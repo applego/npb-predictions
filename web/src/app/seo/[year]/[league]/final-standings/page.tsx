@@ -10,6 +10,7 @@ import { InternalLinks } from "@/components/InternalLinks";
 import {
   getSeasonByYear,
   getFinalStandings,
+  getLatestStandings,
   LEAGUE_LABELS,
   type League,
 } from "@/lib/seo-queries";
@@ -33,34 +34,50 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function FinalStandingsPage({ params }: Props) {
   const { year: yearStr, league } = await params;
   const year = parseInt(yearStr, 10);
-  if (isNaN(year) || !isLeague(league)) notFound();
+  if (Number.isNaN(year) || !isLeague(league)) notFound();
 
   const season = await getSeasonByYear(year);
   if (!season) notFound();
 
-  const standings = await getFinalStandings(season.id, league);
+  const standings = season.isActive
+    ? await getLatestStandings(season.id, league)
+    : await getFinalStandings(season.id, league);
   const leagueName = LEAGUE_LABELS[league];
+
+  const pageTitle = season.isActive
+    ? `${year}年 ${leagueName} 現在の順位`
+    : `${year}年 ${leagueName} 最終順位`;
 
   const breadcrumbItems = [
     { label: "過去シーズン", href: "/seo/past-seasons" },
     { label: `${year}年`, href: `/seo/${year}` },
-    { label: `${leagueName} 最終順位` },
+    { label: season.isActive ? `${leagueName} 現在の順位` : `${leagueName} 最終順位` },
   ];
 
   const faqItems = [
     {
-      question: `${year}年${leagueName}の最終順位は？`,
+      question: season.isActive
+        ? `${year}年${leagueName}の現在の順位は？`
+        : `${year}年${leagueName}の最終順位は？`,
       answer:
         standings.length > 0
-          ? `${year}年${leagueName}の優勝は${standings[0].teamName}です。` +
+          ? (season.isActive
+              ? `${year}年${leagueName}の現在首位は${standings[0].teamName}です。`
+              : `${year}年${leagueName}の優勝は${standings[0].teamName}です。`) +
             standings.map((s) => `${s.rank}位: ${s.teamName}`).join("、")
-          : `${year}年${leagueName}の最終順位はまだ確定していません。`,
+          : season.isActive
+            ? `${year}年${leagueName}のシーズンは開始しましたが、順位データはまだ登録されていません。`
+            : `${year}年${leagueName}の最終順位はまだ確定していません。`,
     },
     {
-      question: `${year}年${leagueName}の優勝チームは？`,
+      question: season.isActive
+        ? `${year}年${leagueName}の現在首位は？`
+        : `${year}年${leagueName}の優勝チームは？`,
       answer:
         standings.length > 0
-          ? `${standings[0].teamName}が${year}年${leagueName}で優勝しました。`
+          ? season.isActive
+            ? `${standings[0].teamName}が${year}年${leagueName}で首位です。`
+            : `${standings[0].teamName}が${year}年${leagueName}で優勝しました。`
           : "まだ確定していません。",
     },
   ];
@@ -71,11 +88,11 @@ export default async function FinalStandingsPage({ params }: Props) {
       <FaqJsonLd items={faqItems} />
       <Breadcrumb items={breadcrumbItems} />
 
-      <h1 className="mb-2 text-2xl font-bold">
-        {year}年 {leagueName} 最終順位
-      </h1>
+      <h1 className="mb-2 text-2xl font-bold">{pageTitle}</h1>
       <p className="mb-6 text-gray-600">
-        {year}年プロ野球{leagueName}の最終順位表
+        {season.isActive
+          ? `${year}年プロ野球${leagueName}の現在の順位（随時更新）`
+          : `${year}年プロ野球${leagueName}の最終順位表`}
       </p>
 
       {standings.length === 0 ? (

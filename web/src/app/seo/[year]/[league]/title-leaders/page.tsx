@@ -10,6 +10,7 @@ import { InternalLinks } from "@/components/InternalLinks";
 import {
   getSeasonByYear,
   getTitleLeaders,
+  getLatestTitleLeaders,
   LEAGUE_LABELS,
   TITLE_LABELS,
   type League,
@@ -38,7 +39,9 @@ export default async function LeagueTitleLeadersPage({ params }: Props) {
   const season = await getSeasonByYear(year);
   if (!season) notFound();
 
-  const titles = await getTitleLeaders(season.id, league);
+  const titles = season.isActive
+    ? await getLatestTitleLeaders(season.id, league)
+    : await getTitleLeaders(season.id, league);
   const leagueName = LEAGUE_LABELS[league];
 
   const breadcrumbItems = [

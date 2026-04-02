@@ -10,6 +10,7 @@ import { InternalLinks } from "@/components/InternalLinks";
 import {
   getSeasonByYear,
   getTitleLeaders,
+  getLatestTitleLeaders,
   LEAGUE_LABELS,
   TITLE_LABELS,
 } from "@/lib/seo-queries";
@@ -27,12 +28,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function TitleLeadersPage({ params }: Props) {
   const { year: yearStr } = await params;
   const year = parseInt(yearStr, 10);
-  if (isNaN(year)) notFound();
+  if (Number.isNaN(year)) notFound();
 
   const season = await getSeasonByYear(year);
   if (!season) notFound();
 
-  const titles = await getTitleLeaders(season.id);
+  // For active seasons use latest snapshot; for past seasons use final data
+  const titles = season.isActive
+    ? await getLatestTitleLeaders(season.id)
+    : await getTitleLeaders(season.id);
 
   const centralTitles = titles.filter((t) => t.league === "central");
   const pacificTitles = titles.filter((t) => t.league === "pacific");

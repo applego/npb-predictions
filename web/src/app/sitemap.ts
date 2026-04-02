@@ -41,5 +41,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }))
   );
 
-  return [...staticPages, ...seasonPages, ...teamPages];
+  const archivePages: MetadataRoute.Sitemap = years.flatMap((year) => [
+    {
+      url: `${BASE_URL}/archive/${year}`,
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+    },
+    {
+      url: `${BASE_URL}/archive/${year}/predictions`,
+      changeFrequency: "monthly" as const,
+      priority: 0.5,
+    },
+  ]);
+
+  return [...staticPages, ...seasonPages, ...teamPages, ...archivePages];
 }
