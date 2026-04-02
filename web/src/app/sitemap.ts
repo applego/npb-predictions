@@ -1,3 +1,5 @@
+export const runtime = "edge";
+
 import type { MetadataRoute } from "next";
 import { getAllSeasons } from "@/lib/seo-queries";
 import { NPB_TEAMS } from "@/lib/teams";
