@@ -176,6 +176,7 @@ export default function NewPredictionPage() {
   const [rankings, setRankings] = useState<RankingState>(initRankings());
   const [titles, setTitles] = useState<TitleState>(initTitles());
   const [submitting, setSubmitting] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
@@ -189,7 +190,8 @@ export default function NewPredictionPage() {
       // Auto-select active season
       const active = (s as Season[]).find((season) => season.isActive);
       if (active) setSeasonId(active.id);
-    });
+      setIsLoadingData(false);
+    }).catch(() => setIsLoadingData(false));
   }, []);
 
   function handleRankingChange(
@@ -301,6 +303,16 @@ export default function NewPredictionPage() {
   }
 
   const selectedSeason = seasons.find((s) => s.id === seasonId);
+
+  if (isLoadingData) {
+    return (
+      <div className="mx-auto max-w-2xl animate-pulse space-y-4">
+        <div className="h-8 w-48 rounded bg-gray-200" />
+        <div className="h-4 w-64 rounded bg-gray-200" />
+        <div className="h-40 rounded-lg bg-gray-200" />
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-2xl">

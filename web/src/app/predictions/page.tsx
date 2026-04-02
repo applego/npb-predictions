@@ -1,12 +1,32 @@
 export const runtime = "edge";
 
+import type { Metadata } from "next";
 import Link from "next/link";
 import type { Prediction } from "@/lib/types";
 import { LEAGUE_LABELS, TITLE_CATEGORY_LABELS } from "@/lib/types";
-
+import ShareButton from "@/components/ShareButton";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "";
 const DEFAULT_YEAR = new Date().getFullYear();
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ year?: string }>;
+}): Promise<Metadata> {
+  const { year: yearParam } = await searchParams;
+  const year = yearParam ? parseInt(yearParam, 10) : DEFAULT_YEAR;
+  return {
+    title: `${year}年 予想比較`,
+    description: `${year}年NPB予想リーグ — 全予想家のセ・パ順位予想とタイトル予想を横比較。`,
+    openGraph: {
+      title: `${year}年 NPB予想リーグ 予想比較`,
+      description: `${year}年プロ野球順位予想 — 5人の予想を一覧表示`,
+      type: "website",
+    },
+    alternates: { canonical: `/predictions?year=${year}` },
+  };
+}
 
 async function getPredictions(year: number): Promise<Prediction[]> {
   try {
@@ -58,12 +78,15 @@ export default async function PredictionsComparePage({
     <div>
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Predictions Compare</h1>
-        <Link
-          href="/predictions/new"
-          className="rounded bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700"
-        >
-          + 予想を登録
-        </Link>
+        <div className="flex items-center gap-2">
+          <ShareButton type="scoreboard" year={year} />
+          <Link
+            href="/predictions/new"
+            className="rounded bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700"
+          >
+            + 予想を登録
+          </Link>
+        </div>
       </div>
       <p className="mb-6 text-sm text-gray-500">
         {year}シーズン — {users.length}人の予想を横比較

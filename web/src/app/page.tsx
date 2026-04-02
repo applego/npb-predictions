@@ -1,7 +1,21 @@
 export const runtime = "edge";
 
+import type { Metadata } from "next";
 import Link from "next/link";
 import type { Season } from "@/lib/types";
+
+export const metadata: Metadata = {
+  title: "NPB Predictions League | プロ野球順位予想リーグ",
+  description:
+    "5人の予想家がプロ野球順位・タイトルを予想して年間王者を競うリーグ。セ・パ両リーグの順位予想とタイトル予想で盛り上がろう。",
+  openGraph: {
+    title: "NPB Predictions League | プロ野球順位予想リーグ",
+    description:
+      "5人の予想家がプロ野球順位・タイトルを予想して年間王者を競うリーグ。",
+    type: "website",
+  },
+  alternates: { canonical: "/" },
+};
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "";
 
@@ -23,57 +37,91 @@ export default async function HomePage() {
 
   return (
     <div>
-      <h1 className="mb-2 text-2xl font-bold">NPB Predictions League</h1>
-      <p className="mb-6 text-gray-600">
-        5人の予想を比較して年間王者を決めよう
-      </p>
-
-      {/* Season Selector */}
-      {activeSeason && (
-        <div className="mb-6 rounded-lg border bg-blue-50 p-4">
-          <p className="text-sm text-blue-700">
-            Active Season:{" "}
-            <span className="font-bold">{activeSeason.label}</span>
-          </p>
+      {/* Hero Section */}
+      <div className="mb-8 rounded-xl bg-gradient-to-br from-blue-600 to-blue-800 p-8 text-white shadow-lg">
+        <div className="mb-1 flex items-center gap-2">
+          <span className="text-4xl">⚾</span>
+          <h1 className="text-3xl font-bold">NPB Predictions League</h1>
         </div>
-      )}
+        <p className="mt-2 text-blue-100">
+          プロ野球順位予想リーグ — セ・パ両リーグの順位とタイトルを予想して年間王者を目指せ
+        </p>
+        {activeSeason && (
+          <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-1.5 text-sm font-medium backdrop-blur-sm">
+            <span className="h-2 w-2 rounded-full bg-green-400" />
+            {activeSeason.label} シーズン開催中
+          </div>
+        )}
+      </div>
 
       {/* Navigation Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Link
           href="/standings"
-          className="group rounded-lg border bg-white p-5 shadow-sm transition hover:shadow-md"
+          className="group rounded-xl border-2 border-transparent bg-white p-5 shadow-sm transition hover:border-blue-200 hover:shadow-md"
         >
-          <div className="mb-2 text-2xl">📊</div>
-          <h2 className="font-semibold group-hover:text-blue-600">
+          <div className="mb-3 text-3xl">📊</div>
+          <h2 className="font-bold group-hover:text-blue-600">
             Current Standings
           </h2>
           <p className="mt-1 text-sm text-gray-500">
-            リアルタイムのスコアボード
+            リアルタイムのスコアボード・順位確認
           </p>
         </Link>
 
         <Link
           href="/predictions"
-          className="group rounded-lg border bg-white p-5 shadow-sm transition hover:shadow-md"
+          className="group rounded-xl border-2 border-transparent bg-white p-5 shadow-sm transition hover:border-purple-200 hover:shadow-md"
         >
-          <div className="mb-2 text-2xl">🔮</div>
-          <h2 className="font-semibold group-hover:text-blue-600">
+          <div className="mb-3 text-3xl">🔮</div>
+          <h2 className="font-bold group-hover:text-purple-600">
             Predictions Compare
           </h2>
-          <p className="mt-1 text-sm text-gray-500">5人の予想を横比較</p>
+          <p className="mt-1 text-sm text-gray-500">
+            全員の予想を横並び比較
+          </p>
         </Link>
 
         <Link
-          href="/admin"
-          className="group rounded-lg border bg-white p-5 shadow-sm transition hover:shadow-md"
+          href="/predictions/new"
+          className="group rounded-xl border-2 border-dashed border-blue-200 bg-blue-50 p-5 shadow-sm transition hover:border-blue-400 hover:shadow-md"
         >
-          <div className="mb-2 text-2xl">⚙️</div>
-          <h2 className="font-semibold group-hover:text-orange-600">Admin</h2>
-          <p className="mt-1 text-sm text-gray-500">
-            シーズン管理・データ更新
+          <div className="mb-3 text-3xl">✍️</div>
+          <h2 className="font-bold text-blue-700 group-hover:text-blue-800">
+            予想を登録する
+          </h2>
+          <p className="mt-1 text-sm text-blue-600">
+            今すぐ順位・タイトル予想を入力
           </p>
         </Link>
+      </div>
+
+      {/* How it works */}
+      <div className="mt-6 rounded-xl border bg-gray-50 p-5">
+        <h2 className="mb-3 text-sm font-semibold text-gray-700">🏆 得点ルール</h2>
+        <div className="grid gap-3 sm:grid-cols-3 text-sm text-gray-600">
+          <div className="flex items-start gap-2">
+            <span className="text-lg">🎯</span>
+            <div>
+              <p className="font-medium text-gray-800">順位予想</p>
+              <p>的中した順位ごとに得点</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-2">
+            <span className="text-lg">🏅</span>
+            <div>
+              <p className="font-medium text-gray-800">タイトル予想</p>
+              <p>打点王・本塁打王など個人タイトルも得点対象</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-2">
+            <span className="text-lg">👑</span>
+            <div>
+              <p className="font-medium text-gray-800">年間王者決定</p>
+              <p>シーズン終了時の合計スコアで決着</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* YouTube Channel Banner */}
