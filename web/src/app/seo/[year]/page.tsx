@@ -1,3 +1,5 @@
+export const runtime = "edge";
+
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -17,19 +19,30 @@ type Props = { params: Promise<{ year: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { year } = await params;
+  const title = `${year}年 NPBシーズン概要 | NPB Predictions League`;
+  const description = `${year}年プロ野球シーズンの順位結果・タイトルホルダー・予想リーグの成績をまとめたページです。`;
   return {
-    title: `${year}年 NPBシーズン概要 | NPB Predictions League`,
-    description: `${year}年プロ野球シーズンの順位結果・タイトルホルダー・予想リーグの成績をまとめたページです。`,
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "website",
+    },
+    alternates: {
+      canonical: `/seo/${year}`,
+    },
   };
 }
 
 export default async function SeasonOverviewPage({ params }: Props) {
   const { year: yearStr } = await params;
   const year = parseInt(yearStr, 10);
-  if (isNaN(year)) notFound();
+  if (Number.isNaN(year)) notFound();
 
-  const season = await getSeasonByYear(year);
-  if (!season) notFound();
+  const seasonOrNull = await getSeasonByYear(year);
+  if (!seasonOrNull) notFound();
+  const season = seasonOrNull;
 
   const [centralStandings, pacificStandings, titles] = await Promise.all([
     getFinalStandings(season.id, "central"),

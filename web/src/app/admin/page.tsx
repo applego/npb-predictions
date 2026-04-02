@@ -301,14 +301,35 @@ function buildDefaultStandings(): StandingRow[] {
   ];
 }
 
+interface Season {
+  id: number;
+  year: number;
+  label: string;
+  isActive: boolean;
+}
+
 function StandingsUpdater() {
-  const [seasonId, setSeasonId] = useState(1);
+  const [seasons, setSeasons] = useState<Season[]>([]);
+  const [seasonId, setSeasonId] = useState<number | "">("");
   const [standings, setStandings] = useState<StandingRow[]>(
     buildDefaultStandings
   );
   const [isFinal, setIsFinal] = useState(false);
   const [result, setResult] = useState<ApiResult | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/seasons")
+      .then((r) => r.json() as Promise<Season[]>)
+      .then((data) => {
+        setSeasons(data);
+        const active = data.find((s) => s.isActive);
+        if (active) setSeasonId(active.id);
+      })
+      .catch(() => undefined);
+  }, []);
+
+  const selectedSeason = seasons.find((s) => s.id === seasonId);
 
   function updateRow(
     idx: number,
@@ -323,6 +344,10 @@ function StandingsUpdater() {
   }
 
   async function handleSubmit() {
+    if (!seasonId) {
+      setResult({ ok: false, error: "シーズンを選択してください" });
+      return;
+    }
     setLoading(true);
     const r = await apiPost("/api/admin/actual-standings/snapshot", {
       standings: standings.map((s) => ({
@@ -336,12 +361,46 @@ function StandingsUpdater() {
   }
 
   async function handleRecalculate() {
+    if (!selectedSeason) {
+      setResult({ ok: false, error: "シーズンを選択してください" });
+      return;
+    }
     setLoading(true);
     const r = await apiPost(
-      `/api/admin/recalculate-scores?year=${new Date().getFullYear()}`,
+      `/api/admin/recalculate-scores?year=${selectedSeason.year}`,
       {}
     );
     setResult(r);
+    setLoading(false);
+  }
+
+  async function handleUpdateAndRecalculate() {
+    if (!seasonId || !selectedSeason) {
+      setResult({ ok: false, error: "シーズンを選択してください" });
+      return;
+    }
+    setLoading(true);
+    const snapshotResult = await apiPost("/api/admin/actual-standings/snapshot", {
+      standings: standings.map((s) => ({
+        ...s,
+        seasonId,
+        isFinal,
+      })),
+    });
+    if (!snapshotResult.ok) {
+      setResult(snapshotResult);
+      setLoading(false);
+      return;
+    }
+    const scoreResult = await apiPost(
+      `/api/admin/recalculate-scores?year=${selectedSeason.year}`,
+      {}
+    );
+    setResult({
+      ok: scoreResult.ok,
+      data: { snapshot: snapshotResult.data, scores: scoreResult.data },
+      error: scoreResult.error,
+    });
     setLoading(false);
   }
 
@@ -410,15 +469,31 @@ function StandingsUpdater() {
   return (
     <section className="rounded-lg border bg-white p-6 shadow-sm">
       <h2 className="mb-4 text-lg font-bold">実順位更新</h2>
-      <div className="mb-4 flex items-center gap-4">
+      <div className="mb-4 flex flex-wrap items-center gap-4">
         <div>
-          <label className="mb-1 block text-sm font-medium">Season ID</label>
-          <input
-            type="number"
-            value={seasonId}
-            onChange={(e) => setSeasonId(Number(e.target.value))}
-            className="w-24 rounded border px-3 py-2"
-          />
+          <label className="mb-1 block text-sm font-medium">シーズン</label>
+          {seasons.length > 0 ? (
+            <select
+              value={seasonId}
+              onChange={(e) => setSeasonId(e.target.value ? Number(e.target.value) : "")}
+              className="rounded border px-3 py-2 text-sm"
+            >
+              <option value="">— 選択 —</option>
+              {seasons.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.label}{s.isActive ? " (現在)" : ""}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <input
+              type="number"
+              value={seasonId}
+              onChange={(e) => setSeasonId(e.target.value ? Number(e.target.value) : "")}
+              placeholder="Season ID"
+              className="w-24 rounded border px-3 py-2 text-sm"
+            />
+          )}
         </div>
         <label className="flex items-center gap-2 text-sm">
           <input
@@ -433,20 +508,27 @@ function StandingsUpdater() {
         {renderLeague("セ・リーグ", "central")}
         {renderLeague("パ・リーグ", "pacific")}
       </div>
-      <div className="mt-4 flex gap-3">
+      <div className="mt-4 flex flex-wrap gap-3">
         <button
-          onClick={handleSubmit}
-          disabled={loading}
-          className="rounded bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700 disabled:opacity-50"
+          onClick={() => { void handleUpdateAndRecalculate(); }}
+          disabled={loading || !seasonId}
+          className="rounded bg-blue-700 px-4 py-2 text-sm font-bold text-white hover:bg-blue-800 disabled:opacity-50"
         >
-          {loading ? "送信中..." : "順位スナップショット登録"}
+          {loading ? "処理中..." : "順位更新 + スコア再計算 (一括)"}
         </button>
         <button
-          onClick={handleRecalculate}
-          disabled={loading}
+          onClick={() => { void handleSubmit(); }}
+          disabled={loading || !seasonId}
+          className="rounded bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700 disabled:opacity-50"
+        >
+          {loading ? "送信中..." : "順位のみ登録"}
+        </button>
+        <button
+          onClick={() => { void handleRecalculate(); }}
+          disabled={loading || !seasonId}
           className="rounded bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50"
         >
-          {loading ? "計算中..." : "スコア再計算"}
+          {loading ? "計算中..." : "スコアのみ再計算"}
         </button>
       </div>
       <ResultDisplay result={result} />

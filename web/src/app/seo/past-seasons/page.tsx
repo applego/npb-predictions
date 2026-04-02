@@ -1,3 +1,5 @@
+export const runtime = "edge";
+
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -12,6 +14,14 @@ export const metadata: Metadata = {
   title: "過去シーズン一覧 | NPB Predictions League",
   description:
     "NPB Predictions Leagueの過去シーズン一覧。各年の順位結果・タイトルホルダー・予想リーグの成績を閲覧できます。",
+  openGraph: {
+    title: "過去シーズン一覧 | NPB Predictions League",
+    description: "NPB Predictions Leagueの過去シーズン一覧。各年の順位結果・タイトルホルダー・予想リーグの成績を閲覧できます。",
+    type: "website",
+  },
+  alternates: {
+    canonical: "/seo/past-seasons",
+  },
 };
 
 export default async function PastSeasonsPage() {
