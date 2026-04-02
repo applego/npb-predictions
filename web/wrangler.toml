@@ -1,0 +1,9 @@
+name = "npb-predictions"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".vercel/output/static"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "npb-predictions"
+database_id = "39af9cc0-90d6-46fe-81cc-c8e31d7c3a66"
