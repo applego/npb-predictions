@@ -1,3 +1,5 @@
+export const runtime = "edge";
+
 import Link from "next/link";
 import type { Season } from "@/lib/types";
 
@@ -9,7 +11,7 @@ async function getSeasons(): Promise<Season[]> {
       cache: "no-store",
     });
     if (!res.ok) return [];
-    return res.json();
+    return res.json() as Promise<Season[]>;
   } catch {
     return [];
   }

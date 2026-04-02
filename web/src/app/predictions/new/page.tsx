@@ -181,11 +181,11 @@ export default function NewPredictionPage() {
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/users").then((r) => r.json()).catch(() => []),
-      fetch("/api/seasons").then((r) => r.json()).catch(() => []),
+      fetch("/api/users").then((r) => r.json() as Promise<User[]>).catch(() => []),
+      fetch("/api/seasons").then((r) => r.json() as Promise<Season[]>).catch(() => []),
     ]).then(([u, s]) => {
-      setUsers(u);
-      setSeasons(s);
+      setUsers(u as User[]);
+      setSeasons(s as Season[]);
       // Auto-select active season
       const active = (s as Season[]).find((season) => season.isActive);
       if (active) setSeasonId(active.id);
@@ -275,7 +275,7 @@ export default function NewPredictionPage() {
         body: JSON.stringify(buildPayload()),
       });
       if (!res.ok) {
-        const d = await res.json().catch(() => ({}));
+        const d = await (res.json() as Promise<any>).catch(() => ({}));
         throw new Error(d.error ?? `HTTP ${res.status}`);
       }
       router.push("/predictions");

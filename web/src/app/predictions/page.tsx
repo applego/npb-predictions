@@ -1,3 +1,5 @@
+export const runtime = "edge";
+
 import Link from "next/link";
 import type { Prediction } from "@/lib/types";
 import { LEAGUE_LABELS, TITLE_CATEGORY_LABELS } from "@/lib/types";
@@ -12,7 +14,7 @@ async function getPredictions(year: number): Promise<Prediction[]> {
       cache: "no-store",
     });
     if (!res.ok) return [];
-    return res.json();
+    return res.json() as Promise<Prediction[]>;
   } catch {
     return [];
   }
