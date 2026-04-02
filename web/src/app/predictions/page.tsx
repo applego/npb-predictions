@@ -139,7 +139,7 @@ export default async function PredictionsComparePage({
 
       {/* Title Picks Comparison */}
       {leagues.map((league) => {
-        const categories = Object.keys(TITLE_CATEGORY_LABELS);
+        const categories = Object.keys(TITLE_CATEGORY_LABELS) as (keyof typeof TITLE_CATEGORY_LABELS)[];
         // Only show categories where at least one user has a pick
         const relevantCategories = categories.filter((cat) =>
           predictions.some((p) =>

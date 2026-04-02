@@ -1,5 +1,15 @@
 // Shared types mirroring the DB schema for frontend use
 
+export type League = "central" | "pacific";
+
+export type TitleCategory =
+  | "batting_avg"
+  | "rbi"
+  | "home_runs"
+  | "wins"
+  | "era"
+  | "saves";
+
 export interface Season {
   id: number;
   year: number;
@@ -19,7 +29,7 @@ export interface User {
 export interface RankingPick {
   id: number;
   predictionId: number;
-  league: "central" | "pacific";
+  league: League;
   rank: number;
   teamName: string;
 }
@@ -27,8 +37,8 @@ export interface RankingPick {
 export interface TitlePick {
   id: number;
   predictionId: number;
-  league: "central" | "pacific";
-  category: string;
+  league: League;
+  category: TitleCategory;
   playerName: string;
   teamName: string | null;
 }
@@ -58,7 +68,7 @@ export interface ScoreboardResponse {
   scores: ScoreEntry[];
 }
 
-export const TITLE_CATEGORY_LABELS: Record<string, string> = {
+export const TITLE_CATEGORY_LABELS: Record<TitleCategory, string> = {
   batting_avg: "首位打者",
   rbi: "打点王",
   home_runs: "本塁打王",
@@ -67,7 +77,7 @@ export const TITLE_CATEGORY_LABELS: Record<string, string> = {
   saves: "最多セーブ",
 };
 
-export const LEAGUE_LABELS: Record<string, string> = {
+export const LEAGUE_LABELS: Record<League, string> = {
   central: "セ・リーグ",
   pacific: "パ・リーグ",
 };

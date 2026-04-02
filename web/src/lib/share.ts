@@ -2,9 +2,9 @@
  * Share URL builder and OG image URL utilities for social sharing.
  */
 
-type OgType = "prediction" | "scoreboard" | "monthly-champion" | "weekly";
+export type OgType = "prediction" | "scoreboard" | "monthly-champion" | "weekly";
 
-interface OgParams {
+export interface OgParams {
   year?: number;
   userId?: number;
   month?: number;
