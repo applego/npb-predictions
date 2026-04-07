@@ -40,6 +40,23 @@ async function getPredictions(year: number): Promise<Prediction[]> {
   }
 }
 
+const SECTION_HEADER_STYLE = {
+  fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
+  letterSpacing: "0.1em",
+  fontSize: "1.25rem",
+  color: "rgba(255,255,255,0.85)",
+};
+
+const TH_STYLE = {
+  color: "rgba(255,255,255,0.3)",
+  letterSpacing: "0.12em",
+};
+
+const TABLE_STYLE = {
+  background: "#0a1525",
+  border: "1px solid rgba(255,255,255,0.05)",
+};
+
 export default async function PredictionsComparePage({
   searchParams,
 }: {
@@ -51,15 +68,23 @@ export default async function PredictionsComparePage({
 
   if (predictions.length === 0) {
     return (
-      <div>
-        <h1 className="mb-4 text-2xl font-bold">Predictions Compare</h1>
-        <div className="rounded-lg border bg-white p-8 text-center">
-          <p className="mb-4 text-gray-500">
+      <div className="space-y-6">
+        <h1 style={SECTION_HEADER_STYLE}>PREDICTIONS COMPARE</h1>
+        <div
+          className="rounded-xl p-10 text-center"
+          style={TABLE_STYLE}
+        >
+          <p className="mb-6 text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>
             {year}シーズンの予想がまだ登録されていません。
           </p>
           <Link
             href="/predictions/new"
-            className="inline-block rounded bg-blue-600 px-5 py-2 text-sm font-bold text-white hover:bg-blue-700"
+            className="inline-block rounded px-5 py-2.5 text-sm font-medium transition-all"
+            style={{
+              border: "1px solid rgba(251,191,36,0.3)",
+              background: "rgba(251,191,36,0.08)",
+              color: "#fbbf24",
+            }}
           >
             + 最初の予想を登録する
           </Link>
@@ -68,46 +93,59 @@ export default async function PredictionsComparePage({
     );
   }
 
-  // Collect all users
   const users = predictions.map((p) => p.user);
-
-  // Build ranking comparison: league -> rank -> user picks
   const leagues = ["central", "pacific"] as const;
 
   return (
-    <div>
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Predictions Compare</h1>
+    <div className="space-y-8">
+      {/* Page header */}
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 style={SECTION_HEADER_STYLE}>PREDICTIONS COMPARE</h1>
+          <p className="mt-1 text-sm" style={{ color: "rgba(255,255,255,0.35)" }}>
+            {year}シーズン — {users.length}人の予想を横比較
+          </p>
+        </div>
         <div className="flex items-center gap-2">
           <ShareButton type="scoreboard" year={year} />
           <Link
             href="/predictions/new"
-            className="rounded bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700"
+            className="rounded px-4 py-2 text-sm font-medium transition-all"
+            style={{
+              border: "1px solid rgba(251,191,36,0.3)",
+              background: "rgba(251,191,36,0.08)",
+              color: "#fbbf24",
+            }}
           >
             + 予想を登録
           </Link>
         </div>
       </div>
-      <p className="mb-6 text-sm text-gray-500">
-        {year}シーズン — {users.length}人の予想を横比較
-      </p>
 
-      {/* Ranking Picks Comparison */}
+      {/* Ranking Picks */}
       {leagues.map((league) => (
-        <div key={league} className="mb-8">
-          <h2 className="mb-3 text-lg font-semibold">
-            {LEAGUE_LABELS[league]} 順位予想
-          </h2>
-          <div className="overflow-x-auto rounded-lg border bg-white shadow-sm">
+        <div key={league}>
+          <SectionLabel>{LEAGUE_LABELS[league]} 順位予想</SectionLabel>
+          <div className="overflow-x-auto rounded-xl" style={TABLE_STYLE}>
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b bg-gray-50">
-                  <th className="px-3 py-2 text-left font-medium">順位</th>
+                <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                  <th
+                    className="px-4 py-3 text-left text-xs font-medium uppercase"
+                    style={TH_STYLE}
+                  >
+                    順位
+                  </th>
                   {users.map((u) => (
-                    <th key={u.id} className="px-3 py-2 text-left font-medium">
+                    <th
+                      key={u.id}
+                      className="px-4 py-3 text-left text-xs font-medium"
+                      style={TH_STYLE}
+                    >
                       <Link
                         href={`/users/${u.id}?year=${year}`}
-                        className="hover:text-blue-600 hover:underline"
+                        className="transition-colors hover:text-amber-400"
+                        style={{ color: "rgba(255,255,255,0.6)" }}
                       >
                         {u.name}
                       </Link>
@@ -117,14 +155,30 @@ export default async function PredictionsComparePage({
               </thead>
               <tbody>
                 {[1, 2, 3, 4, 5, 6].map((rank) => (
-                  <tr key={rank} className="border-b">
-                    <td className="px-3 py-2 font-medium">{rank}位</td>
+                  <tr
+                    key={rank}
+                    style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
+                  >
+                    <td
+                      className="px-4 py-3 font-display text-sm"
+                      style={{
+                        fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
+                        color: "rgba(251,191,36,0.6)",
+                        letterSpacing: "0.05em",
+                      }}
+                    >
+                      {rank}位
+                    </td>
                     {predictions.map((pred) => {
                       const pick = pred.rankingPicks.find(
                         (rp) => rp.league === league && rp.rank === rank
                       );
                       return (
-                        <td key={pred.id} className="px-3 py-2">
+                        <td
+                          key={pred.id}
+                          className="px-4 py-3"
+                          style={{ color: pick ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.2)" }}
+                        >
                           {pick?.teamName ?? "—"}
                         </td>
                       );
@@ -137,10 +191,11 @@ export default async function PredictionsComparePage({
         </div>
       ))}
 
-      {/* Title Picks Comparison */}
+      {/* Title Picks */}
       {leagues.map((league) => {
-        const categories = Object.keys(TITLE_CATEGORY_LABELS) as (keyof typeof TITLE_CATEGORY_LABELS)[];
-        // Only show categories where at least one user has a pick
+        const categories = Object.keys(
+          TITLE_CATEGORY_LABELS
+        ) as (keyof typeof TITLE_CATEGORY_LABELS)[];
         const relevantCategories = categories.filter((cat) =>
           predictions.some((p) =>
             p.titlePicks.some(
@@ -151,21 +206,23 @@ export default async function PredictionsComparePage({
         if (relevantCategories.length === 0) return null;
 
         return (
-          <div key={`title-${league}`} className="mb-8">
-            <h2 className="mb-3 text-lg font-semibold">
-              {LEAGUE_LABELS[league]} タイトル予想
-            </h2>
-            <div className="overflow-x-auto rounded-lg border bg-white shadow-sm">
+          <div key={`title-${league}`}>
+            <SectionLabel>{LEAGUE_LABELS[league]} タイトル予想</SectionLabel>
+            <div className="overflow-x-auto rounded-xl" style={TABLE_STYLE}>
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b bg-gray-50">
-                    <th className="px-3 py-2 text-left font-medium">
+                  <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                    <th
+                      className="px-4 py-3 text-left text-xs font-medium uppercase"
+                      style={TH_STYLE}
+                    >
                       タイトル
                     </th>
                     {users.map((u) => (
                       <th
                         key={u.id}
-                        className="px-3 py-2 text-left font-medium"
+                        className="px-4 py-3 text-left text-xs font-medium"
+                        style={TH_STYLE}
                       >
                         {u.name}
                       </th>
@@ -174,22 +231,34 @@ export default async function PredictionsComparePage({
                 </thead>
                 <tbody>
                   {relevantCategories.map((cat) => (
-                    <tr key={cat} className="border-b">
-                      <td className="px-3 py-2 font-medium">
+                    <tr
+                      key={cat}
+                      style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
+                    >
+                      <td
+                        className="px-4 py-3 text-xs font-medium uppercase tracking-wide"
+                        style={{ color: "rgba(255,255,255,0.5)" }}
+                      >
                         {TITLE_CATEGORY_LABELS[cat]}
                       </td>
                       {predictions.map((pred) => {
                         const pick = pred.titlePicks.find(
-                          (tp) =>
-                            tp.league === league && tp.category === cat
+                          (tp) => tp.league === league && tp.category === cat
                         );
                         return (
-                          <td key={pred.id} className="px-3 py-2">
+                          <td
+                            key={pred.id}
+                            className="px-4 py-3"
+                            style={{ color: pick ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.2)" }}
+                          >
                             {pick ? (
                               <span>
                                 {pick.playerName}
                                 {pick.teamName && (
-                                  <span className="ml-1 text-xs text-gray-400">
+                                  <span
+                                    className="ml-1 text-xs"
+                                    style={{ color: "rgba(255,255,255,0.3)" }}
+                                  >
                                     ({pick.teamName})
                                   </span>
                                 )}
@@ -208,6 +277,27 @@ export default async function PredictionsComparePage({
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mb-3 flex items-center gap-3">
+      <span
+        style={{
+          fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
+          fontSize: "1.1rem",
+          letterSpacing: "0.1em",
+          color: "rgba(255,255,255,0.7)",
+        }}
+      >
+        {children}
+      </span>
+      <div
+        className="h-px flex-1"
+        style={{ background: "rgba(255,255,255,0.06)" }}
+      />
     </div>
   );
 }

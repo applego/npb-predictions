@@ -40,7 +40,7 @@ export async function POST(req: Request) {
   }
 
   const year = parseInt(yearParam, 10);
-  if (isNaN(year)) {
+  if (Number.isNaN(year)) {
     return NextResponse.json({ error: "Invalid year" }, { status: 400 });
   }
 

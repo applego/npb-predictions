@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function PredictionsArchivePage({ params }: Props) {
   const { year: yearStr } = await params;
   const year = parseInt(yearStr, 10);
-  if (isNaN(year)) notFound();
+  if (Number.isNaN(year)) notFound();
 
   const season = await getSeasonByYear(year);
   if (!season) notFound();

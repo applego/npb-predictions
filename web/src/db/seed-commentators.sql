@@ -1,5 +1,5 @@
 -- Season
-INSERT OR IGNORE INTO seasons (year, is_active) VALUES (2026, 1);
+INSERT OR IGNORE INTO seasons (year, label, is_active) VALUES (2026, '2026シーズン', 1);
 
 -- Core 5 users
 INSERT OR IGNORE INTO users (name, slug) VALUES ('Oya','oya'),('Ishiro','ishiro'),('Kuramoto','kuramoto'),('Tsuneshige','tsuneshige'),('Kumagae','kumagae');

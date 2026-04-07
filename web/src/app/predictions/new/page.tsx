@@ -40,8 +40,8 @@ interface TitleState {
 
 function initRankings(): RankingState {
   return {
-    central: Array(6).fill(""),
-    pacific: Array(6).fill(""),
+    central: Array.from({ length: 6 }, () => ""),
+    pacific: Array.from({ length: 6 }, () => ""),
   };
 }
 

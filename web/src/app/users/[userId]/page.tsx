@@ -38,6 +38,16 @@ async function getScoreboard(year: number): Promise<ScoreboardResponse | null> {
   }
 }
 
+const TABLE_STYLE = {
+  background: "#0a1525",
+  border: "1px solid rgba(255,255,255,0.05)",
+};
+
+const TH_STYLE = {
+  color: "rgba(255,255,255,0.3)",
+  letterSpacing: "0.12em",
+};
+
 export default async function UserDetailPage({
   params,
   searchParams,
@@ -54,9 +64,7 @@ export default async function UserDetailPage({
     getScoreboard(year),
   ]);
 
-  if (!prediction) {
-    notFound();
-  }
+  if (!prediction) notFound();
 
   const user = prediction.user;
   const userScore = scoreboard?.scores.find(
@@ -66,20 +74,40 @@ export default async function UserDetailPage({
     scoreboard?.scores.findIndex(
       (s) => s.userId === parseInt(userId, 10)
     ) ?? -1;
+  const isLeader = userRank === 0;
 
   const leagues = ["central", "pacific"] as const;
 
   return (
-    <div>
-      {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
+    <div className="space-y-6">
+      {/* Profile header */}
+      <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-xl font-bold text-blue-700">
-            {user.name.charAt(0)}
+          <div
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-lg font-bold"
+            style={{
+              background: isLeader ? "rgba(251,191,36,0.12)" : "rgba(255,255,255,0.06)",
+              border: isLeader ? "1px solid rgba(251,191,36,0.4)" : "1px solid rgba(255,255,255,0.1)",
+              color: isLeader ? "#fbbf24" : "rgba(255,255,255,0.6)",
+              fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
+            }}
+          >
+            {user.name.charAt(0).toUpperCase()}
           </div>
           <div>
-            <h1 className="text-2xl font-bold">{user.name}</h1>
-            <p className="text-sm text-gray-500">{year}シーズン予想</p>
+            <h1
+              style={{
+                fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
+                fontSize: "clamp(1.5rem, 4vw, 2rem)",
+                letterSpacing: "0.08em",
+                color: "rgba(255,255,255,0.9)",
+              }}
+            >
+              {user.name}
+            </h1>
+            <p className="mt-0.5 text-sm" style={{ color: "rgba(255,255,255,0.35)" }}>
+              {year}シーズン予想
+            </p>
           </div>
         </div>
         <ShareButton
@@ -90,18 +118,19 @@ export default async function UserDetailPage({
         />
       </div>
 
-      {/* Score Summary */}
+      {/* Score cards */}
       {userScore && (
-        <div className="mb-6 grid gap-3 sm:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-4">
           <ScoreCard
             label="総合順位"
-            value={`${userRank + 1}位 / ${scoreboard!.scores.length}人`}
-            highlight={userRank === 0}
+            value={`${userRank + 1}位`}
+            sub={`/ ${scoreboard!.scores.length}人`}
+            highlight={isLeader}
           />
           <ScoreCard
             label="合計スコア"
             value={String(userScore.totalScore)}
-            highlight={userRank === 0}
+            highlight={isLeader}
           />
           <ScoreCard label="順位点" value={String(userScore.rankingScore)} />
           <ScoreCard label="タイトル点" value={String(userScore.titleScore)} />
@@ -116,23 +145,45 @@ export default async function UserDetailPage({
         if (picks.length === 0) return null;
 
         return (
-          <div key={league} className="mb-6">
-            <h2 className="mb-3 text-lg font-semibold">
-              {LEAGUE_LABELS[league]} 順位予想
-            </h2>
-            <div className="overflow-x-auto rounded-lg border bg-white shadow-sm">
+          <div key={league}>
+            <SectionLabel>{LEAGUE_LABELS[league]} 順位予想</SectionLabel>
+            <div className="overflow-x-auto rounded-xl" style={TABLE_STYLE}>
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b bg-gray-50">
-                    <th className="px-4 py-2 text-left font-medium">順位</th>
-                    <th className="px-4 py-2 text-left font-medium">チーム</th>
+                  <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                    {["順位", "チーム"].map((col) => (
+                      <th
+                        key={col}
+                        className="px-4 py-3 text-left text-xs font-medium uppercase"
+                        style={TH_STYLE}
+                      >
+                        {col}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
                   {picks.map((pick) => (
-                    <tr key={pick.id} className="border-b">
-                      <td className="px-4 py-2 font-medium">{pick.rank}位</td>
-                      <td className="px-4 py-2">{pick.teamName}</td>
+                    <tr
+                      key={pick.id}
+                      style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
+                    >
+                      <td
+                        className="px-4 py-3 text-sm"
+                        style={{
+                          fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
+                          color: "rgba(251,191,36,0.6)",
+                          letterSpacing: "0.05em",
+                        }}
+                      >
+                        {pick.rank}位
+                      </td>
+                      <td
+                        className="px-4 py-3"
+                        style={{ color: "rgba(255,255,255,0.75)" }}
+                      >
+                        {pick.teamName}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -150,29 +201,45 @@ export default async function UserDetailPage({
         if (picks.length === 0) return null;
 
         return (
-          <div key={`title-${league}`} className="mb-6">
-            <h2 className="mb-3 text-lg font-semibold">
-              {LEAGUE_LABELS[league]} タイトル予想
-            </h2>
-            <div className="overflow-x-auto rounded-lg border bg-white shadow-sm">
+          <div key={`title-${league}`}>
+            <SectionLabel>{LEAGUE_LABELS[league]} タイトル予想</SectionLabel>
+            <div className="overflow-x-auto rounded-xl" style={TABLE_STYLE}>
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b bg-gray-50">
-                    <th className="px-4 py-2 text-left font-medium">
-                      タイトル
-                    </th>
-                    <th className="px-4 py-2 text-left font-medium">選手</th>
-                    <th className="px-4 py-2 text-left font-medium">チーム</th>
+                  <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                    {["タイトル", "選手", "チーム"].map((col) => (
+                      <th
+                        key={col}
+                        className="px-4 py-3 text-left text-xs font-medium uppercase"
+                        style={TH_STYLE}
+                      >
+                        {col}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
                   {picks.map((pick) => (
-                    <tr key={pick.id} className="border-b">
-                      <td className="px-4 py-2 font-medium">
+                    <tr
+                      key={pick.id}
+                      style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
+                    >
+                      <td
+                        className="px-4 py-3 text-xs font-medium uppercase tracking-wide"
+                        style={{ color: "rgba(255,255,255,0.5)" }}
+                      >
                         {TITLE_CATEGORY_LABELS[pick.category] ?? pick.category}
                       </td>
-                      <td className="px-4 py-2">{pick.playerName}</td>
-                      <td className="px-4 py-2 text-gray-500">
+                      <td
+                        className="px-4 py-3"
+                        style={{ color: "rgba(255,255,255,0.8)" }}
+                      >
+                        {pick.playerName}
+                      </td>
+                      <td
+                        className="px-4 py-3 text-sm"
+                        style={{ color: "rgba(255,255,255,0.35)" }}
+                      >
                         {pick.teamName ?? "—"}
                       </td>
                     </tr>
@@ -184,17 +251,19 @@ export default async function UserDetailPage({
         );
       })}
 
-      {/* Back Link */}
-      <div className="mt-6 flex gap-3">
+      {/* Footer nav */}
+      <div className="flex gap-4 pt-2">
         <Link
           href={`/standings?year=${year}`}
-          className="text-sm text-blue-600 hover:underline"
+          className="text-sm transition-colors hover:text-amber-400"
+          style={{ color: "rgba(255,255,255,0.4)" }}
         >
-          Standings に戻る
+          ← Standings
         </Link>
         <Link
           href={`/predictions?year=${year}`}
-          className="text-sm text-blue-600 hover:underline"
+          className="text-sm transition-colors hover:text-amber-400"
+          style={{ color: "rgba(255,255,255,0.4)" }}
         >
           Predictions Compare
         </Link>
@@ -206,20 +275,81 @@ export default async function UserDetailPage({
 function ScoreCard({
   label,
   value,
+  sub,
   highlight = false,
 }: {
   label: string;
   value: string;
+  sub?: string;
   highlight?: boolean;
 }) {
   return (
     <div
-      className={`rounded-lg border p-4 ${
-        highlight ? "border-yellow-300 bg-yellow-50" : "bg-white"
-      }`}
+      className="relative overflow-hidden rounded-xl p-4"
+      style={{
+        background: highlight ? "rgba(251,191,36,0.06)" : "#0a1525",
+        border: highlight
+          ? "1px solid rgba(251,191,36,0.2)"
+          : "1px solid rgba(255,255,255,0.05)",
+      }}
     >
-      <p className="text-xs text-gray-500">{label}</p>
-      <p className="mt-1 text-xl font-bold">{value}</p>
+      {highlight && (
+        <div
+          className="absolute left-0 top-0 h-full w-[3px]"
+          style={{
+            background: "linear-gradient(to bottom, #fbbf24, rgba(251,191,36,0.2))",
+          }}
+        />
+      )}
+      <p
+        className="text-xs font-medium uppercase"
+        style={{
+          color: highlight ? "rgba(251,191,36,0.6)" : "rgba(255,255,255,0.3)",
+          letterSpacing: "0.14em",
+        }}
+      >
+        {label}
+      </p>
+      <p
+        className="mt-2 leading-none"
+        style={{
+          fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
+          fontSize: "2rem",
+          letterSpacing: "0.05em",
+          color: highlight ? "#fbbf24" : "rgba(255,255,255,0.85)",
+        }}
+      >
+        {value}
+        {sub && (
+          <span
+            className="ml-1 text-base"
+            style={{ color: "rgba(255,255,255,0.3)" }}
+          >
+            {sub}
+          </span>
+        )}
+      </p>
+    </div>
+  );
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mb-3 flex items-center gap-3">
+      <span
+        style={{
+          fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
+          fontSize: "1.1rem",
+          letterSpacing: "0.1em",
+          color: "rgba(255,255,255,0.7)",
+        }}
+      >
+        {children}
+      </span>
+      <div
+        className="h-px flex-1"
+        style={{ background: "rgba(255,255,255,0.06)" }}
+      />
     </div>
   );
 }

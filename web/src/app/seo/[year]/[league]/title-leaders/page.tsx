@@ -34,7 +34,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function LeagueTitleLeadersPage({ params }: Props) {
   const { year: yearStr, league } = await params;
   const year = parseInt(yearStr, 10);
-  if (isNaN(year) || !isLeague(league)) notFound();
+  if (Number.isNaN(year) || !isLeague(league)) notFound();
 
   const season = await getSeasonByYear(year);
   if (!season) notFound();

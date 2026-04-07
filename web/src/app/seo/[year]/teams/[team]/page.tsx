@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function TeamPage({ params }: Props) {
   const { year: yearStr, team: teamSlug } = await params;
   const year = parseInt(yearStr, 10);
-  if (isNaN(year)) notFound();
+  if (Number.isNaN(year)) notFound();
 
   const team = getTeamBySlug(teamSlug);
   if (!team) notFound();
