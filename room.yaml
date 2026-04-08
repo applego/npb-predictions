@@ -1,0 +1,17 @@
+# NPB Predictions Room Configuration
+
+name: NPB Predictions
+description: NPB予想リーグプラットフォーム
+status: active
+
+br:
+  project_path: companies/npb-predictions
+  labels: [npb, predictions, web]
+
+agents: []
+
+humans:
+  - id: human-tsune
+    name: tsune
+    email: applegorillappa@gmail.com
+    role: owner
