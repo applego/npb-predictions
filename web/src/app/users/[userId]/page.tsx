@@ -18,9 +18,14 @@ async function getUserPrediction(
       `${API_BASE}/api/seasons/${year}/users/${userId}`,
       { cache: "no-store" }
     );
-    if (!res.ok) return null;
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: "Unknown error" }));
+      console.error(`[getUserPrediction] Failed: ${res.status}`, errorData);
+      return null;
+    }
     return res.json() as Promise<Prediction | null>;
-  } catch {
+  } catch (error) {
+    console.error("[getUserPrediction] Exception:", error);
     return null;
   }
 }
@@ -59,12 +64,24 @@ export default async function UserDetailPage({
   const { year: yearParam } = await searchParams;
   const year = yearParam ? parseInt(yearParam, 10) : DEFAULT_YEAR;
 
+  // Validate userId is a number
+  const userIdNum = parseInt(userId, 10);
+  if (isNaN(userIdNum)) {
+    console.error(`[UserDetailPage] Invalid userId: ${userId}`);
+    notFound();
+  }
+
   const [prediction, scoreboard] = await Promise.all([
     getUserPrediction(year, userId),
     getScoreboard(year),
   ]);
 
-  if (!prediction) notFound();
+  if (!prediction) {
+    console.error(
+      `[UserDetailPage] Prediction not found: userId=${userId}, year=${year}`
+    );
+    notFound();
+  }
 
   const user = prediction.user;
   const userScore = scoreboard?.scores.find(
