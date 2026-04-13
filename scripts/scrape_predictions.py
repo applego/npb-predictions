@@ -24,6 +24,15 @@ URLS = {
     "2025": "https://www.ohtashp.com/topics/baseball_yosou/index2025.html",
     "2024": "https://www.ohtashp.com/topics/baseball_yosou/index2024.html",
     "2023": "https://www.ohtashp.com/topics/baseball_yosou/index2023.html",
+    "2022": "https://www.ohtashp.com/topics/baseball_yosou/index2022.html",
+    "2021": "https://www.ohtashp.com/topics/baseball_yosou/index2021.html",
+    "2020": "https://www.ohtashp.com/topics/baseball_yosou/index2020.html",
+    "2019": "https://www.ohtashp.com/topics/baseball_yosou/index2019.html",
+    "2018": "https://www.ohtashp.com/topics/baseball_yosou/index2018.html",
+    "2017": "https://www.ohtashp.com/topics/baseball_yosou/index2017.html",
+    "2016": "https://www.ohtashp.com/topics/baseball_yosou/index2016.html",
+    "2015": "https://www.ohtashp.com/topics/baseball_yosou/index2015.html",
+    "2014": "https://www.ohtashp.com/topics/baseball_yosou/index2014.html",
 }
 
 USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"
@@ -94,16 +103,18 @@ def split_variant(name: str) -> tuple[str, str | None]:
 
 
 def parse_source_field(raw: str) -> tuple[str | None, str | None]:
-    """Parse the 出所 (source) field into (source_name, date).
+    """Parse the 出所 (source) field into (source_full, date).
+
+    Returns the full source text (including program/publication names) and date.
 
     Row-format (2024-2026) examples:
-        "12/30中日新聞 『…』"  -> ("中日新聞", "12/30")
-        "1/1YouTube 『Satozaki ch…』" -> ("YouTube", "1/1")
+        "12/30中日新聞 『…』"  -> ("中日新聞『…』", "12/30")
+        "1/1YouTube 『Satozaki ch…』" -> ("YouTube『Satozaki ch…』", "1/1")
         ""  -> (None, None)
 
     Column-format (2023) examples:
-        "YTube(11/18)" -> ("YTube", "11/18")
-        "朝日(1/1)"    -> ("朝日", "1/1")
+        "YTube(11/18)" -> ("YTube(11/18)", "11/18")
+        "朝日(1/1)"    -> ("朝日(1/1)", "1/1")
         "ラミレス"       -> (None, None)  -- this is a name, not a source
     """
     text = raw.strip()
@@ -113,24 +124,17 @@ def parse_source_field(raw: str) -> tuple[str | None, str | None]:
     # Try column-format first: "MediaName(M/D)"
     m = SOURCE_PAREN_DATE_RE.match(text)
     if m:
-        return m.group(1).strip(), m.group(2)
+        # Return full text with date in parentheses
+        return text, m.group(2)
 
     # Try row-format: "M/D MediaName 『title』"
     m = SOURCE_DATE_RE.match(text)
     if m:
         date = m.group(1)
         rest = m.group(2).strip()
-        # Extract media name: everything before 『 or the link text
-        # Rest could be: "中日新聞 『…』" or "YouTube 『Satozaki ch…』"
-        if "『" in rest:
-            source_name = rest.split("『")[0].strip()
-        elif "[" in rest:
-            source_name = rest.split("[")[0].strip()
-        else:
-            source_name = rest
-        # Clean trailing punctuation
-        source_name = source_name.rstrip("、。 ")
-        return source_name if source_name else None, date
+        # Return the full text (media name + program/publication name)
+        # Format: "MediaName『title』" or "MediaName"
+        return rest if rest else None, date
 
     return None, None
 
@@ -525,8 +529,8 @@ def main():
 
         all_data[year] = data
 
-        # Be polite: small delay between requests
-        time.sleep(0.5)
+        # Be polite: small delay between requests (1 second to reduce server load)
+        time.sleep(1.0)
 
     # Write output
     with open(output_path, "w", encoding="utf-8") as f:
