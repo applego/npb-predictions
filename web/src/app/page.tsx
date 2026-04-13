@@ -73,6 +73,18 @@ const NAV_CARDS = [
   },
   {
     num: "03",
+    href: "/rankings/commentators",
+    label: "解説者ランキング",
+    sub: "156人の解説者的中率をランキング比較",
+    accent: "#c084fc",
+    accentBg: "rgba(192,132,252,0.06)",
+    accentBorder: "rgba(192,132,252,0.25)",
+    accentNum: "rgba(192,132,252,0.5)",
+    accentBar: "linear-gradient(to bottom, #c084fc, rgba(192,132,252,0.2) 70%, transparent)",
+    accentHover: "linear-gradient(135deg, rgba(192,132,252,0.04) 0%, transparent 60%)",
+  },
+  {
+    num: "04",
     href: "/predictions/new",
     label: "予想を登録する",
     sub: "今すぐ順位・タイトル予想を入力",
@@ -249,7 +261,7 @@ export default async function HomePage() {
       </section>
 
       {/* ══════════ NAV CARDS ══════════ */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {NAV_CARDS.map(({ num, href, label, sub, accent, accentNum, accentBar, accentHover }) => (
           <Link
             key={href}

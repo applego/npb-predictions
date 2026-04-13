@@ -11,11 +11,16 @@ export type League = "central" | "pacific";
 export type TitleCategory = "batting_avg" | "rbi" | "home_runs" | "wins" | "era" | "saves";
 export type AwardType = "first_half_champion" | "monthly_champion" | "interleague_champion" | "solo_title" | "dark_horse";
 
+export type UserRole = "friend" | "commentator";
+
 export const users = sqliteTable("users", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   avatarUrl: text("avatar_url"),
+  role: text("role").$type<UserRole>().default("friend").notNull(),
+  source: text("source"),
+  variant: text("variant"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
 });
 

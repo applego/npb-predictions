@@ -48,6 +48,7 @@ const NAV_LINKS = [
   { href: "/", label: "HOME" },
   { href: "/standings", label: "STANDINGS" },
   { href: "/predictions", label: "PREDICTIONS" },
+  { href: "/rankings/commentators", label: "RANKINGS" },
   { href: "/seo/past-seasons", label: "ARCHIVE" },
 ];
 
