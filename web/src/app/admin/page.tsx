@@ -561,10 +561,81 @@ function ResultDisplay({ result }: { result: ApiResult | null }) {
 
 // --- Page ---
 
+const ADMIN_SECRET = process.env.NEXT_PUBLIC_ADMIN_SECRET || "npb-admin-2026";
+
 export default function AdminPage() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [secretInput, setSecretInput] = useState("");
+  const [authError, setAuthError] = useState("");
+
+  useEffect(() => {
+    // Check if already authenticated via localStorage
+    const stored = localStorage.getItem("npb-admin-auth");
+    if (stored === ADMIN_SECRET) {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
+  function handleAuth() {
+    if (secretInput === ADMIN_SECRET) {
+      localStorage.setItem("npb-admin-auth", secretInput);
+      setIsAuthenticated(true);
+      setAuthError("");
+    } else {
+      setAuthError("無効なシークレットキーです");
+    }
+  }
+
+  function handleLogout() {
+    localStorage.removeItem("npb-admin-auth");
+    setIsAuthenticated(false);
+    setSecretInput("");
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="w-full max-w-md space-y-4 rounded-lg border bg-white p-8 shadow-lg">
+          <h1 className="text-2xl font-bold">Admin 認証</h1>
+          <p className="text-sm text-gray-600">
+            管理画面にアクセスするにはシークレットキーを入力してください。
+          </p>
+          <div>
+            <label className="mb-2 block text-sm font-medium">シークレットキー</label>
+            <input
+              type="password"
+              value={secretInput}
+              onChange={(e) => setSecretInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleAuth()}
+              placeholder="シークレットキーを入力"
+              className="w-full rounded border px-3 py-2"
+            />
+          </div>
+          {authError && (
+            <p className="text-sm text-red-600">{authError}</p>
+          )}
+          <button
+            onClick={handleAuth}
+            className="w-full rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            認証
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Admin</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Admin</h1>
+        <button
+          onClick={handleLogout}
+          className="rounded border border-gray-300 px-3 py-1 text-sm hover:bg-gray-50"
+        >
+          ログアウト
+        </button>
+      </div>
       <SeasonManager />
       <UserManager />
       <SeedImporter />
