@@ -21,6 +21,8 @@ export const users = sqliteTable("users", {
   role: text("role").$type<UserRole>().default("friend").notNull(),
   source: text("source"),
   variant: text("variant"),
+  firebaseUid: text("firebase_uid"),
+  email: text("email"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
 });
 

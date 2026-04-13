@@ -24,6 +24,9 @@ export interface User {
   name: string;
   slug: string;
   avatarUrl: string | null;
+  role?: string;
+  firebaseUid?: string | null;
+  email?: string | null;
 }
 
 export interface RankingPick {

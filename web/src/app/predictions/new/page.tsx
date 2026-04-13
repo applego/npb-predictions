@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { Season, User } from "@/lib/types";
 import { LEAGUE_LABELS, TITLE_CATEGORY_LABELS } from "@/lib/types";
+import { useAuth } from "@/contexts/AuthContext";
 
 const CENTRAL_TEAMS = [
   "読売ジャイアンツ",
@@ -168,6 +169,7 @@ function TitlePicker({
 
 export default function NewPredictionPage() {
   const router = useRouter();
+  const { firebaseUser, appUser, loading: authLoading, signIn } = useAuth();
 
   const [users, setUsers] = useState<User[]>([]);
   const [seasons, setSeasons] = useState<Season[]>([]);
@@ -193,6 +195,13 @@ export default function NewPredictionPage() {
       setIsLoadingData(false);
     }).catch(() => setIsLoadingData(false));
   }, []);
+
+  // Auto-select the logged-in user
+  useEffect(() => {
+    if (appUser && users.length > 0) {
+      setUserId(appUser.id);
+    }
+  }, [appUser, users]);
 
   function handleRankingChange(
     league: "central" | "pacific",
@@ -303,6 +312,52 @@ export default function NewPredictionPage() {
   }
 
   const selectedSeason = seasons.find((s) => s.id === seasonId);
+
+  // Auth guard: redirect to login if not authenticated
+  if (authLoading) {
+    return (
+      <div className="mx-auto max-w-2xl animate-pulse space-y-4">
+        <div className="h-8 w-48 rounded" style={{ background: "rgba(255,255,255,0.06)" }} />
+        <div className="h-4 w-64 rounded" style={{ background: "rgba(255,255,255,0.06)" }} />
+      </div>
+    );
+  }
+
+  if (!firebaseUser) {
+    return (
+      <div className="mx-auto max-w-md py-16 text-center">
+        <div
+          className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full text-2xl"
+          style={{ background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.2)" }}
+        >
+          ⚾
+        </div>
+        <h1
+          className="mb-3 text-xl font-bold"
+          style={{ color: "rgba(255,255,255,0.9)" }}
+        >
+          ログインが必要です
+        </h1>
+        <p
+          className="mb-6 text-sm"
+          style={{ color: "rgba(255,255,255,0.5)" }}
+        >
+          予想を登録するにはGoogleアカウントでログインしてください
+        </p>
+        <button
+          onClick={signIn}
+          className="rounded px-6 py-2.5 text-sm font-bold transition-all hover:opacity-90"
+          style={{
+            background: "rgba(251,191,36,0.15)",
+            border: "1px solid rgba(251,191,36,0.3)",
+            color: "#fbbf24",
+          }}
+        >
+          Googleでログイン
+        </button>
+      </div>
+    );
+  }
 
   if (isLoadingData) {
     return (

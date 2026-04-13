@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Bebas_Neue, Noto_Sans_JP } from "next/font/google";
+import { Providers } from "@/components/Providers";
+import { AuthHeader } from "@/components/AuthHeader";
 import "./globals.css";
 
 const bebasNeue = Bebas_Neue({
@@ -70,105 +72,110 @@ export default function RootLayout({
           fontFamily: "var(--font-body, 'Noto Sans JP', sans-serif)",
         }}
       >
-        {/* Grain texture overlay */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none fixed inset-0 z-50 opacity-[0.035]"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-            mixBlendMode: "overlay",
-          }}
-        />
-
-        {/* ── Header ── */}
-        <header
-          className="sticky top-0 z-40 backdrop-blur-md"
-          style={{
-            background: "rgba(4, 9, 18, 0.88)",
-            borderBottom: "1px solid rgba(251, 191, 36, 0.08)",
-          }}
-        >
-          <nav className="mx-auto flex max-w-5xl items-center gap-x-6 gap-y-2 px-4 py-3">
-            {/* Logo */}
-            <Link
-              href="/"
-              className="group mr-auto flex shrink-0 items-center gap-2.5"
-            >
-              <span
-                className="flex h-7 w-7 items-center justify-center rounded text-sm"
-                style={{
-                  background: "rgba(251,191,36,0.08)",
-                  border: "1px solid rgba(251,191,36,0.2)",
-                }}
-              >
-                ⚾
-              </span>
-              <span
-                className="font-display text-2xl tracking-widest transition-colors"
-                style={{
-                  color: "#fbbf24",
-                  fontFamily:
-                    "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-                  letterSpacing: "0.18em",
-                }}
-              >
-                NPB LEAGUE
-              </span>
-            </Link>
-
-            {/* Nav links */}
-            <div className="flex items-center gap-5 overflow-x-auto">
-              {NAV_LINKS.map(({ href, label }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  className="whitespace-nowrap text-xs font-medium tracking-widest transition-colors hover:text-amber-400"
-                  style={{ color: "rgba(255,255,255,0.4)", letterSpacing: "0.15em" }}
-                >
-                  {label}
-                </Link>
-              ))}
-              <Link
-                href="/admin"
-                className="whitespace-nowrap text-xs font-medium tracking-widest transition-colors hover:text-orange-400"
-                style={{ color: "rgba(251,146,60,0.5)", letterSpacing: "0.15em" }}
-              >
-                ADMIN
-              </Link>
-            </div>
-          </nav>
-
-          {/* Amber accent line */}
+        <Providers>
+          {/* Grain texture overlay */}
           <div
+            aria-hidden="true"
+            className="pointer-events-none fixed inset-0 z-50 opacity-[0.035]"
             style={{
-              height: "1px",
-              background:
-                "linear-gradient(90deg, transparent 0%, rgba(251,191,36,0.35) 40%, rgba(251,191,36,0.35) 60%, transparent 100%)",
+              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+              mixBlendMode: "overlay",
             }}
           />
-        </header>
 
-        <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
+          {/* ── Header ── */}
+          <header
+            className="sticky top-0 z-40 backdrop-blur-md"
+            style={{
+              background: "rgba(4, 9, 18, 0.88)",
+              borderBottom: "1px solid rgba(251, 191, 36, 0.08)",
+            }}
+          >
+            <nav className="mx-auto flex max-w-5xl items-center gap-x-6 gap-y-2 px-4 py-3">
+              {/* Logo */}
+              <Link
+                href="/"
+                className="group mr-auto flex shrink-0 items-center gap-2.5"
+              >
+                <span
+                  className="flex h-7 w-7 items-center justify-center rounded text-sm"
+                  style={{
+                    background: "rgba(251,191,36,0.08)",
+                    border: "1px solid rgba(251,191,36,0.2)",
+                  }}
+                >
+                  ⚾
+                </span>
+                <span
+                  className="font-display text-2xl tracking-widest transition-colors"
+                  style={{
+                    color: "#fbbf24",
+                    fontFamily:
+                      "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
+                    letterSpacing: "0.18em",
+                  }}
+                >
+                  NPB LEAGUE
+                </span>
+              </Link>
 
-        {/* ── Footer ── */}
-        <footer
-          className="mt-16 py-6"
-          style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
-        >
-          <div className="mx-auto max-w-5xl px-4 text-center">
-            <span
-              className="font-display text-xs tracking-widest"
+              {/* Nav links */}
+              <div className="flex items-center gap-5 overflow-x-auto">
+                {NAV_LINKS.map(({ href, label }) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    className="whitespace-nowrap text-xs font-medium tracking-widest transition-colors hover:text-amber-400"
+                    style={{ color: "rgba(255,255,255,0.4)", letterSpacing: "0.15em" }}
+                  >
+                    {label}
+                  </Link>
+                ))}
+                <Link
+                  href="/admin"
+                  className="whitespace-nowrap text-xs font-medium tracking-widest transition-colors hover:text-orange-400"
+                  style={{ color: "rgba(251,146,60,0.5)", letterSpacing: "0.15em" }}
+                >
+                  ADMIN
+                </Link>
+              </div>
+
+              {/* Auth button */}
+              <AuthHeader />
+            </nav>
+
+            {/* Amber accent line */}
+            <div
               style={{
-                color: "rgba(255,255,255,0.15)",
-                fontFamily:
-                  "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-                letterSpacing: "0.2em",
+                height: "1px",
+                background:
+                  "linear-gradient(90deg, transparent 0%, rgba(251,191,36,0.35) 40%, rgba(251,191,36,0.35) 60%, transparent 100%)",
               }}
-            >
-              NPB PREDICTIONS LEAGUE — プロ野球順位予想リーグ
-            </span>
-          </div>
-        </footer>
+            />
+          </header>
+
+          <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
+
+          {/* ── Footer ── */}
+          <footer
+            className="mt-16 py-6"
+            style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
+          >
+            <div className="mx-auto max-w-5xl px-4 text-center">
+              <span
+                className="font-display text-xs tracking-widest"
+                style={{
+                  color: "rgba(255,255,255,0.15)",
+                  fontFamily:
+                    "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
+                  letterSpacing: "0.2em",
+                }}
+              >
+                NPB PREDICTIONS LEAGUE — プロ野球順位予想リーグ
+              </span>
+            </div>
+          </footer>
+        </Providers>
       </body>
     </html>
   );
