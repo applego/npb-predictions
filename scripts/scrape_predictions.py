@@ -357,11 +357,11 @@ def parse_row_format(tables: list[dict]) -> dict:
 
 def parse_column_format(tables: list[dict]) -> dict:
     """
-    Parse the column-oriented (transposed) format used in 2023.
-    Row 0: header with source info (may have colspan)
-    Row 1: commentator names
-    Rows 2-7: rank 1-6 with team names
-    Row 8 (optional): 備考
+    Parse the column-oriented (transposed) format used in 2014-2023.
+
+    Two patterns supported:
+    - 2014-2022: Row 0 = header with commentator names, Row 1+ = rank data
+    - 2023: Row 0 = source info, Row 1 = commentator names, Row 2+ = rank data
     """
     result = {"central": [], "pacific": []}
     # Track commentator names we've already added (to handle duplicates across sub-tables)
@@ -375,7 +375,7 @@ def parse_column_format(tables: list[dict]) -> dict:
             continue
         if "順位変動" in cap or "オープン戦" in cap or "交流戦" in cap:
             continue
-        if "順位表" in cap:
+        if "順位表" in cap or "タイトル" in cap:
             continue
 
         # Determine league from caption
@@ -390,42 +390,55 @@ def parse_column_format(tables: list[dict]) -> dict:
         if len(rows) < 7:
             continue
 
-        # Row 0 contains source info: expand colspans to align with columns
-        # First cell is a label (e.g. "順位"), rest are source info per column
-        source_row_raw = rows[0]
-        source_cells_expanded: list[str] = []
-        for cell in source_row_raw:
-            text = cell["text"].strip()
-            colspan = cell.get("colspan", 1)
-            source_cells_expanded.extend([text] * colspan)
+        # Detect format: check if Row 0 has all th tags (2014-2022 pattern)
+        # or if it has source info (2023 pattern)
+        row0_all_th = all(cell["tag"] == "th" for cell in rows[0])
 
-        # Row 1 contains commentator names (th cells, NO label column)
-        name_row = rows[1]
-        names_expanded: list[str] = []
-        for cell in name_row:
-            text = cell["text"].strip()
-            colspan = cell.get("colspan", 1)
-            names_expanded.extend([text] * colspan)
+        if row0_all_th:
+            # 2014-2022 pattern: Row 0 = commentator names in th tags
+            # Row 0: [順位, Name1, Name2, ..., 最終順位]
+            names_raw = [cell["text"].strip() for cell in rows[0][1:]]  # skip first cell (順位)
+            # Remove trailing "最終順位" or similar
+            names = [n for n in names_raw if n and "最終順位" not in n]
 
-        # Row 0 has a label in position 0 ("順位"), then data columns,
-        # possibly ending with "（最終順位）".
-        # Row 1 has NO label — it starts directly with commentator names.
-        # So source_infos[i] corresponds to names[i].
-        source_infos = source_cells_expanded[1:]  # skip "順位" label
-        # Remove trailing "（最終順位）" or empty from source_infos
-        while source_infos and ("最終順位" in source_infos[-1] or not source_infos[-1]):
-            source_infos.pop()
+            # No source info in this format
+            source_infos = [""] * len(names)
 
-        # Filter out non-commentator names like "最終順位" or "AERA dot." duplicates
-        names = [n for n in names_expanded if n and n != "最終順位"]
+            # Rank rows start from Row 1
+            rank_start = 1
+        else:
+            # 2023 pattern: Row 0 = source info, Row 1 = commentator names
+            source_row_raw = rows[0]
+            source_cells_expanded: list[str] = []
+            for cell in source_row_raw:
+                text = cell["text"].strip()
+                colspan = cell.get("colspan", 1)
+                source_cells_expanded.extend([text] * colspan)
+
+            name_row = rows[1]
+            names_expanded: list[str] = []
+            for cell in name_row:
+                text = cell["text"].strip()
+                colspan = cell.get("colspan", 1)
+                names_expanded.extend([text] * colspan)
+
+            source_infos = source_cells_expanded[1:]  # skip "順位" label
+            # Remove trailing "（最終順位）" or empty from source_infos
+            while source_infos and ("最終順位" in source_infos[-1] or not source_infos[-1]):
+                source_infos.pop()
+
+            # Filter out non-commentator names like "最終順位" or "AERA dot." duplicates
+            names = [n for n in names_expanded if n and n != "最終順位"]
+
+            # Rank rows start from Row 2
+            rank_start = 2
 
         if not names:
             continue
 
-        # Rows 2-7 contain rank data
+        # Collect rank rows
         rank_rows = []
-        for row in rows[2:]:
-            # Check if first cell is a rank indicator
+        for row in rows[rank_start:]:
             if not row:
                 continue
             first_text = row[0]["text"].strip()
@@ -433,20 +446,14 @@ def parse_column_format(tables: list[dict]) -> dict:
                 rank_rows.append(row)
             elif first_text in ("2位", "3位", "4位", "5位", "6位"):
                 rank_rows.append(row)
-            # Also handle "備考" -> stop
+            # Stop at "備考"
             if first_text == "備考":
                 break
-
-        if len(rank_rows) < 6:
-            # Try to be more lenient: sometimes 優勝 is used for 1位
-            pass
 
         if len(rank_rows) < 6:
             continue
 
         # Extract teams per commentator (transpose)
-        # Each rank_row has: th (rank label), then td cells for each commentator
-        # The last td might be "最終順位"
         num_commentators = len(names)
 
         for col_idx in range(num_commentators):
@@ -454,8 +461,8 @@ def parse_column_format(tables: list[dict]) -> dict:
             rankings = []
 
             for rank_row in rank_rows[:6]:
-                # Get td cells
-                tds = [cell for cell in rank_row if cell["tag"] == "td"]
+                # Get td cells (skip first cell which is the rank label)
+                tds = [cell for cell in rank_row[1:] if cell["tag"] == "td"]
                 if col_idx < len(tds):
                     team = normalise_team(tds[col_idx]["text"])
                     rankings.append(team)
@@ -468,7 +475,7 @@ def parse_column_format(tables: list[dict]) -> dict:
             if len(valid_teams) != 6:
                 continue
 
-            # Determine actual league from team data (caption might be wrong)
+            # Determine actual league from team data
             actual_league = classify_league(rankings)
             if actual_league is None:
                 actual_league = league_from_cap
@@ -478,7 +485,7 @@ def parse_column_format(tables: list[dict]) -> dict:
                 continue
             seen.add(commentator_name)
 
-            # Extract source info from Row 0
+            # Extract source info
             source_raw = source_infos[col_idx] if col_idx < len(source_infos) else ""
             source, date = parse_source_field(source_raw)
 
@@ -519,10 +526,12 @@ def main():
 
         print(f"  Found {len(tables)} tables")
 
-        if year == "2023":
-            data = parse_column_format(tables)
-        else:
+        # 2024-2026: row format (each row = one commentator)
+        # 2014-2023: column format (each column = one commentator)
+        if year in ("2024", "2025", "2026"):
             data = parse_row_format(tables)
+        else:
+            data = parse_column_format(tables)
 
         print(f"  Central: {len(data['central'])} commentators")
         print(f"  Pacific: {len(data['pacific'])} commentators")
