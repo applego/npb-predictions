@@ -141,6 +141,71 @@ export function getFilteredCommentators(
   return pool;
 }
 
+/**
+ * Get a single commentator's data across all years by slug.
+ * Returns null if slug not found.
+ */
+export function getCommentatorBySlug(slug: string): {
+  name: string;
+  slug: string;
+  source: SourceBadge;
+  years: { year: number; centralScore: number; pacificScore: number; totalScore: number }[];
+  allTimeTotal: number;
+} | null {
+  // Find the commentator in any year
+  let name = "";
+  let source: SourceBadge = "YouTube";
+  let foundSlug = "";
+  const years: { year: number; centralScore: number; pacificScore: number; totalScore: number }[] = [];
+
+  for (const yd of COMMENTATOR_DATA) {
+    const found = yd.commentators.find((c) => c.slug === slug);
+    if (found) {
+      name = found.name;
+      source = found.source;
+      foundSlug = found.slug;
+      years.push({
+        year: yd.year,
+        centralScore: found.centralScore,
+        pacificScore: found.pacificScore,
+        totalScore: found.totalScore,
+      });
+    }
+  }
+
+  if (!foundSlug) return null;
+
+  const allTimeTotal = years.reduce((sum, y) => sum + y.totalScore, 0);
+  return { name, slug: foundSlug, source, years, allTimeTotal };
+}
+
+/**
+ * Get all unique commentator slugs across all years.
+ */
+export function getAllCommentatorSlugs(): string[] {
+  const slugs = new Set<string>();
+  for (const yd of COMMENTATOR_DATA) {
+    for (const c of yd.commentators) {
+      slugs.add(c.slug);
+    }
+  }
+  return Array.from(slugs);
+}
+
+/**
+ * Get top N commentators for a given year, sorted by totalScore descending.
+ */
+export function getTopCommentatorsForYear(
+  year: number,
+  limit = 20,
+): CommentatorScore[] {
+  const found = COMMENTATOR_DATA.find((d) => d.year === year);
+  if (!found) return [];
+  return [...found.commentators]
+    .sort((a, b) => b.totalScore - a.totalScore)
+    .slice(0, limit);
+}
+
 export const SOURCE_BADGE_COLORS: Record<SourceBadge, { bg: string; border: string; text: string }> = {
   YouTube:  { bg: "rgba(239,68,68,0.08)",  border: "rgba(239,68,68,0.25)",  text: "#fca5a5" },
   "新聞":   { bg: "rgba(148,163,184,0.08)", border: "rgba(148,163,184,0.25)", text: "#94a3b8" },

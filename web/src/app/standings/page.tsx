@@ -8,6 +8,8 @@ import ShareButton from "@/components/ShareButton";
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "";
 const DEFAULT_YEAR = new Date().getFullYear();
 
+const PAST_SEASONS_WITH_DATA = [2023, 2024, 2025] as const;
+
 export async function generateMetadata({
   searchParams,
 }: {
@@ -84,35 +86,90 @@ export default async function StandingsPage({
       </div>
 
       {!data || data.scores.length === 0 ? (
-        /* Empty state */
+        /* In-progress season or empty state */
         <div
-          className="rounded-xl p-10 text-center"
+          className="space-y-6 rounded-xl p-8"
           style={{ background: "#0a1525", border: "1px solid rgba(255,255,255,0.05)" }}
         >
-          <p
-            className="font-display mb-4 text-sm"
-            style={{
-              color: "rgba(255,255,255,0.4)",
-              fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-              letterSpacing: "0.1em",
-            }}
-          >
-            NO SCORE DATA YET
-          </p>
-          <p className="mb-6 text-sm" style={{ color: "rgba(255,255,255,0.3)" }}>
-            Adminから順位データを登録してスコア再計算を実行してください。
-          </p>
-          <Link
-            href="/admin"
-            className="inline-block rounded px-5 py-2.5 text-sm font-medium transition-all"
-            style={{
-              border: "1px solid rgba(251,191,36,0.3)",
-              background: "rgba(251,191,36,0.08)",
-              color: "#fbbf24",
-            }}
-          >
-            Admin へ →
-          </Link>
+          <div className="text-center">
+            <p
+              className="font-display mb-2 text-sm"
+              style={{
+                color: "rgba(251,191,36,0.6)",
+                fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
+                letterSpacing: "0.12em",
+              }}
+            >
+              {year}
+              <span style={{ color: "rgba(255,255,255,0.4)" }}>
+                {" "}SEASON IN PROGRESS
+              </span>
+            </p>
+            <p className="mb-2 text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>
+              {year}シーズンはまだ結果が確定していないため、スコアを計算できません。
+            </p>
+            <p className="text-sm" style={{ color: "rgba(255,255,255,0.3)" }}>
+              シーズン終了後にスコアが反映されます。それまでは予想比較や過去シーズンの結果をご覧ください。
+            </p>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <Link
+              href={`/predictions?year=${year}`}
+              className="inline-block rounded px-5 py-2.5 text-sm font-medium transition-all"
+              style={{
+                border: "1px solid rgba(251,191,36,0.3)",
+                background: "rgba(251,191,36,0.08)",
+                color: "#fbbf24",
+              }}
+            >
+              {year}年の予想を見る
+            </Link>
+            <Link
+              href="/rankings/commentators"
+              className="inline-block rounded px-5 py-2.5 text-sm font-medium transition-all"
+              style={{
+                border: "1px solid rgba(56,189,248,0.3)",
+                background: "rgba(56,189,248,0.08)",
+                color: "#38bdf8",
+              }}
+            >
+              解説者ランキング
+            </Link>
+          </div>
+
+          {/* Past season results */}
+          <div>
+            <p
+              className="mb-3 text-center text-xs uppercase tracking-widest"
+              style={{
+                color: "rgba(255,255,255,0.25)",
+                letterSpacing: "0.15em",
+                fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
+              }}
+            >
+              PAST SEASONS
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              {PAST_SEASONS_WITH_DATA.map((pastYear) => (
+                <Link
+                  key={pastYear}
+                  href={`/standings?year=${pastYear}`}
+                  className="rounded px-4 py-2 text-sm font-medium transition-all"
+                  style={{
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    background: "rgba(255,255,255,0.03)",
+                    color: "rgba(255,255,255,0.5)",
+                    fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
+                    letterSpacing: "0.1em",
+                  }}
+                >
+                  {pastYear}
+                </Link>
+              ))}
+            </div>
+          </div>
         </div>
       ) : (
         <>

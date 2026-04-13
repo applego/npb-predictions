@@ -1,19 +1,20 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
-  AVAILABLE_YEARS,
-  TOTAL_COMMENTATOR_COUNT,
-  SOURCE_BADGE_COLORS,
-  getFilteredCommentators,
   type LeagueFilter,
   type SortKey,
-  type CommentatorScore,
-  type SourceBadge,
-} from "@/lib/mock-commentator-data";
+  type CommentatorData,
+  type CommentatorRankingsResponse,
+  type RankingDetail,
+  getSourceBadgeColors,
+  getDiffLabel,
+} from "@/lib/commentator-types";
 
-// ── Year filter tabs ──
+// ── Constants ──
+
+const AVAILABLE_YEARS = [2023, 2024, 2025] as const;
 
 type YearOption = (typeof AVAILABLE_YEARS)[number] | "all";
 
@@ -46,8 +47,10 @@ function fmtScore(score: number): string {
   return score > 0 ? `+${score}` : String(score);
 }
 
-function SourceBadgeChip({ source }: { source: SourceBadge }) {
-  const colors = SOURCE_BADGE_COLORS[source];
+// ── Source Badge Chip ──
+
+function SourceBadgeChip({ source }: { source: string | null }) {
+  const colors = getSourceBadgeColors(source);
   return (
     <span
       className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium"
@@ -57,7 +60,7 @@ function SourceBadgeChip({ source }: { source: SourceBadge }) {
         color: colors.text,
       }}
     >
-      {source}
+      {source ?? "その他"}
     </span>
   );
 }
@@ -95,120 +98,351 @@ function TabButton({
   );
 }
 
+// ── Prediction vs Actual Table ──
+
+function PredictionVsActualTable({
+  league,
+  details,
+}: {
+  league: "セ・リーグ" | "パ・リーグ";
+  details: RankingDetail[];
+}) {
+  if (details.length === 0) return null;
+
+  return (
+    <div className="space-y-2">
+      <div
+        className="text-xs font-medium tracking-wide"
+        style={{
+          fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
+          color: "rgba(251,191,36,0.7)",
+          letterSpacing: "0.15em",
+        }}
+      >
+        {league}
+      </div>
+      <table className="w-full text-xs">
+        <thead>
+          <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+            <th
+              className="px-2 py-1.5 text-left"
+              style={{ color: "rgba(255,255,255,0.35)", width: "3rem" }}
+            >
+              順位
+            </th>
+            <th
+              className="px-2 py-1.5 text-left"
+              style={{ color: "rgba(255,255,255,0.35)" }}
+            >
+              予想
+            </th>
+            <th
+              className="px-2 py-1.5 text-left"
+              style={{ color: "rgba(255,255,255,0.35)" }}
+            >
+              実際
+            </th>
+            <th
+              className="px-2 py-1.5 text-right"
+              style={{ color: "rgba(255,255,255,0.35)", width: "5.5rem" }}
+            >
+              結果
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {details.map((detail) => {
+            const diffInfo = getDiffLabel(detail.diff, detail.score);
+            const isCorrect = detail.diff === 0;
+            return (
+              <tr
+                key={detail.rank}
+                style={{
+                  borderBottom: "1px solid rgba(255,255,255,0.04)",
+                  background: isCorrect
+                    ? "rgba(74,222,128,0.04)"
+                    : "transparent",
+                }}
+              >
+                <td
+                  className="px-2 py-1.5"
+                  style={{ color: "rgba(255,255,255,0.5)" }}
+                >
+                  {detail.rank}位
+                </td>
+                <td
+                  className="px-2 py-1.5"
+                  style={{ color: "rgba(255,255,255,0.8)" }}
+                >
+                  {detail.predictedTeam}
+                </td>
+                <td
+                  className="px-2 py-1.5"
+                  style={{ color: "rgba(255,255,255,0.8)" }}
+                >
+                  {detail.actualTeam || "---"}
+                </td>
+                <td className="px-2 py-1.5 text-right">
+                  <span
+                    className="inline-flex items-center gap-1 text-[11px] font-medium"
+                    style={{ color: diffInfo.color }}
+                  >
+                    {isCorrect ? (
+                      <>
+                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-green-400" />
+                        {diffInfo.text}
+                      </>
+                    ) : (
+                      diffInfo.text
+                    )}
+                  </span>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ── Expanded Detail Panel ──
+
+function ExpandedDetail({
+  entry,
+}: {
+  entry: CommentatorData;
+}) {
+  return (
+    <tr>
+      <td
+        colSpan={5}
+        style={{
+          background: "rgba(10,21,37,0.8)",
+          borderBottom: "1px solid rgba(251,191,36,0.1)",
+        }}
+      >
+        <div className="space-y-4 px-4 py-4 sm:px-6">
+          {/* Score breakdown */}
+          <div
+            className="flex flex-wrap gap-4 text-xs"
+            style={{ color: "rgba(255,255,255,0.5)" }}
+          >
+            <span>
+              順位予想:{" "}
+              <span style={{ color: "#fbbf24" }}>{fmtScore(entry.rankingScore)}pt</span>
+            </span>
+            <span>
+              タイトル予想:{" "}
+              <span style={{ color: "#fbbf24" }}>{fmtScore(entry.titleScore)}pt</span>
+            </span>
+            <span>
+              合計:{" "}
+              <span style={{ color: "#fbbf24", fontWeight: 600 }}>
+                {fmtScore(entry.totalScore)}pt
+              </span>
+            </span>
+          </div>
+
+          {/* Prediction vs Actual tables */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <PredictionVsActualTable
+              league="セ・リーグ"
+              details={entry.centralDetails}
+            />
+            <PredictionVsActualTable
+              league="パ・リーグ"
+              details={entry.pacificDetails}
+            />
+          </div>
+
+          {/* Variant info if present */}
+          {entry.variant && (
+            <div
+              className="text-[10px]"
+              style={{ color: "rgba(255,255,255,0.3)" }}
+            >
+              予想バリアント: {entry.variant}
+            </div>
+          )}
+        </div>
+      </td>
+    </tr>
+  );
+}
+
 // ── Leaderboard Row ──
 
 function LeaderboardRow({
   entry,
   rank,
   league,
+  isExpanded,
+  onToggle,
 }: {
-  entry: CommentatorScore;
+  entry: CommentatorData;
   rank: number;
   league: LeagueFilter;
+  isExpanded: boolean;
+  onToggle: () => void;
 }) {
   const isTop3 = rank < 3;
   const isFirst = rank === 0;
   const rankLabel = getRankDisplay(rank);
 
+  const displayScore =
+    league === "central"
+      ? entry.centralScore
+      : league === "pacific"
+        ? entry.pacificScore
+        : entry.totalScore;
+
   return (
-    <tr
-      className="transition-colors"
+    <>
+      <tr
+        className="cursor-pointer transition-colors"
+        onClick={onToggle}
+        style={{
+          borderBottom: isExpanded
+            ? "none"
+            : "1px solid rgba(255,255,255,0.04)",
+          background: isFirst
+            ? "rgba(251,191,36,0.04)"
+            : isExpanded
+              ? "rgba(251,191,36,0.02)"
+              : "transparent",
+        }}
+      >
+        {/* Rank */}
+        <td className="px-3 py-3 text-center sm:px-4">
+          <span
+            className="font-display text-base"
+            style={{
+              fontFamily:
+                "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
+              color: isTop3 ? "#fbbf24" : "rgba(255,255,255,0.4)",
+              fontSize: isTop3 ? "1.25rem" : undefined,
+            }}
+          >
+            {rankLabel}
+          </span>
+        </td>
+
+        {/* Name + Source */}
+        <td className="px-3 py-3 sm:px-4">
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/rankings/commentators/${entry.slug}`}
+              className="font-medium transition-colors hover:text-amber-400"
+              style={{ color: "rgba(255,255,255,0.8)" }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {entry.name}
+            </Link>
+            <SourceBadgeChip source={entry.source} />
+          </div>
+        </td>
+
+        {/* Central score */}
+        {league !== "pacific" && (
+          <td className="hidden px-3 py-3 text-right sm:table-cell sm:px-4">
+            <span
+              className="font-display tabular-nums text-base"
+              style={{
+                fontFamily:
+                  "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
+                color:
+                  entry.centralScore > 0
+                    ? "#fbbf24"
+                    : entry.centralScore < 0
+                      ? "rgba(239,68,68,0.7)"
+                      : "rgba(255,255,255,0.3)",
+              }}
+            >
+              {fmtScore(entry.centralScore)}
+            </span>
+          </td>
+        )}
+
+        {/* Pacific score */}
+        {league !== "central" && (
+          <td className="hidden px-3 py-3 text-right sm:table-cell sm:px-4">
+            <span
+              className="font-display tabular-nums text-base"
+              style={{
+                fontFamily:
+                  "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
+                color:
+                  entry.pacificScore > 0
+                    ? "#fbbf24"
+                    : entry.pacificScore < 0
+                      ? "rgba(239,68,68,0.7)"
+                      : "rgba(255,255,255,0.3)",
+              }}
+            >
+              {fmtScore(entry.pacificScore)}
+            </span>
+          </td>
+        )}
+
+        {/* Total + Expand indicator */}
+        <td className="px-3 py-3 text-right sm:px-4">
+          <div className="flex items-center justify-end gap-2">
+            <span
+              className="inline-block rounded px-3 py-1 font-display tabular-nums text-base"
+              style={{
+                fontFamily:
+                  "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
+                background: isFirst
+                  ? "rgba(251,191,36,0.12)"
+                  : "rgba(255,255,255,0.05)",
+                color: isFirst ? "#fbbf24" : "rgba(255,255,255,0.7)",
+                border: isFirst
+                  ? "1px solid rgba(251,191,36,0.25)"
+                  : "1px solid rgba(255,255,255,0.07)",
+              }}
+            >
+              {fmtScore(displayScore)}
+            </span>
+            <span
+              className="text-xs transition-transform"
+              style={{
+                color: "rgba(255,255,255,0.3)",
+                transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
+              }}
+            >
+              ▼
+            </span>
+          </div>
+        </td>
+      </tr>
+      {isExpanded && <ExpandedDetail entry={entry} />}
+    </>
+  );
+}
+
+// ── Loading Skeleton ──
+
+function LoadingSkeleton() {
+  return (
+    <div
+      className="space-y-3 rounded-xl p-6"
       style={{
-        borderBottom: "1px solid rgba(255,255,255,0.04)",
-        background: isFirst ? "rgba(251,191,36,0.04)" : "transparent",
+        background: "#0a1525",
+        border: "1px solid rgba(255,255,255,0.05)",
       }}
     >
-      {/* Rank */}
-      <td className="px-3 py-3 text-center sm:px-4">
-        <span
-          className="font-display text-base"
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div
+          key={i}
+          className="h-12 animate-pulse rounded"
           style={{
-            fontFamily:
-              "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-            color: isTop3 ? "#fbbf24" : "rgba(255,255,255,0.4)",
-            fontSize: isTop3 ? "1.25rem" : undefined,
+            background: "rgba(255,255,255,0.04)",
+            animationDelay: `${i * 80}ms`,
           }}
-        >
-          {rankLabel}
-        </span>
-      </td>
-
-      {/* Name + Source */}
-      <td className="px-3 py-3 sm:px-4">
-        <div className="flex items-center gap-2">
-          <Link
-            href={`/rankings/commentators/${entry.slug}`}
-            className="font-medium transition-colors hover:text-amber-400"
-            style={{ color: "rgba(255,255,255,0.8)" }}
-          >
-            {entry.name}
-          </Link>
-          <SourceBadgeChip source={entry.source} />
-        </div>
-      </td>
-
-      {/* Central score — hide when filtered to pacific only */}
-      {league !== "pacific" && (
-        <td className="hidden px-3 py-3 text-right sm:table-cell sm:px-4">
-          <span
-            className="font-display tabular-nums text-base"
-            style={{
-              fontFamily:
-                "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-              color:
-                entry.centralScore > 0
-                  ? "#fbbf24"
-                  : entry.centralScore < 0
-                    ? "rgba(239,68,68,0.7)"
-                    : "rgba(255,255,255,0.3)",
-            }}
-          >
-            {fmtScore(entry.centralScore)}
-          </span>
-        </td>
-      )}
-
-      {/* Pacific score — hide when filtered to central only */}
-      {league !== "central" && (
-        <td className="hidden px-3 py-3 text-right sm:table-cell sm:px-4">
-          <span
-            className="font-display tabular-nums text-base"
-            style={{
-              fontFamily:
-                "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-              color:
-                entry.pacificScore > 0
-                  ? "#fbbf24"
-                  : entry.pacificScore < 0
-                    ? "rgba(239,68,68,0.7)"
-                    : "rgba(255,255,255,0.3)",
-            }}
-          >
-            {fmtScore(entry.pacificScore)}
-          </span>
-        </td>
-      )}
-
-      {/* Total */}
-      <td className="px-3 py-3 text-right sm:px-4">
-        <span
-          className="inline-block rounded px-3 py-1 font-display tabular-nums text-base"
-          style={{
-            fontFamily:
-              "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-            background: isFirst
-              ? "rgba(251,191,36,0.12)"
-              : "rgba(255,255,255,0.05)",
-            color: isFirst ? "#fbbf24" : "rgba(255,255,255,0.7)",
-            border: isFirst
-              ? "1px solid rgba(251,191,36,0.25)"
-              : "1px solid rgba(255,255,255,0.07)",
-          }}
-        >
-          {fmtScore(entry.totalScore)}
-        </span>
-      </td>
-    </tr>
+        />
+      ))}
+    </div>
   );
 }
 
@@ -219,11 +453,129 @@ export function CommentatorRankingsClient() {
   const [league, setLeague] = useState<LeagueFilter>("all");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortKey>("score");
+  const [expandedId, setExpandedId] = useState<number | null>(null);
 
-  const filtered = useMemo(
-    () => getFilteredCommentators(year, league, search, sort),
-    [year, league, search, sort],
-  );
+  const [data, setData] = useState<CommentatorRankingsResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch data from API
+  const fetchData = useCallback(async (y: YearOption, l: LeagueFilter) => {
+    // "all" years aggregation is not supported by the API; fetch each year
+    if (y === "all") {
+      setLoading(true);
+      setError(null);
+      try {
+        const results = await Promise.all(
+          AVAILABLE_YEARS.map(async (yr) => {
+            const res = await fetch(
+              `/api/rankings/commentators?year=${yr}&league=${l}`
+            );
+            if (!res.ok) return null;
+            return (await res.json()) as CommentatorRankingsResponse;
+          })
+        );
+
+        // Aggregate scores across years
+        const aggregated = new Map<
+          number,
+          CommentatorData
+        >();
+        for (const result of results) {
+          if (!result) continue;
+          for (const c of result.commentators) {
+            const existing = aggregated.get(c.userId);
+            if (existing) {
+              existing.centralScore += c.centralScore;
+              existing.pacificScore += c.pacificScore;
+              existing.rankingScore += c.rankingScore;
+              existing.titleScore += c.titleScore;
+              existing.totalScore += c.totalScore;
+              existing.effectiveTotal += c.effectiveTotal;
+              // Keep details from the latest year only
+              if (c.centralDetails.length > 0) {
+                existing.centralDetails = c.centralDetails;
+              }
+              if (c.pacificDetails.length > 0) {
+                existing.pacificDetails = c.pacificDetails;
+              }
+            } else {
+              aggregated.set(c.userId, { ...c });
+            }
+          }
+        }
+
+        const sorted = Array.from(aggregated.values()).sort(
+          (a, b) => b.effectiveTotal - a.effectiveTotal
+        );
+        sorted.forEach((c, idx) => {
+          c.rank = idx + 1;
+        });
+
+        setData({
+          season: { id: 0, year: 0 },
+          league: l,
+          actualCentral: results.find((r) => r)?.actualCentral ?? [],
+          actualPacific: results.find((r) => r)?.actualPacific ?? [],
+          totalCommentators: sorted.length,
+          commentators: sorted,
+        });
+      } catch (err) {
+        setError("データの取得に失敗しました");
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(
+        `/api/rankings/commentators?year=${y}&league=${l}`
+      );
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setError(
+          (body as { error?: string }).error ?? `Error ${res.status}`
+        );
+        setData(null);
+        return;
+      }
+      const json = (await res.json()) as CommentatorRankingsResponse;
+      setData(json);
+    } catch (err) {
+      setError("データの取得に失敗しました");
+      setData(null);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData(year, league);
+  }, [year, league, fetchData]);
+
+  // Client-side filtering for search + sort (data is already league-filtered)
+  const filtered = data
+    ? (() => {
+        let pool = [...data.commentators];
+
+        // Search
+        if (search.trim()) {
+          const q = search.trim().toLowerCase();
+          pool = pool.filter((c) => c.name.toLowerCase().includes(q));
+        }
+
+        // Sort
+        if (sort === "name") {
+          pool.sort((a, b) => a.name.localeCompare(b.name, "ja"));
+        }
+        // "score" is default from API
+
+        return pool;
+      })()
+    : [];
 
   // Build table header columns based on league filter
   const headerCols: { label: string; align: string; hideMobile?: boolean }[] = [
@@ -240,7 +592,7 @@ export function CommentatorRankingsClient() {
 
   return (
     <div className="space-y-6">
-      {/* ══════════ Page Header ══════════ */}
+      {/* Page Header */}
       <div>
         <h1
           className="leading-none"
@@ -265,7 +617,7 @@ export function CommentatorRankingsClient() {
         </p>
       </div>
 
-      {/* ══════════ Controls ══════════ */}
+      {/* Controls */}
       <div
         className="space-y-4 rounded-xl p-4 sm:p-5"
         style={{
@@ -289,7 +641,10 @@ export function CommentatorRankingsClient() {
               <TabButton
                 key={tab.value}
                 active={year === tab.value}
-                onClick={() => setYear(tab.value)}
+                onClick={() => {
+                  setYear(tab.value);
+                  setExpandedId(null);
+                }}
               >
                 {tab.label}
               </TabButton>
@@ -315,7 +670,10 @@ export function CommentatorRankingsClient() {
                 <TabButton
                   key={tab.value}
                   active={league === tab.value}
-                  onClick={() => setLeague(tab.value)}
+                  onClick={() => {
+                    setLeague(tab.value);
+                    setExpandedId(null);
+                  }}
                   accentColor="#38bdf8"
                 >
                   {tab.label}
@@ -376,14 +734,18 @@ export function CommentatorRankingsClient() {
         </div>
       </div>
 
-      {/* ══════════ Stats Bar ══════════ */}
+      {/* Stats Bar */}
       <div className="flex items-center justify-between">
         <p className="text-sm" style={{ color: "rgba(255,255,255,0.3)" }}>
-          {filtered.length > 0 ? (
+          {loading ? (
+            "読み込み中..."
+          ) : error ? (
+            <span style={{ color: "rgba(239,68,68,0.7)" }}>{error}</span>
+          ) : filtered.length > 0 ? (
             <>
               {filtered.length}人表示 /{" "}
               <span style={{ color: "rgba(251,191,36,0.6)" }}>
-                {TOTAL_COMMENTATOR_COUNT}人
+                {data?.totalCommentators ?? 0}人
               </span>
               の解説者が参加
             </>
@@ -404,8 +766,10 @@ export function CommentatorRankingsClient() {
         </span>
       </div>
 
-      {/* ══════════ Leaderboard Table ══════════ */}
-      {filtered.length > 0 ? (
+      {/* Leaderboard Table */}
+      {loading ? (
+        <LoadingSkeleton />
+      ) : filtered.length > 0 ? (
         <div
           className="overflow-x-auto rounded-xl"
           style={{
@@ -437,16 +801,22 @@ export function CommentatorRankingsClient() {
             <tbody>
               {filtered.map((entry, idx) => (
                 <LeaderboardRow
-                  key={entry.name}
+                  key={entry.userId}
                   entry={entry}
                   rank={idx}
                   league={league}
+                  isExpanded={expandedId === entry.userId}
+                  onToggle={() =>
+                    setExpandedId(
+                      expandedId === entry.userId ? null : entry.userId
+                    )
+                  }
                 />
               ))}
             </tbody>
           </table>
         </div>
-      ) : (
+      ) : !error ? (
         <div
           className="rounded-xl p-10 text-center"
           style={{
@@ -469,9 +839,9 @@ export function CommentatorRankingsClient() {
             検索条件を変更してください
           </p>
         </div>
-      )}
+      ) : null}
 
-      {/* ══════════ Legend ══════════ */}
+      {/* Legend */}
       <section
         className="rounded-xl p-5"
         style={{
@@ -500,17 +870,47 @@ export function CommentatorRankingsClient() {
             style={{ background: "rgba(255,255,255,0.05)" }}
           />
         </div>
-        <div
-          className="mt-4 space-y-2 text-sm leading-relaxed"
-          style={{ color: "rgba(255,255,255,0.35)" }}
-        >
-          <p>
-            各解説者の開幕前順位予想を、実際のシーズン結果と照合してスコアリング。
-            順位差に応じた加減点方式で、セ・パ各リーグの的中率を数値化しています。
-          </p>
-          <p>
-            データソース: YouTube予想動画、スポーツ新聞コラム、テレビ・ラジオ番組の開幕前特番など。
-          </p>
+
+        {/* Scoring legend */}
+        <div className="mt-4 space-y-3">
+          <div
+            className="flex flex-wrap gap-3 text-[11px]"
+            style={{ color: "rgba(255,255,255,0.4)" }}
+          >
+            <span>
+              <span style={{ color: "#4ade80" }}>的中 +5</span> = 完全一致
+            </span>
+            <span>
+              <span style={{ color: "#86efac" }}>1差 +3</span>
+            </span>
+            <span>
+              <span style={{ color: "#fbbf24" }}>2差 +1</span>
+            </span>
+            <span>
+              <span style={{ color: "#fb923c" }}>3差 -1</span>
+            </span>
+            <span>
+              <span style={{ color: "#f87171" }}>4差 -3</span>
+            </span>
+            <span>
+              <span style={{ color: "#ef4444" }}>5差 -5</span>
+            </span>
+          </div>
+
+          <div
+            className="space-y-2 text-sm leading-relaxed"
+            style={{ color: "rgba(255,255,255,0.35)" }}
+          >
+            <p>
+              各解説者の開幕前順位予想を、実際のシーズン結果と照合してスコアリング。
+              順位差に応じた加減点方式で、セ・パ各リーグの的中率を数値化しています。
+            </p>
+            <p>
+              データソース:
+              YouTube予想動画、スポーツ新聞コラム、テレビ・ラジオ番組の開幕前特番など。
+              行をクリックすると予想と実際の比較表が展開されます。
+            </p>
+          </div>
         </div>
       </section>
     </div>
