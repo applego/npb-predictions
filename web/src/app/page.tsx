@@ -3,6 +3,7 @@ export const runtime = "edge";
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { Season } from "@/lib/types";
+import { NewsCompact } from "./news/NewsClient";
 
 export const metadata: Metadata = {
   title: "NPB Predictions League | プロ野球順位予想リーグ",
@@ -17,13 +18,36 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "";
+const API_BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://npb-predictions.pages.dev";
 
 async function getSeasons(): Promise<Season[]> {
   try {
     const res = await fetch(`${API_BASE}/api/seasons`, { cache: "no-store" });
     if (!res.ok) return [];
     return res.json() as Promise<Season[]>;
+  } catch {
+    return [];
+  }
+}
+
+interface NewsItem {
+  id: string;
+  type: "hit" | "ranking" | "prediction" | "spotlight";
+  title: string;
+  body: string;
+  commentator?: string;
+  year?: number;
+  timestamp: number;
+  icon: string;
+}
+
+async function getLatestNews(): Promise<NewsItem[]> {
+  try {
+    const res = await fetch(`${API_BASE}/api/news?limit=5`, {
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    return res.json() as Promise<NewsItem[]>;
   } catch {
     return [];
   }
@@ -98,7 +122,10 @@ const NAV_CARDS = [
 ];
 
 export default async function HomePage() {
-  const seasons = await getSeasons();
+  const [seasons, latestNews] = await Promise.all([
+    getSeasons(),
+    getLatestNews(),
+  ]);
   const activeSeason = seasons.find((s) => s.isActive) ?? seasons[0];
   const year = activeSeason?.year ?? new Date().getFullYear();
 
@@ -536,6 +563,57 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ══════════ LATEST NEWS ══════════ */}
+      {latestNews.length > 0 && (
+        <section
+          className="overflow-hidden rounded-xl"
+          style={{
+            background: "#0a1525",
+            border: "1px solid rgba(255,255,255,0.05)",
+          }}
+        >
+          {/* Section header */}
+          <div
+            className="flex items-center justify-between px-6 py-3"
+            style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
+          >
+            <div className="flex items-center gap-4">
+              <span
+                className="font-display text-xs"
+                style={{
+                  fontFamily:
+                    "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
+                  color: "rgba(251,191,36,0.5)",
+                  letterSpacing: "0.25em",
+                }}
+              >
+                LATEST NEWS
+              </span>
+              <div
+                className="h-px w-16"
+                style={{ background: "rgba(255,255,255,0.05)" }}
+              />
+            </div>
+            <Link
+              href="/news"
+              className="text-xs font-medium tracking-wider transition-colors hover:text-amber-400"
+              style={{
+                fontFamily:
+                  "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
+                color: "rgba(255,255,255,0.3)",
+                letterSpacing: "0.12em",
+              }}
+            >
+              VIEW ALL →
+            </Link>
+          </div>
+
+          <div className="p-4">
+            <NewsCompact items={latestNews} />
+          </div>
+        </section>
+      )}
 
       {/* ══════════ PAST SEASONS ══════════ */}
       {seasons.length > 1 && (
