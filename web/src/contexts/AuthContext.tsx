@@ -13,6 +13,7 @@ import {
   onAuthStateChanged,
   signInWithGoogle as firebaseSignIn,
   signOut as firebaseSignOut,
+  FIREBASE_ENABLED,
   type FirebaseUser,
 } from "@/lib/firebase";
 
@@ -79,7 +80,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Listen to Firebase auth state changes
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(getFirebaseAuth(), async (user) => {
+    const auth = getFirebaseAuth();
+    if (!auth) { setLoading(false); return; }
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setFirebaseUser(user);
       if (user) {
         const linked = await linkUser(user);
@@ -93,10 +96,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = useCallback(async () => {
+    if (!FIREBASE_ENABLED) { console.warn("Firebase Auth not configured"); return; }
     try {
       const user = await firebaseSignIn();
-      // linkUser will be called by onAuthStateChanged listener,
-      // but we also call it here for immediate response
+      if (!user) return;
       const linked = await linkUser(user);
       setAppUser(linked);
     } catch (error) {

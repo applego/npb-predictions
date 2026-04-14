@@ -89,7 +89,7 @@ export default async function CommentatorAccuracyPage({ params }: Props) {
   const year = parseInt(yearStr, 10);
   if (Number.isNaN(year)) notFound();
 
-  const commentators = getTopCommentatorsForYear(year, 20);
+  const commentators = await getTopCommentatorsForYear(year, 20);
   if (commentators.length === 0) notFound();
 
   const breadcrumbItems = [

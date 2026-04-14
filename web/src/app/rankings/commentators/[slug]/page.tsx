@@ -9,45 +9,10 @@ import {
   getCommentatorBySlug,
   getAllCommentatorSlugs,
 } from "@/lib/commentator-queries";
+import { SOURCE_BADGE_CONFIG, getSourceBadgeColors } from "@/lib/commentator-types";
 
-// Source badge colors for display
-export type SourceBadge = "YouTube" | "新聞" | "テレビ" | "ラジオ" | "雑誌" | "Web";
-
-export const SOURCE_BADGE_COLORS: Record<
-  SourceBadge,
-  { bg: string; border: string; text: string }
-> = {
-  YouTube: {
-    bg: "rgba(255, 0, 0, 0.08)",
-    border: "rgba(255, 0, 0, 0.25)",
-    text: "#ef4444",
-  },
-  新聞: {
-    bg: "rgba(148, 163, 184, 0.08)",
-    border: "rgba(148, 163, 184, 0.25)",
-    text: "#94a3b8",
-  },
-  テレビ: {
-    bg: "rgba(59, 130, 246, 0.08)",
-    border: "rgba(59, 130, 246, 0.25)",
-    text: "#3b82f6",
-  },
-  ラジオ: {
-    bg: "rgba(168, 85, 247, 0.08)",
-    border: "rgba(168, 85, 247, 0.25)",
-    text: "#a855f7",
-  },
-  雑誌: {
-    bg: "rgba(34, 197, 94, 0.08)",
-    border: "rgba(34, 197, 94, 0.25)",
-    text: "#22c55e",
-  },
-  Web: {
-    bg: "rgba(6, 182, 212, 0.08)",
-    border: "rgba(6, 182, 212, 0.25)",
-    text: "#06b6d4",
-  },
-};
+type SourceBadge = "YouTube" | "新聞" | "テレビ" | "ラジオ" | "雑誌" | "Web";
+const SOURCE_BADGE_COLORS = SOURCE_BADGE_CONFIG;
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://npb-predictions.vercel.app";
@@ -56,7 +21,7 @@ type Props = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const data = getCommentatorBySlug(decodeURIComponent(slug));
+  const data = await getCommentatorBySlug(decodeURIComponent(slug));
   if (!data) return { title: "Not Found" };
 
   const title = `${data.name} - プロ野球順位予想 的中率 | NPB Predictions League`;
@@ -151,7 +116,7 @@ function ScoreTrendArrow({ years }: { years: { year: number; totalScore: number 
 
 export default async function CommentatorDetailPage({ params }: Props) {
   const { slug } = await params;
-  const data = getCommentatorBySlug(decodeURIComponent(slug));
+  const data = await getCommentatorBySlug(decodeURIComponent(slug));
   if (!data) notFound();
 
   const sortedYears = [...data.years].sort((a, b) => a.year - b.year);
