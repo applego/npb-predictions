@@ -11,7 +11,7 @@ import {
   AVAILABLE_YEARS,
   SOURCE_BADGE_COLORS,
   type SourceBadge,
-} from "@/lib/mock-commentator-data";
+} from "@/lib/commentator-queries";
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://npb-predictions.vercel.app";
@@ -54,8 +54,15 @@ function fmtScore(score: number): string {
   return score > 0 ? `+${score}` : String(score);
 }
 
-function SourceBadgeChip({ source }: { source: SourceBadge }) {
-  const colors = SOURCE_BADGE_COLORS[source];
+function SourceBadgeChip({ source }: { source: string | null }) {
+  if (!source || !(source in SOURCE_BADGE_COLORS)) {
+    return (
+      <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium text-gray-400">
+        不明
+      </span>
+    );
+  }
+  const colors = SOURCE_BADGE_COLORS[source as SourceBadge];
   return (
     <span
       className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium"
