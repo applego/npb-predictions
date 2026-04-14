@@ -8,10 +8,46 @@ import { BreadcrumbJsonLd } from "@/components/StructuredData";
 import {
   getCommentatorBySlug,
   getAllCommentatorSlugs,
-  AVAILABLE_YEARS,
-  SOURCE_BADGE_COLORS,
-  type SourceBadge,
-} from "@/lib/mock-commentator-data";
+} from "@/lib/commentator-queries";
+
+// Source badge colors for display
+export type SourceBadge = "YouTube" | "新聞" | "テレビ" | "ラジオ" | "雑誌" | "Web";
+
+export const SOURCE_BADGE_COLORS: Record<
+  SourceBadge,
+  { bg: string; border: string; text: string }
+> = {
+  YouTube: {
+    bg: "rgba(255, 0, 0, 0.08)",
+    border: "rgba(255, 0, 0, 0.25)",
+    text: "#ef4444",
+  },
+  新聞: {
+    bg: "rgba(148, 163, 184, 0.08)",
+    border: "rgba(148, 163, 184, 0.25)",
+    text: "#94a3b8",
+  },
+  テレビ: {
+    bg: "rgba(59, 130, 246, 0.08)",
+    border: "rgba(59, 130, 246, 0.25)",
+    text: "#3b82f6",
+  },
+  ラジオ: {
+    bg: "rgba(168, 85, 247, 0.08)",
+    border: "rgba(168, 85, 247, 0.25)",
+    text: "#a855f7",
+  },
+  雑誌: {
+    bg: "rgba(34, 197, 94, 0.08)",
+    border: "rgba(34, 197, 94, 0.25)",
+    text: "#22c55e",
+  },
+  Web: {
+    bg: "rgba(6, 182, 212, 0.08)",
+    border: "rgba(6, 182, 212, 0.25)",
+    text: "#06b6d4",
+  },
+};
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://npb-predictions.vercel.app";
@@ -53,8 +89,24 @@ function fmtScore(score: number): string {
   return score > 0 ? `+${score}` : String(score);
 }
 
-function SourceBadgeChip({ source }: { source: SourceBadge }) {
-  const colors = SOURCE_BADGE_COLORS[source];
+function SourceBadgeChip({ source }: { source: string | null }) {
+  if (!source || !(source in SOURCE_BADGE_COLORS)) {
+    // Default badge for unknown/null sources
+    return (
+      <span
+        className="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium"
+        style={{
+          background: "rgba(100,100,100,0.08)",
+          border: "1px solid rgba(100,100,100,0.25)",
+          color: "#999",
+        }}
+      >
+        {source ?? "不明"}
+      </span>
+    );
+  }
+
+  const colors = SOURCE_BADGE_COLORS[source as SourceBadge];
   return (
     <span
       className="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium"
