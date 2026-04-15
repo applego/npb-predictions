@@ -95,8 +95,16 @@ describe("getters", () => {
     expect(getBodyFont("zen").name).toBe("Zen Kaku Gothic New");
   });
 
+  it("getBodyFont falls back to first for unknown id", () => {
+    expect(getBodyFont("nonexistent").id).toBe(BODY_FONTS[0].id);
+  });
+
   it("getColorTheme returns correct theme", () => {
     expect(getColorTheme("night").name).toBe("Night Game");
+  });
+
+  it("getColorTheme falls back to first for unknown id", () => {
+    expect(getColorTheme("nonexistent").id).toBe(COLOR_THEMES[0].id);
   });
 });
 

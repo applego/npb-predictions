@@ -112,6 +112,20 @@ describe("getShareText", () => {
     const text = getShareText("weekly", { year: 2026 });
     expect(text).toContain("#NPB予想リーグ");
   });
+
+  it("returns generic fallback text for unknown type", () => {
+    // Covers the `default` branch in getShareText
+    const text = getShareText("unknown" as OgType, { year: 2026 });
+    expect(text).toContain("#NPB予想リーグ");
+  });
+});
+
+describe("getShareUrl default branch", () => {
+  it("returns base URL for unknown type", () => {
+    // Covers the `default` branch in getShareUrl
+    const url = getShareUrl("unknown" as OgType, { year: 2026 });
+    expect(url).toBe("https://test.example.com");
+  });
 });
 
 describe("getTwitterShareUrl", () => {

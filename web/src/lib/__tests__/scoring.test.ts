@@ -269,4 +269,28 @@ describe("calcMonthlyChampions", () => {
     expect(results[0].month).toBe(1);
     expect(results[1].month).toBe(3);
   });
+
+  it("keeps higher score when same user has multiple snapshots in the same month", () => {
+    // First snapshot: 40, second: 10 — should keep 40 (existing > new)
+    const snapshots = [
+      { userId: 1, totalScore: 40, snapshotDate: new Date(2026, 0, 10) }, // Jan, score=40
+      { userId: 1, totalScore: 10, snapshotDate: new Date(2026, 0, 25) }, // Jan, score=10 (lower → ignored)
+      { userId: 2, totalScore: 30, snapshotDate: new Date(2026, 0, 15) }, // Jan, score=30
+    ];
+    const results = calcMonthlyChampions(snapshots);
+    expect(results).toHaveLength(1);
+    // User 1 gain=40 (best), user 2 gain=30 — user 1 wins
+    expect(results[0].userId).toBe(1);
+    expect(results[0].scoreGain).toBe(40);
+  });
+
+  it("handles tie-breaking: first user encountered wins on equal gain", () => {
+    const snapshots = [
+      { userId: 1, totalScore: 15, snapshotDate: new Date(2026, 0, 1) },
+      { userId: 2, totalScore: 15, snapshotDate: new Date(2026, 0, 2) },
+    ];
+    const results = calcMonthlyChampions(snapshots);
+    expect(results).toHaveLength(1);
+    expect(results[0].scoreGain).toBe(15);
+  });
 });
