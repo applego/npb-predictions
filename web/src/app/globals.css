@@ -1,79 +1,110 @@
 @import "tailwindcss";
 
-/* ── Custom Keyframes ── */
-@keyframes amber-glow {
-  0%, 100% {
-    text-shadow: 0 0 10px rgba(251, 191, 36, 0.4), 0 0 20px rgba(251, 191, 36, 0.2);
-  }
-  50% {
-    text-shadow: 0 0 22px rgba(251, 191, 36, 0.9), 0 0 40px rgba(251, 191, 36, 0.5), 0 0 60px rgba(251, 191, 36, 0.2);
-  }
+/* ══════════════════════════════════════════
+   NPB Predictions — Design System CSS
+   Theme: Light (Expo/Baseball) + Baseball Motif
+   Source of truth: /design.md
+   ══════════════════════════════════════════ */
+
+:root {
+  /* Base — light / Expo-inspired */
+  --bg-base: #FAFAFA;
+  --bg-surface: #FFFFFF;
+  --bg-elevated: #F5F5F5;
+  --bg-inset: #F0F0F0;
+  --border-primary: #E5E5E5;
+  --border-strong: #D4D4D4;
+
+  /* Text — dark on light */
+  --text-primary: #1A1A1A;
+  --text-secondary: #525252;
+  --text-muted: #A3A3A3;
+
+  /* Baseball Accents */
+  --stitch: #E53935;
+  --stitch-light: #EF5350;
+  --field: #2E7D32;
+  --dirt: #D4A017;
+  --plate: #FFFFFF;
+
+  /* League */
+  --central: #1565C0;
+  --pacific: #00695C;
 }
 
-@keyframes border-glow {
-  0%, 100% { box-shadow: 0 0 5px rgba(251, 191, 36, 0.15); }
-  50% { box-shadow: 0 0 15px rgba(251, 191, 36, 0.35), 0 0 30px rgba(251, 191, 36, 0.1); }
+html {
+  background: var(--bg-base);
+  color: var(--text-primary);
 }
 
-@keyframes scoreboard-flicker {
-  0%, 93%, 95.5%, 97%, 99%, 100% { opacity: 1; }
-  94% { opacity: 0.82; }
-  96% { opacity: 0.95; }
-  98% { opacity: 0.87; }
-}
+/* ── Baseball Motif Utilities ── */
 
-@keyframes slide-up-fade {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes pulse-dot {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50%       { transform: scale(1.5); opacity: 0.7; }
-}
-
-/* ── Utility Classes ── */
 @layer utilities {
-  .animate-amber-glow {
-    animation: amber-glow 3.5s ease-in-out infinite;
+  /* Stitch border: red dots — baseball seam on white leather */
+  .stitch-border {
+    background-image: radial-gradient(circle, var(--stitch) 1.5px, transparent 1.5px);
+    background-size: 10px 3px;
+    background-repeat: repeat-x;
+    height: 3px;
   }
 
-  .animate-border-glow {
-    animation: border-glow 3s ease-in-out infinite;
+  /* Home plate badge: pentagon clip */
+  .home-plate {
+    clip-path: polygon(0% 0%, 100% 0%, 100% 70%, 50% 100%, 0% 70%);
   }
 
-  .animate-flicker {
-    animation: scoreboard-flicker 12s ease-in-out infinite;
+  /* Bat divider: tapered center line */
+  .bat-divider {
+    height: 1px;
+    background: linear-gradient(90deg,
+      transparent 0%,
+      var(--border-primary) 20%,
+      var(--border-strong) 50%,
+      var(--border-primary) 80%,
+      transparent 100%
+    );
   }
 
-  .animate-slide-up {
-    animation: slide-up-fade 0.5s ease-out forwards;
+  /* Diamond pattern for table headers */
+  .diamond-pattern {
+    background-image: repeating-linear-gradient(
+      45deg, transparent, transparent 10px,
+      rgba(0, 0, 0, 0.015) 10px, rgba(0, 0, 0, 0.015) 11px
+    );
   }
 
-  .animate-pulse-dot {
-    animation: pulse-dot 2s ease-in-out infinite;
-  }
-
+  /* Font classes */
   .font-display {
     font-family: var(--font-display, 'Bebas Neue', 'Impact', 'Arial Narrow', sans-serif);
-    letter-spacing: 0.05em;
+    letter-spacing: 0.04em;
   }
 
   .font-body {
     font-family: var(--font-body, 'Noto Sans JP', sans-serif);
   }
 
-  .text-shadow-amber {
-    text-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+  /* Card: Expo-style white card with subtle shadow */
+  .card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-primary);
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
   }
 
-  .stadium-card {
-    background: #0a1525;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 0.75rem;
+  .card:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
   }
+}
 
-  .stadium-card:hover {
-    background: #0f1d35;
+/* ── Minimal Animation ── */
+
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%       { transform: scale(1.4); opacity: 0.6; }
+}
+
+@layer utilities {
+  .animate-pulse-dot {
+    animation: pulse-dot 2s ease-in-out infinite;
   }
 }

@@ -25,6 +25,8 @@ export interface User {
   slug: string;
   avatarUrl: string | null;
   role?: string;
+  source?: string | null;
+  variant?: string | null;
   firebaseUid?: string | null;
   email?: string | null;
 }

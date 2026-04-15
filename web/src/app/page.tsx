@@ -2,7 +2,8 @@ export const runtime = "edge";
 
 import type { Metadata } from "next";
 import Link from "next/link";
-import type { Season } from "@/lib/types";
+import type { Season, Prediction } from "@/lib/types";
+import { TeamBadge } from "@/components/TeamBadge";
 import { NewsCompact } from "./news/NewsClient";
 
 export const metadata: Metadata = {
@@ -39,6 +40,7 @@ interface NewsItem {
   year?: number;
   timestamp: number;
   icon: string;
+  source?: string;
 }
 
 async function getLatestNews(): Promise<NewsItem[]> {
@@ -48,6 +50,18 @@ async function getLatestNews(): Promise<NewsItem[]> {
     });
     if (!res.ok) return [];
     return res.json() as Promise<NewsItem[]>;
+  } catch {
+    return [];
+  }
+}
+
+async function getPredictions(year: number): Promise<Prediction[]> {
+  try {
+    const res = await fetch(`${API_BASE}/api/seasons/${year}/predictions`, {
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    return res.json() as Promise<Prediction[]>;
   } catch {
     return [];
   }
@@ -76,12 +90,12 @@ const NAV_CARDS = [
     href: "/standings",
     label: "Current Standings",
     sub: "リアルタイムのスコアボード・順位確認",
-    accent: "#fbbf24",
-    accentBg: "rgba(251,191,36,0.06)",
-    accentBorder: "rgba(251,191,36,0.25)",
-    accentNum: "rgba(251,191,36,0.5)",
-    accentBar: "linear-gradient(to bottom, #fbbf24, rgba(251,191,36,0.2) 70%, transparent)",
-    accentHover: "linear-gradient(135deg, rgba(251,191,36,0.04) 0%, transparent 60%)",
+    accent: "var(--stitch)",
+    accentBg: "rgba(229,57,53,0.06)",
+    accentBorder: "rgba(229,57,53,0.25)",
+    accentNum: "rgba(229,57,53,0.5)",
+    accentBar: "linear-gradient(to bottom, var(--stitch), rgba(229,57,53,0.2) 70%, transparent)",
+    accentHover: "linear-gradient(135deg, rgba(229,57,53,0.04) 0%, transparent 60%)",
   },
   {
     num: "02",
@@ -128,6 +142,7 @@ export default async function HomePage() {
   ]);
   const activeSeason = seasons.find((s) => s.isActive) ?? seasons[0];
   const year = activeSeason?.year ?? new Date().getFullYear();
+  const predictions = await getPredictions(year);
 
   return (
     <div className="space-y-8">
@@ -136,8 +151,8 @@ export default async function HomePage() {
         className="relative overflow-hidden rounded-2xl"
         style={{
           background:
-            "linear-gradient(135deg, #0a1525 0%, #0d1b30 60%, #0a1220 100%)",
-          border: "1px solid rgba(251,191,36,0.08)",
+            "linear-gradient(135deg, var(--bg-surface) 0%, var(--bg-elevated) 60%, var(--bg-surface) 100%)",
+          border: "1px solid rgba(229,57,53,0.08)",
         }}
       >
         {/* Corner glow */}
@@ -146,7 +161,7 @@ export default async function HomePage() {
           className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full opacity-10"
           style={{
             background:
-              "radial-gradient(circle, rgba(251,191,36,1) 0%, transparent 70%)",
+              "radial-gradient(circle, rgba(229,57,53,1) 0%, transparent 70%)",
           }}
         />
 
@@ -156,7 +171,7 @@ export default async function HomePage() {
           className="absolute left-0 top-0 h-full w-[3px]"
           style={{
             background:
-              "linear-gradient(to bottom, #fbbf24, rgba(251,191,36,0.4) 60%, transparent)",
+              "linear-gradient(to bottom, var(--stitch), rgba(229,57,53,0.4) 60%, transparent)",
           }}
         />
 
@@ -178,7 +193,7 @@ export default async function HomePage() {
               fontFamily:
                 "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
               fontSize: "clamp(4rem, 14vw, 9rem)",
-              color: "rgba(251,191,36,0.06)",
+              color: "rgba(229,57,53,0.06)",
               letterSpacing: "0.08em",
               lineHeight: 0.85,
               marginBottom: "-0.2em",
@@ -201,13 +216,13 @@ export default async function HomePage() {
               className="block"
               style={{
                 fontSize: "clamp(2rem, 7vw, 4.5rem)",
-                color: "rgba(255,255,255,0.9)",
+                color: "var(--text-primary)",
               }}
             >
               NPB{" "}
               <span
                 className="animate-amber-glow"
-                style={{ color: "#fbbf24" }}
+                style={{ color: "var(--stitch)" }}
               >
                 PREDICTIONS
               </span>
@@ -216,7 +231,7 @@ export default async function HomePage() {
               className="block"
               style={{
                 fontSize: "clamp(1.25rem, 4vw, 2.5rem)",
-                color: "rgba(255,255,255,0.5)",
+                color: "var(--text-secondary)",
                 marginTop: "0.05em",
               }}
             >
@@ -227,7 +242,7 @@ export default async function HomePage() {
           {/* Japanese subtitle */}
           <p
             className="mt-3 text-sm leading-relaxed"
-            style={{ color: "rgba(255,255,255,0.4)" }}
+            style={{ color: "var(--text-secondary)" }}
           >
             プロ野球順位予想リーグ — セ・パ両リーグの順位とタイトルを予想して年間王者を目指せ
           </p>
@@ -237,18 +252,18 @@ export default async function HomePage() {
             <div
               className="mt-5 inline-flex items-center gap-2 rounded px-3 py-1.5"
               style={{
-                border: "1px solid rgba(251,191,36,0.25)",
-                background: "rgba(251,191,36,0.06)",
+                border: "1px solid rgba(229,57,53,0.25)",
+                background: "rgba(229,57,53,0.06)",
               }}
             >
               <span
                 className="animate-pulse-dot h-1.5 w-1.5 rounded-full"
-                style={{ background: "#fbbf24", display: "inline-block" }}
+                style={{ background: "var(--stitch)", display: "inline-block" }}
               />
               <span
                 className="font-display text-xs"
                 style={{
-                  color: "#fbbf24",
+                  color: "var(--stitch)",
                   fontFamily:
                     "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
                   letterSpacing: "0.2em",
@@ -265,9 +280,9 @@ export default async function HomePage() {
               href="/standings"
               className="inline-flex items-center gap-2 rounded px-5 py-2.5 text-sm font-medium transition-all"
               style={{
-                border: "1px solid rgba(251,191,36,0.3)",
-                background: "rgba(251,191,36,0.08)",
-                color: "#fbbf24",
+                border: "1px solid rgba(229,57,53,0.3)",
+                background: "rgba(229,57,53,0.08)",
+                color: "var(--stitch)",
               }}
               >
               STANDINGS →
@@ -276,9 +291,9 @@ export default async function HomePage() {
               href="/predictions"
               className="inline-flex items-center gap-2 rounded px-5 py-2.5 text-sm font-medium transition-all"
               style={{
-                border: "1px solid rgba(255,255,255,0.1)",
-                background: "rgba(255,255,255,0.04)",
-                color: "rgba(255,255,255,0.7)",
+                border: "1px solid var(--border-primary)",
+                background: "var(--border-primary)",
+                color: "var(--text-secondary)",
               }}
             >
               PREDICTIONS →
@@ -295,8 +310,8 @@ export default async function HomePage() {
             href={href}
             className="group relative overflow-hidden rounded-xl transition-all"
             style={{
-              background: "#0a1525",
-              border: "1px solid rgba(255,255,255,0.05)",
+              background: "var(--bg-surface)",
+              border: "1px solid var(--border-primary)",
             }}
           >
             {/* Left accent bar */}
@@ -329,13 +344,13 @@ export default async function HomePage() {
 
               <h2
                 className="font-semibold"
-                style={{ color: "rgba(255,255,255,0.85)" }}
+                style={{ color: "var(--text-primary)" }}
               >
                 {label}
               </h2>
               <p
                 className="mt-1 text-sm"
-                style={{ color: "rgba(255,255,255,0.35)" }}
+                style={{ color: "var(--text-muted)" }}
               >
                 {sub}
               </p>
@@ -355,25 +370,25 @@ export default async function HomePage() {
       <section
         className="overflow-hidden rounded-xl"
         style={{
-          background: "#0a1525",
-          border: "1px solid rgba(255,255,255,0.05)",
+          background: "var(--bg-surface)",
+          border: "1px solid var(--border-primary)",
         }}
       >
         {/* Section header */}
         <div
           className="flex items-center gap-4 px-6 py-3"
-          style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
+          style={{ borderBottom: "1px solid var(--border-primary)" }}
         >
           <div
             className="h-px flex-1"
-            style={{ background: "rgba(255,255,255,0.05)" }}
+            style={{ background: "var(--border-primary)" }}
           />
           <span
             className="font-display text-xs"
             style={{
               fontFamily:
                 "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-              color: "rgba(251,191,36,0.5)",
+              color: "rgba(229,57,53,0.5)",
               letterSpacing: "0.25em",
             }}
           >
@@ -381,7 +396,7 @@ export default async function HomePage() {
           </span>
           <div
             className="h-px flex-1"
-            style={{ background: "rgba(255,255,255,0.05)" }}
+            style={{ background: "var(--border-primary)" }}
           />
         </div>
 
@@ -389,11 +404,11 @@ export default async function HomePage() {
           {/* Ranking points */}
           <div
             className="p-6"
-            style={{ borderRight: "1px solid rgba(255,255,255,0.05)" }}
+            style={{ borderRight: "1px solid var(--border-primary)" }}
           >
             <h3
               className="mb-4 text-xs font-medium tracking-widest uppercase"
-              style={{ color: "rgba(255,255,255,0.3)", letterSpacing: "0.18em" }}
+              style={{ color: "var(--text-muted)", letterSpacing: "0.18em" }}
             >
               順位予想得点
             </h3>
@@ -407,7 +422,7 @@ export default async function HomePage() {
                   >
                     <span
                       className="text-sm"
-                      style={{ color: "rgba(255,255,255,0.5)" }}
+                      style={{ color: "var(--text-secondary)" }}
                     >
                       {diff}
                     </span>
@@ -417,8 +432,8 @@ export default async function HomePage() {
                         fontFamily:
                           "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
                         color: isPositive
-                          ? "#fbbf24"
-                          : "rgba(239,68,68,0.7)",
+                          ? "var(--stitch)"
+                          : "rgba(229,57,53,0.7)",
                         letterSpacing: "0.05em",
                       }}
                     >
@@ -433,18 +448,18 @@ export default async function HomePage() {
           {/* Title points */}
           <div
             className="p-6"
-            style={{ borderRight: "1px solid rgba(255,255,255,0.05)" }}
+            style={{ borderRight: "1px solid var(--border-primary)" }}
           >
             <h3
               className="mb-4 text-xs font-medium tracking-widest uppercase"
-              style={{ color: "rgba(255,255,255,0.3)", letterSpacing: "0.18em" }}
+              style={{ color: "var(--text-muted)", letterSpacing: "0.18em" }}
             >
               タイトル予想得点
             </h3>
             <div className="flex items-end justify-between">
               <span
                 className="text-sm"
-                style={{ color: "rgba(255,255,255,0.5)" }}
+                style={{ color: "var(--text-secondary)" }}
               >
                 的中
               </span>
@@ -453,7 +468,7 @@ export default async function HomePage() {
                 style={{
                   fontFamily:
                     "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-                  color: "#fbbf24",
+                  color: "var(--stitch)",
                   letterSpacing: "0.05em",
                 }}
               >
@@ -462,7 +477,7 @@ export default async function HomePage() {
             </div>
             <p
               className="mt-5 text-xs leading-relaxed"
-              style={{ color: "rgba(255,255,255,0.25)" }}
+              style={{ color: "var(--text-muted)" }}
             >
               打率 · 打点 · 本塁打
               <br />
@@ -474,7 +489,7 @@ export default async function HomePage() {
           <div className="p-6">
             <h3
               className="mb-4 text-xs font-medium tracking-widest uppercase"
-              style={{ color: "rgba(255,255,255,0.3)", letterSpacing: "0.18em" }}
+              style={{ color: "var(--text-muted)", letterSpacing: "0.18em" }}
             >
               副賞
             </h3>
@@ -483,7 +498,7 @@ export default async function HomePage() {
                 <div
                   key={label}
                   className="flex items-center gap-2.5 text-sm"
-                  style={{ color: "rgba(255,255,255,0.4)" }}
+                  style={{ color: "var(--text-secondary)" }}
                 >
                   <span>{icon}</span>
                   <span>{label}</span>
@@ -498,8 +513,8 @@ export default async function HomePage() {
       <section
         className="relative overflow-hidden rounded-xl"
         style={{
-          background: "#0a1525",
-          border: "1px solid rgba(239,68,68,0.15)",
+          background: "var(--bg-surface)",
+          border: "1px solid rgba(229,57,53,0.15)",
         }}
       >
         <div
@@ -507,7 +522,7 @@ export default async function HomePage() {
           className="pointer-events-none absolute inset-0"
           style={{
             background:
-              "linear-gradient(135deg, rgba(239,68,68,0.05) 0%, transparent 50%)",
+              "linear-gradient(135deg, rgba(229,57,53,0.05) 0%, transparent 50%)",
           }}
         />
 
@@ -517,7 +532,7 @@ export default async function HomePage() {
           className="absolute left-0 top-0 h-full w-[3px]"
           style={{
             background:
-              "linear-gradient(to bottom, #ef4444, rgba(239,68,68,0.3) 70%, transparent)",
+              "linear-gradient(to bottom, var(--stitch), rgba(229,57,53,0.3) 70%, transparent)",
           }}
         />
 
@@ -525,9 +540,9 @@ export default async function HomePage() {
           <div
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded text-sm"
             style={{
-              border: "1px solid rgba(239,68,68,0.25)",
-              background: "rgba(239,68,68,0.08)",
-              color: "#ef4444",
+              border: "1px solid rgba(229,57,53,0.25)",
+              background: "rgba(229,57,53,0.08)",
+              color: "var(--stitch)",
             }}
           >
             ▶
@@ -535,13 +550,13 @@ export default async function HomePage() {
           <div className="flex-1">
             <h2
               className="font-semibold"
-              style={{ color: "rgba(255,255,255,0.85)" }}
+              style={{ color: "var(--text-primary)" }}
             >
               プロ野球予想リーグ【YouTube】
             </h2>
             <p
               className="mt-1.5 text-sm leading-relaxed"
-              style={{ color: "rgba(255,255,255,0.4)" }}
+              style={{ color: "var(--text-secondary)" }}
             >
               毎日の順位変動＋予想家スコアをショート動画でお届け。
               <br className="hidden sm:block" />
@@ -553,9 +568,9 @@ export default async function HomePage() {
               rel="noopener noreferrer"
               className="mt-4 inline-flex items-center gap-2 rounded px-4 py-2 text-sm font-medium transition-all"
               style={{
-                border: "1px solid rgba(239,68,68,0.25)",
-                background: "rgba(239,68,68,0.08)",
-                color: "#fca5a5",
+                border: "1px solid rgba(229,57,53,0.25)",
+                background: "rgba(229,57,53,0.08)",
+                color: "var(--stitch)",
               }}
             >
               チャンネルを見る →
@@ -564,19 +579,122 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* ══════════ PREDICTION MATRIX PREVIEW ══════════ */}
+      {predictions.length > 0 && (
+        <section>
+          <div className="mb-3 flex items-center justify-between">
+            <span
+              className="text-xs font-bold tracking-widest"
+              style={{
+                fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
+                color: "rgba(229,57,53,0.5)",
+                letterSpacing: "0.25em",
+              }}
+            >
+              {year} PREDICTIONS
+            </span>
+            <Link
+              href="/predictions"
+              className="text-xs font-medium tracking-wider transition-colors hover:text-amber-400"
+              style={{
+                fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
+                color: "var(--text-muted)",
+                letterSpacing: "0.12em",
+              }}
+            >
+              FULL VIEW →
+            </Link>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            {(["central", "pacific"] as const).map((league) => {
+              const isC = league === "central";
+              const accentColor = isC ? "var(--stitch)" : "#38bdf8";
+              const headerBg = isC ? "#1a365d" : "#1a3a2a";
+              const pUsers = predictions.map((p) => p.user);
+
+              return (
+                <div key={league} className="overflow-hidden rounded-xl" style={{ background: "var(--bg-surface)" }}>
+                  {/* League banner */}
+                  <div
+                    className="flex items-center gap-2 px-3 py-2"
+                    style={{ background: headerBg, borderBottom: `2px solid ${accentColor}` }}
+                  >
+                    <span
+                      className="rounded px-1.5 py-0.5 text-[9px] font-black"
+                      style={{ background: accentColor, color: "#1a1a1a" }}
+                    >
+                      {isC ? "セ" : "パ"}
+                    </span>
+                    <span className="text-[11px] font-bold" style={{ color: "#fff" }}>
+                      {year}年 順位予想
+                    </span>
+                  </div>
+                  {/* Matrix */}
+                  <div className="overflow-x-auto p-1">
+                    <table className="w-full" style={{ borderCollapse: "separate", borderSpacing: "2px" }}>
+                      <thead>
+                        <tr>
+                          <th className="w-7 rounded px-1 py-1 text-center text-[9px]" style={{ background: "var(--bg-inset)", color: "var(--text-muted)" }}>#</th>
+                          {pUsers.map((u) => (
+                            <th key={u.id} className="rounded px-1 py-1 text-center text-[9px]" style={{ background: "var(--bg-inset)", color: "var(--text-muted)" }}>
+                              {u.name.slice(0, 4)}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[1, 2, 3, 4, 5, 6].map((rank) => (
+                          <tr key={rank}>
+                            <td
+                              className="rounded px-1 py-1 text-center text-xs font-bold"
+                              style={{
+                                fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
+                                background: "var(--bg-inset)",
+                                color: rank === 1 ? accentColor : "var(--text-muted)",
+                              }}
+                            >
+                              {rank}
+                            </td>
+                            {predictions.map((pred) => {
+                              const pick = pred.rankingPicks.find(
+                                (rp) => rp.league === league && rp.rank === rank
+                              );
+                              return (
+                                <td key={pred.id} className="p-0.5">
+                                  {pick ? (
+                                    <TeamBadge teamName={pick.teamName} variant="cell" />
+                                  ) : (
+                                    <div className="rounded text-center text-[10px]" style={{ background: "var(--bg-elevated)", padding: "0.35rem", color: "var(--border-primary)" }}>—</div>
+                                  )}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       {/* ══════════ LATEST NEWS ══════════ */}
       {latestNews.length > 0 && (
         <section
           className="overflow-hidden rounded-xl"
           style={{
-            background: "#0a1525",
-            border: "1px solid rgba(255,255,255,0.05)",
+            background: "var(--bg-surface)",
+            border: "1px solid var(--border-primary)",
           }}
         >
           {/* Section header */}
           <div
             className="flex items-center justify-between px-6 py-3"
-            style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
+            style={{ borderBottom: "1px solid var(--border-primary)" }}
           >
             <div className="flex items-center gap-4">
               <span
@@ -584,7 +702,7 @@ export default async function HomePage() {
                 style={{
                   fontFamily:
                     "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-                  color: "rgba(251,191,36,0.5)",
+                  color: "rgba(229,57,53,0.5)",
                   letterSpacing: "0.25em",
                 }}
               >
@@ -592,7 +710,7 @@ export default async function HomePage() {
               </span>
               <div
                 className="h-px w-16"
-                style={{ background: "rgba(255,255,255,0.05)" }}
+                style={{ background: "var(--border-primary)" }}
               />
             </div>
             <Link
@@ -601,7 +719,7 @@ export default async function HomePage() {
               style={{
                 fontFamily:
                   "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-                color: "rgba(255,255,255,0.3)",
+                color: "var(--text-muted)",
                 letterSpacing: "0.12em",
               }}
             >
@@ -624,7 +742,7 @@ export default async function HomePage() {
               style={{
                 fontFamily:
                   "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-                color: "rgba(255,255,255,0.2)",
+                color: "var(--text-muted)",
                 letterSpacing: "0.2em",
               }}
             >
@@ -632,7 +750,7 @@ export default async function HomePage() {
             </span>
             <div
               className="h-px flex-1"
-              style={{ background: "rgba(255,255,255,0.05)" }}
+              style={{ background: "var(--border-primary)" }}
             />
           </div>
           <div className="flex flex-wrap gap-2">
@@ -644,9 +762,9 @@ export default async function HomePage() {
                   href={`/standings?year=${s.year}`}
                   className="rounded px-4 py-1.5 text-xs transition-all"
                   style={{
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    background: "rgba(255,255,255,0.03)",
-                    color: "rgba(255,255,255,0.35)",
+                    border: "1px solid var(--border-primary)",
+                    background: "var(--bg-elevated)",
+                    color: "var(--text-muted)",
                   }}
                 >
                   {s.label}

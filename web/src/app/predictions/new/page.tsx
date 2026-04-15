@@ -317,8 +317,8 @@ export default function NewPredictionPage() {
   if (authLoading) {
     return (
       <div className="mx-auto max-w-2xl animate-pulse space-y-4">
-        <div className="h-8 w-48 rounded" style={{ background: "rgba(255,255,255,0.06)" }} />
-        <div className="h-4 w-64 rounded" style={{ background: "rgba(255,255,255,0.06)" }} />
+        <div className="h-8 w-48 rounded" style={{ background: "var(--border-primary)" }} />
+        <div className="h-4 w-64 rounded" style={{ background: "var(--border-primary)" }} />
       </div>
     );
   }
@@ -328,19 +328,19 @@ export default function NewPredictionPage() {
       <div className="mx-auto max-w-md py-16 text-center">
         <div
           className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full text-2xl"
-          style={{ background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.2)" }}
+          style={{ background: "rgba(229,57,53,0.1)", border: "1px solid rgba(229,57,53,0.2)" }}
         >
           ⚾
         </div>
         <h1
           className="mb-3 text-xl font-bold"
-          style={{ color: "rgba(255,255,255,0.9)" }}
+          style={{ color: "var(--text-primary)" }}
         >
           ログインが必要です
         </h1>
         <p
           className="mb-6 text-sm"
-          style={{ color: "rgba(255,255,255,0.5)" }}
+          style={{ color: "var(--text-secondary)" }}
         >
           予想を登録するにはGoogleアカウントでログインしてください
         </p>
@@ -348,9 +348,9 @@ export default function NewPredictionPage() {
           onClick={signIn}
           className="rounded px-6 py-2.5 text-sm font-bold transition-all hover:opacity-90"
           style={{
-            background: "rgba(251,191,36,0.15)",
-            border: "1px solid rgba(251,191,36,0.3)",
-            color: "#fbbf24",
+            background: "rgba(229,57,53,0.15)",
+            border: "1px solid rgba(229,57,53,0.3)",
+            color: "var(--stitch)",
           }}
         >
           Googleでログイン

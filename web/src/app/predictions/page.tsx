@@ -2,37 +2,38 @@ export const runtime = "edge";
 
 import type { Metadata } from "next";
 import Link from "next/link";
-import type { Prediction } from "@/lib/types";
-import { LEAGUE_LABELS, TITLE_CATEGORY_LABELS } from "@/lib/types";
+import type { Prediction, Season } from "@/lib/types";
+import { LEAGUE_LABELS } from "@/lib/types";
+import { getTeamByName } from "@/lib/teams";
 import ShareButton from "@/components/ShareButton";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "";
-const DEFAULT_YEAR = new Date().getFullYear();
+const API_BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://npb-predictions.pages.dev";
 
-export async function generateMetadata({
-  searchParams,
-}: {
-  searchParams: Promise<{ year?: string }>;
-}): Promise<Metadata> {
-  const { year: yearParam } = await searchParams;
-  const year = yearParam ? parseInt(yearParam, 10) : DEFAULT_YEAR;
-  return {
-    title: `${year}年 予想比較`,
-    description: `${year}年NPB予想リーグ — 全予想家のセ・パ順位予想とタイトル予想を横比較。`,
-    openGraph: {
-      title: `${year}年 NPB予想リーグ 予想比較`,
-      description: `${year}年プロ野球順位予想 — 5人の予想を一覧表示`,
-      type: "website",
-    },
-    alternates: { canonical: `/predictions?year=${year}` },
-  };
+async function getActiveYear(): Promise<number> {
+  try {
+    const res = await fetch(`${API_BASE}/api/seasons`, { cache: "no-store" });
+    if (!res.ok) return new Date().getFullYear();
+    const seasons = (await res.json()) as Season[];
+    const active = seasons.find((s) => s.isActive) ?? seasons[0];
+    return active?.year ?? new Date().getFullYear();
+  } catch {
+    return new Date().getFullYear();
+  }
+}
+
+async function getAllSeasons(): Promise<Season[]> {
+  try {
+    const res = await fetch(`${API_BASE}/api/seasons`, { cache: "no-store" });
+    if (!res.ok) return [];
+    return res.json() as Promise<Season[]>;
+  } catch {
+    return [];
+  }
 }
 
 async function getPredictions(year: number): Promise<Prediction[]> {
   try {
-    const res = await fetch(`${API_BASE}/api/seasons/${year}/predictions`, {
-      cache: "no-store",
-    });
+    const res = await fetch(`${API_BASE}/api/seasons/${year}/predictions`, { cache: "no-store" });
     if (!res.ok) return [];
     return res.json() as Promise<Prediction[]>;
   } catch {
@@ -40,264 +41,224 @@ async function getPredictions(year: number): Promise<Prediction[]> {
   }
 }
 
-const SECTION_HEADER_STYLE = {
-  fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-  letterSpacing: "0.1em",
-  fontSize: "1.25rem",
-  color: "rgba(255,255,255,0.85)",
-};
-
-const TH_STYLE = {
-  color: "rgba(255,255,255,0.3)",
-  letterSpacing: "0.12em",
-};
-
-const TABLE_STYLE = {
-  background: "#0a1525",
-  border: "1px solid rgba(255,255,255,0.05)",
-};
-
-export default async function PredictionsComparePage({
+export async function generateMetadata({
   searchParams,
 }: {
   searchParams: Promise<{ year?: string }>;
-}) {
+}): Promise<Metadata> {
   const { year: yearParam } = await searchParams;
-  const year = yearParam ? parseInt(yearParam, 10) : DEFAULT_YEAR;
-  const predictions = await getPredictions(year);
+  const year = yearParam ? parseInt(yearParam, 10) : await getActiveYear();
+  return {
+    title: `${year}年 順位予想一覧`,
+    description: `${year}年NPB予想リーグ — 全予想家のセ・パ順位予想を一覧表示。`,
+    alternates: { canonical: `/predictions?year=${year}` },
+  };
+}
 
-  if (predictions.length === 0) {
-    return (
-      <div className="space-y-6">
-        <h1 style={SECTION_HEADER_STYLE}>PREDICTIONS COMPARE</h1>
-        <div
-          className="rounded-xl p-10 text-center"
-          style={TABLE_STYLE}
-        >
-          <p className="mb-6 text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>
-            {year}シーズンの予想がまだ登録されていません。
-          </p>
-          <Link
-            href="/predictions/new"
-            className="inline-block rounded px-5 py-2.5 text-sm font-medium transition-all"
-            style={{
-              border: "1px solid rgba(251,191,36,0.3)",
-              background: "rgba(251,191,36,0.08)",
-              color: "#fbbf24",
-            }}
-          >
-            + 最初の予想を登録する
-          </Link>
-        </div>
-      </div>
-    );
-  }
+export default async function PredictionsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ year?: string; league?: string }>;
+}) {
+  const { year: yearParam, league: leagueParam } = await searchParams;
+  const year = yearParam ? parseInt(yearParam, 10) : await getActiveYear();
+  const league = leagueParam === "pacific" ? "pacific" : "central";
 
-  const users = predictions.map((p) => p.user);
-  const leagues = ["central", "pacific"] as const;
+  const [predictions, allSeasons] = await Promise.all([
+    getPredictions(year),
+    getAllSeasons(),
+  ]);
+
+  // Filter predictions that have picks for this league
+  const filtered = predictions.filter((p) =>
+    p.rankingPicks.some((rp) => rp.league === league)
+  );
 
   return (
-    <div className="space-y-8">
-      {/* Page header */}
+    <div className="space-y-5">
+      {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 style={SECTION_HEADER_STYLE}>PREDICTIONS COMPARE</h1>
-          <p className="mt-1 text-sm" style={{ color: "rgba(255,255,255,0.35)" }}>
-            {year}シーズン — {users.length}人の予想を横比較
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <ShareButton type="scoreboard" year={year} />
-          <Link
-            href="/predictions/new"
-            className="rounded px-4 py-2 text-sm font-medium transition-all"
+          <h1
             style={{
-              border: "1px solid rgba(251,191,36,0.3)",
-              background: "rgba(251,191,36,0.08)",
-              color: "#fbbf24",
+              fontFamily: "var(--font-display)",
+              fontSize: "clamp(1.5rem, 4vw, 2.25rem)",
+              letterSpacing: "0.04em",
+              color: "var(--text-primary)",
             }}
           >
-            + 予想を登録
-          </Link>
+            <span style={{ color: "var(--stitch)" }}>{year}</span> 順位予想一覧
+          </h1>
+          <p className="mt-0.5 text-sm" style={{ color: "var(--text-muted)" }}>
+            {filtered.length}人 — {LEAGUE_LABELS[league]}
+          </p>
         </div>
+        <ShareButton type="scoreboard" year={year} />
       </div>
 
-      {/* Ranking Picks */}
-      {leagues.map((league) => (
-        <div key={league}>
-          <SectionLabel>{LEAGUE_LABELS[league]} 順位予想</SectionLabel>
-          <div className="overflow-x-auto rounded-xl" style={TABLE_STYLE}>
-            <table className="w-full text-sm">
-              <thead>
-                <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                  <th
-                    className="px-4 py-3 text-left text-xs font-medium uppercase"
-                    style={TH_STYLE}
-                  >
-                    順位
-                  </th>
-                  {users.map((u) => (
-                    <th
-                      key={u.id}
-                      className="px-4 py-3 text-left text-xs font-medium"
-                      style={TH_STYLE}
-                    >
-                      <Link
-                        href={`/users/${u.id}?year=${year}`}
-                        className="transition-colors hover:text-amber-400"
-                        style={{ color: "rgba(255,255,255,0.6)" }}
-                      >
-                        {u.name}
-                      </Link>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
+      {/* Year selector */}
+      {allSeasons.length > 1 && (
+        <div className="flex flex-wrap gap-1">
+          {allSeasons
+            .sort((a, b) => b.year - a.year)
+            .map((s) => (
+              <Link
+                key={s.year}
+                href={`/predictions?year=${s.year}&league=${league}`}
+                className="rounded-sm px-2 py-1 text-xs font-medium"
+                style={{
+                  fontFamily: "var(--font-display)",
+                  letterSpacing: "0.06em",
+                  background: s.year === year ? "var(--stitch)" : "var(--bg-surface)",
+                  color: s.year === year ? "#fff" : "var(--text-muted)",
+                  border: `1px solid ${s.year === year ? "var(--stitch)" : "var(--border-primary)"}`,
+                }}
+              >
+                {s.year}
+              </Link>
+            ))}
+        </div>
+      )}
+
+      {/* League tabs */}
+      <div className="flex gap-0">
+        {(["central", "pacific"] as const).map((l) => {
+          const active = l === league;
+          const color = l === "central" ? "var(--central)" : "var(--pacific)";
+          return (
+            <Link
+              key={l}
+              href={`/predictions?year=${year}&league=${l}`}
+              className="px-5 py-2.5 text-sm font-bold"
+              style={{
+                fontFamily: "var(--font-display)",
+                letterSpacing: "0.08em",
+                color: active ? "#fff" : "var(--text-muted)",
+                background: active ? color : "var(--bg-surface)",
+                borderBottom: active ? `3px solid ${color}` : "3px solid var(--border-primary)",
+              }}
+            >
+              {LEAGUE_LABELS[l]}
+            </Link>
+          );
+        })}
+        <div className="flex-1" style={{ borderBottom: "3px solid var(--border-primary)" }} />
+      </div>
+
+      {/* Matrix: predictors as ROWS, ranks 1-6 as COLUMNS */}
+      {filtered.length === 0 ? (
+        <div className="card rounded-lg p-10 text-center">
+          <p style={{ color: "var(--text-muted)" }}>
+            {year}年{LEAGUE_LABELS[league]}の予想データがありません
+          </p>
+        </div>
+      ) : (
+        <div className="card overflow-x-auto rounded-lg">
+          <table className="w-full" style={{ borderCollapse: "separate", borderSpacing: 0 }}>
+            <thead>
+              <tr>
+                <th
+                  className="sticky left-0 z-10 px-3 py-2.5 text-left text-xs"
+                  style={{
+                    fontFamily: "var(--font-display)",
+                    color: "var(--text-muted)",
+                    background: "var(--bg-inset)",
+                    borderBottom: "2px solid var(--border-primary)",
+                    letterSpacing: "0.08em",
+                    minWidth: "8rem",
+                  }}
+                >
+                  予想者
+                </th>
                 {[1, 2, 3, 4, 5, 6].map((rank) => (
-                  <tr
+                  <th
                     key={rank}
-                    style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
+                    className="px-1 py-2.5 text-center"
+                    style={{
+                      fontFamily: "var(--font-display)",
+                      fontSize: "0.9rem",
+                      color: rank === 1 ? "var(--dirt)" : "var(--text-muted)",
+                      background: "var(--bg-inset)",
+                      borderBottom: "2px solid var(--border-primary)",
+                      minWidth: "5rem",
+                    }}
                   >
+                    {rank}位
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((pred, idx) => {
+                const picks = pred.rankingPicks
+                  .filter((rp) => rp.league === league)
+                  .sort((a, b) => a.rank - b.rank);
+
+                return (
+                  <tr
+                    key={pred.id}
+                    style={{
+                      borderBottom: "1px solid var(--border-primary)",
+                      background: idx % 2 === 0 ? "var(--bg-surface)" : "var(--bg-elevated)",
+                    }}
+                  >
+                    {/* Predictor name (sticky) */}
                     <td
-                      className="px-4 py-3 font-display text-sm"
+                      className="sticky left-0 z-10 px-3 py-1.5"
                       style={{
-                        fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-                        color: "rgba(251,191,36,0.6)",
-                        letterSpacing: "0.05em",
+                        background: idx % 2 === 0 ? "var(--bg-surface)" : "var(--bg-elevated)",
+                        borderRight: "1px solid var(--border-primary)",
                       }}
                     >
-                      {rank}位
+                      <div className="text-xs font-medium" style={{ color: "var(--text-primary)" }}>
+                        {pred.user.name}
+                      </div>
+                      {pred.user.source && (
+                        <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                          {pred.user.source}
+                        </div>
+                      )}
                     </td>
-                    {predictions.map((pred) => {
-                      const pick = pred.rankingPicks.find(
-                        (rp) => rp.league === league && rp.rank === rank
-                      );
+                    {/* Rank cells 1-6 */}
+                    {[1, 2, 3, 4, 5, 6].map((rank) => {
+                      const pick = picks.find((p) => p.rank === rank);
+                      const team = pick ? getTeamByName(pick.teamName) : null;
                       return (
-                        <td
-                          key={pred.id}
-                          className="px-4 py-3"
-                          style={{ color: pick ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.2)" }}
-                        >
-                          {pick?.teamName ?? "—"}
+                        <td key={rank} className="p-0.5">
+                          {team ? (
+                            <div
+                              className="flex items-center justify-center rounded-sm py-1.5 text-xs font-bold"
+                              style={{
+                                background: team.color,
+                                color: team.textColor,
+                                textShadow: team.textColor === "#fff" ? "0 1px 2px rgba(0,0,0,0.3)" : "none",
+                              }}
+                            >
+                              {team.shortName}
+                            </div>
+                          ) : (
+                            <div
+                              className="flex items-center justify-center rounded-sm py-1.5 text-xs"
+                              style={{ color: "var(--text-muted)" }}
+                            >
+                              —
+                            </div>
+                          )}
                         </td>
                       );
                     })}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
-      ))}
+      )}
 
-      {/* Title Picks */}
-      {leagues.map((league) => {
-        const categories = Object.keys(
-          TITLE_CATEGORY_LABELS
-        ) as (keyof typeof TITLE_CATEGORY_LABELS)[];
-        const relevantCategories = categories.filter((cat) =>
-          predictions.some((p) =>
-            p.titlePicks.some(
-              (tp) => tp.league === league && tp.category === cat
-            )
-          )
-        );
-        if (relevantCategories.length === 0) return null;
-
-        return (
-          <div key={`title-${league}`}>
-            <SectionLabel>{LEAGUE_LABELS[league]} タイトル予想</SectionLabel>
-            <div className="overflow-x-auto rounded-xl" style={TABLE_STYLE}>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                    <th
-                      className="px-4 py-3 text-left text-xs font-medium uppercase"
-                      style={TH_STYLE}
-                    >
-                      タイトル
-                    </th>
-                    {users.map((u) => (
-                      <th
-                        key={u.id}
-                        className="px-4 py-3 text-left text-xs font-medium"
-                        style={TH_STYLE}
-                      >
-                        {u.name}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {relevantCategories.map((cat) => (
-                    <tr
-                      key={cat}
-                      style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
-                    >
-                      <td
-                        className="px-4 py-3 text-xs font-medium uppercase tracking-wide"
-                        style={{ color: "rgba(255,255,255,0.5)" }}
-                      >
-                        {TITLE_CATEGORY_LABELS[cat]}
-                      </td>
-                      {predictions.map((pred) => {
-                        const pick = pred.titlePicks.find(
-                          (tp) => tp.league === league && tp.category === cat
-                        );
-                        return (
-                          <td
-                            key={pred.id}
-                            className="px-4 py-3"
-                            style={{ color: pick ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.2)" }}
-                          >
-                            {pick ? (
-                              <span>
-                                {pick.playerName}
-                                {pick.teamName && (
-                                  <span
-                                    className="ml-1 text-xs"
-                                    style={{ color: "rgba(255,255,255,0.3)" }}
-                                  >
-                                    ({pick.teamName})
-                                  </span>
-                                )}
-                              </span>
-                            ) : (
-                              "—"
-                            )}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="mb-3 flex items-center gap-3">
-      <span
-        style={{
-          fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-          fontSize: "1.1rem",
-          letterSpacing: "0.1em",
-          color: "rgba(255,255,255,0.7)",
-        }}
-      >
-        {children}
-      </span>
-      <div
-        className="h-px flex-1"
-        style={{ background: "rgba(255,255,255,0.06)" }}
-      />
+      {/* Stats */}
+      <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+        データソース: ohtashp.com — {filtered.length}人の解説者・評論家の開幕前予想
+      </p>
     </div>
   );
 }

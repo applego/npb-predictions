@@ -95,20 +95,20 @@ function ScoreTrendArrow({ years }: { years: { year: number; totalScore: number 
 
   if (diff > 0) {
     return (
-      <span className="text-sm" style={{ color: "#34d399" }}>
+      <span className="text-sm" style={{ color: "var(--field)" }}>
         +{diff} pts
       </span>
     );
   }
   if (diff < 0) {
     return (
-      <span className="text-sm" style={{ color: "rgba(239,68,68,0.7)" }}>
+      <span className="text-sm" style={{ color: "var(--stitch)" }}>
         {diff} pts
       </span>
     );
   }
   return (
-    <span className="text-sm" style={{ color: "rgba(255,255,255,0.3)" }}>
+    <span className="text-sm" style={{ color: "var(--text-muted)" }}>
       0 pts
     </span>
   );
@@ -157,14 +157,14 @@ export default async function CommentatorDetailPage({ params }: Props) {
                 fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
                 fontSize: "clamp(1.75rem, 5vw, 2.75rem)",
                 letterSpacing: "0.06em",
-                color: "rgba(255,255,255,0.9)",
+                color: "var(--text-primary)",
               }}
             >
               {data.name}
             </h1>
             <div className="mt-2 flex items-center gap-3">
               <SourceBadgeChip source={data.source} />
-              <span className="text-sm" style={{ color: "rgba(255,255,255,0.35)" }}>
+              <span className="text-sm" style={{ color: "var(--text-muted)" }}>
                 {data.years.length}シーズン参加
               </span>
             </div>
@@ -174,13 +174,13 @@ export default async function CommentatorDetailPage({ params }: Props) {
           <div
             className="rounded-xl px-5 py-3 text-center"
             style={{
-              background: "rgba(251,191,36,0.06)",
-              border: "1px solid rgba(251,191,36,0.2)",
+              background: "color-mix(in srgb, var(--dirt) 6%, transparent)",
+              border: "1px solid color-mix(in srgb, var(--dirt) 20%, transparent)",
             }}
           >
             <div
               className="text-[10px] uppercase tracking-widest"
-              style={{ color: "rgba(251,191,36,0.5)", letterSpacing: "0.15em" }}
+              style={{ color: "color-mix(in srgb, var(--dirt) 50%, transparent)", letterSpacing: "0.15em" }}
             >
               ALL-TIME
             </div>
@@ -188,7 +188,7 @@ export default async function CommentatorDetailPage({ params }: Props) {
               className="font-display text-2xl"
               style={{
                 fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-                color: "#fbbf24",
+                color: "var(--dirt)",
               }}
             >
               {fmtScore(data.allTimeTotal)}
@@ -200,8 +200,8 @@ export default async function CommentatorDetailPage({ params }: Props) {
         <div
           className="rounded-xl p-5"
           style={{
-            background: "#0a1525",
-            border: "1px solid rgba(255,255,255,0.05)",
+            background: "var(--bg-surface)",
+            border: "1px solid var(--border-primary)",
           }}
         >
           <div className="mb-3 flex items-center justify-between">
@@ -209,7 +209,7 @@ export default async function CommentatorDetailPage({ params }: Props) {
               className="text-xs uppercase tracking-widest"
               style={{
                 fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-                color: "rgba(255,255,255,0.4)",
+                color: "var(--text-muted)",
                 letterSpacing: "0.14em",
               }}
             >
@@ -229,7 +229,7 @@ export default async function CommentatorDetailPage({ params }: Props) {
                     className="w-10 shrink-0 font-display text-sm tabular-nums"
                     style={{
                       fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-                      color: "rgba(255,255,255,0.5)",
+                      color: "var(--text-secondary)",
                     }}
                   >
                     {yr.year}
@@ -239,8 +239,8 @@ export default async function CommentatorDetailPage({ params }: Props) {
                       className="h-6 rounded"
                       style={{
                         width: `${Math.max(pct, 4)}%`,
-                        background: "linear-gradient(90deg, rgba(251,191,36,0.15), rgba(251,191,36,0.35))",
-                        border: "1px solid rgba(251,191,36,0.2)",
+                        background: "linear-gradient(90deg, color-mix(in srgb, var(--dirt) 15%, transparent), color-mix(in srgb, var(--dirt) 35%, transparent))",
+                        border: "1px solid color-mix(in srgb, var(--dirt) 20%, transparent)",
                         transition: "width 0.3s ease",
                       }}
                     />
@@ -249,7 +249,7 @@ export default async function CommentatorDetailPage({ params }: Props) {
                     className="w-12 shrink-0 text-right font-display text-sm tabular-nums"
                     style={{
                       fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-                      color: yr.totalScore > 0 ? "#fbbf24" : "rgba(239,68,68,0.7)",
+                      color: yr.totalScore > 0 ? "var(--dirt)" : "var(--stitch)",
                     }}
                   >
                     {fmtScore(yr.totalScore)}
@@ -264,19 +264,19 @@ export default async function CommentatorDetailPage({ params }: Props) {
         <div
           className="overflow-x-auto rounded-xl"
           style={{
-            background: "#0a1525",
-            border: "1px solid rgba(255,255,255,0.05)",
+            background: "var(--bg-surface)",
+            border: "1px solid var(--border-primary)",
           }}
         >
           <table className="w-full text-sm">
             <thead>
-              <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              <tr style={{ borderBottom: "1px solid var(--border-primary)" }}>
                 {["YEAR", "CENTRAL", "PACIFIC", "TOTAL"].map((col, i) => (
                   <th
                     key={col}
                     className={`px-4 py-3 text-xs font-medium uppercase tracking-widest ${i === 0 ? "text-left" : "text-right"}`}
                     style={{
-                      color: "rgba(255,255,255,0.3)",
+                      color: "var(--text-muted)",
                       letterSpacing: "0.14em",
                       fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
                     }}
@@ -294,8 +294,8 @@ export default async function CommentatorDetailPage({ params }: Props) {
                   <tr
                     key={yr.year}
                     style={{
-                      borderBottom: "1px solid rgba(255,255,255,0.04)",
-                      background: isBest ? "rgba(251,191,36,0.04)" : "transparent",
+                      borderBottom: "1px solid var(--border-primary)",
+                      background: isBest ? "color-mix(in srgb, var(--dirt) 4%, transparent)" : "transparent",
                     }}
                   >
                     <td className="px-4 py-3.5">
@@ -304,7 +304,7 @@ export default async function CommentatorDetailPage({ params }: Props) {
                         className="font-display text-sm transition-colors hover:text-amber-400"
                         style={{
                           fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-                          color: "rgba(255,255,255,0.7)",
+                          color: "var(--text-secondary)",
                         }}
                       >
                         {yr.year}
@@ -317,10 +317,10 @@ export default async function CommentatorDetailPage({ params }: Props) {
                           fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
                           color:
                             yr.centralScore > 0
-                              ? "#fbbf24"
+                              ? "var(--dirt)"
                               : yr.centralScore < 0
-                                ? "rgba(239,68,68,0.7)"
-                                : "rgba(255,255,255,0.3)",
+                                ? "var(--stitch)"
+                                : "var(--text-muted)",
                         }}
                       >
                         {fmtScore(yr.centralScore)}
@@ -333,10 +333,10 @@ export default async function CommentatorDetailPage({ params }: Props) {
                           fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
                           color:
                             yr.pacificScore > 0
-                              ? "#fbbf24"
+                              ? "var(--dirt)"
                               : yr.pacificScore < 0
-                                ? "rgba(239,68,68,0.7)"
-                                : "rgba(255,255,255,0.3)",
+                                ? "var(--stitch)"
+                                : "var(--text-muted)",
                         }}
                       >
                         {fmtScore(yr.pacificScore)}
@@ -348,12 +348,12 @@ export default async function CommentatorDetailPage({ params }: Props) {
                         style={{
                           fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
                           background: isBest
-                            ? "rgba(251,191,36,0.12)"
-                            : "rgba(255,255,255,0.05)",
-                          color: isBest ? "#fbbf24" : "rgba(255,255,255,0.7)",
+                            ? "color-mix(in srgb, var(--dirt) 12%, transparent)"
+                            : "var(--bg-elevated)",
+                          color: isBest ? "var(--dirt)" : "var(--text-secondary)",
                           border: isBest
-                            ? "1px solid rgba(251,191,36,0.25)"
-                            : "1px solid rgba(255,255,255,0.07)",
+                            ? "1px solid color-mix(in srgb, var(--dirt) 25%, transparent)"
+                            : "1px solid var(--border-primary)",
                         }}
                       >
                         {fmtScore(yr.totalScore)}
@@ -366,15 +366,15 @@ export default async function CommentatorDetailPage({ params }: Props) {
               {/* All-time totals row */}
               <tr
                 style={{
-                  borderTop: "2px solid rgba(251,191,36,0.15)",
-                  background: "rgba(251,191,36,0.03)",
+                  borderTop: "2px solid color-mix(in srgb, var(--dirt) 15%, transparent)",
+                  background: "color-mix(in srgb, var(--dirt) 3%, transparent)",
                 }}
               >
                 <td
                   className="px-4 py-3.5 font-display text-sm"
                   style={{
                     fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-                    color: "rgba(251,191,36,0.6)",
+                    color: "color-mix(in srgb, var(--dirt) 60%, transparent)",
                     letterSpacing: "0.1em",
                   }}
                 >
@@ -385,7 +385,7 @@ export default async function CommentatorDetailPage({ params }: Props) {
                     className="font-display tabular-nums text-sm font-bold"
                     style={{
                       fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-                      color: "#fbbf24",
+                      color: "var(--dirt)",
                     }}
                   >
                     {fmtScore(sortedYears.reduce((sum, y) => sum + y.centralScore, 0))}
@@ -396,7 +396,7 @@ export default async function CommentatorDetailPage({ params }: Props) {
                     className="font-display tabular-nums text-sm font-bold"
                     style={{
                       fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-                      color: "#fbbf24",
+                      color: "var(--dirt)",
                     }}
                   >
                     {fmtScore(sortedYears.reduce((sum, y) => sum + y.pacificScore, 0))}
@@ -407,9 +407,9 @@ export default async function CommentatorDetailPage({ params }: Props) {
                     className="inline-block rounded px-3 py-1 font-display tabular-nums text-sm font-bold"
                     style={{
                       fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-                      background: "rgba(251,191,36,0.12)",
-                      color: "#fbbf24",
-                      border: "1px solid rgba(251,191,36,0.25)",
+                      background: "color-mix(in srgb, var(--dirt) 12%, transparent)",
+                      color: "var(--dirt)",
+                      border: "1px solid color-mix(in srgb, var(--dirt) 25%, transparent)",
                     }}
                   >
                     {fmtScore(data.allTimeTotal)}
@@ -426,9 +426,9 @@ export default async function CommentatorDetailPage({ params }: Props) {
             href="/rankings/commentators"
             className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all"
             style={{
-              border: "1px solid rgba(255,255,255,0.1)",
-              background: "rgba(255,255,255,0.03)",
-              color: "rgba(255,255,255,0.6)",
+              border: "1px solid var(--border-primary)",
+              background: "var(--bg-elevated)",
+              color: "var(--text-secondary)",
             }}
           >
             &larr; ランキング一覧へ

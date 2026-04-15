@@ -44,12 +44,12 @@ async function getScoreboard(year: number): Promise<ScoreboardResponse | null> {
 }
 
 const TABLE_STYLE = {
-  background: "#0a1525",
-  border: "1px solid rgba(255,255,255,0.05)",
+  background: "var(--bg-surface)",
+  border: "1px solid var(--border-primary)",
 };
 
 const TH_STYLE = {
-  color: "rgba(255,255,255,0.3)",
+  color: "var(--text-muted)",
   letterSpacing: "0.12em",
 };
 
@@ -103,9 +103,9 @@ export default async function UserDetailPage({
           <div
             className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-lg font-bold"
             style={{
-              background: isLeader ? "rgba(251,191,36,0.12)" : "rgba(255,255,255,0.06)",
-              border: isLeader ? "1px solid rgba(251,191,36,0.4)" : "1px solid rgba(255,255,255,0.1)",
-              color: isLeader ? "#fbbf24" : "rgba(255,255,255,0.6)",
+              background: isLeader ? "rgba(229,57,53,0.12)" : "var(--border-primary)",
+              border: isLeader ? "1px solid rgba(229,57,53,0.4)" : "1px solid var(--text-muted)",
+              color: isLeader ? "var(--stitch)" : "var(--text-secondary)",
               fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
             }}
           >
@@ -117,12 +117,12 @@ export default async function UserDetailPage({
                 fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
                 fontSize: "clamp(1.5rem, 4vw, 2rem)",
                 letterSpacing: "0.08em",
-                color: "rgba(255,255,255,0.9)",
+                color: "var(--text-primary)",
               }}
             >
               {user.name}
             </h1>
-            <p className="mt-0.5 text-sm" style={{ color: "rgba(255,255,255,0.35)" }}>
+            <p className="mt-0.5 text-sm" style={{ color: "var(--text-muted)" }}>
               {year}シーズン予想
             </p>
           </div>
@@ -167,7 +167,7 @@ export default async function UserDetailPage({
             <div className="overflow-x-auto rounded-xl" style={TABLE_STYLE}>
               <table className="w-full text-sm">
                 <thead>
-                  <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                  <tr style={{ borderBottom: "1px solid var(--border-primary)" }}>
                     {["順位", "チーム"].map((col) => (
                       <th
                         key={col}
@@ -183,13 +183,13 @@ export default async function UserDetailPage({
                   {picks.map((pick) => (
                     <tr
                       key={pick.id}
-                      style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
+                      style={{ borderBottom: "1px solid var(--border-primary)" }}
                     >
                       <td
                         className="px-4 py-3 text-sm"
                         style={{
                           fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-                          color: "rgba(251,191,36,0.6)",
+                          color: "rgba(229,57,53,0.6)",
                           letterSpacing: "0.05em",
                         }}
                       >
@@ -223,7 +223,7 @@ export default async function UserDetailPage({
             <div className="overflow-x-auto rounded-xl" style={TABLE_STYLE}>
               <table className="w-full text-sm">
                 <thead>
-                  <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                  <tr style={{ borderBottom: "1px solid var(--border-primary)" }}>
                     {["タイトル", "選手", "チーム"].map((col) => (
                       <th
                         key={col}
@@ -239,23 +239,23 @@ export default async function UserDetailPage({
                   {picks.map((pick) => (
                     <tr
                       key={pick.id}
-                      style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
+                      style={{ borderBottom: "1px solid var(--border-primary)" }}
                     >
                       <td
                         className="px-4 py-3 text-xs font-medium uppercase tracking-wide"
-                        style={{ color: "rgba(255,255,255,0.5)" }}
+                        style={{ color: "var(--text-secondary)" }}
                       >
                         {TITLE_CATEGORY_LABELS[pick.category] ?? pick.category}
                       </td>
                       <td
                         className="px-4 py-3"
-                        style={{ color: "rgba(255,255,255,0.8)" }}
+                        style={{ color: "var(--text-primary)" }}
                       >
                         {pick.playerName}
                       </td>
                       <td
                         className="px-4 py-3 text-sm"
-                        style={{ color: "rgba(255,255,255,0.35)" }}
+                        style={{ color: "var(--text-muted)" }}
                       >
                         {pick.teamName ?? "—"}
                       </td>
@@ -273,14 +273,14 @@ export default async function UserDetailPage({
         <Link
           href={`/standings?year=${year}`}
           className="text-sm transition-colors hover:text-amber-400"
-          style={{ color: "rgba(255,255,255,0.4)" }}
+          style={{ color: "var(--text-secondary)" }}
         >
           ← Standings
         </Link>
         <Link
           href={`/predictions?year=${year}`}
           className="text-sm transition-colors hover:text-amber-400"
-          style={{ color: "rgba(255,255,255,0.4)" }}
+          style={{ color: "var(--text-secondary)" }}
         >
           Predictions Compare
         </Link>
@@ -304,24 +304,24 @@ function ScoreCard({
     <div
       className="relative overflow-hidden rounded-xl p-4"
       style={{
-        background: highlight ? "rgba(251,191,36,0.06)" : "#0a1525",
+        background: highlight ? "rgba(229,57,53,0.06)" : "var(--bg-surface)",
         border: highlight
-          ? "1px solid rgba(251,191,36,0.2)"
-          : "1px solid rgba(255,255,255,0.05)",
+          ? "1px solid rgba(229,57,53,0.2)"
+          : "1px solid var(--border-primary)",
       }}
     >
       {highlight && (
         <div
           className="absolute left-0 top-0 h-full w-[3px]"
           style={{
-            background: "linear-gradient(to bottom, #fbbf24, rgba(251,191,36,0.2))",
+            background: "linear-gradient(to bottom, var(--stitch), rgba(229,57,53,0.2))",
           }}
         />
       )}
       <p
         className="text-xs font-medium uppercase"
         style={{
-          color: highlight ? "rgba(251,191,36,0.6)" : "rgba(255,255,255,0.3)",
+          color: highlight ? "rgba(229,57,53,0.6)" : "var(--text-muted)",
           letterSpacing: "0.14em",
         }}
       >
@@ -333,14 +333,14 @@ function ScoreCard({
           fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
           fontSize: "2rem",
           letterSpacing: "0.05em",
-          color: highlight ? "#fbbf24" : "rgba(255,255,255,0.85)",
+          color: highlight ? "var(--stitch)" : "var(--text-primary)",
         }}
       >
         {value}
         {sub && (
           <span
             className="ml-1 text-base"
-            style={{ color: "rgba(255,255,255,0.3)" }}
+            style={{ color: "var(--text-muted)" }}
           >
             {sub}
           </span>
@@ -358,14 +358,14 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
           fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
           fontSize: "1.1rem",
           letterSpacing: "0.1em",
-          color: "rgba(255,255,255,0.7)",
+          color: "var(--text-secondary)",
         }}
       >
         {children}
       </span>
       <div
         className="h-px flex-1"
-        style={{ background: "rgba(255,255,255,0.06)" }}
+        style={{ background: "var(--border-primary)" }}
       />
     </div>
   );

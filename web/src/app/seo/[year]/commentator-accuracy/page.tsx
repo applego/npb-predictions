@@ -9,9 +9,11 @@ import { InternalLinks } from "@/components/InternalLinks";
 import {
   getTopCommentatorsForYear,
   AVAILABLE_YEARS,
-  SOURCE_BADGE_COLORS,
-  type SourceBadge,
 } from "@/lib/commentator-queries";
+import {
+  SOURCE_BADGE_CONFIG as SOURCE_BADGE_COLORS,
+  type SourceBadge,
+} from "@/lib/commentator-types";
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://npb-predictions.vercel.app";

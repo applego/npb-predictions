@@ -1,6 +1,22 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+
+// --- Admin UID check ---
+
+const ADMIN_UIDS = (process.env.NEXT_PUBLIC_ADMIN_UIDS ?? "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+function useIsAdmin(): { isAdmin: boolean; loading: boolean } {
+  const { firebaseUser, loading } = useAuth();
+  if (loading) return { isAdmin: false, loading: true };
+  if (!firebaseUser) return { isAdmin: false, loading: false };
+  const isAdmin = ADMIN_UIDS.includes(firebaseUser.uid);
+  return { isAdmin, loading: false };
+}
 
 // --- Types ---
 
@@ -561,65 +577,82 @@ function ResultDisplay({ result }: { result: ApiResult | null }) {
 
 // --- Page ---
 
-const ADMIN_SECRET = process.env.NEXT_PUBLIC_ADMIN_SECRET || "npb-admin-2026";
-
 export default function AdminPage() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [secretInput, setSecretInput] = useState("");
-  const [authError, setAuthError] = useState("");
+  const { firebaseUser, loading: authLoading, signIn } = useAuth();
+  const { isAdmin, loading: adminLoading } = useIsAdmin();
 
-  useEffect(() => {
-    // Check if already authenticated via localStorage
-    const stored = localStorage.getItem("npb-admin-auth");
-    if (stored === ADMIN_SECRET) {
-      setIsAuthenticated(true);
-    }
-  }, []);
-
-  function handleAuth() {
-    if (secretInput === ADMIN_SECRET) {
-      localStorage.setItem("npb-admin-auth", secretInput);
-      setIsAuthenticated(true);
-      setAuthError("");
-    } else {
-      setAuthError("無効なシークレットキーです");
-    }
-  }
-
-  function handleLogout() {
-    localStorage.removeItem("npb-admin-auth");
-    setIsAuthenticated(false);
-    setSecretInput("");
-  }
-
-  if (!isAuthenticated) {
+  if (authLoading || adminLoading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="w-full max-w-md space-y-4 rounded-lg border bg-white p-8 shadow-lg">
-          <h1 className="text-2xl font-bold">Admin 認証</h1>
-          <p className="text-sm text-gray-600">
-            管理画面にアクセスするにはシークレットキーを入力してください。
-          </p>
-          <div>
-            <label className="mb-2 block text-sm font-medium">シークレットキー</label>
-            <input
-              type="password"
-              value={secretInput}
-              onChange={(e) => setSecretInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleAuth()}
-              placeholder="シークレットキーを入力"
-              className="w-full rounded border px-3 py-2"
-            />
-          </div>
-          {authError && (
-            <p className="text-sm text-red-600">{authError}</p>
-          )}
-          <button
-            onClick={handleAuth}
-            className="w-full rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+        <div
+          className="rounded-xl p-10 text-center"
+          style={{ background: "var(--bg-surface)", border: "1px solid var(--border-primary)" }}
+        >
+          <p style={{ color: "var(--text-secondary)" }}>読み込み中...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!firebaseUser) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div
+          className="w-full max-w-md space-y-4 rounded-xl p-8 text-center"
+          style={{ background: "var(--bg-surface)", border: "1px solid var(--border-primary)" }}
+        >
+          <h1
+            className="text-2xl"
+            style={{
+              fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
+              color: "var(--text-primary)",
+              letterSpacing: "0.08em",
+            }}
           >
-            認証
+            ADMIN
+          </h1>
+          <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+            管理画面にアクセスするにはログインしてください。
+          </p>
+          <button
+            onClick={signIn}
+            className="rounded px-5 py-2.5 text-sm font-medium transition-all"
+            style={{
+              background: "rgba(229,57,53,0.12)",
+              border: "1px solid rgba(229,57,53,0.25)",
+              color: "var(--stitch)",
+            }}
+          >
+            Googleでログイン
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div
+          className="w-full max-w-md space-y-3 rounded-xl p-8 text-center"
+          style={{ background: "var(--bg-surface)", border: "1px solid rgba(239,68,68,0.15)" }}
+        >
+          <h1
+            className="text-2xl"
+            style={{
+              fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
+              color: "rgba(239,68,68,0.8)",
+              letterSpacing: "0.08em",
+            }}
+          >
+            ACCESS DENIED
+          </h1>
+          <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+            このアカウントにはAdmin権限がありません。
+          </p>
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+            UID: {firebaseUser.uid}
+          </p>
         </div>
       </div>
     );
@@ -628,13 +661,19 @@ export default function AdminPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Admin</h1>
-        <button
-          onClick={handleLogout}
-          className="rounded border border-gray-300 px-3 py-1 text-sm hover:bg-gray-50"
+        <h1
+          className="text-2xl"
+          style={{
+            fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
+            color: "var(--text-primary)",
+            letterSpacing: "0.08em",
+          }}
         >
-          ログアウト
-        </button>
+          ADMIN
+        </h1>
+        <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+          {firebaseUser.email}
+        </span>
       </div>
       <SeasonManager />
       <UserManager />

@@ -1,48 +1,19 @@
 // Database queries for commentator detail pages
+// Computes scores directly from ranking_picks + actual_team_standings
+// (no dependency on scoreSnapshots which has no data)
 import { getDb } from "@/db";
 import {
   users,
   seasons,
-  scoreSnapshots,
+  predictions,
+  rankingPicks,
+  actualTeamStandings,
 } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
+import { calcRankingPointForTeam } from "@/lib/scoring";
 
 // Available years with prediction data
-export const AVAILABLE_YEARS = [2023, 2024, 2025, 2026] as const;
-
-// Source badge type and colors
-export type SourceBadge = "YouTube" | "新聞" | "テレビ" | "ラジオ" | "雑誌";
-
-export const SOURCE_BADGE_COLORS: Record<
-  SourceBadge,
-  { bg: string; border: string; text: string }
-> = {
-  YouTube: {
-    bg: "rgba(239,68,68,0.08)",
-    border: "rgba(239,68,68,0.25)",
-    text: "#fca5a5",
-  },
-  新聞: {
-    bg: "rgba(148,163,184,0.08)",
-    border: "rgba(148,163,184,0.25)",
-    text: "#94a3b8",
-  },
-  テレビ: {
-    bg: "rgba(56,189,248,0.08)",
-    border: "rgba(56,189,248,0.25)",
-    text: "#7dd3fc",
-  },
-  ラジオ: {
-    bg: "rgba(168,85,247,0.08)",
-    border: "rgba(168,85,247,0.25)",
-    text: "#c4b5fd",
-  },
-  雑誌: {
-    bg: "rgba(52,211,153,0.08)",
-    border: "rgba(52,211,153,0.25)",
-    text: "#6ee7b7",
-  },
-};
+export const AVAILABLE_YEARS = [2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026] as const;
 
 export interface CommentatorYearScore {
   year: number;
@@ -70,7 +41,73 @@ export interface TopCommentator {
 }
 
 /**
- * Get commentator detail by slug with all-year score history
+ * Compute per-league scores for a single user's prediction in a season.
+ * Joins ranking_picks with actual_team_standings to calculate scores
+ * using calcRankingPointForTeam.
+ */
+async function computeScoresForPrediction(
+  db: ReturnType<typeof getDb>,
+  predictionId: number,
+  seasonId: number,
+): Promise<{ centralScore: number; pacificScore: number; totalScore: number }> {
+  // Fetch actual standings for this season (latest snapshot per league+rank)
+  const allStandings = await db
+    .select()
+    .from(actualTeamStandings)
+    .where(eq(actualTeamStandings.seasonId, seasonId))
+    .orderBy(desc(actualTeamStandings.snapshotDate));
+
+  // Deduplicate: keep latest snapshot per league:rank
+  const standingsMap = new Map<string, { league: string; rank: number; teamName: string }>();
+  for (const row of allStandings) {
+    const key = `${row.league}:${row.rank}`;
+    if (!standingsMap.has(key)) {
+      standingsMap.set(key, { league: row.league, rank: row.rank, teamName: row.teamName });
+    }
+  }
+
+  // Build rank lookup: league -> teamName -> actualRank
+  const centralRankMap = new Map<string, number>();
+  const pacificRankMap = new Map<string, number>();
+  for (const s of standingsMap.values()) {
+    if (s.league === "central") centralRankMap.set(s.teamName, s.rank);
+    if (s.league === "pacific") pacificRankMap.set(s.teamName, s.rank);
+  }
+
+  const hasActual = centralRankMap.size > 0 || pacificRankMap.size > 0;
+
+  // Fetch ranking picks for this prediction
+  const picks = await db
+    .select()
+    .from(rankingPicks)
+    .where(eq(rankingPicks.predictionId, predictionId));
+
+  let centralScore = 0;
+  let pacificScore = 0;
+
+  for (const pick of picks) {
+    const rankMap = pick.league === "central" ? centralRankMap : pacificRankMap;
+    const actualRank = rankMap.get(pick.teamName);
+    if (hasActual && actualRank !== undefined) {
+      const score = calcRankingPointForTeam(pick.rank, actualRank);
+      if (pick.league === "central") {
+        centralScore += score;
+      } else {
+        pacificScore += score;
+      }
+    }
+  }
+
+  return {
+    centralScore,
+    pacificScore,
+    totalScore: centralScore + pacificScore,
+  };
+}
+
+/**
+ * Get commentator detail by slug with all-year score history.
+ * Scores are computed on-the-fly from ranking_picks + actual_team_standings.
  */
 export async function getCommentatorBySlug(
   slug: string
@@ -85,41 +122,45 @@ export async function getCommentatorBySlug(
 
   if (!user) return null;
 
-  // 2. Fetch all score snapshots for this user across all seasons
-  const scoresWithSeasons = await db
+  // 2. Find all predictions for this user across all seasons
+  const userPreds = await db
     .select({
+      predictionId: predictions.id,
+      seasonId: predictions.seasonId,
       year: seasons.year,
-      rankingScore: scoreSnapshots.rankingScore,
-      titleScore: scoreSnapshots.titleScore,
-      totalScore: scoreSnapshots.totalScore,
-      snapshotDate: scoreSnapshots.snapshotDate,
     })
-    .from(scoreSnapshots)
-    .innerJoin(seasons, eq(scoreSnapshots.seasonId, seasons.id))
-    .where(eq(scoreSnapshots.userId, user.id))
-    .orderBy(desc(scoreSnapshots.snapshotDate));
+    .from(predictions)
+    .innerJoin(seasons, eq(predictions.seasonId, seasons.id))
+    .where(eq(predictions.userId, user.id));
 
-  // 3. Deduplicate: keep only latest snapshot per year
-  const seenYears = new Set<number>();
-  const latestPerYear = scoresWithSeasons.filter((row) => {
-    if (seenYears.has(row.year)) return false;
-    seenYears.add(row.year);
-    return true;
-  });
+  if (userPreds.length === 0) {
+    return {
+      userId: user.id,
+      name: user.name,
+      slug: user.slug,
+      source: user.source,
+      years: [],
+      allTimeTotal: 0,
+    };
+  }
 
-  // 4. Build year-by-year scores
-  // Note: we only have totalScore, rankingScore, titleScore from DB
-  // For per-league breakdown (centralScore, pacificScore), we'd need to re-calculate
-  // For now, we'll use rankingScore as central and titleScore as pacific (placeholder)
-  // TODO: Implement proper per-league score calculation
-  const years: CommentatorYearScore[] = latestPerYear.map((row) => ({
-    year: row.year,
-    centralScore: Math.round(row.rankingScore / 2), // Placeholder: split equally
-    pacificScore: Math.round(row.rankingScore / 2), // Placeholder: split equally
-    totalScore: row.totalScore,
-  }));
+  // 3. Compute scores for each year
+  const years: CommentatorYearScore[] = [];
 
-  // 5. Calculate all-time total
+  for (const pred of userPreds) {
+    const scores = await computeScoresForPrediction(db, pred.predictionId, pred.seasonId);
+    years.push({
+      year: pred.year,
+      centralScore: scores.centralScore,
+      pacificScore: scores.pacificScore,
+      totalScore: scores.totalScore,
+    });
+  }
+
+  // Sort by year
+  years.sort((a, b) => a.year - b.year);
+
+  // 4. Calculate all-time total
   const allTimeTotal = years.reduce((sum, y) => sum + y.totalScore, 0);
 
   return {
@@ -147,7 +188,8 @@ export async function getAllCommentatorSlugs(): Promise<string[]> {
 }
 
 /**
- * Get top commentators for a specific year, ordered by total score
+ * Get top commentators for a specific year, ordered by total score.
+ * Scores are computed on-the-fly from ranking_picks + actual_team_standings.
  */
 export async function getTopCommentatorsForYear(
   year: number,
@@ -163,51 +205,90 @@ export async function getTopCommentatorsForYear(
 
   if (!season) return [];
 
-  // 2. Get latest score snapshots for all commentators in this season
-  const scoresWithUsers = await db
-    .select({
-      userId: users.id,
-      name: users.name,
-      slug: users.slug,
-      source: users.source,
-      rankingScore: scoreSnapshots.rankingScore,
-      titleScore: scoreSnapshots.titleScore,
-      totalScore: scoreSnapshots.totalScore,
-      snapshotDate: scoreSnapshots.snapshotDate,
-    })
-    .from(scoreSnapshots)
-    .innerJoin(users, eq(scoreSnapshots.userId, users.id))
-    .innerJoin(seasons, eq(scoreSnapshots.seasonId, seasons.id))
-    .where(
-      and(
-        eq(scoreSnapshots.seasonId, season.id),
-        eq(users.role, "commentator")
-      )
-    )
-    .orderBy(desc(scoreSnapshots.snapshotDate), desc(scoreSnapshots.totalScore));
+  // 2. Fetch actual standings for this season
+  const allStandings = await db
+    .select()
+    .from(actualTeamStandings)
+    .where(eq(actualTeamStandings.seasonId, season.id))
+    .orderBy(desc(actualTeamStandings.snapshotDate));
 
-  // 3. Deduplicate: keep only latest snapshot per user
-  const seenUsers = new Set<number>();
-  const latestPerUser = scoresWithUsers.filter((row) => {
-    if (seenUsers.has(row.userId)) return false;
-    seenUsers.add(row.userId);
-    return true;
+  const standingsMap = new Map<string, { league: string; rank: number; teamName: string }>();
+  for (const row of allStandings) {
+    const key = `${row.league}:${row.rank}`;
+    if (!standingsMap.has(key)) {
+      standingsMap.set(key, { league: row.league, rank: row.rank, teamName: row.teamName });
+    }
+  }
+
+  const centralRankMap = new Map<string, number>();
+  const pacificRankMap = new Map<string, number>();
+  for (const s of standingsMap.values()) {
+    if (s.league === "central") centralRankMap.set(s.teamName, s.rank);
+    if (s.league === "pacific") pacificRankMap.set(s.teamName, s.rank);
+  }
+
+  const hasActual = centralRankMap.size > 0 || pacificRankMap.size > 0;
+
+  // 3. Fetch all commentator predictions for this season
+  const allCommentators = await db
+    .select()
+    .from(users)
+    .where(eq(users.role, "commentator"));
+  const userMap = new Map(allCommentators.map((u) => [u.id, u]));
+
+  const seasonPreds = await db
+    .select()
+    .from(predictions)
+    .where(eq(predictions.seasonId, season.id));
+  const commentatorPreds = seasonPreds.filter((p) => userMap.has(p.userId));
+
+  if (commentatorPreds.length === 0) return [];
+
+  // 4. Fetch all ranking picks for these predictions
+  const allPicks = await db.select().from(rankingPicks);
+  const predIdSet = new Set(commentatorPreds.map((p) => p.id));
+  const relevantPicks = allPicks.filter((rp) => predIdSet.has(rp.predictionId));
+
+  // Group picks by predictionId
+  const picksByPred = new Map<number, typeof relevantPicks>();
+  for (const rp of relevantPicks) {
+    const arr = picksByPred.get(rp.predictionId) ?? [];
+    arr.push(rp);
+    picksByPred.set(rp.predictionId, arr);
+  }
+
+  // 5. Compute scores for each commentator
+  const results: TopCommentator[] = commentatorPreds.map((pred) => {
+    const user = userMap.get(pred.userId)!;
+    const picks = picksByPred.get(pred.id) ?? [];
+
+    let centralScore = 0;
+    let pacificScore = 0;
+
+    for (const pick of picks) {
+      const rankMap = pick.league === "central" ? centralRankMap : pacificRankMap;
+      const actualRank = rankMap.get(pick.teamName);
+      if (hasActual && actualRank !== undefined) {
+        const score = calcRankingPointForTeam(pick.rank, actualRank);
+        if (pick.league === "central") {
+          centralScore += score;
+        } else {
+          pacificScore += score;
+        }
+      }
+    }
+
+    return {
+      name: user.name,
+      slug: user.slug,
+      source: user.source,
+      centralScore,
+      pacificScore,
+      totalScore: centralScore + pacificScore,
+    };
   });
 
-  // 4. Sort by total score descending and limit
-  const topScorers = latestPerUser
-    .sort((a, b) => b.totalScore - a.totalScore)
-    .slice(0, limit);
-
-  // 5. Build result with central/pacific split
-  // TODO: Calculate actual per-league scores from rankingPicks + actualTeamStandings
-  // For now, use placeholder: split rankingScore equally
-  return topScorers.map((row) => ({
-    name: row.name,
-    slug: row.slug,
-    source: row.source,
-    centralScore: Math.round(row.rankingScore / 2),
-    pacificScore: Math.round(row.rankingScore / 2),
-    totalScore: row.totalScore,
-  }));
+  // Sort by total score descending and limit
+  results.sort((a, b) => b.totalScore - a.totalScore);
+  return results.slice(0, limit);
 }

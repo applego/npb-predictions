@@ -2,23 +2,15 @@ export const runtime = "edge";
 
 import { NextResponse } from "next/server";
 import { getDb } from "@/db";
-import {
-  users,
-  seasons,
-  predictions,
-  rankingPicks,
-  scoreSnapshots,
-  actualTeamStandings,
-} from "@/db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { users, seasons, predictions, rankingPicks, actualTeamStandings } from "@/db/schema";
+import { eq, desc } from "drizzle-orm";
 import { calcRankingPointForTeam } from "@/lib/scoring";
 
 /**
  * GET /api/rankings/commentators?year=2025&league=all
  *
- * Returns commentator rankings with score breakdowns and prediction details.
- * - year: 2023 | 2024 | 2025 (required)
- * - league: central | pacific | all (default: all)
+ * Computes commentator rankings on the fly from ranking_picks + actualTeamStandings.
+ * No dependency on pre-computed scoreSnapshots.
  */
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -26,10 +18,7 @@ export async function GET(req: Request) {
   const leagueParam = searchParams.get("league") ?? "all";
 
   if (!yearParam) {
-    return NextResponse.json(
-      { error: "year query parameter is required" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "year is required" }, { status: 400 });
   }
 
   const year = parseInt(yearParam, 10);
@@ -37,173 +26,88 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Invalid year" }, { status: 400 });
   }
 
-  if (!["all", "central", "pacific"].includes(leagueParam)) {
-    return NextResponse.json(
-      { error: "league must be central, pacific, or all" },
-      { status: 400 }
-    );
-  }
-
   const db = getDb();
 
-  // 1. Find the season
-  const [season] = await db
-    .select()
-    .from(seasons)
-    .where(eq(seasons.year, year));
-
+  // 1. Find season
+  const [season] = await db.select().from(seasons).where(eq(seasons.year, year));
   if (!season) {
     return NextResponse.json({ error: "Season not found" }, { status: 404 });
   }
 
-  // 2. Fetch commentator users with their latest score snapshots
-  const commentatorScores = await db
-    .select({
-      userId: users.id,
-      userName: users.name,
-      userSlug: users.slug,
-      userSource: users.source,
-      userVariant: users.variant,
-      rankingScore: scoreSnapshots.rankingScore,
-      titleScore: scoreSnapshots.titleScore,
-      totalScore: scoreSnapshots.totalScore,
-      snapshotDate: scoreSnapshots.snapshotDate,
-    })
-    .from(users)
-    .innerJoin(
-      scoreSnapshots,
-      and(
-        eq(scoreSnapshots.userId, users.id),
-        eq(scoreSnapshots.seasonId, season.id)
-      )
-    )
-    .where(eq(users.role, "commentator"))
-    .orderBy(desc(scoreSnapshots.totalScore));
-
-  // Deduplicate: keep only latest snapshot per user
-  const seenUsers = new Set<number>();
-  const latestScores = commentatorScores.filter((row) => {
-    if (seenUsers.has(row.userId)) return false;
-    seenUsers.add(row.userId);
-    return true;
-  });
-
-  // 3. Fetch actual standings for this season (latest final or most recent)
+  // 2. Fetch actual standings
   const allStandings = await db
     .select()
     .from(actualTeamStandings)
     .where(eq(actualTeamStandings.seasonId, season.id))
     .orderBy(desc(actualTeamStandings.snapshotDate));
 
-  // Deduplicate: keep only the latest snapshot per league+rank
-  const standingsMap = new Map<
-    string,
-    { league: string; rank: number; teamName: string }
-  >();
+  const standingsMap = new Map<string, { league: string; rank: number; teamName: string }>();
   for (const row of allStandings) {
     const key = `${row.league}:${row.rank}`;
     if (!standingsMap.has(key)) {
-      standingsMap.set(key, {
-        league: row.league,
-        rank: row.rank,
-        teamName: row.teamName,
-      });
+      standingsMap.set(key, { league: row.league, rank: row.rank, teamName: row.teamName });
     }
   }
 
-  const actualCentral = Array.from(standingsMap.values())
-    .filter((s) => s.league === "central")
-    .sort((a, b) => a.rank - b.rank);
-  const actualPacific = Array.from(standingsMap.values())
-    .filter((s) => s.league === "pacific")
-    .sort((a, b) => a.rank - b.rank);
+  const actualCentral = [...standingsMap.values()].filter((s) => s.league === "central").sort((a, b) => a.rank - b.rank);
+  const actualPacific = [...standingsMap.values()].filter((s) => s.league === "pacific").sort((a, b) => a.rank - b.rank);
 
-  // 4. For each commentator, fetch their ranking picks and compute per-league scores
-  const userIds = latestScores.map((s) => s.userId);
+  // Build rank lookup: league -> teamName -> actualRank
+  const centralRankMap = new Map(actualCentral.map((s) => [s.teamName, s.rank]));
+  const pacificRankMap = new Map(actualPacific.map((s) => [s.teamName, s.rank]));
 
-  // Fetch all predictions for these users in this season
-  const allPredictions = userIds.length > 0
-    ? await db
-        .select()
-        .from(predictions)
-        .where(eq(predictions.seasonId, season.id))
-    : [];
+  const hasActual = actualCentral.length > 0 || actualPacific.length > 0;
 
-  // Filter to only commentator predictions
-  const commentatorPredictions = allPredictions.filter((p) =>
-    userIds.includes(p.userId)
-  );
+  // 3. Fetch all commentator predictions for this season
+  const allUsers = await db.select().from(users).where(eq(users.role, "commentator"));
+  const userMap = new Map(allUsers.map((u) => [u.id, u]));
 
-  // Fetch all ranking picks for those predictions
-  const predictionIds = commentatorPredictions.map((p) => p.id);
-  const allRankingPicks =
-    predictionIds.length > 0
-      ? await db.select().from(rankingPicks)
-      : [];
+  const seasonPreds = await db.select().from(predictions).where(eq(predictions.seasonId, season.id));
+  const commentatorPreds = seasonPreds.filter((p) => userMap.has(p.userId));
 
-  // Filter to only relevant prediction IDs
-  const relevantPicks = allRankingPicks.filter((rp) =>
-    predictionIds.includes(rp.predictionId)
-  );
-
-  // Build a lookup: userId -> prediction picks
-  const predByUser = new Map<number, number>(); // userId -> predictionId
-  for (const p of commentatorPredictions) {
-    predByUser.set(p.userId, p.id);
-  }
-
-  const picksByPrediction = new Map<
-    number,
-    Array<{ league: string; rank: number; teamName: string }>
-  >();
-  for (const rp of relevantPicks) {
-    const existing = picksByPrediction.get(rp.predictionId) ?? [];
-    existing.push({
-      league: rp.league,
-      rank: rp.rank,
-      teamName: rp.teamName,
+  if (commentatorPreds.length === 0) {
+    return NextResponse.json({
+      season: { id: season.id, year: season.year },
+      league: leagueParam,
+      actualCentral,
+      actualPacific,
+      totalCommentators: 0,
+      commentators: [],
     });
-    picksByPrediction.set(rp.predictionId, existing);
   }
 
-  // Build actual rank lookup for score calculation: teamName -> actualRank per league
-  const centralRankMap = new Map<string, number>();
-  for (const s of actualCentral) {
-    centralRankMap.set(s.teamName, s.rank);
+  // 4. Fetch all ranking picks
+  const allPicks = await db.select().from(rankingPicks);
+  const predIdSet = new Set(commentatorPreds.map((p) => p.id));
+  const relevantPicks = allPicks.filter((rp) => predIdSet.has(rp.predictionId));
+
+  // Group picks by predictionId
+  const picksByPred = new Map<number, typeof relevantPicks>();
+  for (const rp of relevantPicks) {
+    const arr = picksByPred.get(rp.predictionId) ?? [];
+    arr.push(rp);
+    picksByPred.set(rp.predictionId, arr);
   }
-  const pacificRankMap = new Map<string, number>();
-  for (const s of actualPacific) {
-    pacificRankMap.set(s.teamName, s.rank);
-  }
 
-  // 5. Build response
-  const commentators = latestScores.map((row, idx) => {
-    const predId = predByUser.get(row.userId);
-    const picks = predId ? picksByPrediction.get(predId) ?? [] : [];
+  // 5. Compute scores for each commentator
+  const commentators = commentatorPreds.map((pred) => {
+    const user = userMap.get(pred.userId)!;
+    const picks = picksByPred.get(pred.id) ?? [];
 
-    const centralPicks = picks
-      .filter((p) => p.league === "central")
-      .sort((a, b) => a.rank - b.rank);
-    const pacificPicks = picks
-      .filter((p) => p.league === "pacific")
-      .sort((a, b) => a.rank - b.rank);
+    const centralPicks = picks.filter((p) => p.league === "central").sort((a, b) => a.rank - b.rank);
+    const pacificPicks = picks.filter((p) => p.league === "pacific").sort((a, b) => a.rank - b.rank);
 
-    // Compute per-league scores
     let centralScore = 0;
     let pacificScore = 0;
 
     const centralDetails = centralPicks.map((pick) => {
       const actualRank = centralRankMap.get(pick.teamName);
-      const score =
-        actualRank !== undefined
-          ? calcRankingPointForTeam(pick.rank, actualRank)
-          : 0;
+      const score = hasActual && actualRank !== undefined ? calcRankingPointForTeam(pick.rank, actualRank) : 0;
       centralScore += score;
       return {
         rank: pick.rank,
         predictedTeam: pick.teamName,
-        actualTeam:
-          actualCentral.find((a) => a.rank === pick.rank)?.teamName ?? "",
+        actualTeam: actualCentral.find((a) => a.rank === pick.rank)?.teamName ?? "",
         actualRank: actualRank ?? null,
         diff: actualRank !== undefined ? Math.abs(pick.rank - actualRank) : null,
         score,
@@ -212,55 +116,44 @@ export async function GET(req: Request) {
 
     const pacificDetails = pacificPicks.map((pick) => {
       const actualRank = pacificRankMap.get(pick.teamName);
-      const score =
-        actualRank !== undefined
-          ? calcRankingPointForTeam(pick.rank, actualRank)
-          : 0;
+      const score = hasActual && actualRank !== undefined ? calcRankingPointForTeam(pick.rank, actualRank) : 0;
       pacificScore += score;
       return {
         rank: pick.rank,
         predictedTeam: pick.teamName,
-        actualTeam:
-          actualPacific.find((a) => a.rank === pick.rank)?.teamName ?? "",
+        actualTeam: actualPacific.find((a) => a.rank === pick.rank)?.teamName ?? "",
         actualRank: actualRank ?? null,
         diff: actualRank !== undefined ? Math.abs(pick.rank - actualRank) : null,
         score,
       };
     });
 
-    // Determine effective total for league filter
-    let effectiveTotal = row.totalScore;
-    if (leagueParam === "central") {
-      effectiveTotal = centralScore;
-    } else if (leagueParam === "pacific") {
-      effectiveTotal = pacificScore;
-    }
+    const totalScore = centralScore + pacificScore;
+    let effectiveTotal = totalScore;
+    if (leagueParam === "central") effectiveTotal = centralScore;
+    if (leagueParam === "pacific") effectiveTotal = pacificScore;
 
     return {
-      userId: row.userId,
-      name: row.userName,
-      slug: row.userSlug,
-      source: row.userSource,
-      variant: row.userVariant,
+      userId: user.id,
+      name: user.name,
+      slug: user.slug,
+      source: user.source,
+      variant: user.variant,
       centralScore,
       pacificScore,
-      rankingScore: row.rankingScore,
-      titleScore: row.titleScore,
-      totalScore: row.totalScore,
+      rankingScore: totalScore,
+      titleScore: 0,
+      totalScore,
       effectiveTotal,
       centralDetails,
       pacificDetails,
     };
   });
 
-  // Re-sort by effectiveTotal for the chosen league filter
+  // Sort by effectiveTotal descending
   commentators.sort((a, b) => b.effectiveTotal - a.effectiveTotal);
 
-  // Assign ranks after sorting
-  const ranked = commentators.map((c, idx) => ({
-    ...c,
-    rank: idx + 1,
-  }));
+  const ranked = commentators.map((c, idx) => ({ ...c, rank: idx + 1 }));
 
   return NextResponse.json({
     season: { id: season.id, year: season.year },

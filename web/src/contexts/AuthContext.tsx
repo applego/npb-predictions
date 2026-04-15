@@ -27,6 +27,11 @@ export interface AppUser {
   firebaseUid: string;
 }
 
+const ADMIN_UIDS = (process.env.NEXT_PUBLIC_ADMIN_UIDS ?? "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
 interface AuthContextValue {
   /** Firebase user (null = not signed in) */
   firebaseUser: FirebaseUser | null;
@@ -34,6 +39,8 @@ interface AuthContextValue {
   appUser: AppUser | null;
   /** True while checking initial auth state */
   loading: boolean;
+  /** True if the current user is an admin */
+  isAdmin: boolean;
   signIn: () => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -42,6 +49,7 @@ const AuthContext = createContext<AuthContextValue>({
   firebaseUser: null,
   appUser: null,
   loading: true,
+  isAdmin: false,
   signIn: async () => {},
   signOut: async () => {},
 });
@@ -112,9 +120,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAppUser(null);
   }, []);
 
+  const isAdmin = !!firebaseUser && ADMIN_UIDS.includes(firebaseUser.uid);
+
   return (
     <AuthContext.Provider
-      value={{ firebaseUser, appUser, loading, signIn, signOut }}
+      value={{ firebaseUser, appUser, loading, isAdmin, signIn, signOut }}
     >
       {children}
     </AuthContext.Provider>

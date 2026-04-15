@@ -3,6 +3,7 @@ export const runtime = "edge";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { NewsClient } from "./NewsClient";
+import { generateNewsFeed } from "@/lib/news-feed";
 
 export const metadata: Metadata = {
   title: "NEWS | ニュース・アクティビティ",
@@ -16,33 +17,8 @@ export const metadata: Metadata = {
   alternates: { canonical: "/news" },
 };
 
-interface NewsItem {
-  id: string;
-  type: "hit" | "ranking" | "prediction" | "spotlight";
-  title: string;
-  body: string;
-  commentator?: string;
-  year?: number;
-  timestamp: number;
-  icon: string;
-}
-
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://npb-predictions.pages.dev";
-
-async function getNews(): Promise<NewsItem[]> {
-  try {
-    const res = await fetch(`${SITE_URL}/api/news?limit=50`, {
-      cache: "no-store",
-    });
-    if (!res.ok) return [];
-    return res.json() as Promise<NewsItem[]>;
-  } catch {
-    return [];
-  }
-}
-
 export default async function NewsPage() {
-  const news = await getNews();
+  const news = await generateNewsFeed(100);
 
   return (
     <div className="space-y-6">
@@ -56,17 +32,17 @@ export default async function NewsPage() {
                 "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
               fontSize: "clamp(1.75rem, 5vw, 2.75rem)",
               letterSpacing: "0.08em",
-              color: "rgba(255,255,255,0.9)",
+              color: "var(--text-primary)",
             }}
           >
-            <span className="animate-amber-glow" style={{ color: "#fbbf24" }}>
+            <span className="animate-amber-glow" style={{ color: "var(--stitch)" }}>
               NEWS
             </span>{" "}
             FEED
           </h1>
           <p
             className="mt-1 text-sm"
-            style={{ color: "rgba(255,255,255,0.35)" }}
+            style={{ color: "var(--text-muted)" }}
           >
             的中速報・ランキング変動・新規予想・注目情報
           </p>
@@ -81,7 +57,7 @@ export default async function NewsPage() {
             letterSpacing: "0.12em",
             border: "1px solid rgba(255,255,255,0.08)",
             background: "rgba(255,255,255,0.03)",
-            color: "rgba(255,255,255,0.4)",
+            color: "var(--text-secondary)",
           }}
         >
           HOME

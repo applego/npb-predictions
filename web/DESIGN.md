@@ -1,256 +1,270 @@
 # NPB Predictions — Design System
 
-> Auto-generated from design tokens. Last updated: 2026-04-13
+> Last updated: 2026-04-14 — Light theme: Baseball + Expo/HashiCorp clean
 
-## 1. Visual Theme & Atmosphere
+## 1. Design Philosophy
 
-Stadium scoreboard aesthetic with night-game atmosphere. Dark navy backgrounds (`#0a1525`) combined with amber neon glow (`rgba(251, 191, 36, *)`) evoke lit scoreboards under floodlights. Condensed display typography (Bebas Neue) for headers contrasts with clean Japanese sans-serif (Noto Sans JP) for body text. Always-dark theme — no light mode. Subtle scoreboard flicker and ambient glow animations reinforce the stadium ambiance.
+**Expo/HashiCorp の白ベースクリーン構造** + **野球ボールそのもの**
 
-## 2. Color Palette & Roles
+- 白い革 + 赤い縫い目 = 野球ボールの配色をそのままUIに
+- Expo: 白背景、大きな余白、鮮明なコントラスト、モダンで軽快
+- 方針: 「データを見るための道具」— 機能美重視、装飾は野球モチーフに限定
 
-### Primary Colors
-| Token | Value | Role |
-|-------|-------|------|
-| Amber glow | `rgba(251, 191, 36, 0.4)` ~ `rgba(251, 191, 36, 0.9)` | Primary accent used in text shadows, box shadows, borders (animated) |
+---
 
-### Background & Surface
-| Token | Value | Role |
-|-------|-------|------|
-| Stadium card bg | `#0a1525` | Card default background |
-| Stadium card hover | `#0f1d35` | Card hover state (brightened) |
+## 2. Color Palette
 
-### Border
-| Token | Value | Role |
-|-------|-------|------|
-| Card border | `rgba(255, 255, 255, 0.05)` | Subtle white border on `.stadium-card` |
-| Border glow (animated) | `rgba(251, 191, 36, 0.15)` ~ `rgba(251, 191, 36, 0.35)` | Animated border glow effect |
+### Base (Light / Expo-inspired)
+| Token | Value | Usage |
+|-------|-------|-------|
+| `--bg-base` | `#FAFAFA` | Page background (off-white) |
+| `--bg-surface` | `#FFFFFF` | Card / section (pure white) |
+| `--bg-elevated` | `#F5F5F5` | Hover / active |
+| `--bg-inset` | `#F0F0F0` | Table header, rank column |
+| `--border-primary` | `#E5E5E5` | Card borders |
+| `--border-strong` | `#D4D4D4` | Active, dividers |
 
-### CSS Variables (Source of Truth)
+### Text
+| Token | Value | Usage |
+|-------|-------|-------|
+| `--text-primary` | `#1A1A1A` | Headings (near black) |
+| `--text-secondary` | `#525252` | Body text |
+| `--text-muted` | `#A3A3A3` | Captions, timestamps |
 
-Font variables injected via `next/font/google` in layout:
+### Baseball Accents
+| Token | Value | Motif | Usage |
+|-------|-------|-------|-------|
+| `--stitch` | `#E53935` | ボール縫い目 | Primary accent, CTA, active nav |
+| `--stitch-light` | `#EF5350` | 縫い目 hover | Hover states |
+| `--field` | `#2E7D32` | 外野の芝 | Positive scores, success |
+| `--dirt` | `#D4A017` | 内野の土 | Gold highlight, 1位 |
+| `--plate` | `#F5F5F7` | ホームベース | Clean white accent |
+
+### League
+| Token | Value |
+|-------|-------|
+| `--central` | `#1565C0` |
+| `--pacific` | `#00695C` |
+
+### 12球団 Team Colors
+| Team | BG | Text |
+|------|-----|------|
+| 巨人 | `#F97316` | `#fff` |
+| 阪神 | `#FBBF24` | `#1a1a1a` |
+| DeNA | `#2563EB` | `#fff` |
+| 広島 | `#DC2626` | `#fff` |
+| 中日 | `#1E40AF` | `#fff` |
+| ヤクルト | `#059669` | `#fff` |
+| ソフトバンク | `#F5D100` | `#1a1a1a` |
+| 日本ハム | `#1E3A5F` | `#4FB3E0` |
+| ロッテ | `#1a1a1a` | `#fff` |
+| 楽天 | `#B91C1C` | `#fff` |
+| 西武 | `#1D4ED8` | `#fff` |
+| オリックス | `#1E3A5F` | `#C8A951` |
+
+---
+
+## 3. Typography
+
+| Level | Font | Size | Tracking | Usage |
+|-------|------|------|----------|-------|
+| Display XL | Bebas Neue | clamp(2.5rem,6vw,4rem) | 0.04em | Hero year number |
+| Display LG | Bebas Neue | clamp(1.5rem,4vw,2.25rem) | 0.04em | Section h1 |
+| Display SM | Bebas Neue | 0.75rem | 0.15em | Nav links, labels |
+| Body | Noto Sans JP | 0.875rem | 0 | Body text |
+| Body SM | Noto Sans JP | 0.75rem | 0 | Captions |
+| Data | Bebas Neue | 1rem | 0.02em | Scores, rank numbers |
+
 ```css
 --font-display: 'Bebas Neue', 'Impact', 'Arial Narrow', sans-serif;
 --font-body: 'Noto Sans JP', sans-serif;
 ```
 
-**Note**: No explicit `:root` color variables. All colors are hardcoded in utility classes (Tailwind v4 + custom utilities in `globals.css`).
+---
 
-## 3. Typography Rules
+## 4. Baseball Motif Elements
 
-### 3.1 和文フォント (Japanese Fonts)
-- **Noto Sans JP** — 本文、ナビゲーション、全日本語テキスト
+### 4a. Stitch Border（縫い目ボーダー）
+セクション区切り・ヘッダー下端に赤い縫い目ドットライン。
 
-### 3.2 欧文フォント (Latin Fonts)
-- **Bebas Neue** — 見出し、ロゴ、ナビリンク（全て大文字推奨、ワイドトラッキング）
-- Fallback: `Impact`, `Arial Narrow`, `sans-serif`
-
-### 3.3 font-family 指定
 ```css
-/* Display (headings, logos, nav) — `.font-display` */
-font-family: var(--font-display, 'Bebas Neue', 'Impact', 'Arial Narrow', sans-serif);
-letter-spacing: 0.05em;
-
-/* Body — `.font-body` */
-font-family: var(--font-body, 'Noto Sans JP', sans-serif);
-```
-
-### 3.4 文字サイズ階層 (Type Scale)
-Tailwind v4 デフォルトサイズを使用。カスタムフォントサイズの定義なし。
-
-### 3.5 行間・字間 (Line Height & Letter Spacing)
-| Context | letter-spacing | Notes |
-|---------|----------------|-------|
-| Display (`.font-display`) | `0.05em` | Bebas Neue は必ずワイドトラッキング |
-
-行間（line-height）: Tailwind デフォルト。明示的なカスタム設定なし。
-
-### 3.6 禁則処理 (Kinsoku Shori)
-ブラウザ標準。カスタム設定なし。
-
-### 3.7 OpenType Features
-未設定。
-
-### 3.8 縦書き (Vertical Writing)
-未使用。
-
-## 4. Component Stylings
-
-### Stadium Card (`.stadium-card`)
-**Visual**: 濃紺背景に極めて薄い白ボーダー。角丸カード。hover で背景が明るくなる。
-
-**CSS**:
-```css
-.stadium-card {
-  background: #0a1525;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 0.75rem;
-}
-
-.stadium-card:hover {
-  background: #0f1d35;
+.stitch-border {
+  background-image: radial-gradient(circle, var(--stitch) 1.5px, transparent 1.5px);
+  background-size: 10px 3px;
+  background-repeat: repeat-x;
+  height: 3px;
 }
 ```
 
-### Amber Glow Text (`.animate-amber-glow`)
-**Visual**: テキストに amber ネオンの脈動効果。3.5秒周期で明滅。
+**Usage**: Header 下端, セクション上端, カード間の区切り
 
-**Keyframes**:
+### 4b. Home Plate Badge（ホームベース型バッジ）
+五角形。順位番号・リーグラベルに使用。
+
 ```css
-@keyframes amber-glow {
-  0%, 100% {
-    text-shadow: 0 0 10px rgba(251, 191, 36, 0.4), 0 0 20px rgba(251, 191, 36, 0.2);
-  }
-  50% {
-    text-shadow: 0 0 22px rgba(251, 191, 36, 0.9), 0 0 40px rgba(251, 191, 36, 0.5), 0 0 60px rgba(251, 191, 36, 0.2);
-  }
-}
-/* animation: amber-glow 3.5s ease-in-out infinite; */
-```
-
-### Border Glow (`.animate-border-glow`)
-**Visual**: box-shadow で amber ネオンボーダー。3秒周期で脈動。
-
-**Keyframes**:
-```css
-@keyframes border-glow {
-  0%, 100% { box-shadow: 0 0 5px rgba(251, 191, 36, 0.15); }
-  50% { box-shadow: 0 0 15px rgba(251, 191, 36, 0.35), 0 0 30px rgba(251, 191, 36, 0.1); }
-}
-/* animation: border-glow 3s ease-in-out infinite; */
-```
-
-### Scoreboard Flicker (`.animate-flicker`)
-**Visual**: 微妙な点滅でスタジアムディスプレイの雰囲気を演出。12秒周期。**使いすぎ注意** — 特定の要素のみに限定。
-
-**Keyframes**:
-```css
-@keyframes scoreboard-flicker {
-  0%, 93%, 95.5%, 97%, 99%, 100% { opacity: 1; }
-  94% { opacity: 0.82; }
-  96% { opacity: 0.95; }
-  98% { opacity: 0.87; }
-}
-/* animation: scoreboard-flicker 12s ease-in-out infinite; */
-```
-
-### Slide Up Fade (`.animate-slide-up`)
-**Visual**: 下から 20px スライドしながらフェードイン。0.5秒。`forwards` で最終状態保持。
-
-**Keyframes**:
-```css
-@keyframes slide-up-fade {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-/* animation: slide-up-fade 0.5s ease-out forwards; */
-```
-
-### Pulse Dot (`.animate-pulse-dot`)
-**Visual**: 点が拡大・縮小 + opacity 変化。2秒周期。
-
-**Keyframes**:
-```css
-@keyframes pulse-dot {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50%       { transform: scale(1.5); opacity: 0.7; }
-}
-/* animation: pulse-dot 2s ease-in-out infinite; */
-```
-
-### Text Shadow Amber (`.text-shadow-amber`)
-**Visual**: 静的な amber text shadow（アニメーションなし）。
-
-**CSS**:
-```css
-.text-shadow-amber {
-  text-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+.home-plate {
+  clip-path: polygon(0% 0%, 100% 0%, 100% 70%, 50% 100%, 0% 70%);
 }
 ```
 
-### Font Utility Classes
-```css
-.font-display {
-  font-family: var(--font-display, 'Bebas Neue', 'Impact', 'Arial Narrow', sans-serif);
-  letter-spacing: 0.05em;
-}
+**Usage**: 順位番号 (1-6), リーグラベル (セ/パ), ユーザーランクバッジ
 
-.font-body {
-  font-family: var(--font-body, 'Noto Sans JP', sans-serif);
+### 4c. Bat Divider（バット型ディバイダー）
+中央が太く端が細い水平線。
+
+```css
+.bat-divider {
+  height: 2px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    var(--border-primary) 15%,
+    var(--border-strong) 50%,
+    var(--border-primary) 85%,
+    transparent 100%
+  );
 }
 ```
 
-## 5. Layout Principles
+**Usage**: セクション間, Footer 上端
 
-- **Primary container**: `.stadium-card` をコンテンツブロックの基本単位とする
-- **Accent strategy**: Amber glow でインタラクティブ要素やハイライトを表現
-- **Grid system**: Tailwind v4 デフォルトグリッド（明示的なカスタムグリッドなし）
-- **Spacing rhythm**: Tailwind デフォルトスペーシングスケール使用
+### 4d. Diamond Pattern（ダイヤモンド背景）
+テーブルヘッダーの微妙な菱形テクスチャ。
 
-## 6. Depth & Elevation
+```css
+.diamond-pattern {
+  background-image: repeating-linear-gradient(
+    45deg, transparent, transparent 10px,
+    rgba(255,255,255,0.015) 10px, rgba(255,255,255,0.015) 11px
+  );
+}
+```
 
-### Shadows
-| Context | Shadow | Notes |
-|---------|--------|-------|
-| Amber text glow (static) | `0 0 10px rgba(251,191,36,0.5)` | `.text-shadow-amber` |
-| Amber glow anim (通常) | `0 0 10px rgba(251,191,36,0.4), 0 0 20px rgba(251,191,36,0.2)` | `.animate-amber-glow` 0% / 100% |
-| Amber glow anim (peak) | `0 0 22px rgba(251,191,36,0.9), 0 0 40px rgba(251,191,36,0.5), 0 0 60px rgba(251,191,36,0.2)` | `.animate-amber-glow` 50% |
-| Border glow anim (通常) | `0 0 5px rgba(251,191,36,0.15)` | `.animate-border-glow` 0% / 100% |
-| Border glow anim (peak) | `0 0 15px rgba(251,191,36,0.35), 0 0 30px rgba(251,191,36,0.1)` | `.animate-border-glow` 50% |
+**Usage**: Matrix ヘッダー行, Hero セクション背景
 
-### Z-Index
-明示的な z-index 階層定義なし。Tailwind デフォルト使用。
+---
 
-## 7. Do's and Don'ts
+## 5. Component Specs
+
+### 5a. Navigation
+```
+[🏠] NPB LEAGUE   HOME  STANDINGS  PREDICTIONS  RANKINGS  NEWS   [ログイン]
+═══ stitch dots (red) ════════════════════════════════════════════════════
+```
+- Logo: "N" inside home-plate clip-path, `--stitch` background
+- Links: Bebas Neue 0.75rem, tracking-widest, `--text-muted` default
+- Active: `--stitch` color + 底部に赤ドット indicator
+- Header bg: `--bg-inset`
+- Bottom edge: `.stitch-border` (red dots)
+
+### 5b. Prediction Matrix（順位予想マトリクス）
+TV中継/新聞スポーツ欄風のメインコンポーネント。
+
+```
+┌──────────────────────────────────────────┐
+│ [🏠セ] 2026年 セ・リーグ 順位予想         │ ← League band (--central bg)
+├──────┬────────┬────────┬────────┬────────┤
+│  1   │ [巨人] │ [阪神] │ [DeNA] │ ...   │ ← Rank: home-plate badge
+│  2   │ [阪神] │ [巨人] │ [巨人] │       │ ← Cell: team color fills 100%
+│  3   │ [DeNA] │ [DeNA] │ [阪神] │       │
+│  4   │ [広島] │ [広島] │ [広島] │       │
+│  5   │ [中日] │ [ヤクルト]│[中日]│       │
+│  6   │ [ヤクルト]│[中日]│[ヤクルト]│     │
+└──────┴────────┴────────┴────────┴────────┘
+```
+
+- League band: `--central` or `--pacific` background, white text, リーグ名
+- Header row: `--bg-inset` + diamond pattern, predictor names
+- Rank column: home-plate badge, 1位=`--dirt`, 6位=subtle red tint
+- Team cell: **チームカラーが100%セルを塗る**, 4px radius, 3px gap
+  - Font: Noto Sans JP 0.8rem bold
+  - Text: team textColor
+  - Text shadow for white text: `0 1px 2px rgba(0,0,0,0.3)`
+- border-spacing: 3px (セル間のギャップ)
+
+### 5c. Scoreboard
+```
+═══ stitch border (top) ═══════════════════
+  CURRENT STANDINGS      2025 Season
+┌────────────────────────────────────────┐
+│  #  Name        順位  タイトル  合計   │
+│  1  ユーザーA    +12    +6      18    │ ← --dirt row
+│  2  ユーザーB    +8     +3      11    │
+└────────────────────────────────────────┘
+```
+- Top: stitch border
+- 1位 row: `--dirt` accent background
+- Score numbers: Bebas Neue, tabular-nums
+
+### 5d. News Card
+```
+┌─ left accent (3px, type color) ────────┐
+│ [icon] TYPE_BADGE    year             │
+│ Title text                             │
+│ Body text                              │
+│ 📎 source link                         │
+└────────────────────────────────────────┘
+```
+- Left: 3px type-color bar
+- Source: `📎` + link or label
+
+---
+
+## 6. Layout
+
+- Max-width: `72rem` (1152px) — データ密度のため広め
+- Gutter: 1rem mobile / 1.5rem desktop
+- Section gap: 2rem
+- Card padding: 1.25rem
+- Card radius: 0.5rem (HashiCorp 風に控えめ)
+- Card border: `--border-primary`
+
+---
+
+## 7. Animations
+
+**最小限に抑える。機能的なものだけ。**
+
+| Name | Duration | Usage |
+|------|----------|-------|
+| `pulse-dot` | 2s | Active season indicator dot |
+
+**削除済み（旧テーマ）**: amber-glow, border-glow, scoreboard-flicker, grain texture
+
+---
+
+## 8. Do's and Don'ts
 
 ### Do
-- **Amber を唯一のアクセントカラー** として統一する（`rgba(251, 191, 36, *)`）
-- Bebas Neue は **`letter-spacing: 0.05em` 以上** のワイドトラッキングで使う
-- ネオン発光効果は **`.animate-amber-glow` / `.animate-border-glow`** で表現する
-- コンテンツブロックには **`.stadium-card`** を使う
-- スコアボード風の雰囲気を出すときは **`.animate-flicker` を控えめに使う**（広範囲に使わない）
-- `.stadium-card` には `hover:bg-[#0f1d35]` または `.stadium-card:hover` スタイルを活用
+- `--stitch` (赤) を primary accent として統一する
+- 野球モチーフ (stitch, home-plate, bat-divider) をUI装飾に使う
+- チームカラーはマトリクスセルのみに限定（UI全体に散らさない）
+- Bebas Neue は常に uppercase + wide tracking
+- データテーブルは密度重視（cell padding は小さく）
+- コンテンツブロックは `--bg-surface` + `--border-primary`
 
 ### Don't
-- **明るい背景やライトモードを導入しない**（常にダーク）
-- Bebas Neue を **小文字・通常トラッキングで使わない**
-- **Amber 以外のアクセントカラーを追加しない**（青・緑・赤などの追加色は禁止）
-- **`.animate-flicker` を広範囲に使わない**（微妙さが大事）
-- **過度なアニメーション**（ユーザーを疲れさせない）
+- ダークモードにしない（白ベース固定）
+- amber glow / neon 系エフェクトは使わない
+- grain texture は使わない
+- 丸角を大きくしない (max 0.5rem)
+- `--stitch` 以外のアクセントカラーをUI装飾に追加しない
+- 過度なアニメーション
+- 影を濃くしすぎない（Expo風の軽い影のみ）
 
-## 8. Responsive Behavior
+---
 
-Tailwind v4 デフォルトブレークポイント使用。カスタムブレークポイントなし。
+## 9. Agent Quick Reference
 
-| Breakpoint | Width |
-|------------|-------|
-| `sm` | 640px |
-| `md` | 768px |
-| `lg` | 1024px |
-| `xl` | 1280px |
-| `2xl` | 1536px |
-
-## 9. Agent Prompt Guide
-
-### Quick Reference
 ```
-Theme: Stadium scoreboard aesthetic (always dark)
-Card BG: #0a1525, hover: #0f1d35
-Card border: rgba(255,255,255,0.05), radius: 0.75rem
-Accent: rgba(251,191,36,*) (amber glow only)
-Font Display: Bebas Neue, Impact, Arial Narrow, sans-serif (letter-spacing: 0.05em)
-Font Body: Noto Sans JP, sans-serif
-Animations: amber-glow(3.5s), border-glow(3s), flicker(12s), slide-up-fade(0.5s), pulse-dot(2s)
-Tailwind: v4 (@import "tailwindcss"), no tailwind.config
-Custom utilities: .stadium-card, .animate-*, .font-display, .font-body, .text-shadow-amber
-```
-
-### Prompt Example
-```
-Create a [component] for NPB Predictions.
-Style: Dark stadium scoreboard aesthetic with amber neon accents
-Colors: card=#0a1525, card-hover=#0f1d35, accent=rgba(251,191,36,*), border=rgba(255,255,255,0.05)
-Fonts: headings=Bebas Neue (letter-spacing: 0.05em), body=Noto Sans JP
-Effects: .animate-amber-glow (text), .animate-border-glow (box), .animate-flicker (subtle, sparingly)
-Container: .stadium-card (radius: 0.75rem)
-Animation durations: amber-glow=3.5s, border-glow=3s, flicker=12s, slide-up=0.5s, pulse-dot=2s
+Theme: Light (Expo/baseball ball) + baseball motif
+BG: base=#FAFAFA, surface=#FFFFFF, elevated=#F5F5F5, inset=#F0F0F0
+Text: primary=#1A1A1A, secondary=#525252, muted=#A3A3A3
+Border: primary=#E5E5E5, strong=#D4D4D4
+Accent: --stitch=#E53935 (red stitching on white = baseball)
+Gold: --dirt=#D4A017 (1位 highlight)
+Fonts: display=Bebas Neue, body=Noto Sans JP
+Motifs: stitch-border (red dots), home-plate (pentagon), bat-divider
+Matrix: team colors fill cells, 3px gap, league color band header
+Card: white + light border + subtle shadow, radius 0.5rem
+No dark mode, no glow, no grain
 ```

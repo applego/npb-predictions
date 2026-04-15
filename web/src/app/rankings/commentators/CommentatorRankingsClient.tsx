@@ -14,7 +14,7 @@ import {
 
 // ── Constants ──
 
-const AVAILABLE_YEARS = [2023, 2024, 2025] as const;
+const AVAILABLE_YEARS = [2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026] as const;
 
 type YearOption = (typeof AVAILABLE_YEARS)[number] | "all";
 
@@ -71,7 +71,7 @@ function TabButton({
   active,
   onClick,
   children,
-  accentColor = "#fbbf24",
+  accentColor = "var(--stitch)",
 }: {
   active: boolean;
   onClick: () => void;
@@ -86,11 +86,11 @@ function TabButton({
       style={{
         fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
         letterSpacing: "0.12em",
-        background: active ? `${accentColor}12` : "rgba(255,255,255,0.03)",
+        background: active ? `${accentColor}12` : "var(--bg-elevated)",
         border: active
           ? `1px solid ${accentColor}40`
-          : "1px solid rgba(255,255,255,0.08)",
-        color: active ? accentColor : "rgba(255,255,255,0.4)",
+          : "1px solid var(--border-primary)",
+        color: active ? accentColor : "var(--text-secondary)",
       }}
     >
       {children}
@@ -115,7 +115,7 @@ function PredictionVsActualTable({
         className="text-xs font-medium tracking-wide"
         style={{
           fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-          color: "rgba(251,191,36,0.7)",
+          color: "rgba(229,57,53,0.7)",
           letterSpacing: "0.15em",
         }}
       >
@@ -123,28 +123,28 @@ function PredictionVsActualTable({
       </div>
       <table className="w-full text-xs">
         <thead>
-          <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+          <tr style={{ borderBottom: "1px solid var(--border-primary)" }}>
             <th
               className="px-2 py-1.5 text-left"
-              style={{ color: "rgba(255,255,255,0.35)", width: "3rem" }}
+              style={{ color: "var(--text-muted)", width: "3rem" }}
             >
               順位
             </th>
             <th
               className="px-2 py-1.5 text-left"
-              style={{ color: "rgba(255,255,255,0.35)" }}
+              style={{ color: "var(--text-muted)" }}
             >
               予想
             </th>
             <th
               className="px-2 py-1.5 text-left"
-              style={{ color: "rgba(255,255,255,0.35)" }}
+              style={{ color: "var(--text-muted)" }}
             >
               実際
             </th>
             <th
               className="px-2 py-1.5 text-right"
-              style={{ color: "rgba(255,255,255,0.35)", width: "5.5rem" }}
+              style={{ color: "var(--text-muted)", width: "5.5rem" }}
             >
               結果
             </th>
@@ -158,7 +158,7 @@ function PredictionVsActualTable({
               <tr
                 key={detail.rank}
                 style={{
-                  borderBottom: "1px solid rgba(255,255,255,0.04)",
+                  borderBottom: "1px solid var(--border-primary)",
                   background: isCorrect
                     ? "rgba(74,222,128,0.04)"
                     : "transparent",
@@ -166,19 +166,19 @@ function PredictionVsActualTable({
               >
                 <td
                   className="px-2 py-1.5"
-                  style={{ color: "rgba(255,255,255,0.5)" }}
+                  style={{ color: "var(--text-secondary)" }}
                 >
                   {detail.rank}位
                 </td>
                 <td
                   className="px-2 py-1.5"
-                  style={{ color: "rgba(255,255,255,0.8)" }}
+                  style={{ color: "var(--text-primary)" }}
                 >
                   {detail.predictedTeam}
                 </td>
                 <td
                   className="px-2 py-1.5"
-                  style={{ color: "rgba(255,255,255,0.8)" }}
+                  style={{ color: "var(--text-primary)" }}
                 >
                   {detail.actualTeam || "---"}
                 </td>
@@ -218,27 +218,27 @@ function ExpandedDetail({
       <td
         colSpan={5}
         style={{
-          background: "rgba(10,21,37,0.8)",
-          borderBottom: "1px solid rgba(251,191,36,0.1)",
+          background: "var(--bg-inset)",
+          borderBottom: "1px solid color-mix(in srgb, var(--stitch) 10%, transparent)",
         }}
       >
         <div className="space-y-4 px-4 py-4 sm:px-6">
           {/* Score breakdown */}
           <div
             className="flex flex-wrap gap-4 text-xs"
-            style={{ color: "rgba(255,255,255,0.5)" }}
+            style={{ color: "var(--text-secondary)" }}
           >
             <span>
               順位予想:{" "}
-              <span style={{ color: "#fbbf24" }}>{fmtScore(entry.rankingScore)}pt</span>
+              <span style={{ color: "var(--stitch)" }}>{fmtScore(entry.rankingScore)}pt</span>
             </span>
             <span>
               タイトル予想:{" "}
-              <span style={{ color: "#fbbf24" }}>{fmtScore(entry.titleScore)}pt</span>
+              <span style={{ color: "var(--stitch)" }}>{fmtScore(entry.titleScore)}pt</span>
             </span>
             <span>
               合計:{" "}
-              <span style={{ color: "#fbbf24", fontWeight: 600 }}>
+              <span style={{ color: "var(--stitch)", fontWeight: 600 }}>
                 {fmtScore(entry.totalScore)}pt
               </span>
             </span>
@@ -260,7 +260,7 @@ function ExpandedDetail({
           {entry.variant && (
             <div
               className="text-[10px]"
-              style={{ color: "rgba(255,255,255,0.3)" }}
+              style={{ color: "var(--text-muted)" }}
             >
               予想バリアント: {entry.variant}
             </div>
@@ -305,11 +305,11 @@ function LeaderboardRow({
         style={{
           borderBottom: isExpanded
             ? "none"
-            : "1px solid rgba(255,255,255,0.04)",
+            : "1px solid var(--border-primary)",
           background: isFirst
-            ? "rgba(251,191,36,0.04)"
+            ? "rgba(229,57,53,0.04)"
             : isExpanded
-              ? "rgba(251,191,36,0.02)"
+              ? "rgba(229,57,53,0.02)"
               : "transparent",
         }}
       >
@@ -320,7 +320,7 @@ function LeaderboardRow({
             style={{
               fontFamily:
                 "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-              color: isTop3 ? "#fbbf24" : "rgba(255,255,255,0.4)",
+              color: isTop3 ? "var(--stitch)" : "var(--text-secondary)",
               fontSize: isTop3 ? "1.25rem" : undefined,
             }}
           >
@@ -334,7 +334,7 @@ function LeaderboardRow({
             <Link
               href={`/rankings/commentators/${entry.slug}`}
               className="font-medium transition-colors hover:text-amber-400"
-              style={{ color: "rgba(255,255,255,0.8)" }}
+              style={{ color: "var(--text-primary)" }}
               onClick={(e) => e.stopPropagation()}
             >
               {entry.name}
@@ -353,10 +353,10 @@ function LeaderboardRow({
                   "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
                 color:
                   entry.centralScore > 0
-                    ? "#fbbf24"
+                    ? "var(--stitch)"
                     : entry.centralScore < 0
-                      ? "rgba(239,68,68,0.7)"
-                      : "rgba(255,255,255,0.3)",
+                      ? "var(--stitch)"
+                      : "var(--text-muted)",
               }}
             >
               {fmtScore(entry.centralScore)}
@@ -374,10 +374,10 @@ function LeaderboardRow({
                   "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
                 color:
                   entry.pacificScore > 0
-                    ? "#fbbf24"
+                    ? "var(--stitch)"
                     : entry.pacificScore < 0
-                      ? "rgba(239,68,68,0.7)"
-                      : "rgba(255,255,255,0.3)",
+                      ? "var(--stitch)"
+                      : "var(--text-muted)",
               }}
             >
               {fmtScore(entry.pacificScore)}
@@ -394,12 +394,12 @@ function LeaderboardRow({
                 fontFamily:
                   "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
                 background: isFirst
-                  ? "rgba(251,191,36,0.12)"
-                  : "rgba(255,255,255,0.05)",
-                color: isFirst ? "#fbbf24" : "rgba(255,255,255,0.7)",
+                  ? "rgba(229,57,53,0.12)"
+                  : "var(--border-primary)",
+                color: isFirst ? "var(--stitch)" : "var(--text-secondary)",
                 border: isFirst
-                  ? "1px solid rgba(251,191,36,0.25)"
-                  : "1px solid rgba(255,255,255,0.07)",
+                  ? "1px solid rgba(229,57,53,0.25)"
+                  : "1px solid var(--border-primary)",
               }}
             >
               {fmtScore(displayScore)}
@@ -407,7 +407,7 @@ function LeaderboardRow({
             <span
               className="text-xs transition-transform"
               style={{
-                color: "rgba(255,255,255,0.3)",
+                color: "var(--text-muted)",
                 transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
               }}
             >
@@ -428,8 +428,8 @@ function LoadingSkeleton() {
     <div
       className="space-y-3 rounded-xl p-6"
       style={{
-        background: "#0a1525",
-        border: "1px solid rgba(255,255,255,0.05)",
+        background: "var(--bg-surface)",
+        border: "1px solid var(--border-primary)",
       }}
     >
       {Array.from({ length: 8 }).map((_, i) => (
@@ -437,7 +437,7 @@ function LoadingSkeleton() {
           key={i}
           className="h-12 animate-pulse rounded"
           style={{
-            background: "rgba(255,255,255,0.04)",
+            background: "var(--border-primary)",
             animationDelay: `${i * 80}ms`,
           }}
         />
@@ -601,17 +601,17 @@ export function CommentatorRankingsClient() {
               "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
             fontSize: "clamp(1.75rem, 5vw, 2.75rem)",
             letterSpacing: "0.08em",
-            color: "rgba(255,255,255,0.9)",
+            color: "var(--text-primary)",
           }}
         >
           COMMENTATOR{" "}
-          <span className="animate-amber-glow" style={{ color: "#fbbf24" }}>
+          <span className="animate-amber-glow" style={{ color: "var(--stitch)" }}>
             RANKINGS
           </span>
         </h1>
         <p
           className="mt-1 text-sm"
-          style={{ color: "rgba(255,255,255,0.35)" }}
+          style={{ color: "var(--text-muted)" }}
         >
           プロ野球解説者 的中率ランキング
         </p>
@@ -621,8 +621,8 @@ export function CommentatorRankingsClient() {
       <div
         className="space-y-4 rounded-xl p-4 sm:p-5"
         style={{
-          background: "#0a1525",
-          border: "1px solid rgba(255,255,255,0.05)",
+          background: "var(--bg-surface)",
+          border: "1px solid var(--border-primary)",
         }}
       >
         {/* Year Tabs */}
@@ -630,7 +630,7 @@ export function CommentatorRankingsClient() {
           <div
             className="mb-2 text-[10px] font-medium uppercase tracking-widest"
             style={{
-              color: "rgba(255,255,255,0.25)",
+              color: "var(--text-muted)",
               letterSpacing: "0.18em",
             }}
           >
@@ -659,7 +659,7 @@ export function CommentatorRankingsClient() {
             <div
               className="mb-2 text-[10px] font-medium uppercase tracking-widest"
               style={{
-                color: "rgba(255,255,255,0.25)",
+                color: "var(--text-muted)",
                 letterSpacing: "0.18em",
               }}
             >
@@ -687,7 +687,7 @@ export function CommentatorRankingsClient() {
             <div
               className="mb-2 text-[10px] font-medium uppercase tracking-widest"
               style={{
-                color: "rgba(255,255,255,0.25)",
+                color: "var(--text-muted)",
                 letterSpacing: "0.18em",
               }}
             >
@@ -712,7 +712,7 @@ export function CommentatorRankingsClient() {
             <div
               className="mb-2 text-[10px] font-medium uppercase tracking-widest"
               style={{
-                color: "rgba(255,255,255,0.25)",
+                color: "var(--text-muted)",
                 letterSpacing: "0.18em",
               }}
             >
@@ -725,9 +725,9 @@ export function CommentatorRankingsClient() {
               placeholder="解説者名で検索..."
               className="w-full rounded px-3 py-1.5 text-sm outline-none transition-all sm:w-56"
               style={{
-                background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.08)",
-                color: "rgba(255,255,255,0.8)",
+                background: "var(--border-primary)",
+                border: "1px solid var(--border-primary)",
+                color: "var(--text-primary)",
               }}
             />
           </div>
@@ -736,15 +736,15 @@ export function CommentatorRankingsClient() {
 
       {/* Stats Bar */}
       <div className="flex items-center justify-between">
-        <p className="text-sm" style={{ color: "rgba(255,255,255,0.3)" }}>
+        <p className="text-sm" style={{ color: "var(--text-muted)" }}>
           {loading ? (
             "読み込み中..."
           ) : error ? (
-            <span style={{ color: "rgba(239,68,68,0.7)" }}>{error}</span>
+            <span style={{ color: "var(--stitch)" }}>{error}</span>
           ) : filtered.length > 0 ? (
             <>
               {filtered.length}人表示 /{" "}
-              <span style={{ color: "rgba(251,191,36,0.6)" }}>
+              <span style={{ color: "rgba(229,57,53,0.6)" }}>
                 {data?.totalCommentators ?? 0}人
               </span>
               の解説者が参加
@@ -758,7 +758,7 @@ export function CommentatorRankingsClient() {
           style={{
             fontFamily:
               "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-            color: "rgba(255,255,255,0.15)",
+            color: "var(--text-muted)",
             letterSpacing: "0.2em",
           }}
         >
@@ -773,15 +773,15 @@ export function CommentatorRankingsClient() {
         <div
           className="overflow-x-auto rounded-xl"
           style={{
-            background: "#0a1525",
-            border: "1px solid rgba(255,255,255,0.05)",
+            background: "var(--bg-surface)",
+            border: "1px solid var(--border-primary)",
           }}
         >
           <table className="w-full text-sm">
             <thead>
               <tr
                 style={{
-                  borderBottom: "1px solid rgba(255,255,255,0.06)",
+                  borderBottom: "1px solid var(--border-primary)",
                 }}
               >
                 {headerCols.map((col) => (
@@ -789,7 +789,7 @@ export function CommentatorRankingsClient() {
                     key={col.label}
                     className={`px-3 py-3 text-xs font-medium uppercase tracking-widest sm:px-4 ${col.align} ${col.hideMobile ? "hidden sm:table-cell" : ""}`}
                     style={{
-                      color: "rgba(255,255,255,0.3)",
+                      color: "var(--text-muted)",
                       letterSpacing: "0.14em",
                     }}
                   >
@@ -820,14 +820,14 @@ export function CommentatorRankingsClient() {
         <div
           className="rounded-xl p-10 text-center"
           style={{
-            background: "#0a1525",
-            border: "1px solid rgba(255,255,255,0.05)",
+            background: "var(--bg-surface)",
+            border: "1px solid var(--border-primary)",
           }}
         >
           <p
             className="font-display mb-2 text-sm"
             style={{
-              color: "rgba(255,255,255,0.4)",
+              color: "var(--text-secondary)",
               fontFamily:
                 "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
               letterSpacing: "0.1em",
@@ -835,7 +835,7 @@ export function CommentatorRankingsClient() {
           >
             NO RESULTS
           </p>
-          <p className="text-sm" style={{ color: "rgba(255,255,255,0.3)" }}>
+          <p className="text-sm" style={{ color: "var(--text-muted)" }}>
             検索条件を変更してください
           </p>
         </div>
@@ -845,21 +845,21 @@ export function CommentatorRankingsClient() {
       <section
         className="rounded-xl p-5"
         style={{
-          background: "#0a1525",
-          border: "1px solid rgba(255,255,255,0.05)",
+          background: "var(--bg-surface)",
+          border: "1px solid var(--border-primary)",
         }}
       >
         <div className="flex items-center gap-4">
           <div
             className="h-px flex-1"
-            style={{ background: "rgba(255,255,255,0.05)" }}
+            style={{ background: "var(--border-primary)" }}
           />
           <span
             className="font-display shrink-0 text-xs"
             style={{
               fontFamily:
                 "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-              color: "rgba(251,191,36,0.5)",
+              color: "rgba(229,57,53,0.5)",
               letterSpacing: "0.25em",
             }}
           >
@@ -867,7 +867,7 @@ export function CommentatorRankingsClient() {
           </span>
           <div
             className="h-px flex-1"
-            style={{ background: "rgba(255,255,255,0.05)" }}
+            style={{ background: "var(--border-primary)" }}
           />
         </div>
 
@@ -875,7 +875,7 @@ export function CommentatorRankingsClient() {
         <div className="mt-4 space-y-3">
           <div
             className="flex flex-wrap gap-3 text-[11px]"
-            style={{ color: "rgba(255,255,255,0.4)" }}
+            style={{ color: "var(--text-secondary)" }}
           >
             <span>
               <span style={{ color: "#4ade80" }}>的中 +5</span> = 完全一致
@@ -884,7 +884,7 @@ export function CommentatorRankingsClient() {
               <span style={{ color: "#86efac" }}>1差 +3</span>
             </span>
             <span>
-              <span style={{ color: "#fbbf24" }}>2差 +1</span>
+              <span style={{ color: "var(--stitch)" }}>2差 +1</span>
             </span>
             <span>
               <span style={{ color: "#fb923c" }}>3差 -1</span>
@@ -899,7 +899,7 @@ export function CommentatorRankingsClient() {
 
           <div
             className="space-y-2 text-sm leading-relaxed"
-            style={{ color: "rgba(255,255,255,0.35)" }}
+            style={{ color: "var(--text-muted)" }}
           >
             <p>
               各解説者の開幕前順位予想を、実際のシーズン結果と照合してスコアリング。

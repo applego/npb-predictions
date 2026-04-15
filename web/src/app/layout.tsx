@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Bebas_Neue, Noto_Sans_JP } from "next/font/google";
 import { Providers } from "@/components/Providers";
 import { AuthHeader } from "@/components/AuthHeader";
+import { Nav } from "@/components/Nav";
 import "./globals.css";
 
 const bebasNeue = Bebas_Neue({
@@ -27,152 +28,79 @@ export const metadata: Metadata = {
     template: "%s | NPB Predictions League",
   },
   description:
-    "プロ野球順位予想リーグ - 5人の予想を比較して年間王者を決めよう。セ・パ両リーグの順位予想とタイトル予想で競おう。",
+    "プロ野球順位予想リーグ - 順位予想を比較して年間王者を決めよう。",
   metadataBase: new URL(BASE_URL),
-  openGraph: {
-    type: "website",
-    locale: "ja_JP",
-    siteName: "NPB Predictions League",
-    title: "NPB Predictions League | プロ野球順位予想リーグ",
-    description:
-      "プロ野球順位予想リーグ - 5人の予想を比較して年間王者を決めよう。",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "NPB Predictions League",
-    description:
-      "プロ野球順位予想リーグ - 5人の予想を比較して年間王者を決めよう。",
-  },
+  openGraph: { type: "website", locale: "ja_JP", siteName: "NPB Predictions League" },
   robots: { index: true, follow: true },
 };
 
-const NAV_LINKS = [
-  { href: "/", label: "HOME" },
-  { href: "/standings", label: "STANDINGS" },
-  { href: "/predictions", label: "PREDICTIONS" },
-  { href: "/rankings/commentators", label: "RANKINGS" },
-  { href: "/news", label: "NEWS" },
-  { href: "/seo/past-seasons", label: "ARCHIVE" },
-];
-
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="ja"
-      className={`${bebasNeue.variable} ${notoSansJP.variable}`}
-    >
+    <html lang="ja" className={`${bebasNeue.variable} ${notoSansJP.variable}`}>
       <body
         className="min-h-screen antialiased"
         style={{
-          background: "#040912",
-          color: "rgba(255,255,255,0.87)",
-          fontFamily: "var(--font-body, 'Noto Sans JP', sans-serif)",
+          background: "var(--bg-base)",
+          color: "var(--text-primary)",
+          fontFamily: "var(--font-body)",
         }}
       >
         <Providers>
-          {/* Grain texture overlay */}
-          <div
-            aria-hidden="true"
-            className="pointer-events-none fixed inset-0 z-50 opacity-[0.035]"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-              mixBlendMode: "overlay",
-            }}
-          />
-
-          {/* ── Header ── */}
+          {/* ── Header: white bar + red stitch ── */}
           <header
-            className="sticky top-0 z-40 backdrop-blur-md"
+            className="sticky top-0 z-40"
             style={{
-              background: "rgba(4, 9, 18, 0.88)",
-              borderBottom: "1px solid rgba(251, 191, 36, 0.08)",
+              background: "var(--bg-surface)",
+              borderBottom: "1px solid var(--border-primary)",
             }}
           >
-            <nav className="mx-auto flex max-w-5xl items-center gap-x-6 gap-y-2 px-4 py-3">
-              {/* Logo */}
-              <Link
-                href="/"
-                className="group mr-auto flex shrink-0 items-center gap-2.5"
-              >
+            <nav className="relative mx-auto flex max-w-[72rem] items-center gap-x-4 px-4 py-3 md:px-6">
+              {/* Logo: red home-plate N */}
+              <Link href="/" className="mr-auto flex shrink-0 items-center gap-2.5">
                 <span
-                  className="flex h-7 w-7 items-center justify-center rounded text-sm"
-                  style={{
-                    background: "rgba(251,191,36,0.08)",
-                    border: "1px solid rgba(251,191,36,0.2)",
-                  }}
+                  className="home-plate flex h-8 w-8 items-center justify-center text-sm font-black"
+                  style={{ background: "var(--stitch)", color: "#fff" }}
                 >
-                  ⚾
+                  N
                 </span>
                 <span
-                  className="font-display text-2xl tracking-widest transition-colors"
                   style={{
-                    color: "#fbbf24",
-                    fontFamily:
-                      "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-                    letterSpacing: "0.18em",
+                    fontFamily: "var(--font-display)",
+                    fontSize: "1.25rem",
+                    letterSpacing: "0.1em",
+                    color: "var(--text-primary)",
                   }}
                 >
-                  NPB LEAGUE
+                  NPB{" "}
+                  <span style={{ color: "var(--stitch)" }}>LEAGUE</span>
                 </span>
               </Link>
 
-              {/* Nav links */}
-              <div className="flex items-center gap-5 overflow-x-auto">
-                {NAV_LINKS.map(({ href, label }) => (
-                  <Link
-                    key={href}
-                    href={href}
-                    className="whitespace-nowrap text-xs font-medium tracking-widest transition-colors hover:text-amber-400"
-                    style={{ color: "rgba(255,255,255,0.4)", letterSpacing: "0.15em" }}
-                  >
-                    {label}
-                  </Link>
-                ))}
-                <Link
-                  href="/admin"
-                  className="whitespace-nowrap text-xs font-medium tracking-widest transition-colors hover:text-orange-400"
-                  style={{ color: "rgba(251,146,60,0.5)", letterSpacing: "0.15em" }}
-                >
-                  ADMIN
-                </Link>
-              </div>
-
-              {/* Auth button */}
+              <Nav />
               <AuthHeader />
             </nav>
 
-            {/* Amber accent line */}
-            <div
-              style={{
-                height: "1px",
-                background:
-                  "linear-gradient(90deg, transparent 0%, rgba(251,191,36,0.35) 40%, rgba(251,191,36,0.35) 60%, transparent 100%)",
-              }}
-            />
+            {/* Red stitch line — baseball seam */}
+            <div className="stitch-border" />
           </header>
 
-          <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
+          <main className="mx-auto max-w-[72rem] px-4 py-8 md:px-6">
+            {children}
+          </main>
 
           {/* ── Footer ── */}
-          <footer
-            className="mt-16 py-6"
-            style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
-          >
-            <div className="mx-auto max-w-5xl px-4 text-center">
+          <footer className="mt-12 pb-6">
+            <div className="bat-divider mx-auto max-w-[72rem]" />
+            <div className="pt-4 text-center">
               <span
-                className="font-display text-xs tracking-widest"
                 style={{
-                  color: "rgba(255,255,255,0.15)",
-                  fontFamily:
-                    "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
+                  fontFamily: "var(--font-display)",
+                  fontSize: "0.65rem",
                   letterSpacing: "0.2em",
+                  color: "var(--text-muted)",
                 }}
               >
-                NPB PREDICTIONS LEAGUE — プロ野球順位予想リーグ
+                NPB PREDICTIONS LEAGUE
               </span>
             </div>
           </footer>

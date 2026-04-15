@@ -82,7 +82,7 @@ export const COMMENTATOR_DATA: CommentatorYearData[] = [
   { year: 2025, commentators: DATA_2025 },
 ];
 
-export const AVAILABLE_YEARS = [2023, 2024, 2025] as const;
+export const AVAILABLE_YEARS = [2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026] as const;
 
 export const TOTAL_COMMENTATOR_COUNT = 156;
 
