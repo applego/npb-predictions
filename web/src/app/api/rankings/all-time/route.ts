@@ -97,21 +97,30 @@ export async function GET() {
     yearStats.set(year, { mean, stddev });
   }
 
-  // FAIR: per user per year, keep only the BEST scoring prediction
+  // FAIR: per user per year, keep only the FIRST prediction (not best — no gaming)
   type YearScore = { year: number; centralScore: number; pacificScore: number; totalScore: number; deviation: number | null };
-  const userBestByYear = new Map<number, Map<number, PredScore>>(); // userId -> year -> best PredScore
+  const userFirstByYear = new Map<number, Map<number, PredScore>>();
 
   for (const ps of allPredScores) {
-    if (!userBestByYear.has(ps.userId)) userBestByYear.set(ps.userId, new Map());
-    const yearMap = userBestByYear.get(ps.userId)!;
+    if (!userFirstByYear.has(ps.userId)) userFirstByYear.set(ps.userId, new Map());
+    const yearMap = userFirstByYear.get(ps.userId)!;
     const existing = yearMap.get(ps.year);
-    if (!existing || ps.totalScore > existing.totalScore) {
+    if (!existing) {
       yearMap.set(ps.year, ps);
+    } else {
+      // Keep the one with null/empty variant (original prediction)
+      const psVar = ps.variant ?? "";
+      const exVar = existing.variant ?? "";
+      if (psVar === "" && exVar !== "") {
+        yearMap.set(ps.year, ps);
+      } else if (psVar < exVar && exVar !== "") {
+        yearMap.set(ps.year, ps);
+      }
     }
   }
 
   // Build ranked list
-  const ranked = Array.from(userBestByYear.entries())
+  const ranked = Array.from(userFirstByYear.entries())
     .map(([userId, yearMap]) => {
       const user = userMap.get(userId)!;
       const years: YearScore[] = [];

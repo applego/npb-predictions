@@ -151,15 +151,26 @@ export async function GET(req: Request) {
     };
   });
 
-  // Deduplicate: keep only the BEST scoring variant per user
-  const bestByUser = new Map<number, typeof commentators[0]>();
+  // Deduplicate: keep only the FIRST prediction per user (earliest variant = fairness)
+  // variant priority: null/empty (original) > "①" > "②" > ...
+  const firstByUser = new Map<number, typeof commentators[0]>();
   for (const c of commentators) {
-    const existing = bestByUser.get(c.userId);
-    if (!existing || c.effectiveTotal > existing.effectiveTotal) {
-      bestByUser.set(c.userId, c);
+    const existing = firstByUser.get(c.userId);
+    if (!existing) {
+      firstByUser.set(c.userId, c);
+    } else {
+      // Keep the one with null/empty variant (original prediction)
+      const cVar = c.variant ?? "";
+      const exVar = existing.variant ?? "";
+      if (cVar === "" && exVar !== "") {
+        firstByUser.set(c.userId, c);
+      } else if (cVar < exVar && exVar !== "") {
+        // "①" < "②" < "③"
+        firstByUser.set(c.userId, c);
+      }
     }
   }
-  const deduped = Array.from(bestByUser.values());
+  const deduped = Array.from(firstByUser.values());
 
   // Filter: combined ranking only includes users who predicted BOTH leagues
   const filtered = leagueParam === "all"
