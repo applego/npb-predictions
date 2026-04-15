@@ -2,10 +2,9 @@ export const runtime = "edge";
 
 import type { Metadata } from "next";
 import Link from "next/link";
-import type { ScoreboardResponse, Season } from "@/lib/types";
 import ShareButton from "@/components/ShareButton";
+import { getSeasons, getScoreboardData } from "@/lib/scoreboard";
 
-const API_BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://npb-predictions.pages.dev";
 const CURRENT_YEAR = new Date().getFullYear();
 
 export async function generateMetadata({
@@ -21,26 +20,6 @@ export async function generateMetadata({
     description: `${year}年NPB予想リーグのスコアボード。各予想家の順位点・合計得点を確認。`,
     alternates: { canonical: `/standings?year=${year}` },
   };
-}
-
-async function getScoreboard(year: number): Promise<ScoreboardResponse | null> {
-  try {
-    const res = await fetch(`${API_BASE}/api/seasons/${year}/current-scoreboard`, { cache: "no-store" });
-    if (!res.ok) return null;
-    return res.json() as Promise<ScoreboardResponse | null>;
-  } catch {
-    return null;
-  }
-}
-
-async function getAllSeasons(): Promise<Season[]> {
-  try {
-    const res = await fetch(`${API_BASE}/api/seasons`, { cache: "no-store" });
-    if (!res.ok) return [];
-    return res.json() as Promise<Season[]>;
-  } catch {
-    return [];
-  }
 }
 
 function fmtScore(score: number): string {
@@ -62,8 +41,8 @@ export default async function StandingsPage({
   const { year: yearParam } = await searchParams;
   const year = yearParam ? parseInt(yearParam, 10) : CURRENT_YEAR;
   const [data, allSeasons] = await Promise.all([
-    getScoreboard(year),
-    getAllSeasons(),
+    getScoreboardData(year),
+    getSeasons(),
   ]);
 
   const isCurrent = year >= CURRENT_YEAR;

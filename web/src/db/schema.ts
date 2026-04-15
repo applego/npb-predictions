@@ -107,8 +107,26 @@ export const awards = sqliteTable("awards", {
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
 });
 
+// Battle groups
+export const battleGroups = sqliteTable("battle_groups", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  createdBy: integer("created_by").references(() => users.id),
+  inviteCode: text("invite_code").notNull().unique(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
+});
+
+// Group membership
+export const battleGroupMembers = sqliteTable("battle_group_members", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  groupId: integer("group_id").notNull().references(() => battleGroups.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  joinedAt: integer("joined_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
+}, (table) => [uniqueIndex("bgm_group_user_idx").on(table.groupId, table.userId)]);
+
 // Relations
-export const usersRelations = relations(users, ({ many }) => ({ predictions: many(predictions), scoreSnapshots: many(scoreSnapshots), awards: many(awards) }));
+export const usersRelations = relations(users, ({ many }) => ({ predictions: many(predictions), scoreSnapshots: many(scoreSnapshots), awards: many(awards), battleGroupMembers: many(battleGroupMembers) }));
 export const seasonsRelations = relations(seasons, ({ many }) => ({ predictions: many(predictions), actualTeamStandings: many(actualTeamStandings), actualTitleSnapshots: many(actualTitleSnapshots), scoreSnapshots: many(scoreSnapshots), awards: many(awards) }));
 export const predictionsRelations = relations(predictions, ({ one, many }) => ({ user: one(users, { fields: [predictions.userId], references: [users.id] }), season: one(seasons, { fields: [predictions.seasonId], references: [seasons.id] }), rankingPicks: many(rankingPicks), titlePicks: many(titlePicks) }));
 export const rankingPicksRelations = relations(rankingPicks, ({ one }) => ({ prediction: one(predictions, { fields: [rankingPicks.predictionId], references: [predictions.id] }) }));
@@ -117,3 +135,15 @@ export const actualTeamStandingsRelations = relations(actualTeamStandings, ({ on
 export const actualTitleSnapshotsRelations = relations(actualTitleSnapshots, ({ one }) => ({ season: one(seasons, { fields: [actualTitleSnapshots.seasonId], references: [seasons.id] }) }));
 export const scoreSnapshotsRelations = relations(scoreSnapshots, ({ one }) => ({ user: one(users, { fields: [scoreSnapshots.userId], references: [users.id] }), season: one(seasons, { fields: [scoreSnapshots.seasonId], references: [seasons.id] }) }));
 export const awardsRelations = relations(awards, ({ one }) => ({ user: one(users, { fields: [awards.userId], references: [users.id] }), season: one(seasons, { fields: [awards.seasonId], references: [seasons.id] }) }));
+export const battleGroupsRelations = relations(battleGroups, ({ one, many }) => ({ creator: one(users, { fields: [battleGroups.createdBy], references: [users.id] }), members: many(battleGroupMembers) }));
+export const battleGroupMembersRelations = relations(battleGroupMembers, ({ one }) => ({ group: one(battleGroups, { fields: [battleGroupMembers.groupId], references: [battleGroups.id] }), user: one(users, { fields: [battleGroupMembers.userId], references: [users.id] }) }));
+
+// Likes (anonymous, fingerprint-based)
+export const likes = sqliteTable("likes", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  targetUserId: integer("target_user_id").notNull().references(() => users.id),
+  fingerprint: text("fingerprint").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
+}, (table) => [uniqueIndex("likes_user_fp_idx").on(table.targetUserId, table.fingerprint)]);
+
+export const likesRelations = relations(likes, ({ one }) => ({ user: one(users, { fields: [likes.targetUserId], references: [users.id] }) }));

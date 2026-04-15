@@ -137,7 +137,85 @@ def main():
     for l in leaked[:10]:
         print(f"    → id={l[0]} name='{l[1]}' should be role=system")
 
-    print("\n=== 7. No duplicate predictions ===")
+    print("\n=== 7. Source/出典 validation ===")
+
+    # 7a. Source coverage rate
+    cur.execute("SELECT COUNT(*) FROM users WHERE role='commentator'")
+    total_commentators = cur.fetchone()[0]
+    cur.execute("SELECT COUNT(*) FROM users WHERE role='commentator' AND source IS NOT NULL AND source != ''")
+    with_source = cur.fetchone()[0]
+    coverage = round(with_source / max(total_commentators, 1) * 100, 1)
+    check(coverage >= 80, f"Source coverage: {with_source}/{total_commentators} ({coverage}%) — target ≥80%")
+
+    # 7b. Known valid source categories
+    VALID_SOURCE_KEYWORDS = [
+        # Direct categories
+        "YouTube", "Web", "テレビ", "新聞", "ラジオ", "雑誌",
+        # Newspapers
+        "日刊スポーツ", "スポーツ報知", "東京スポーツ", "デイリースポーツ", "デイリー",
+        "スポニチ", "サンスポ", "サンケイスポーツ", "中日スポーツ",
+        "西日本スポーツ", "産経", "報知", "夕刊フジ", "朝日", "日経", "読売",
+        # Magazines
+        "週刊ベースボール", "週ベ", "週べ", "週刊ポスト", "週刊大衆", "Number", "AERA",
+        # TV
+        "NHK", "TBS", "フジ", "テレビ朝日", "日テレ", "日本テレビ", "MBS", "テレビ東京",
+        "ABC", "CBC", "RCC", "関西テレビ", "関テレ", "東海テレビ", "中京",
+        "名古屋テレビ", "サンテレビ", "仙台放送", "テレ玉", "朝日放送",
+        "BS", "スカパー", "プロ野球ニュース", "Going",
+        # Radio
+        "文化放送", "ニッポン放送", "ラジオ大阪", "MBSラジオ", "ABCラジオ",
+        "STVラジオ", "HBCラジオ", "CBCラジオ",
+        # Web
+        "web Sportiva", "Sportiva", "SPAIA", "Full-Count", "FullC", "HOMINIS",
+        "Yahoo!", "カナコロ", "ガッツリ",
+        # Abbreviations
+        "週BB", "HBC", "HOME", "Get Sports", "おはよう朝日",
+        "OHK", "TSS", "KBC", "RAB", "BBC",
+        # Roles (valid but not media)
+        "デスク", "担当", "編集",
+    ]
+    VALID_SOURCE_PREFIXES = VALID_SOURCE_KEYWORDS  # backward compat
+
+    cur.execute("SELECT id, name, source FROM users WHERE role='commentator' AND source IS NOT NULL AND source != ''")
+    bad_sources = []
+    for row in cur.fetchall():
+        uid, uname, source = row
+        # Check if source contains any known keyword
+        matched = any(kw in source for kw in VALID_SOURCE_KEYWORDS)
+        # Also match M/DD date-only patterns
+        if not matched:
+            import re as _re
+            matched = bool(_re.match(r'^\d{1,2}/\d{1,2}', source))
+        if not matched:
+            bad_sources.append((uid, uname, source))
+
+    if bad_sources:
+        print(f"  ⚠️  {len(bad_sources)} sources don't match known patterns (may be valid, review manually):")
+        for uid, uname, src in bad_sources[:10]:
+            print(f"    → id={uid} {uname}: '{src}'")
+    else:
+        print(f"  ✅ All {with_source} sources match known patterns")
+
+    # 7c. No source has suspicious characters
+    cur.execute("SELECT id, name, source FROM users WHERE role='commentator' AND (source LIKE '%<script%' OR source LIKE '%javascript:%' OR source LIKE '%onclick%')")
+    xss_sources = cur.fetchall()
+    check(len(xss_sources) == 0, f"No XSS in source fields ({len(xss_sources)} found)")
+
+    # 7d. Sources with dates should have valid date format (M/DD or YYYY)
+    import re
+    cur.execute("SELECT source FROM users WHERE role='commentator' AND source IS NOT NULL")
+    date_pattern = re.compile(r'\((\d{1,2}/\d{1,2})')
+    bad_dates = []
+    for (source,) in cur.fetchall():
+        m = date_pattern.search(source)
+        if m:
+            parts = m.group(1).split("/")
+            month, day = int(parts[0]), int(parts[1])
+            if month < 1 or month > 12 or day < 1 or day > 31:
+                bad_dates.append(source)
+    check(len(bad_dates) == 0, f"All source dates have valid M/DD format ({len(bad_dates)} invalid)")
+
+    print("\n=== 8. No duplicate predictions ===")
     cur.execute("""
         SELECT u.name, s.year, COUNT(*)
         FROM predictions p

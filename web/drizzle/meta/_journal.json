@@ -15,6 +15,13 @@
       "when": 1776093831889,
       "tag": "0001_open_kabuki",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1776217895713,
+      "tag": "0002_typical_magdalene",
+      "breakpoints": true
     }
   ]
 }

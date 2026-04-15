@@ -18,7 +18,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "validate-data": "python3 scripts/validate-data.py",
-    "ci": "npm run validate-data && npm run build && npm run build:cf"
+    "ci": "npm run test && npm run validate-data && npm run build",
+    "ci:full": "npm run test && npm run validate-data && npm run build && npm run build:cf"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.0",
