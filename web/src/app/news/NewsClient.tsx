@@ -63,7 +63,7 @@ function TypeBadge({ type }: { type: string }) {
   const s = TYPE_STYLES[type] ?? TYPE_STYLES.prediction;
   return (
     <span
-      className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
+      className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold uppercase tracking-wider"
       style={{ background: s.badge, color: s.text, border: `1px solid ${s.border}` }}
     >
       {s.label}

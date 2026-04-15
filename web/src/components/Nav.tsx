@@ -7,12 +7,9 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const NAV_LINKS = [
   { href: "/", label: "HOME" },
-  { href: "/predictions", label: "PREDICTIONS" },
   { href: "/rankings", label: "RANKINGS" },
   { href: "/groups", label: "GROUPS" },
   { href: "/news", label: "NEWS" },
-  { href: "/standings", label: "STANDINGS" },
-  { href: "/seo/past-seasons", label: "ARCHIVE" },
 ];
 
 export function Nav() {
@@ -59,7 +56,7 @@ export function Nav() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex h-8 w-8 items-center justify-center rounded-sm md:hidden"
+        className="flex h-11 w-11 items-center justify-center rounded-sm md:hidden"
         style={{
           background: open ? "rgba(229,57,53,0.08)" : "transparent",
           border: "1px solid var(--border-primary)",
@@ -97,7 +94,7 @@ export function Nav() {
                 key={href}
                 href={href}
                 onClick={() => setOpen(false)}
-                className="rounded-sm px-3 py-2.5 text-sm font-medium tracking-widest"
+                className="flex min-h-[44px] items-center rounded-sm px-3 text-sm font-medium tracking-widest"
                 style={{
                   fontFamily: "var(--font-display)",
                   color: isActive(href) ? "var(--stitch)" : "var(--text-secondary)",

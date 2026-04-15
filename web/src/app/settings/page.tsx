@@ -153,7 +153,7 @@ export default function SettingsPage() {
               >
                 <div className="mb-2 flex items-center justify-between">
                   <span className="text-xs font-bold" style={{ color: "var(--text-primary)" }}>{nf.name}</span>
-                  {active && <span className="rounded-sm px-1.5 py-0.5 text-[9px] font-bold" style={{ background: "var(--stitch)", color: "#fff" }}>ON</span>}
+                  {active && <span className="rounded-sm px-1.5 py-0.5 text-[10px] font-bold" style={{ background: "var(--stitch)", color: "#fff" }}>ON</span>}
                 </div>
                 {/* Number preview */}
                 <div style={{ display: "flex", alignItems: "baseline", gap: "0.75rem" }}>
@@ -188,7 +188,7 @@ export default function SettingsPage() {
               >
                 <div className="mb-2 flex items-center justify-between">
                   <span className="text-xs font-bold" style={{ color: "var(--text-primary)" }}>{bf.name}</span>
-                  {active && <span className="rounded-sm px-1.5 py-0.5 text-[9px] font-bold" style={{ background: "var(--stitch)", color: "#fff" }}>ON</span>}
+                  {active && <span className="rounded-sm px-1.5 py-0.5 text-[10px] font-bold" style={{ background: "var(--stitch)", color: "#fff" }}>ON</span>}
                 </div>
                 <div style={{ fontFamily: bf.family }}>
                   <p style={{ fontSize: "1rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.2rem" }}>

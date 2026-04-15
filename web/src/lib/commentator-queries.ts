@@ -27,6 +27,7 @@ export interface CommentatorDetail {
   name: string;
   slug: string;
   source: string | null;
+  sourceUrl: string | null;
   years: CommentatorYearScore[];
   allTimeTotal: number;
 }
@@ -35,6 +36,7 @@ export interface TopCommentator {
   name: string;
   slug: string;
   source: string | null;
+  sourceUrl: string | null;
   centralScore: number;
   pacificScore: number;
   totalScore: number;
@@ -139,6 +141,7 @@ export async function getCommentatorBySlug(
       name: user.name,
       slug: user.slug,
       source: user.source,
+      sourceUrl: user.sourceUrl,
       years: [],
       allTimeTotal: 0,
     };
@@ -168,6 +171,7 @@ export async function getCommentatorBySlug(
     name: user.name,
     slug: user.slug,
     source: user.source,
+    sourceUrl: user.sourceUrl,
     years,
     allTimeTotal,
   };
@@ -282,6 +286,7 @@ export async function getTopCommentatorsForYear(
       name: user.name,
       slug: user.slug,
       source: user.source,
+      sourceUrl: user.sourceUrl,
       centralScore,
       pacificScore,
       totalScore: centralScore + pacificScore,

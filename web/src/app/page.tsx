@@ -758,7 +758,7 @@ export default async function HomePage() {
                 <Link
                   key={s.id}
                   href={`/standings?year=${s.year}`}
-                  className="rounded px-4 py-1.5 text-xs transition-all"
+                  className="rounded px-4 py-2.5 text-xs transition-all"
                   style={{
                     border: "1px solid var(--border-primary)",
                     background: "var(--bg-elevated)",

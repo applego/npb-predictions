@@ -54,34 +54,43 @@ function fmtScore(score: number): string {
   return score > 0 ? `+${score}` : String(score);
 }
 
-function SourceBadgeChip({ source }: { source: string | null }) {
-  if (!source || !(source in SOURCE_BADGE_COLORS)) {
-    // Default badge for unknown/null sources
+function SourceBadgeChip({ source, sourceUrl }: { source: string | null; sourceUrl?: string | null }) {
+  const isKnown = source && source in SOURCE_BADGE_COLORS;
+  const chipStyle = isKnown
+    ? {
+        background: SOURCE_BADGE_COLORS[source as SourceBadge].bg,
+        border: `1px solid ${SOURCE_BADGE_COLORS[source as SourceBadge].border}`,
+        color: SOURCE_BADGE_COLORS[source as SourceBadge].text,
+      }
+    : {
+        background: "rgba(100,100,100,0.08)",
+        border: "1px solid rgba(100,100,100,0.25)",
+        color: "#999",
+      };
+
+  const label = source ?? "不明";
+
+  if (sourceUrl) {
     return (
-      <span
-        className="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium"
-        style={{
-          background: "rgba(100,100,100,0.08)",
-          border: "1px solid rgba(100,100,100,0.25)",
-          color: "#999",
-        }}
+      <a
+        href={sourceUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium transition-opacity hover:opacity-80"
+        style={chipStyle}
+        title={`${label} — 別タブで開く`}
       >
-        {source ?? "不明"}
-      </span>
+        {label} ↗
+      </a>
     );
   }
 
-  const colors = SOURCE_BADGE_COLORS[source as SourceBadge];
   return (
     <span
       className="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium"
-      style={{
-        background: colors.bg,
-        border: `1px solid ${colors.border}`,
-        color: colors.text,
-      }}
+      style={chipStyle}
     >
-      {source}
+      {label}
     </span>
   );
 }
@@ -163,7 +172,7 @@ export default async function CommentatorDetailPage({ params }: Props) {
               {data.name}
             </h1>
             <div className="mt-2 flex items-center gap-3">
-              <SourceBadgeChip source={data.source} />
+              <SourceBadgeChip source={data.source} sourceUrl={data.sourceUrl} />
               <span className="text-sm" style={{ color: "var(--text-muted)" }}>
                 {data.years.length}シーズン参加
               </span>
@@ -179,7 +188,7 @@ export default async function CommentatorDetailPage({ params }: Props) {
             }}
           >
             <div
-              className="text-[10px] uppercase tracking-widest"
+              className="text-xs uppercase tracking-widest"
               style={{ color: "color-mix(in srgb, var(--dirt) 50%, transparent)", letterSpacing: "0.15em" }}
             >
               ALL-TIME

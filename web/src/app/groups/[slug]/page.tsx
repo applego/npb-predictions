@@ -209,7 +209,7 @@ export default function GroupDetailPage() {
               <button
                 key={y}
                 onClick={() => setYear(y)}
-                className="rounded-sm px-2 py-1 text-xs font-medium"
+                className="rounded-sm px-3 py-2 text-xs font-medium"
                 style={{
                   fontFamily: "var(--font-display)",
                   letterSpacing: "0.06em",
@@ -280,7 +280,7 @@ export default function GroupDetailPage() {
                 {member.avatarUrl ? (
                   <Image
                     src={member.avatarUrl}
-                    alt=""
+                    alt={member.name}
                     width={28}
                     height={28}
                     className="h-7 w-7 rounded-full"
@@ -323,7 +323,7 @@ export default function GroupDetailPage() {
                       {member.totalScore}
                     </div>
                     <div
-                      className="text-[10px]"
+                      className="text-xs"
                       style={{ color: "var(--text-muted)" }}
                     >
                       C:{member.centralScore} / P:{member.pacificScore}

@@ -93,7 +93,7 @@ export default async function PredictionsArchivePage({ params }: Props) {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b bg-gray-50 text-left">
-                        <th className="px-3 py-2 font-medium">順位</th>
+                        <th className="sticky left-0 z-10 bg-gray-50 px-3 py-2 font-medium">順位</th>
                         {actual.length > 0 && (
                           <th className="px-3 py-2 font-medium text-green-700">
                             実際
@@ -109,7 +109,7 @@ export default async function PredictionsArchivePage({ params }: Props) {
                     <tbody>
                       {[1, 2, 3, 4, 5, 6].map((rank) => (
                         <tr key={rank} className="border-b last:border-0">
-                          <td className="px-3 py-2 font-bold">{rank}</td>
+                          <td className="sticky left-0 z-10 bg-white px-3 py-2 font-bold">{rank}</td>
                           {actual.length > 0 && (
                             <td className="px-3 py-2 font-semibold text-green-700">
                               {actual.find((a) => a.rank === rank)?.teamName ??

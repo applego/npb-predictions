@@ -138,6 +138,7 @@ export async function GET(req: Request) {
       name: user.name,
       slug: user.slug,
       source: user.source,
+      sourceUrl: user.sourceUrl,
       variant: user.variant,
       centralScore,
       pacificScore,
@@ -150,10 +151,20 @@ export async function GET(req: Request) {
     };
   });
 
+  // Deduplicate: keep only the BEST scoring variant per user
+  const bestByUser = new Map<number, typeof commentators[0]>();
+  for (const c of commentators) {
+    const existing = bestByUser.get(c.userId);
+    if (!existing || c.effectiveTotal > existing.effectiveTotal) {
+      bestByUser.set(c.userId, c);
+    }
+  }
+  const deduped = Array.from(bestByUser.values());
+
   // Filter: combined ranking only includes users who predicted BOTH leagues
   const filtered = leagueParam === "all"
-    ? commentators.filter((c) => c.centralDetails.length > 0 && c.pacificDetails.length > 0)
-    : commentators;
+    ? deduped.filter((c) => c.centralDetails.length > 0 && c.pacificDetails.length > 0)
+    : deduped;
 
   // Sort by effectiveTotal descending
   filtered.sort((a, b) => b.effectiveTotal - a.effectiveTotal);

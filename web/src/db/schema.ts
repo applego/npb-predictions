@@ -20,6 +20,7 @@ export const users = sqliteTable("users", {
   avatarUrl: text("avatar_url"),
   role: text("role").$type<UserRole>().default("friend").notNull(),
   source: text("source"),
+  sourceUrl: text("source_url"),
   variant: text("variant"),
   firebaseUid: text("firebase_uid"),
   email: text("email"),

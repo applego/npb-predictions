@@ -54,7 +54,7 @@ function CellBadge({ team, className }: { team: NpbTeam; className: string }) {
 function TagBadge({ team, className }: { team: NpbTeam; className: string }) {
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-bold ${className}`}
+      className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-bold ${className}`}
       style={{
         background: team.color,
         color: team.textColor,

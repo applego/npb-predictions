@@ -21,6 +21,7 @@ export interface CommentatorData {
   name: string;
   slug: string;
   source: string | null;
+  sourceUrl: string | null;
   variant: string | null;
   centralScore: number;
   pacificScore: number;

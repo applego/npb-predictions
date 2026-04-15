@@ -26,6 +26,7 @@ export interface User {
   avatarUrl: string | null;
   role?: string;
   source?: string | null;
+  sourceUrl?: string | null;
   variant?: string | null;
   firebaseUid?: string | null;
   email?: string | null;

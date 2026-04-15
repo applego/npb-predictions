@@ -15,6 +15,7 @@ export async function POST(req: Request) {
     name: string;
     slug: string;
     avatarUrl?: string;
+    sourceUrl?: string;
   };
 
   if (!body.name?.trim() || !body.slug?.trim()) {
@@ -30,6 +31,7 @@ export async function POST(req: Request) {
       name: body.name.trim(),
       slug: body.slug.trim(),
       avatarUrl: body.avatarUrl?.trim() || null,
+      sourceUrl: body.sourceUrl?.trim() || null,
     })
     .onConflictDoNothing({ target: users.slug })
     .returning();

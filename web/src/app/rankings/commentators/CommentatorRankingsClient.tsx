@@ -104,16 +104,32 @@ function loadPrevRanks(key: string): Map<number, number> {
 
 // ── Sub-components ──
 
-function SourceBadgeChip({ source }: { source: string | null }) {
+function SourceBadgeChip({ source, sourceUrl }: { source: string | null; sourceUrl?: string | null }) {
   const colors = getSourceBadgeColors(source);
+  const chipStyle = {
+    background: colors.bg,
+    border: `1px solid ${colors.border}`,
+    color: colors.text,
+  };
+  if (sourceUrl) {
+    return (
+      <a
+        href={sourceUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium transition-opacity hover:opacity-80"
+        style={chipStyle}
+        onClick={(e) => e.stopPropagation()}
+        title={`${source ?? "その他"} — 別タブで開く`}
+      >
+        {source ?? "その他"} ↗
+      </a>
+    );
+  }
   return (
     <span
-      className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium"
-      style={{
-        background: colors.bg,
-        border: `1px solid ${colors.border}`,
-        color: colors.text,
-      }}
+      className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium"
+      style={chipStyle}
     >
       {source ?? "その他"}
     </span>
@@ -135,7 +151,7 @@ function TabButton({
     <button
       type="button"
       onClick={onClick}
-      className="shrink-0 rounded px-3 py-1.5 text-xs font-medium tracking-wider transition-all"
+      className="shrink-0 rounded px-3 py-2.5 text-xs font-medium tracking-wider transition-all"
       style={{
         fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
         letterSpacing: "0.12em",
@@ -157,7 +173,7 @@ function RankChangeBadge({ delta }: { delta: number | null | undefined }) {
   if (delta === undefined || delta === null) {
     return (
       <span
-        className="rounded px-1 py-0.5 text-[9px] font-bold"
+        className="rounded px-1 py-0.5 text-[10px] font-bold"
         style={{ background: "rgba(96,165,250,0.15)", color: "#60a5fa", letterSpacing: "0.05em" }}
       >
         NEW
@@ -168,7 +184,7 @@ function RankChangeBadge({ delta }: { delta: number | null | undefined }) {
   const up = delta > 0;
   return (
     <span
-      className="text-[10px] font-bold"
+      className="text-xs font-bold"
       style={{ color: up ? "#4ade80" : "#f87171" }}
     >
       {up ? "↑" : "↓"}{Math.abs(delta)}
@@ -191,7 +207,7 @@ function LikeButton({
     <button
       type="button"
       onClick={(e) => { e.stopPropagation(); onLike(); }}
-      className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[11px] transition-all"
+      className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-xs transition-all"
       style={{
         color: liked ? "var(--stitch)" : "var(--text-muted)",
         border: `1px solid ${liked ? "rgba(229,57,53,0.3)" : "var(--border-primary)"}`,
@@ -255,7 +271,7 @@ function PredictionVsActualTable({
                 <td className="px-2 py-1.5" style={{ color: "var(--text-primary)" }}>{detail.predictedTeam}</td>
                 <td className="px-2 py-1.5" style={{ color: "var(--text-primary)" }}>{detail.actualTeam || "---"}</td>
                 <td className="px-2 py-1.5 text-right">
-                  <span className="inline-flex items-center gap-1 text-[11px] font-medium" style={{ color: diffInfo.color }}>
+                  <span className="inline-flex items-center gap-1 text-xs font-medium" style={{ color: diffInfo.color }}>
                     {isCorrect ? (
                       <><span className="inline-block h-1.5 w-1.5 rounded-full bg-green-400" />{diffInfo.text}</>
                     ) : (
@@ -295,7 +311,7 @@ function ExpandedDetail({ entry }: { entry: CommentatorData }) {
             <PredictionVsActualTable league="パ・リーグ" details={entry.pacificDetails} />
           </div>
           {entry.variant && (
-            <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+            <div className="text-xs" style={{ color: "var(--text-muted)" }}>
               予想バリアント: {entry.variant}
             </div>
           )}
@@ -381,7 +397,7 @@ function LeaderboardRow({
             >
               {entry.name}
             </Link>
-            <SourceBadgeChip source={entry.source} />
+            <SourceBadgeChip source={entry.source} sourceUrl={entry.sourceUrl} />
             <LikeButton count={likeCount} liked={liked} onLike={onLike} />
           </div>
         </td>
@@ -486,7 +502,7 @@ function FirstPlaceDonut({
   return (
     <div className="space-y-2">
       <div
-        className="text-[10px] font-medium uppercase tracking-widest"
+        className="text-xs font-medium uppercase tracking-widest"
         style={{
           fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
           color: "var(--text-muted)",
@@ -523,7 +539,7 @@ function FirstPlaceDonut({
       </svg>
       <div className="space-y-1">
         {slices.map(({ team, count }) => (
-          <div key={team} className="flex items-center gap-1.5 text-[10px]">
+          <div key={team} className="flex items-center gap-1.5 text-xs">
             <div
               className="h-2 w-2 shrink-0 rounded-sm"
               style={{ background: getTeamColor(team) }}
@@ -1037,7 +1053,7 @@ export function CommentatorRankingsClient() {
             <button
               type="button"
               onClick={() => setShowDistrib((v) => !v)}
-              className="rounded px-2.5 py-1 text-[10px] font-medium tracking-wide transition-all"
+              className="rounded px-2.5 py-2 text-xs font-medium tracking-wide transition-all"
               style={{
                 fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
                 letterSpacing: "0.12em",
@@ -1058,7 +1074,7 @@ export function CommentatorRankingsClient() {
                   data.actualPacific.map((a) => ({ rank: a.rank, teamName: a.teamName })),
                 )
               }
-              className="rounded px-2.5 py-1 text-[10px] font-medium tracking-wide transition-all"
+              className="rounded px-2.5 py-2 text-xs font-medium tracking-wide transition-all"
               style={{
                 fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
                 letterSpacing: "0.12em",

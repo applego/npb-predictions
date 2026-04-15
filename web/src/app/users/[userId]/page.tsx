@@ -264,7 +264,7 @@ export default async function UserDetailPage({
             }}
           >
             <ScoreHistoryChart history={history} />
-            <p className="mt-2 text-[10px]" style={{ color: "var(--text-muted)" }}>
+            <p className="mt-2 text-xs" style={{ color: "var(--text-muted)" }}>
               ▪ 濃い赤 = 合計スコア ▪ 薄い赤 = うち順位点
             </p>
           </div>

@@ -117,6 +117,7 @@ interface User {
   name: string;
   slug: string;
   avatarUrl: string | null;
+  sourceUrl: string | null;
 }
 
 function UserManager() {
@@ -124,6 +125,7 @@ function UserManager() {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [sourceUrl, setSourceUrl] = useState("");
   const [result, setResult] = useState<ApiResult | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -144,12 +146,14 @@ function UserManager() {
       name,
       slug: slug || name.toLowerCase().replace(/\s+/g, "-"),
       avatarUrl: avatarUrl || undefined,
+      sourceUrl: sourceUrl || undefined,
     });
     setResult(r);
     if (r.ok) {
       setName("");
       setSlug("");
       setAvatarUrl("");
+      setSourceUrl("");
       await loadUsers();
     }
     setLoading(false);
@@ -176,7 +180,7 @@ function UserManager() {
 
       {/* Add user form */}
       <h3 className="mb-3 text-sm font-semibold text-gray-600">ユーザー追加</h3>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2">
         <div>
           <label className="mb-1 block text-sm font-medium">名前 *</label>
           <input
@@ -204,6 +208,16 @@ function UserManager() {
             value={avatarUrl}
             onChange={(e) => setAvatarUrl(e.target.value)}
             placeholder="https://..."
+            className="w-full rounded border px-3 py-2"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium">媒体URL（別タブリンク用）</label>
+          <input
+            type="url"
+            value={sourceUrl}
+            onChange={(e) => setSourceUrl(e.target.value)}
+            placeholder="https://www.youtube.com/..."
             className="w-full rounded border px-3 py-2"
           />
         </div>

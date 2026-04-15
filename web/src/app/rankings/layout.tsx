@@ -4,9 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const TABS = [
+  { href: "/rankings/predictions", label: "PREDICTIONS", match: "/rankings/predictions" },
   { href: "/rankings/commentators", label: "YEARLY", match: "/rankings/commentators" },
   { href: "/rankings/all-time", label: "ALL-TIME", match: "/rankings/all-time" },
-  { href: "/standings", label: "SCOREBOARD", match: "/standings" },
+  { href: "/rankings/scoreboard", label: "SCOREBOARD", match: "/rankings/scoreboard" },
 ];
 
 export default function RankingsLayout({ children }: { children: React.ReactNode }) {
