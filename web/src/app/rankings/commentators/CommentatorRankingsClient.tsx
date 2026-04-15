@@ -135,7 +135,7 @@ function TabButton({
     <button
       type="button"
       onClick={onClick}
-      className="rounded px-3 py-1.5 text-xs font-medium tracking-wider transition-all"
+      className="shrink-0 rounded px-3 py-1.5 text-xs font-medium tracking-wider transition-all"
       style={{
         fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
         letterSpacing: "0.12em",
@@ -969,7 +969,7 @@ export function CommentatorRankingsClient() {
       >
         <div>
           <div className="mb-2 text-[10px] font-medium uppercase tracking-widest" style={{ color: "var(--text-muted)", letterSpacing: "0.18em" }}>YEAR</div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {YEAR_TABS.map((tab) => (
               <TabButton key={tab.value} active={year === tab.value} onClick={() => { setYear(tab.value); setExpandedId(null); }}>
                 {tab.label}

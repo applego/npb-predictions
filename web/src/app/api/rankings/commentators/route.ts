@@ -150,10 +150,15 @@ export async function GET(req: Request) {
     };
   });
 
-  // Sort by effectiveTotal descending
-  commentators.sort((a, b) => b.effectiveTotal - a.effectiveTotal);
+  // Filter: combined ranking only includes users who predicted BOTH leagues
+  const filtered = leagueParam === "all"
+    ? commentators.filter((c) => c.centralDetails.length > 0 && c.pacificDetails.length > 0)
+    : commentators;
 
-  const ranked = commentators.map((c, idx) => ({ ...c, rank: idx + 1 }));
+  // Sort by effectiveTotal descending
+  filtered.sort((a, b) => b.effectiveTotal - a.effectiveTotal);
+
+  const ranked = filtered.map((c, idx) => ({ ...c, rank: idx + 1 }));
 
   return NextResponse.json({
     season: { id: season.id, year: season.year },

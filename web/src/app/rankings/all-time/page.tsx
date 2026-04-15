@@ -15,6 +15,7 @@ interface YearScore {
   centralScore: number;
   pacificScore: number;
   totalScore: number;
+  deviation: number | null;
 }
 
 interface Commentator {
@@ -23,13 +24,15 @@ interface Commentator {
   name: string;
   slug: string;
   source: string | null;
-  variant: string | null;
   yearsCount: number;
   years: YearScore[];
   allTimeCentral: number;
   allTimePacific: number;
   allTimeTotal: number;
   avgPerYear: number;
+  bestScore: number;
+  bestYear: number | null;
+  avgDeviation: number | null;
 }
 
 interface AllTimeResponse {
@@ -150,7 +153,7 @@ export default async function AllTimeRankingsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr style={{ borderBottom: "2px solid var(--border-primary)" }}>
-                  {["#", "解説者", "参加年", "セ", "パ", "通算", "平均/年"].map((col, i) => (
+                  {["#", "解説者", "参加年", "平均/年", "最高", "偏差値", "通算"].map((col, i) => (
                     <th
                       key={col}
                       className={`px-3 py-2.5 text-xs font-medium ${i <= 1 ? "text-left" : "text-right"}`}
@@ -200,22 +203,29 @@ export default async function AllTimeRankingsPage() {
                       </td>
                       <td className="px-3 py-2.5 text-right" style={{
                         fontFamily: "var(--font-display)",
-                        color: c.allTimeCentral > 0 ? "var(--field)" : c.allTimeCentral < 0 ? "var(--stitch)" : "var(--text-muted)",
+                        fontWeight: 700,
+                        color: c.avgPerYear > 0 ? "var(--field)" : c.avgPerYear < 0 ? "var(--stitch)" : "var(--text-muted)",
                       }}>
-                        {fmtScore(c.allTimeCentral)}
+                        {c.avgPerYear > 0 ? `+${c.avgPerYear}` : c.avgPerYear}
                       </td>
                       <td className="px-3 py-2.5 text-right" style={{
                         fontFamily: "var(--font-display)",
-                        color: c.allTimePacific > 0 ? "var(--field)" : c.allTimePacific < 0 ? "var(--stitch)" : "var(--text-muted)",
+                        color: c.bestScore > 0 ? "var(--dirt)" : "var(--text-muted)",
                       }}>
-                        {fmtScore(c.allTimePacific)}
+                        {fmtScore(c.bestScore)}
+                        {c.bestYear && <span className="ml-0.5 text-[10px]" style={{ color: "var(--text-muted)" }}>({c.bestYear})</span>}
+                      </td>
+                      <td className="px-3 py-2.5 text-right" style={{
+                        fontFamily: "var(--font-display)",
+                        color: c.avgDeviation && c.avgDeviation >= 55 ? "var(--field)" : c.avgDeviation && c.avgDeviation < 45 ? "var(--stitch)" : "var(--text-muted)",
+                      }}>
+                        {c.avgDeviation ?? "—"}
                       </td>
                       <td className="px-3 py-2.5 text-right">
                         <span
                           className="inline-block rounded-sm px-2 py-0.5"
                           style={{
                             fontFamily: "var(--font-display)",
-                            fontWeight: 700,
                             background: isTop3 ? "rgba(212,160,23,0.08)" : "var(--bg-elevated)",
                             color: c.allTimeTotal > 0 ? "var(--dirt)" : "var(--stitch)",
                             border: `1px solid ${isTop3 ? "rgba(212,160,23,0.2)" : "var(--border-primary)"}`,
@@ -223,12 +233,6 @@ export default async function AllTimeRankingsPage() {
                         >
                           {fmtScore(c.allTimeTotal)}
                         </span>
-                      </td>
-                      <td className="px-3 py-2.5 text-right" style={{
-                        fontFamily: "var(--font-display)",
-                        color: "var(--text-muted)",
-                      }}>
-                        {c.avgPerYear}
                       </td>
                     </tr>
                   );

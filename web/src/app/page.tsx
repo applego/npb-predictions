@@ -403,8 +403,7 @@ export default async function HomePage() {
         <div className="grid sm:grid-cols-3">
           {/* Ranking points */}
           <div
-            className="p-6"
-            style={{ borderRight: "1px solid var(--border-primary)" }}
+            className="p-6 sm:[border-right:1px_solid_var(--border-primary)]"
           >
             <h3
               className="mb-4 text-xs font-medium tracking-widest uppercase"
@@ -447,8 +446,7 @@ export default async function HomePage() {
 
           {/* Title points */}
           <div
-            className="p-6"
-            style={{ borderRight: "1px solid var(--border-primary)" }}
+            className="p-6 sm:[border-right:1px_solid_var(--border-primary)]"
           >
             <h3
               className="mb-4 text-xs font-medium tracking-widest uppercase"
@@ -635,9 +633,9 @@ export default async function HomePage() {
                     <table className="w-full" style={{ borderCollapse: "separate", borderSpacing: "2px" }}>
                       <thead>
                         <tr>
-                          <th className="w-7 rounded px-1 py-1 text-center text-[9px]" style={{ background: "var(--bg-inset)", color: "var(--text-muted)" }}>#</th>
+                          <th className="w-7 rounded px-1 py-1 text-center text-[11px]" style={{ background: "var(--bg-inset)", color: "var(--text-muted)" }}>#</th>
                           {pUsers.map((u) => (
-                            <th key={u.id} className="rounded px-1 py-1 text-center text-[9px]" style={{ background: "var(--bg-inset)", color: "var(--text-muted)" }}>
+                            <th key={u.id} className="rounded px-1 py-1 text-center text-[11px]" style={{ background: "var(--bg-inset)", color: "var(--text-muted)" }}>
                               {u.name.slice(0, 4)}
                             </th>
                           ))}
