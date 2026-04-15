@@ -9,6 +9,8 @@ import {
 } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { calcRankingPointForTeam } from "@/lib/scoring";
+import { generateArticleV2, type ArticleVarsV2 } from "@/lib/article-templates-v2";
+import { computeBoldness, getBoldnessLabel, getTimingLabel, getConsensusLabel } from "@/lib/article-templates";
 
 export interface NewsItem {
   id: string;
@@ -20,6 +22,14 @@ export interface NewsItem {
   timestamp: number;
   icon: string;
   source?: string;
+  /** Newspaper-style headline (for prediction type) */
+  headline?: string;
+  /** Newspaper subtext */
+  subtext?: string;
+  /** Central league picks [1st, 2nd, ...] */
+  centralPicks?: string[];
+  /** Pacific league picks [1st, 2nd, ...] */
+  pacificPicks?: string[];
 }
 
 function fmtScore(score: number): string {
@@ -141,32 +151,92 @@ export async function generateNewsFeed(limit = 50): Promise<NewsItem[]> {
       });
     });
 
-    // ── 3. 新規予想 (prediction) ──
+    // ── 3. 新規予想 (prediction) — newspaper article style ──
     const seasonPreds = await db
-      .select({
-        userId: predictions.userId,
-        createdAt: predictions.createdAt,
-      })
+      .select()
       .from(predictions)
       .where(eq(predictions.seasonId, season.id))
       .orderBy(desc(predictions.createdAt));
+
+    // Get all ranking picks for article generation
+    const allPicksForSeason = await db.select().from(rankingPicks);
+    const picksByPredId = new Map<number, typeof allPicksForSeason>();
+    for (const rp of allPicksForSeason) {
+      const arr = picksByPredId.get(rp.predictionId) ?? [];
+      arr.push(rp);
+      picksByPredId.set(rp.predictionId, arr);
+    }
+
+    // Collect all 1st picks for boldness calculation
+    const allC1s: string[] = [];
+    const allP1s: string[] = [];
+    for (const sp of seasonPreds) {
+      const picks = picksByPredId.get(sp.id) ?? [];
+      const c1 = picks.find((p) => p.league === "central" && p.rank === 1);
+      const p1 = picks.find((p) => p.league === "pacific" && p.rank === 1);
+      if (c1) allC1s.push(c1.teamName);
+      if (p1) allP1s.push(p1.teamName);
+    }
 
     for (const pred of seasonPreds) {
       const user = userMap.get(pred.userId);
       if (!user) continue;
 
-      const displayName = user.variant ? `${user.name}(${user.variant})` : user.name;
+      const picks = picksByPredId.get(pred.id) ?? [];
+      const centralPicks = picks
+        .filter((p) => p.league === "central")
+        .sort((a, b) => a.rank - b.rank)
+        .map((p) => p.teamName);
+      const pacificPicks = picks
+        .filter((p) => p.league === "pacific")
+        .sort((a, b) => a.rank - b.rank)
+        .map((p) => p.teamName);
+
+      const c1 = centralPicks[0] ?? "???";
+      const p1 = pacificPicks[0] ?? "???";
+
+      // Generate newspaper article
+      const boldnessLevel = computeBoldness(c1, p1, allC1s, allP1s);
+      const month = pred.createdAt ? new Date(Number(pred.createdAt) * 1000).getMonth() + 1 : 3;
+      const popularC = mode(allC1s);
+      const popularPct = allC1s.length > 0
+        ? Math.round((allC1s.filter((t) => t === popularC).length / allC1s.length) * 100)
+        : 0;
+
+      const vars: ArticleVarsV2 = {
+        name: user.name,
+        year: season.year,
+        central1: c1,
+        pacific1: p1,
+        boldness: getBoldnessLabel(boldnessLevel),
+        timing: getTimingLabel(month),
+        timingBonus: month <= 3 ? "×1.00" : `×${Math.max(0.1, 1 - 0.9 * Math.sqrt(Math.min(1, (month - 3) * 30 / 181))).toFixed(2)}`,
+        consensus: getConsensusLabel(c1 === popularC ? 0.8 : 0.2),
+        popularPick: popularC,
+        popularPct,
+        lastYearC1: "",
+        lastYearP1: "",
+        c1LastRank: 0,
+        daysContext: "",
+        month,
+      };
+
+      const article = generateArticleV2(user.id, vars);
 
       newsItems.push({
         id: `prediction-${season.year}-${user.id}`,
         type: "prediction",
-        title: `${displayName}が${season.year}年の予想を登録`,
-        body: `データソース: ${user.source ?? "直接入力"}`,
+        title: article.headline,
+        body: article.subtext,
         commentator: user.name,
         year: season.year,
         timestamp: season.year * 10000000 + 3000 + pred.userId,
-        icon: "📝",
+        icon: "📰",
         source: user.source ?? undefined,
+        headline: article.headline,
+        subtext: article.subtext,
+        centralPicks,
+        pacificPicks,
       });
     }
   }
@@ -247,4 +317,15 @@ export async function generateNewsFeed(limit = 50): Promise<NewsItem[]> {
   });
 
   return unique.slice(0, limit);
+}
+
+function mode(arr: string[]): string {
+  const freq = new Map<string, number>();
+  for (const v of arr) freq.set(v, (freq.get(v) ?? 0) + 1);
+  let best = "";
+  let bestCount = 0;
+  for (const [k, c] of freq) {
+    if (c > bestCount) { best = k; bestCount = c; }
+  }
+  return best;
 }

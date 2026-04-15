@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { getTeamByName } from "@/lib/teams";
 
 // ── Types ──
 
@@ -14,6 +15,10 @@ interface NewsItem {
   timestamp: number;
   icon: string;
   source?: string;
+  headline?: string;
+  subtext?: string;
+  centralPicks?: string[];
+  pacificPicks?: string[];
 }
 
 type FilterType = "all" | "hit" | "ranking" | "prediction" | "spotlight";
@@ -56,6 +61,29 @@ const TYPE_STYLES: Record<string, { bg: string; border: string; text: string; la
     badge: "rgba(194,65,12,0.10)",
   },
 };
+
+// ── Team Mini Badge ──
+
+function TeamMini({ team, rank }: { team: string; rank: number }) {
+  const t = getTeamByName(team);
+  if (!t) return <span className="text-[9px]" style={{ color: "var(--text-muted)" }}>{team}</span>;
+  return (
+    <span
+      className="inline-flex items-center justify-center rounded-sm text-[9px] font-bold"
+      style={{
+        background: t.color,
+        color: t.textColor,
+        padding: "1px 4px",
+        minWidth: "1.2rem",
+        lineHeight: 1.3,
+        textShadow: t.textColor === "#fff" ? "0 0 2px rgba(0,0,0,0.3)" : "none",
+      }}
+      title={`${rank}位: ${t.shortName}`}
+    >
+      {t.abbr}
+    </span>
+  );
+}
 
 // ── Shared Badge ──
 
@@ -183,6 +211,31 @@ function NewsCard({ item }: { item: NewsItem }) {
           {item.body}
         </p>
 
+        {/* Team picks for prediction type */}
+        {item.type === "prediction" && item.centralPicks && item.centralPicks.length > 0 && (
+          <div className="mt-2 flex gap-3">
+            <div className="flex items-center gap-1">
+              <span className="text-[9px] font-bold" style={{ color: "var(--text-muted)" }}>セ</span>
+              {item.centralPicks.map((team, i) => (
+                <TeamMini key={`c-${i}`} team={team} rank={i + 1} />
+              ))}
+            </div>
+            {item.pacificPicks && item.pacificPicks.length > 0 && (
+              <div className="flex items-center gap-1">
+                <span className="text-[9px] font-bold" style={{ color: "var(--text-muted)" }}>パ</span>
+                {item.pacificPicks.map((team, i) => (
+                  <TeamMini key={`p-${i}`} team={team} rank={i + 1} />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {item.source && !item.source.startsWith("http") && item.source !== "直接入力" && (
+          <span className="mt-1 inline-block text-[10px]" style={{ color: "var(--text-muted)" }}>
+            📎 {item.source}
+          </span>
+        )}
         {item.source && item.source.startsWith("http") && (
           <a
             href={item.source}
