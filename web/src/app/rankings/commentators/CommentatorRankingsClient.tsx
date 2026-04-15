@@ -1424,6 +1424,24 @@ export function CommentatorRankingsClient() {
             <p>各解説者の開幕前順位予想を、実際のシーズン結果と照合してスコアリング。順位差に応じた加減点方式で、セ・パ各リーグの的中率を数値化しています。</p>
             <p>データソース: YouTube予想動画、スポーツ新聞コラム、テレビ・ラジオ番組の開幕前特番など。行をクリックすると予想と実際の比較表が展開されます。</p>
           </div>
+          <div className="flex items-center justify-between pt-1">
+            <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+              複数年の平均成績・偏差値で比較したい場合は通算ランキングへ
+            </span>
+            <a
+              href="/rankings/all-time"
+              className="inline-flex items-center gap-1 rounded px-2.5 py-1 text-xs font-medium transition-opacity hover:opacity-80"
+              style={{
+                fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
+                letterSpacing: "0.08em",
+                background: "rgba(212,160,23,0.08)",
+                border: "1px solid rgba(212,160,23,0.2)",
+                color: "#d4a017",
+              }}
+            >
+              通算ランキング →
+            </a>
+          </div>
         </div>
       </section>
     </div>

@@ -49,48 +49,48 @@ export const SOURCE_BADGE_CONFIG: Record<
   { bg: string; border: string; text: string; label: string }
 > = {
   YouTube: {
-    bg: "rgba(239,68,68,0.08)",
-    border: "rgba(239,68,68,0.25)",
-    text: "#fca5a5",
+    bg: "#FEE2E2",
+    border: "#FECACA",
+    text: "#B91C1C",
     label: "YouTube",
   },
   "テレビ": {
-    bg: "rgba(56,189,248,0.08)",
-    border: "rgba(56,189,248,0.25)",
-    text: "#7dd3fc",
+    bg: "#DBEAFE",
+    border: "#BFDBFE",
+    text: "#1D4ED8",
     label: "テレビ",
   },
   "新聞": {
-    bg: "rgba(148,163,184,0.08)",
-    border: "rgba(148,163,184,0.25)",
-    text: "#94a3b8",
+    bg: "#F1F5F9",
+    border: "#E2E8F0",
+    text: "#475569",
     label: "新聞",
   },
   "雑誌": {
-    bg: "rgba(52,211,153,0.08)",
-    border: "rgba(52,211,153,0.25)",
-    text: "#6ee7b7",
+    bg: "#D1FAE5",
+    border: "#A7F3D0",
+    text: "#065F46",
     label: "雑誌",
   },
   "ラジオ": {
-    bg: "rgba(168,85,247,0.08)",
-    border: "rgba(168,85,247,0.25)",
-    text: "#c4b5fd",
+    bg: "#EDE9FE",
+    border: "#DDD6FE",
+    text: "#6D28D9",
     label: "ラジオ",
   },
   Web: {
-    bg: "rgba(251,191,36,0.08)",
-    border: "rgba(251,191,36,0.25)",
-    text: "#fcd34d",
+    bg: "#FEF3C7",
+    border: "#FDE68A",
+    text: "#92400E",
     label: "Web",
   },
 };
 
 // Fallback for unknown sources
 export const DEFAULT_SOURCE_BADGE = {
-  bg: "rgba(255,255,255,0.05)",
-  border: "rgba(255,255,255,0.15)",
-  text: "rgba(255,255,255,0.5)",
+  bg: "#F3F4F6",
+  border: "#E5E7EB",
+  text: "#6B7280",
   label: "その他",
 };
 
