@@ -5,7 +5,7 @@ import { calcRankingPointForTeam } from "@/lib/scoring";
 import type { Season, ScoreboardResponse } from "@/lib/types";
 
 const toStr = (d: Date | number | null | undefined): string | null =>
-  d == null ? null : d instanceof Date ? d.toISOString() : String(d);
+  d === null || d === undefined ? null : d instanceof Date ? d.toISOString() : String(d);
 
 export async function getSeasons(): Promise<Season[]> {
   const db = getDb();
