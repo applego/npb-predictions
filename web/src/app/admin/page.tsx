@@ -492,6 +492,15 @@ interface Season {
   isActive: boolean;
 }
 
+interface ScrapedStanding {
+  league: "central" | "pacific";
+  rank: number;
+  teamName: string;
+  wins: number;
+  losses: number;
+  draws: number;
+}
+
 function StandingsUpdater() {
   const [seasons, setSeasons] = useState<Season[]>([]);
   const [seasonId, setSeasonId] = useState<number | "">("");
@@ -501,6 +510,7 @@ function StandingsUpdater() {
   const [isFinal, setIsFinal] = useState(false);
   const [result, setResult] = useState<ApiResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [scraping, setScraping] = useState(false);
 
   useEffect(() => {
     fetch("/api/seasons")
@@ -556,6 +566,43 @@ function StandingsUpdater() {
     );
     setResult(r);
     setLoading(false);
+  }
+
+  async function handleScrapeNpb() {
+    setScraping(true);
+    setResult(null);
+    try {
+      const res = await fetch("/api/admin/scrape-standings", { method: "POST" });
+      const data = await res.json() as { standings?: ScrapedStanding[]; error?: string; scrapedAt?: string; savedToSeasons?: number[] };
+      if (!res.ok) {
+        setResult({ ok: false, error: data.error ?? res.statusText });
+        return;
+      }
+      // Populate form from scraped data
+      const scraped = data.standings ?? [];
+      setStandings((prev) =>
+        prev.map((row) => {
+          const match = scraped.find(
+            (s) => s.league === row.league && s.rank === row.rank
+          );
+          return match
+            ? { ...row, teamName: match.teamName, wins: match.wins, losses: match.losses, draws: match.draws }
+            : row;
+        })
+      );
+      setResult({
+        ok: true,
+        data: {
+          message: `npb.jpから${scraped.length}チームの順位を取得・保存しました`,
+          scrapedAt: data.scrapedAt,
+          savedToSeasons: data.savedToSeasons,
+        },
+      });
+    } catch (e) {
+      setResult({ ok: false, error: String(e) });
+    } finally {
+      setScraping(false);
+    }
   }
 
   async function handleUpdateAndRecalculate() {
@@ -652,7 +699,16 @@ function StandingsUpdater() {
 
   return (
     <section className="rounded-lg border bg-white p-6 shadow-sm">
-      <h2 className="mb-4 text-lg font-bold">実順位更新</h2>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-lg font-bold">実順位更新</h2>
+        <button
+          onClick={() => { void handleScrapeNpb(); }}
+          disabled={scraping || loading}
+          className="rounded bg-green-600 px-4 py-2 text-sm font-bold text-white hover:bg-green-700 disabled:opacity-50"
+        >
+          {scraping ? "取得中..." : "NPBから自動取得"}
+        </button>
+      </div>
       <div className="mb-4 flex flex-wrap items-center gap-4">
         <div>
           <label className="mb-1 block text-sm font-medium">シーズン</label>
