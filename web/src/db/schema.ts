@@ -11,7 +11,7 @@ export type League = "central" | "pacific";
 export type TitleCategory = "batting_avg" | "rbi" | "home_runs" | "wins" | "era" | "saves";
 export type AwardType = "first_half_champion" | "monthly_champion" | "interleague_champion" | "solo_title" | "dark_horse";
 
-export type UserRole = "friend" | "commentator";
+export type UserRole = "friend" | "commentator" | "system";
 
 export const users = sqliteTable("users", {
   id: integer("id").primaryKey({ autoIncrement: true }),
