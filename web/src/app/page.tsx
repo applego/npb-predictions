@@ -372,7 +372,7 @@ export default async function HomePage() {
               <span style={{ fontSize: "1.1em" }}>&#8594;</span>
             </Link>
             <Link
-              href="/rankings/commentators"
+              href="/rankings/scoreboard"
               className="inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-medium transition-all"
               style={{
                 background: "var(--bg-elevated)",
@@ -544,6 +544,135 @@ export default async function HomePage() {
           </div>
         </section>
       )}
+
+      {/* ══════════ PREDICTION NEWS PREVIEW ══════════ */}
+      {latestNews.filter((n) => n.type === "prediction").length > 0 && (
+        <section
+          className="overflow-hidden rounded-xl"
+          style={{
+            background: "var(--bg-surface)",
+            border: "1px solid var(--border-primary)",
+          }}
+        >
+          {/* Header */}
+          <div
+            className="flex items-center justify-between px-5 py-3"
+            style={{ borderBottom: "1px solid var(--border-primary)" }}
+          >
+            <div className="flex items-center gap-3">
+              <span
+                className="flex h-7 w-7 items-center justify-center rounded text-xs"
+                style={{
+                  background: "var(--bg-elevated)",
+                  border: "1px solid var(--border-primary)",
+                  color: "var(--text-secondary)",
+                }}
+              >
+                &#128240;
+              </span>
+              <span
+                className="text-sm font-bold"
+                style={{ color: "var(--text-primary)" }}
+              >
+                最新の予想ニュース
+              </span>
+            </div>
+            <Link
+              href="/news"
+              className="text-xs font-medium transition-colors"
+              style={{
+                color: "var(--stitch)",
+                letterSpacing: "0.08em",
+              }}
+            >
+              すべてのニュースを見る &#8594;
+            </Link>
+          </div>
+
+          <div className="divide-y" style={{ borderColor: "var(--border-primary)" }}>
+            {latestNews
+              .filter((n) => n.type === "prediction")
+              .slice(0, 2)
+              .map((news) => (
+                <div key={news.id} className="px-5 py-4">
+                  {news.commentator && (
+                    <span
+                      className="mb-1.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold"
+                      style={{
+                        background: "rgba(124,58,237,0.08)",
+                        color: "#7c3aed",
+                        border: "1px solid rgba(124,58,237,0.15)",
+                      }}
+                    >
+                      {news.commentator}
+                    </span>
+                  )}
+                  <h3
+                    className="text-sm font-bold leading-snug"
+                    style={{ color: "var(--text-primary)" }}
+                  >
+                    {news.title}
+                  </h3>
+                  <p
+                    className="mt-1 text-xs leading-relaxed"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    {news.body.length > 80
+                      ? `${news.body.slice(0, 80)}...`
+                      : news.body}
+                  </p>
+                </div>
+              ))}
+          </div>
+        </section>
+      )}
+
+      {/* ══════════ IMAGE GENERATION CTA ══════════ */}
+      <section
+        className="overflow-hidden rounded-xl"
+        style={{
+          background: "var(--bg-surface)",
+          border: "1px solid var(--border-primary)",
+        }}
+      >
+        <div className="px-6 py-8 text-center sm:px-10">
+          <span
+            className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-full text-xl"
+            style={{
+              background: "var(--bg-elevated)",
+              border: "1px solid var(--border-primary)",
+            }}
+          >
+            &#128444;&#65039;
+          </span>
+          <h2
+            className="mt-3 text-lg font-bold"
+            style={{ color: "var(--text-primary)" }}
+          >
+            あなたの予想を新聞一面に
+          </h2>
+          <p
+            className="mt-1.5 text-sm"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            予想を登録して、スポーツ新聞風の画像を自動生成。X でシェアしよう！
+          </p>
+          <div className="mt-5">
+            <Link
+              href="/predictions/new"
+              className="inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-bold transition-all"
+              style={{
+                background: "var(--stitch)",
+                color: "#fff",
+                boxShadow: "0 2px 8px rgba(229,57,53,0.3)",
+              }}
+            >
+              予想を登録して画像を作る
+              <span style={{ fontSize: "1.1em" }}>&#8594;</span>
+            </Link>
+          </div>
+        </div>
+      </section>
 
       {/* ══════════ GROUPS (Coming Soon) ══════════ */}
       <section
