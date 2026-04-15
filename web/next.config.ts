@@ -1,8 +1,13 @@
 import type { NextConfig } from "next";
-import { setupDevPlatform } from "@cloudflare/next-on-pages/next-dev";
 
+// Use an async IIFE to avoid top-level await (incompatible with Next.js CJS compilation)
 if (process.env.NODE_ENV === "development") {
-  await setupDevPlatform();
+  (async () => {
+    const { setupDevPlatform } = await import(
+      "@cloudflare/next-on-pages/next-dev"
+    );
+    await setupDevPlatform();
+  })();
 }
 
 const nextConfig: NextConfig = {

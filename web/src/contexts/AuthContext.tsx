@@ -90,7 +90,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const auth = getFirebaseAuth();
     if (!auth) { setLoading(false); return; }
+
+    // Safety net: if Firebase never responds within 8s, unblock the UI
+    const timeout = setTimeout(() => setLoading(false), 8000);
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      clearTimeout(timeout);
       setFirebaseUser(user);
       if (user) {
         const linked = await linkUser(user);
@@ -100,7 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       setLoading(false);
     });
-    return unsubscribe;
+    return () => { clearTimeout(timeout); unsubscribe(); };
   }, []);
 
   const signIn = useCallback(async () => {
