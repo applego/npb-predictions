@@ -8,6 +8,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import { getTeamByName } from "@/lib/teams";
+import { downloadPredictionPng } from "@/lib/prediction-png";
 
 interface PickDetail {
   rank: number;
@@ -346,8 +347,8 @@ export default function GroupDetailPage() {
       {/* Prediction matrix comparison */}
       {scoreboard.some((s) => s.hasPrediction) && (
         <>
-          {/* League tabs */}
-          <div className="flex gap-0">
+          {/* League tabs + PNG button */}
+          <div className="flex items-end gap-0">
             {(["central", "pacific"] as const).map((l) => {
               const active = l === league;
               const color =
@@ -372,9 +373,39 @@ export default function GroupDetailPage() {
               );
             })}
             <div
-              className="flex-1"
+              className="flex flex-1 items-center justify-end pb-1"
               style={{ borderBottom: "3px solid var(--border-primary)" }}
-            />
+            >
+              <button
+                onClick={() => {
+                  const withPreds = scoreboard.filter((m) => m.hasPrediction);
+                  const cols = withPreds.map((m) => ({
+                    name: m.name,
+                    picks: (league === "central" ? m.centralPicks : m.pacificPicks).map(
+                      (p) => ({ rank: p.rank, teamName: p.teamName })
+                    ),
+                  }));
+                  downloadPredictionPng(
+                    cols,
+                    league,
+                    `${group.name} — ${season?.year ?? ""} 予想比較`
+                  );
+                }}
+                className="mr-2 inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-opacity hover:opacity-80"
+                style={{
+                  background: "var(--bg-elevated)",
+                  border: "1px solid var(--border-primary)",
+                  color: "var(--text-secondary)",
+                  fontFamily: "var(--font-display)",
+                  letterSpacing: "0.06em",
+                }}
+              >
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M8 2v8M5 7l3 3 3-3M2 12v1a1 1 0 001 1h10a1 1 0 001-1v-1" />
+                </svg>
+                PNG
+              </button>
+            </div>
           </div>
 
           {/* Matrix table */}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import Link from "next/link";
 import {
   type LeagueFilter,
@@ -11,6 +11,8 @@ import {
   getSourceBadgeColors,
   getDiffLabel,
 } from "@/lib/commentator-types";
+import { useAuth } from "@/contexts/AuthContext";
+import { downloadPredictionPng, type PngCol } from "@/lib/prediction-png";
 
 // ── Constants ──
 
@@ -751,6 +753,18 @@ export function CommentatorRankingsClient() {
   // UI toggles
   const [showDistrib, setShowDistrib] = useState(false);
 
+  // PNG panel
+  const { firebaseUser } = useAuth();
+  const [showPngPanel, setShowPngPanel] = useState(false);
+  const [pngLeague, setPngLeague] = useState<"central" | "pacific">("central");
+  const [selectedPngIds, setSelectedPngIds] = useState<Set<number>>(new Set());
+  const [includeSelf, setIncludeSelf] = useState(false);
+  const [selfPrediction, setSelfPrediction] = useState<{
+    name: string;
+    picks: Array<{ league: string; rank: number; teamName: string }>;
+  } | null>(null);
+  const [selfPicksLoading, setSelfPicksLoading] = useState(false);
+
   // 1位予想分布 (memoized from data)
   const firstPlaceDistrib = useMemo(() => {
     if (!data) return { central: [], pacific: [] };
@@ -934,6 +948,24 @@ export function CommentatorRankingsClient() {
     [fingerprint, likedIds]
   );
 
+  // Fetch own prediction when includeSelf is toggled on
+  useEffect(() => {
+    if (!includeSelf || !firebaseUser || year === "all") {
+      setSelfPrediction(null);
+      return;
+    }
+    setSelfPicksLoading(true);
+    fetch(`/api/seasons/${year}/predictions`)
+      .then((r) => r.json() as Promise<Array<{ user: { firebaseUid: string | null; name: string }; rankingPicks: Array<{ league: string; rank: number; teamName: string }> }>>)
+      .then((preds) => {
+        const mine = preds.find((p) => p.user.firebaseUid === firebaseUser.uid);
+        if (!mine) { setSelfPrediction(null); return; }
+        setSelfPrediction({ name: mine.user.name, picks: mine.rankingPicks });
+      })
+      .catch(() => setSelfPrediction(null))
+      .finally(() => setSelfPicksLoading(false));
+  }, [includeSelf, firebaseUser, year]);
+
   // Client-side filtering
   const filtered = data
     ? (() => {
@@ -1085,6 +1117,25 @@ export function CommentatorRankingsClient() {
             >
               ↓ グリッド画像
             </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (!showPngPanel && data) {
+                  setSelectedPngIds(new Set(data.commentators.slice(0, 20).map((c) => c.userId)));
+                }
+                setShowPngPanel((v) => !v);
+              }}
+              className="rounded px-2.5 py-2 text-xs font-medium tracking-wide transition-all"
+              style={{
+                fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
+                letterSpacing: "0.12em",
+                background: showPngPanel ? "rgba(251,191,36,0.12)" : "var(--bg-elevated)",
+                border: showPngPanel ? "1px solid rgba(251,191,36,0.35)" : "1px solid var(--border-primary)",
+                color: showPngPanel ? "#fbbf24" : "var(--text-secondary)",
+              }}
+            >
+              {showPngPanel ? "▲ PNG閉じる" : "📰 新聞PNG"}
+            </button>
           </div>
         )}
         <span
@@ -1129,6 +1180,167 @@ export function CommentatorRankingsClient() {
               />
             )}
           </div>
+        </div>
+      )}
+
+      {/* 新聞PNG Panel */}
+      {showPngPanel && data && !loading && (
+        <div
+          className="rounded-xl p-5 space-y-4"
+          style={{ background: "var(--bg-surface)", border: "1px solid rgba(251,191,36,0.2)" }}
+        >
+          <div
+            className="text-xs font-medium uppercase tracking-widest"
+            style={{ fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)", color: "#fbbf24", letterSpacing: "0.2em" }}
+          >
+            📰 新聞スタイル PNG
+          </div>
+
+          {/* League selector */}
+          <div>
+            <div className="mb-1.5 text-[10px] font-medium uppercase tracking-widest" style={{ color: "var(--text-muted)", letterSpacing: "0.18em" }}>LEAGUE</div>
+            <div className="flex gap-2">
+              {(["central", "pacific"] as const).map((lg) => (
+                <button
+                  key={lg}
+                  type="button"
+                  onClick={() => setPngLeague(lg)}
+                  className="rounded px-3 py-1.5 text-xs font-medium transition-all"
+                  style={{
+                    fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
+                    letterSpacing: "0.1em",
+                    background: pngLeague === lg ? (lg === "central" ? "rgba(239,68,68,0.12)" : "rgba(59,130,246,0.12)") : "var(--bg-elevated)",
+                    border: pngLeague === lg ? `1px solid ${lg === "central" ? "rgba(239,68,68,0.4)" : "rgba(59,130,246,0.4)"}` : "1px solid var(--border-primary)",
+                    color: pngLeague === lg ? (lg === "central" ? "#f87171" : "#60a5fa") : "var(--text-secondary)",
+                  }}
+                >
+                  {lg === "central" ? "セ・リーグ" : "パ・リーグ"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Self prediction toggle */}
+          {firebaseUser && year !== "all" && (
+            <label className="flex cursor-pointer select-none items-center gap-2">
+              <input
+                type="checkbox"
+                checked={includeSelf}
+                onChange={(e) => setIncludeSelf(e.target.checked)}
+                className="h-3.5 w-3.5 rounded accent-red-500"
+              />
+              <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
+                自分の予想を先頭に追加
+                {selfPicksLoading && <span style={{ color: "var(--text-muted)" }}> (読み込み中...)</span>}
+                {includeSelf && !selfPicksLoading && !selfPrediction && (
+                  <span style={{ color: "#fb923c" }}> (この年の予想データなし)</span>
+                )}
+              </span>
+            </label>
+          )}
+
+          {/* Commentator selection */}
+          <div>
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <div className="text-[10px] font-medium uppercase tracking-widest" style={{ color: "var(--text-muted)", letterSpacing: "0.18em" }}>
+                解説者選択 ({selectedPngIds.size}人)
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedPngIds(new Set(data.commentators.map((c) => c.userId)))}
+                className="rounded px-2 py-0.5 text-[10px] transition-opacity hover:opacity-80"
+                style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-primary)", color: "var(--text-secondary)" }}
+              >
+                全選択
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedPngIds(new Set())}
+                className="rounded px-2 py-0.5 text-[10px] transition-opacity hover:opacity-80"
+                style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-primary)", color: "var(--text-secondary)" }}
+              >
+                全解除
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedPngIds(new Set(data.commentators.slice(0, 20).map((c) => c.userId)))}
+                className="rounded px-2 py-0.5 text-[10px] transition-opacity hover:opacity-80"
+                style={{ background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.25)", color: "#fbbf24" }}
+              >
+                上位20
+              </button>
+            </div>
+            <div
+              className="max-h-52 space-y-0.5 overflow-y-auto rounded p-2"
+              style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-primary)" }}
+            >
+              {data.commentators.map((c) => (
+                <label
+                  key={c.userId}
+                  className="flex cursor-pointer select-none items-center gap-2 rounded px-2 py-1 transition-colors hover:bg-white/5"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedPngIds.has(c.userId)}
+                    onChange={(e) => {
+                      const next = new Set(selectedPngIds);
+                      e.target.checked ? next.add(c.userId) : next.delete(c.userId);
+                      setSelectedPngIds(next);
+                    }}
+                    className="h-3 w-3 accent-red-500"
+                  />
+                  <span className="tabular-nums text-[10px]" style={{ color: "var(--text-muted)", minWidth: "2em" }}>
+                    {c.rank}
+                  </span>
+                  <span className="flex-1 text-xs" style={{ color: "var(--text-secondary)" }}>
+                    {c.name}
+                  </span>
+                  <span className="tabular-nums text-xs" style={{ color: "var(--text-primary)" }}>
+                    {pngLeague === "central" ? c.centralScore : c.pacificScore}pt
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Download button */}
+          <button
+            type="button"
+            disabled={selectedPngIds.size === 0}
+            onClick={() => {
+              const selected = data.commentators.filter((c) => selectedPngIds.has(c.userId));
+              const cols: PngCol[] = [];
+              if (includeSelf && selfPrediction) {
+                cols.push({
+                  name: selfPrediction.name,
+                  isMe: true,
+                  picks: selfPrediction.picks
+                    .filter((rp) => rp.league === pngLeague)
+                    .map((rp) => ({ rank: rp.rank, teamName: rp.teamName })),
+                });
+              }
+              for (const c of selected) {
+                const details = pngLeague === "central" ? c.centralDetails : c.pacificDetails;
+                cols.push({
+                  name: c.name,
+                  picks: details.map((d) => ({ rank: d.rank, teamName: d.predictedTeam })),
+                });
+              }
+              const leagueLabel = pngLeague === "central" ? "セ・リーグ" : "パ・リーグ";
+              const yearLabel = year === "all" ? "ALL TIME" : String(year);
+              downloadPredictionPng(cols, pngLeague, `NPB ${yearLabel} ${leagueLabel} 順位予想`);
+            }}
+            className="w-full rounded py-2 text-sm font-medium tracking-wide transition-all disabled:opacity-40"
+            style={{
+              fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
+              letterSpacing: "0.12em",
+              background: selectedPngIds.size > 0 ? "rgba(251,191,36,0.12)" : "var(--bg-elevated)",
+              border: `1px solid ${selectedPngIds.size > 0 ? "rgba(251,191,36,0.4)" : "var(--border-primary)"}`,
+              color: selectedPngIds.size > 0 ? "#fbbf24" : "var(--text-muted)",
+            }}
+          >
+            ↓ PNG ダウンロード ({selectedPngIds.size + (includeSelf && selfPrediction ? 1 : 0)}列)
+          </button>
         </div>
       )}
 

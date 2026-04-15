@@ -30,12 +30,19 @@ export interface BodyFont {
 }
 
 export const BODY_FONTS: BodyFont[] = [
+  // ── ゴシック体 ──
   { id: "noto", name: "Noto Sans JP", family: "'Noto Sans JP', sans-serif", googleQuery: "family=Noto+Sans+JP:wght@400;700" },
   { id: "zen", name: "Zen Kaku Gothic New", family: "'Zen Kaku Gothic New', sans-serif", googleQuery: "family=Zen+Kaku+Gothic+New:wght@400;700" },
   { id: "mplus", name: "M PLUS 1p", family: "'M PLUS 1p', sans-serif", googleQuery: "family=M+PLUS+1p:wght@400;700" },
   { id: "biz", name: "BIZ UDPGothic", family: "'BIZ UDPGothic', sans-serif", googleQuery: "family=BIZ+UDPGothic:wght@400;700" },
   { id: "murecho", name: "Murecho", family: "'Murecho', sans-serif", googleQuery: "family=Murecho:wght@400;700" },
   { id: "maru", name: "Zen Maru Gothic", family: "'Zen Maru Gothic', sans-serif", googleQuery: "family=Zen+Maru+Gothic:wght@400;700" },
+  // ── 明朝体（新聞風） ──
+  { id: "noto-serif", name: "Noto Serif JP", family: "'Noto Serif JP', serif", googleQuery: "family=Noto+Serif+JP:wght@400;700;900" },
+  { id: "shippori", name: "Shippori Mincho B1", family: "'Shippori Mincho B1', serif", googleQuery: "family=Shippori+Mincho+B1:wght@400;700;800" },
+  { id: "zen-old", name: "Zen Old Mincho", family: "'Zen Old Mincho', serif", googleQuery: "family=Zen+Old+Mincho:wght@400;700;900" },
+  { id: "biz-mincho", name: "BIZ UDPMincho", family: "'BIZ UDPMincho', serif", googleQuery: "family=BIZ+UDPMincho" },
+  { id: "zen-antique", name: "Zen Antique", family: "'Zen Antique', serif", googleQuery: "family=Zen+Antique" },
 ];
 
 // ── Color Themes ──
@@ -126,6 +133,46 @@ export const COLOR_THEMES: ColorTheme[] = [
       "--stitch-light": "#818CF8",
       "--field": "#34D399",
       "--dirt": "#F59E0B",
+    },
+  },
+  {
+    id: "sports-red",
+    name: "激アツ（赤）",
+    description: "白地に赤黒 — スポーツ紙の一面風",
+    vars: {
+      "--bg-base": "#F5F5F5",
+      "--bg-surface": "#FFFFFF",
+      "--bg-elevated": "#F0F0F0",
+      "--bg-inset": "#E8E8E8",
+      "--border-primary": "#CCCCCC",
+      "--border-strong": "#1A1A1A",
+      "--text-primary": "#0A0A0A",
+      "--text-secondary": "#333333",
+      "--text-muted": "#777777",
+      "--stitch": "#CC0000",
+      "--stitch-light": "#FF0000",
+      "--field": "#006600",
+      "--dirt": "#CC6600",
+    },
+  },
+  {
+    id: "sports-blue",
+    name: "激アツ（青）",
+    description: "白地に青黒 — 中日スポーツ風",
+    vars: {
+      "--bg-base": "#F5F5F5",
+      "--bg-surface": "#FFFFFF",
+      "--bg-elevated": "#EEF2F7",
+      "--bg-inset": "#E0E8F0",
+      "--border-primary": "#CCCCCC",
+      "--border-strong": "#1A1A1A",
+      "--text-primary": "#0A0A0A",
+      "--text-secondary": "#2A2A3A",
+      "--text-muted": "#6A6A7A",
+      "--stitch": "#0033AA",
+      "--stitch-light": "#0055DD",
+      "--field": "#006600",
+      "--dirt": "#CC6600",
     },
   },
 ];
