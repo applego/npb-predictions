@@ -5,43 +5,154 @@ import { notFound } from "next/navigation";
 import type { Prediction, ScoreboardResponse } from "@/lib/types";
 import { LEAGUE_LABELS, TITLE_CATEGORY_LABELS } from "@/lib/types";
 import ShareButton from "@/components/ShareButton";
+import { ScoreHistoryChart, type ScoreHistoryEntry } from "@/components/ScoreHistoryChart";
+import { getDb } from "@/db";
+import { users, seasons, predictions, rankingPicks, titlePicks, scoreSnapshots } from "@/db/schema";
+import { eq, and, desc } from "drizzle-orm";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "";
 const DEFAULT_YEAR = new Date().getFullYear();
+
+// ── Direct DB helpers (avoids self-referential fetch on CF Pages) ──
 
 async function getUserPrediction(
   year: number,
-  userId: string
+  userId: number,
 ): Promise<Prediction | null> {
-  try {
-    const res = await fetch(
-      `${API_BASE}/api/seasons/${year}/users/${userId}`,
-      { cache: "no-store" }
-    );
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({ error: "Unknown error" }));
-      console.error(`[getUserPrediction] Failed: ${res.status}`, errorData);
-      return null;
-    }
-    return res.json() as Promise<Prediction | null>;
-  } catch (error) {
-    console.error("[getUserPrediction] Exception:", error);
-    return null;
-  }
+  const db = getDb();
+
+  const [season] = await db.select().from(seasons).where(eq(seasons.year, year));
+  if (!season) return null;
+
+  const pred = await db.query.predictions.findFirst({
+    where: and(eq(predictions.seasonId, season.id), eq(predictions.userId, userId)),
+    with: { user: true, rankingPicks: true, titlePicks: true },
+  });
+  if (!pred) return null;
+
+  // Map to Prediction type (user field must match)
+  return {
+    id: pred.id,
+    userId: pred.userId,
+    seasonId: pred.seasonId,
+    isLocked: pred.isLocked,
+    lockedAt: pred.lockedAt instanceof Date ? pred.lockedAt.toISOString() : (pred.lockedAt ?? null),
+    user: {
+      id: pred.user.id,
+      name: pred.user.name,
+      slug: pred.user.slug,
+      avatarUrl: pred.user.avatarUrl,
+      role: pred.user.role ?? undefined,
+      source: pred.user.source,
+      variant: pred.user.variant,
+      firebaseUid: pred.user.firebaseUid,
+      email: pred.user.email,
+    },
+    rankingPicks: pred.rankingPicks.map((rp) => ({
+      id: rp.id,
+      predictionId: rp.predictionId,
+      league: rp.league,
+      rank: rp.rank,
+      teamName: rp.teamName,
+    })),
+    titlePicks: pred.titlePicks.map((tp) => ({
+      id: tp.id,
+      predictionId: tp.predictionId,
+      league: tp.league,
+      category: tp.category,
+      playerName: tp.playerName,
+      teamName: tp.teamName,
+    })),
+  };
 }
 
 async function getScoreboard(year: number): Promise<ScoreboardResponse | null> {
-  try {
-    const res = await fetch(
-      `${API_BASE}/api/seasons/${year}/current-scoreboard`,
-      { cache: "no-store" }
-    );
-    if (!res.ok) return null;
-    return res.json() as Promise<ScoreboardResponse | null>;
-  } catch {
-    return null;
+  const db = getDb();
+
+  const [season] = await db.select().from(seasons).where(eq(seasons.year, year));
+  if (!season) return null;
+
+  const snaps = await db
+    .select()
+    .from(scoreSnapshots)
+    .where(eq(scoreSnapshots.seasonId, season.id))
+    .orderBy(desc(scoreSnapshots.totalScore));
+
+  if (snaps.length === 0) {
+    return {
+      season: {
+        id: season.id, year: season.year, label: season.label,
+        isActive: season.isActive,
+        lockDate: season.lockDate instanceof Date ? season.lockDate.toISOString() : (season.lockDate ?? null),
+        createdAt: season.createdAt instanceof Date ? season.createdAt.toISOString() : String(season.createdAt),
+      },
+      scores: [],
+    };
   }
+
+  const allUsers = await db.select().from(users);
+  const userMap = new Map(allUsers.map((u) => [u.id, u]));
+
+  const seen = new Set<number>();
+  const scores: ScoreboardResponse["scores"] = [];
+  for (const s of snaps) {
+    if (seen.has(s.userId)) continue;
+    seen.add(s.userId);
+    const u = userMap.get(s.userId);
+    if (!u || u.role !== "friend") continue;
+    scores.push({
+      userId: u.id,
+      userName: u.name,
+      rankingScore: s.rankingScore,
+      titleScore: s.titleScore,
+      totalScore: s.totalScore,
+      snapshotDate: s.snapshotDate instanceof Date ? s.snapshotDate.toISOString() : new Date().toISOString(),
+    });
+  }
+
+  return {
+    season: {
+      id: season.id, year: season.year, label: season.label,
+      isActive: season.isActive,
+      lockDate: season.lockDate instanceof Date ? season.lockDate.toISOString() : (season.lockDate ?? null),
+      createdAt: season.createdAt instanceof Date ? season.createdAt.toISOString() : String(season.createdAt),
+    },
+    scores,
+  };
 }
+
+async function getUserHistory(userId: number): Promise<ScoreHistoryEntry[]> {
+  const db = getDb();
+
+  const [allSeasons, snaps] = await Promise.all([
+    db.select().from(seasons),
+    db.select().from(scoreSnapshots).where(eq(scoreSnapshots.userId, userId)),
+  ]);
+
+  const snapBySeason = new Map<number, (typeof snaps)[0]>();
+  for (const s of snaps) {
+    const existing = snapBySeason.get(s.seasonId);
+    if (!existing || s.totalScore > existing.totalScore) {
+      snapBySeason.set(s.seasonId, s);
+    }
+  }
+
+  return allSeasons
+    .sort((a, b) => a.year - b.year)
+    .flatMap((season) => {
+      const snap = snapBySeason.get(season.id);
+      if (!snap) return [];
+      return [
+        {
+          year: season.year,
+          totalScore: snap.totalScore,
+          rankingScore: snap.rankingScore,
+          titleScore: snap.titleScore,
+        },
+      ];
+    });
+}
+
+// ── Page ──
 
 const TABLE_STYLE = {
   background: "var(--bg-surface)",
@@ -64,33 +175,20 @@ export default async function UserDetailPage({
   const { year: yearParam } = await searchParams;
   const year = yearParam ? parseInt(yearParam, 10) : DEFAULT_YEAR;
 
-  // Validate userId is a number
   const userIdNum = parseInt(userId, 10);
-  if (isNaN(userIdNum)) {
-    console.error(`[UserDetailPage] Invalid userId: ${userId}`);
-    notFound();
-  }
+  if (isNaN(userIdNum)) notFound();
 
-  const [prediction, scoreboard] = await Promise.all([
-    getUserPrediction(year, userId),
+  const [prediction, scoreboard, history] = await Promise.all([
+    getUserPrediction(year, userIdNum),
     getScoreboard(year),
+    getUserHistory(userIdNum),
   ]);
 
-  if (!prediction) {
-    console.error(
-      `[UserDetailPage] Prediction not found: userId=${userId}, year=${year}`
-    );
-    notFound();
-  }
+  if (!prediction) notFound();
 
   const user = prediction.user;
-  const userScore = scoreboard?.scores.find(
-    (s) => s.userId === parseInt(userId, 10)
-  );
-  const userRank =
-    scoreboard?.scores.findIndex(
-      (s) => s.userId === parseInt(userId, 10)
-    ) ?? -1;
+  const userScore = scoreboard?.scores.find((s) => s.userId === userIdNum);
+  const userRank = scoreboard?.scores.findIndex((s) => s.userId === userIdNum) ?? -1;
   const isLeader = userRank === 0;
 
   const leagues = ["central", "pacific"] as const;
@@ -130,7 +228,7 @@ export default async function UserDetailPage({
         <ShareButton
           type="prediction"
           year={year}
-          userId={parseInt(userId, 10)}
+          userId={userIdNum}
           userName={user.name}
         />
       </div>
@@ -151,6 +249,25 @@ export default async function UserDetailPage({
           />
           <ScoreCard label="順位点" value={String(userScore.rankingScore)} />
           <ScoreCard label="タイトル点" value={String(userScore.titleScore)} />
+        </div>
+      )}
+
+      {/* Score Progression Chart */}
+      {history.length >= 2 && (
+        <div>
+          <SectionLabel>スコア推移</SectionLabel>
+          <div
+            className="overflow-hidden rounded-xl p-4"
+            style={{
+              background: "var(--bg-surface)",
+              border: "1px solid var(--border-primary)",
+            }}
+          >
+            <ScoreHistoryChart history={history} />
+            <p className="mt-2 text-[10px]" style={{ color: "var(--text-muted)" }}>
+              ▪ 濃い赤 = 合計スコア ▪ 薄い赤 = うち順位点
+            </p>
+          </div>
         </div>
       )}
 
