@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { RankChangeNotifier } from "@/components/RankChangeNotifier";
 
 const TABS = [
   {
@@ -72,6 +73,7 @@ export default function RankingsLayout({ children }: { children: React.ReactNode
         <div className="flex-1" style={{ borderBottom: "2px solid var(--border-primary)" }} />
       </div>
       {children}
+      <RankChangeNotifier />
     </div>
   );
 }

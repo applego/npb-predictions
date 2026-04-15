@@ -116,26 +116,145 @@ interface User {
   id: number;
   name: string;
   slug: string;
+  source: string | null;
   avatarUrl: string | null;
   sourceUrl: string | null;
+}
+
+interface YTChannel {
+  channelId: string;
+  title: string;
+  description: string;
+  thumbnail: string | null;
+  url: string;
+}
+
+function UserSourceEditor({ user, onSaved }: { user: User; onSaved: () => void }) {
+  const [editing, setEditing] = useState(false);
+  const [sourceUrl, setSourceUrl] = useState(user.sourceUrl ?? "");
+  const [saving, setSaving] = useState(false);
+  const [ytLoading, setYtLoading] = useState(false);
+  const [ytCandidates, setYtCandidates] = useState<YTChannel[] | null>(null);
+  const [ytError, setYtError] = useState<string | null>(null);
+
+  async function save() {
+    setSaving(true);
+    await fetch(`/api/admin/users/${user.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sourceUrl: sourceUrl || null }),
+    });
+    setSaving(false);
+    setEditing(false);
+    setYtCandidates(null);
+    onSaved();
+  }
+
+  async function searchYouTube() {
+    setYtLoading(true);
+    setYtError(null);
+    setYtCandidates(null);
+    try {
+      const res = await fetch(`/api/admin/youtube-search?q=${encodeURIComponent(user.name)}`);
+      const data = (await res.json()) as { channels?: YTChannel[]; error?: string };
+      if (!res.ok || data.error) { setYtError(data.error ?? "検索失敗"); return; }
+      setYtCandidates(data.channels ?? []);
+    } catch (e) {
+      setYtError(String(e));
+    } finally {
+      setYtLoading(false);
+    }
+  }
+
+  if (!editing) {
+    return (
+      <div className="flex items-center gap-2">
+        {user.sourceUrl ? (
+          <a href={user.sourceUrl} target="_blank" rel="noopener noreferrer"
+            className="max-w-[180px] truncate text-xs text-blue-600 hover:underline">
+            {user.sourceUrl}
+          </a>
+        ) : (
+          <span className="text-xs text-gray-400">未設定</span>
+        )}
+        <button onClick={() => setEditing(true)}
+          className="rounded border px-2 py-0.5 text-[11px] text-gray-500 hover:bg-gray-50">
+          編集
+        </button>
+        {user.source === "YouTube" && (
+          <button onClick={searchYouTube} disabled={ytLoading}
+            className="rounded border border-red-200 bg-red-50 px-2 py-0.5 text-[11px] text-red-600 hover:bg-red-100 disabled:opacity-50">
+            {ytLoading ? "検索中…" : "▶ YT検索"}
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-2">
+        <input type="url" value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)}
+          placeholder="https://www.youtube.com/..."
+          className="flex-1 rounded border px-2 py-1 text-xs" />
+        <button onClick={save} disabled={saving}
+          className="rounded bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+          {saving ? "保存中" : "保存"}
+        </button>
+        <button onClick={() => { setEditing(false); setYtCandidates(null); }}
+          className="rounded border px-3 py-1 text-xs text-gray-500">
+          キャンセル
+        </button>
+      </div>
+
+      {/* YouTube search candidates */}
+      {user.source === "YouTube" && (
+        <button onClick={searchYouTube} disabled={ytLoading}
+          className="rounded border border-red-200 bg-red-50 px-2 py-1 text-[11px] text-red-600 hover:bg-red-100 disabled:opacity-50">
+          {ytLoading ? "検索中…" : "▶ YouTube チャンネルを検索"}
+        </button>
+      )}
+      {ytError && <p className="text-[11px] text-red-500">{ytError}</p>}
+      {ytCandidates && ytCandidates.length === 0 && (
+        <p className="text-[11px] text-gray-400">候補が見つかりませんでした</p>
+      )}
+      {ytCandidates && ytCandidates.map((ch) => (
+        <div key={ch.channelId}
+          className="flex items-center gap-2 rounded border bg-gray-50 p-2 text-xs">
+          {ch.thumbnail && (
+            <img src={ch.thumbnail} alt="" className="h-8 w-8 rounded-full object-cover" />
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-medium">{ch.title}</p>
+            <p className="truncate text-gray-400">{ch.description}</p>
+          </div>
+          <button
+            onClick={() => { setSourceUrl(ch.url); setYtCandidates(null); }}
+            className="shrink-0 rounded bg-red-600 px-2 py-0.5 text-white hover:bg-red-700">
+            採用
+          </button>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function UserManager() {
   const [users, setUsers] = useState<User[]>([]);
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
+  const [source, setSource] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [sourceUrl, setSourceUrl] = useState("");
   const [result, setResult] = useState<ApiResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [filter, setFilter] = useState("");
 
   async function loadUsers() {
     try {
       const res = await fetch("/api/admin/users");
       if (res.ok) setUsers((await res.json()) as User[]);
-    } catch {
-      // ignore
-    }
+    } catch { /* ignore */ }
   }
 
   useEffect(() => { void loadUsers(); }, []);
@@ -145,19 +264,24 @@ function UserManager() {
     const r = await apiPost("/api/admin/users", {
       name,
       slug: slug || name.toLowerCase().replace(/\s+/g, "-"),
+      source: source || undefined,
       avatarUrl: avatarUrl || undefined,
       sourceUrl: sourceUrl || undefined,
     });
     setResult(r);
     if (r.ok) {
-      setName("");
-      setSlug("");
-      setAvatarUrl("");
-      setSourceUrl("");
+      setName(""); setSlug(""); setSource(""); setAvatarUrl(""); setSourceUrl("");
       await loadUsers();
     }
     setLoading(false);
   }
+
+  const filtered = filter
+    ? users.filter((u) => u.name.includes(filter) || (u.source ?? "").includes(filter))
+    : users;
+
+  const noUrl = filtered.filter((u) => !u.sourceUrl);
+  const hasUrl = filtered.filter((u) => u.sourceUrl);
 
   return (
     <section className="rounded-lg border bg-white p-6 shadow-sm">
@@ -165,16 +289,56 @@ function UserManager() {
 
       {/* Existing users */}
       {users.length > 0 && (
-        <div className="mb-6">
-          <h3 className="mb-2 text-sm font-semibold text-gray-600">登録済みユーザー ({users.length}人)</h3>
-          <ul className="divide-y rounded border">
-            {users.map((u) => (
-              <li key={u.id} className="flex items-center gap-3 px-3 py-2 text-sm">
-                <span className="font-medium">{u.name}</span>
-                <span className="text-gray-400">@{u.slug}</span>
-              </li>
-            ))}
-          </ul>
+        <div className="mb-6 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-gray-600">
+              登録済みユーザー ({users.length}人)
+              {noUrl.length > 0 && (
+                <span className="ml-2 text-orange-500">URL未設定 {noUrl.length}人</span>
+              )}
+            </h3>
+            <input
+              type="text"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              placeholder="名前・媒体で絞り込み"
+              className="rounded border px-2 py-1 text-xs"
+            />
+          </div>
+
+          {/* URL未設定 */}
+          {noUrl.length > 0 && (
+            <div>
+              <p className="mb-1 text-[11px] font-medium text-orange-500">▼ URL未設定</p>
+              <ul className="divide-y rounded border">
+                {noUrl.map((u) => (
+                  <li key={u.id} className="grid grid-cols-[140px_80px_1fr] items-start gap-3 px-3 py-2 text-sm">
+                    <span className="font-medium truncate">{u.name}</span>
+                    <span className="text-xs text-gray-400 truncate">{u.source ?? "—"}</span>
+                    <UserSourceEditor user={u} onSaved={loadUsers} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* URL設定済み */}
+          {hasUrl.length > 0 && (
+            <details>
+              <summary className="cursor-pointer text-[11px] font-medium text-gray-400 hover:text-gray-600">
+                ▼ URL設定済み ({hasUrl.length}人)
+              </summary>
+              <ul className="mt-1 divide-y rounded border">
+                {hasUrl.map((u) => (
+                  <li key={u.id} className="grid grid-cols-[140px_80px_1fr] items-start gap-3 px-3 py-2 text-sm">
+                    <span className="font-medium truncate">{u.name}</span>
+                    <span className="text-xs text-gray-400 truncate">{u.source ?? "—"}</span>
+                    <UserSourceEditor user={u} onSaved={loadUsers} />
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
         </div>
       )}
 
@@ -183,50 +347,40 @@ function UserManager() {
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
           <label className="mb-1 block text-sm font-medium">名前 *</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="例: 田中太郎"
-            className="w-full rounded border px-3 py-2"
-          />
+          <input type="text" value={name} onChange={(e) => setName(e.target.value)}
+            placeholder="例: 田中太郎" className="w-full rounded border px-3 py-2" />
         </div>
         <div>
           <label className="mb-1 block text-sm font-medium">スラッグ</label>
-          <input
-            type="text"
-            value={slug}
-            onChange={(e) => setSlug(e.target.value)}
-            placeholder="自動生成（空白でOK）"
-            className="w-full rounded border px-3 py-2"
-          />
+          <input type="text" value={slug} onChange={(e) => setSlug(e.target.value)}
+            placeholder="自動生成（空白でOK）" className="w-full rounded border px-3 py-2" />
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium">媒体種別</label>
+          <select value={source} onChange={(e) => setSource(e.target.value)}
+            className="w-full rounded border px-3 py-2">
+            <option value="">選択...</option>
+            <option>YouTube</option>
+            <option>テレビ</option>
+            <option>新聞</option>
+            <option>雑誌</option>
+            <option>ラジオ</option>
+            <option>Web</option>
+          </select>
         </div>
         <div>
           <label className="mb-1 block text-sm font-medium">アバターURL</label>
-          <input
-            type="text"
-            value={avatarUrl}
-            onChange={(e) => setAvatarUrl(e.target.value)}
-            placeholder="https://..."
-            className="w-full rounded border px-3 py-2"
-          />
+          <input type="text" value={avatarUrl} onChange={(e) => setAvatarUrl(e.target.value)}
+            placeholder="https://..." className="w-full rounded border px-3 py-2" />
         </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium">媒体URL（別タブリンク用）</label>
-          <input
-            type="url"
-            value={sourceUrl}
-            onChange={(e) => setSourceUrl(e.target.value)}
-            placeholder="https://www.youtube.com/..."
-            className="w-full rounded border px-3 py-2"
-          />
+        <div className="sm:col-span-2">
+          <label className="mb-1 block text-sm font-medium">媒体URL</label>
+          <input type="url" value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)}
+            placeholder="https://www.youtube.com/@channel" className="w-full rounded border px-3 py-2" />
         </div>
       </div>
-      <button
-        onClick={handleAdd}
-        disabled={loading || !name.trim()}
-        className="mt-4 rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-      >
+      <button onClick={handleAdd} disabled={loading || !name.trim()}
+        className="mt-4 rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
         {loading ? "追加中..." : "ユーザー追加"}
       </button>
       <ResultDisplay result={result} />
