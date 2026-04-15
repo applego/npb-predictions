@@ -7,11 +7,11 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const NAV_LINKS = [
   { href: "/", label: "HOME" },
-  { href: "/standings", label: "STANDINGS" },
   { href: "/predictions", label: "PREDICTIONS" },
-  { href: "/rankings/commentators", label: "RANKINGS" },
+  { href: "/rankings", label: "RANKINGS" },
   { href: "/groups", label: "GROUPS" },
   { href: "/news", label: "NEWS" },
+  { href: "/standings", label: "STANDINGS" },
   { href: "/seo/past-seasons", label: "ARCHIVE" },
 ];
 

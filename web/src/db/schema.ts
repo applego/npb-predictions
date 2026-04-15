@@ -39,11 +39,12 @@ export const predictions = sqliteTable("predictions", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   userId: integer("user_id").notNull().references(() => users.id),
   seasonId: integer("season_id").notNull().references(() => seasons.id),
+  variant: text("variant"),  // ①②③ etc. — commentators can have multiple per year, friends get null (one only)
   isLocked: integer("is_locked", { mode: "boolean" }).default(false).notNull(),
   lockedAt: integer("locked_at", { mode: "timestamp" }),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
-}, (table) => [uniqueIndex("predictions_user_season_idx").on(table.userId, table.seasonId)]);
+}, (table) => [uniqueIndex("predictions_user_season_variant_idx").on(table.userId, table.seasonId, table.variant)]);
 
 export const rankingPicks = sqliteTable("ranking_picks", {
   id: integer("id").primaryKey({ autoIncrement: true }),
