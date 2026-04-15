@@ -3,23 +3,25 @@ export const runtime = "edge";
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { Season, Prediction } from "@/lib/types";
-import { TeamBadge } from "@/components/TeamBadge";
 import { NewsCompact } from "./news/NewsClient";
 
 export const metadata: Metadata = {
   title: "NPB Predictions League | プロ野球順位予想リーグ",
   description:
-    "5人の予想家がプロ野球順位・タイトルを予想して年間王者を競うリーグ。セ・パ両リーグの順位予想とタイトル予想で盛り上がろう。",
+    "プロ野球順位予想を競うリーグ。セ・パ両リーグの1位予想分布、解説者ランキング、最新ニュースをチェックして、あなたも挑戦しよう。",
   openGraph: {
     title: "NPB Predictions League | プロ野球順位予想リーグ",
     description:
-      "5人の予想家がプロ野球順位・タイトルを予想して年間王者を競うリーグ。",
+      "セ・パ完全的中チャレンジ — 歴代最高スコアを超えられるか？",
     type: "website",
   },
   alternates: { canonical: "/" },
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://npb-predictions.pages.dev";
+const API_BASE =
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://npb-predictions.pages.dev";
+
+// ── Data fetchers ──
 
 async function getSeasons(): Promise<Season[]> {
   try {
@@ -67,73 +69,100 @@ async function getPredictions(year: number): Promise<Prediction[]> {
   }
 }
 
-const RANKING_RULES = [
-  { diff: "完全一致", score: "+5" },
-  { diff: "1位差",   score: "+3" },
-  { diff: "2位差",   score: "+1" },
-  { diff: "3位差",   score: "−1" },
-  { diff: "4位差",   score: "−3" },
-  { diff: "5位差",   score: "−5" },
+interface CommentatorRankingResponse {
+  totalCommentators: number;
+  commentators: { rank: number; name: string; effectiveTotal: number }[];
+}
+
+async function getTopCommentators(
+  year: number
+): Promise<CommentatorRankingResponse | null> {
+  try {
+    const res = await fetch(
+      `${API_BASE}/api/rankings/commentators?year=${year}&league=all`,
+      { cache: "no-store" }
+    );
+    if (!res.ok) return null;
+    return res.json() as Promise<CommentatorRankingResponse>;
+  } catch {
+    return null;
+  }
+}
+
+// ── Distribution computation ──
+
+interface TeamCount {
+  teamName: string;
+  count: number;
+  pct: number;
+  color: string;
+}
+
+function computeFirstPlaceDistribution(
+  predictions: Prediction[],
+  league: "central" | "pacific"
+): TeamCount[] {
+  const counts: Record<string, number> = {};
+  for (const pred of predictions) {
+    const firstPick = pred.rankingPicks.find(
+      (rp) => rp.league === league && rp.rank === 1
+    );
+    if (firstPick) {
+      counts[firstPick.teamName] = (counts[firstPick.teamName] ?? 0) + 1;
+    }
+  }
+  const total = Object.values(counts).reduce((a, b) => a + b, 0);
+  if (total === 0) return [];
+
+  // Sort descending by count
+  const sorted = Object.entries(counts)
+    .map(([teamName, count]) => ({
+      teamName,
+      count,
+      pct: Math.round((count / total) * 100),
+      color: getTeamColor(teamName),
+    }))
+    .sort((a, b) => b.count - a.count);
+
+  return sorted;
+}
+
+// Map team shortName to their brand color for bar display
+function getTeamColor(name: string): string {
+  const map: Record<string, string> = {
+    巨人: "#F97316",
+    阪神: "#FBBF24",
+    DeNA: "#2563EB",
+    広島: "#DC2626",
+    中日: "#1E40AF",
+    ヤクルト: "#059669",
+    オリックス: "#1E3A5F",
+    ソフトバンク: "#F5D100",
+    ロッテ: "#1a1a1a",
+    楽天: "#B91C1C",
+    西武: "#1D4ED8",
+    日本ハム: "#1E3A5F",
+  };
+  return map[name] ?? "var(--stitch)";
+}
+
+// ── Score rules ──
+
+const SCORE_CHIPS = [
+  { label: "的中", score: "+5", positive: true },
+  { label: "1差", score: "+3", positive: true },
+  { label: "2差", score: "+1", positive: true },
+  { label: "3差", score: "-1", positive: false },
+  { label: "4差", score: "-3", positive: false },
+  { label: "5差", score: "-5", positive: false },
 ];
 
-const AWARDS = [
-  { icon: "🥇", label: "前半戦王者" },
-  { icon: "📅", label: "月間王者" },
-  { icon: "⚔️", label: "交流戦王者" },
-  { icon: "🎯", label: "一人勝ちタイトル賞" },
-  { icon: "🎲", label: "大穴賞" },
-];
+// ── Constants ──
 
-const NAV_CARDS = [
-  {
-    num: "01",
-    href: "/standings",
-    label: "Current Standings",
-    sub: "リアルタイムのスコアボード・順位確認",
-    accent: "var(--stitch)",
-    accentBg: "rgba(229,57,53,0.06)",
-    accentBorder: "rgba(229,57,53,0.25)",
-    accentNum: "rgba(229,57,53,0.5)",
-    accentBar: "linear-gradient(to bottom, var(--stitch), rgba(229,57,53,0.2) 70%, transparent)",
-    accentHover: "linear-gradient(135deg, rgba(229,57,53,0.04) 0%, transparent 60%)",
-  },
-  {
-    num: "02",
-    href: "/predictions",
-    label: "Predictions Compare",
-    sub: "全員の予想を横並び比較",
-    accent: "#38bdf8",
-    accentBg: "rgba(56,189,248,0.06)",
-    accentBorder: "rgba(56,189,248,0.25)",
-    accentNum: "rgba(56,189,248,0.5)",
-    accentBar: "linear-gradient(to bottom, #38bdf8, rgba(56,189,248,0.2) 70%, transparent)",
-    accentHover: "linear-gradient(135deg, rgba(56,189,248,0.04) 0%, transparent 60%)",
-  },
-  {
-    num: "03",
-    href: "/rankings/commentators",
-    label: "解説者ランキング",
-    sub: "156人の解説者的中率をランキング比較",
-    accent: "#c084fc",
-    accentBg: "rgba(192,132,252,0.06)",
-    accentBorder: "rgba(192,132,252,0.25)",
-    accentNum: "rgba(192,132,252,0.5)",
-    accentBar: "linear-gradient(to bottom, #c084fc, rgba(192,132,252,0.2) 70%, transparent)",
-    accentHover: "linear-gradient(135deg, rgba(192,132,252,0.04) 0%, transparent 60%)",
-  },
-  {
-    num: "04",
-    href: "/predictions/new",
-    label: "予想を登録する",
-    sub: "今すぐ順位・タイトル予想を入力",
-    accent: "#34d399",
-    accentBg: "rgba(52,211,153,0.06)",
-    accentBorder: "rgba(52,211,153,0.25)",
-    accentNum: "rgba(52,211,153,0.5)",
-    accentBar: "linear-gradient(to bottom, #34d399, rgba(52,211,153,0.2) 70%, transparent)",
-    accentHover: "linear-gradient(135deg, rgba(52,211,153,0.04) 0%, transparent 60%)",
-  },
-];
+const BEST_SCORE = 44;
+const PERFECT_SCORE = 60;
+
+// ── Page ──
 
 export default async function HomePage() {
   const [seasons, latestNews] = await Promise.all([
@@ -142,540 +171,326 @@ export default async function HomePage() {
   ]);
   const activeSeason = seasons.find((s) => s.isActive) ?? seasons[0];
   const year = activeSeason?.year ?? new Date().getFullYear();
-  const predictions = await getPredictions(year);
+  const [predictions, commentatorData] = await Promise.all([
+    getPredictions(year),
+    getTopCommentators(year),
+  ]);
+
+  const centralDist = computeFirstPlaceDistribution(predictions, "central");
+  const pacificDist = computeFirstPlaceDistribution(predictions, "pacific");
+  const topScorer = commentatorData?.commentators?.[0] ?? null;
 
   return (
-    <div className="space-y-8">
-      {/* ══════════ HERO ══════════ */}
+    <div className="space-y-6">
+      {/* ══════════ HERO: CHALLENGE ══════════ */}
       <section
         className="relative overflow-hidden rounded-2xl"
         style={{
-          background:
-            "linear-gradient(135deg, var(--bg-surface) 0%, var(--bg-elevated) 60%, var(--bg-surface) 100%)",
-          border: "1px solid rgba(229,57,53,0.08)",
+          background: "var(--bg-surface)",
+          border: "1px solid var(--border-primary)",
+          boxShadow:
+            "0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.03)",
         }}
       >
-        {/* Corner glow */}
+        {/* Stitch accent top */}
         <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full opacity-10"
+          className="h-1 w-full"
           style={{
             background:
-              "radial-gradient(circle, rgba(229,57,53,1) 0%, transparent 70%)",
+              "linear-gradient(90deg, var(--stitch), var(--stitch-light) 50%, transparent 100%)",
           }}
         />
 
-        {/* Left amber stripe */}
+        {/* Subtle diamond watermark */}
         <div
           aria-hidden="true"
-          className="absolute left-0 top-0 h-full w-[3px]"
+          className="pointer-events-none absolute right-4 top-4 select-none"
           style={{
-            background:
-              "linear-gradient(to bottom, var(--stitch), rgba(229,57,53,0.4) 60%, transparent)",
+            fontSize: "8rem",
+            lineHeight: 1,
+            color: "var(--border-primary)",
+            opacity: 0.4,
           }}
-        />
-
-        {/* Diamond pattern top-right */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute right-6 top-6 opacity-5"
-          style={{ fontSize: "7rem", lineHeight: 1, userSelect: "none" }}
         >
-          ⬟
+          &#9671;
         </div>
 
-        <div className="relative px-8 py-10 sm:px-12">
-          {/* Ghost year */}
-          <div
-            aria-hidden="true"
-            className="font-display select-none leading-none"
-            style={{
-              fontFamily:
-                "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-              fontSize: "clamp(4rem, 14vw, 9rem)",
-              color: "rgba(229,57,53,0.06)",
-              letterSpacing: "0.08em",
-              lineHeight: 0.85,
-              marginBottom: "-0.2em",
-              marginLeft: "-0.02em",
-            }}
-          >
-            {year}
+        <div className="relative px-6 py-8 sm:px-10 sm:py-10">
+          {/* Trophy icon + badge */}
+          <div className="mb-4 flex items-center gap-3">
+            <span
+              className="flex h-10 w-10 items-center justify-center rounded-lg text-lg"
+              style={{
+                background: "var(--stitch)",
+                color: "#fff",
+                boxShadow: "0 2px 8px rgba(229,57,53,0.25)",
+              }}
+            >
+              &#127942;
+            </span>
+            {activeSeason && (
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold"
+                style={{
+                  background: "var(--bg-elevated)",
+                  border: "1px solid var(--border-primary)",
+                  color: "var(--text-secondary)",
+                  fontFamily:
+                    "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
+                  letterSpacing: "0.12em",
+                }}
+              >
+                <span
+                  className="animate-pulse-dot inline-block h-1.5 w-1.5 rounded-full"
+                  style={{ background: "var(--field)" }}
+                />
+                {year} SEASON
+              </span>
+            )}
           </div>
 
           {/* Main heading */}
           <h1
-            className="font-display leading-none"
             style={{
               fontFamily:
                 "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-              letterSpacing: "0.06em",
+              letterSpacing: "0.04em",
             }}
           >
             <span
               className="block"
               style={{
-                fontSize: "clamp(2rem, 7vw, 4.5rem)",
+                fontSize: "clamp(1.5rem, 5vw, 2.5rem)",
                 color: "var(--text-primary)",
+                lineHeight: 1.15,
               }}
             >
-              NPB{" "}
-              <span
-                className="animate-amber-glow"
-                style={{ color: "var(--stitch)" }}
-              >
-                PREDICTIONS
-              </span>
-            </span>
-            <span
-              className="block"
-              style={{
-                fontSize: "clamp(1.25rem, 4vw, 2.5rem)",
-                color: "var(--text-secondary)",
-                marginTop: "0.05em",
-              }}
-            >
-              LEAGUE
+              セパ完全的中チャレンジ
             </span>
           </h1>
 
-          {/* Japanese subtitle */}
-          <p
-            className="mt-3 text-sm leading-relaxed"
-            style={{ color: "var(--text-secondary)" }}
-          >
-            プロ野球順位予想リーグ — セ・パ両リーグの順位とタイトルを予想して年間王者を目指せ
-          </p>
-
-          {/* Season badge */}
-          {activeSeason && (
-            <div
-              className="mt-5 inline-flex items-center gap-2 rounded px-3 py-1.5"
-              style={{
-                border: "1px solid rgba(229,57,53,0.25)",
-                background: "rgba(229,57,53,0.06)",
-              }}
-            >
-              <span
-                className="animate-pulse-dot h-1.5 w-1.5 rounded-full"
-                style={{ background: "var(--stitch)", display: "inline-block" }}
-              />
-              <span
-                className="font-display text-xs"
+          {/* Score indicator */}
+          <div className="mt-4 flex flex-wrap items-end gap-4">
+            <div>
+              <p
+                className="text-xs font-medium"
                 style={{
-                  color: "var(--stitch)",
-                  fontFamily:
-                    "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-                  letterSpacing: "0.2em",
+                  color: "var(--text-muted)",
+                  letterSpacing: "0.08em",
                 }}
               >
-                {activeSeason.label} — SEASON ACTIVE
-              </span>
+                歴代最高
+              </p>
+              <p
+                style={{
+                  fontFamily:
+                    "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
+                  fontSize: "clamp(2.5rem, 8vw, 4rem)",
+                  lineHeight: 1,
+                  color: "var(--stitch)",
+                  letterSpacing: "0.02em",
+                }}
+              >
+                +{BEST_SCORE}
+              </p>
             </div>
-          )}
+            <div
+              className="mb-1.5 h-8 w-px"
+              style={{ background: "var(--border-primary)" }}
+            />
+            <div>
+              <p
+                className="text-xs font-medium"
+                style={{
+                  color: "var(--text-muted)",
+                  letterSpacing: "0.08em",
+                }}
+              >
+                満点
+              </p>
+              <p
+                style={{
+                  fontFamily:
+                    "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
+                  fontSize: "clamp(2.5rem, 8vw, 4rem)",
+                  lineHeight: 1,
+                  color: "var(--text-secondary)",
+                  letterSpacing: "0.02em",
+                }}
+              >
+                +{PERFECT_SCORE}
+              </p>
+            </div>
 
-          {/* CTA buttons */}
+            {/* Progress bar visual */}
+            <div className="ml-auto hidden w-48 sm:block">
+              <div
+                className="h-3 w-full overflow-hidden rounded-full"
+                style={{ background: "var(--bg-inset)" }}
+              >
+                <div
+                  className="h-full rounded-full"
+                  style={{
+                    width: `${Math.round((BEST_SCORE / PERFECT_SCORE) * 100)}%`,
+                    background:
+                      "linear-gradient(90deg, var(--stitch), var(--stitch-light))",
+                  }}
+                />
+              </div>
+              <p
+                className="mt-1 text-right text-[10px] font-medium"
+                style={{ color: "var(--text-muted)" }}
+              >
+                {Math.round((BEST_SCORE / PERFECT_SCORE) * 100)}% of perfect
+              </p>
+            </div>
+          </div>
+
+          {/* Tagline */}
+          <p
+            className="mt-4 text-sm"
+            style={{ color: "var(--text-secondary)", lineHeight: 1.6 }}
+          >
+            {topScorer
+              ? `現在のトップは ${topScorer.name}（+${topScorer.effectiveTotal}）。`
+              : ""}
+            あなたは歴代最高+{BEST_SCORE}を超えられる？
+          </p>
+
+          {/* CTA */}
           <div className="mt-6 flex flex-wrap gap-3">
             <Link
-              href="/standings"
-              className="inline-flex items-center gap-2 rounded px-5 py-2.5 text-sm font-medium transition-all"
+              href="/predictions/new"
+              className="inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-bold transition-all"
               style={{
-                border: "1px solid rgba(229,57,53,0.3)",
-                background: "rgba(229,57,53,0.08)",
-                color: "var(--stitch)",
+                background: "var(--stitch)",
+                color: "#fff",
+                boxShadow: "0 2px 8px rgba(229,57,53,0.3)",
               }}
-              >
-              STANDINGS →
+            >
+              今すぐ予想する
+              <span style={{ fontSize: "1.1em" }}>&#8594;</span>
             </Link>
             <Link
-              href="/predictions"
-              className="inline-flex items-center gap-2 rounded px-5 py-2.5 text-sm font-medium transition-all"
+              href="/rankings/commentators"
+              className="inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-medium transition-all"
               style={{
+                background: "var(--bg-elevated)",
                 border: "1px solid var(--border-primary)",
-                background: "var(--border-primary)",
                 color: "var(--text-secondary)",
               }}
             >
-              PREDICTIONS →
+              ランキングを見る
             </Link>
           </div>
         </div>
       </section>
 
-      {/* ══════════ NAV CARDS ══════════ */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {NAV_CARDS.map(({ num, href, label, sub, accent, accentNum, accentBar, accentHover }) => (
-          <Link
-            key={href}
-            href={href}
-            className="group relative overflow-hidden rounded-xl transition-all"
-            style={{
-              background: "var(--bg-surface)",
-              border: "1px solid var(--border-primary)",
-            }}
+      {/* ══════════ PREDICTION DISTRIBUTION ══════════ */}
+      {(centralDist.length > 0 || pacificDist.length > 0) && (
+        <section
+          className="overflow-hidden rounded-xl"
+          style={{
+            background: "var(--bg-surface)",
+            border: "1px solid var(--border-primary)",
+          }}
+        >
+          {/* Header */}
+          <div
+            className="flex items-center justify-between px-5 py-3"
+            style={{ borderBottom: "1px solid var(--border-primary)" }}
           >
-            {/* Left accent bar */}
-            <div
-              aria-hidden="true"
-              className="absolute left-0 top-0 h-full w-[3px]"
-              style={{ background: accentBar }}
-            />
-
-            {/* Hover glow overlay */}
-            <div
-              aria-hidden="true"
-              className="absolute inset-0 opacity-0 transition-opacity group-hover:opacity-100"
-              style={{ background: accentHover }}
-            />
-
-            <div className="relative p-6">
-              {/* Number */}
-              <div
-                className="mb-2 text-4xl leading-none"
+            <div className="flex items-center gap-3">
+              <span
+                className="flex h-7 w-7 items-center justify-center rounded text-xs"
                 style={{
-                  fontFamily:
-                    "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-                  color: accentNum,
-                  letterSpacing: "0.05em",
+                  background: "var(--bg-elevated)",
+                  border: "1px solid var(--border-primary)",
+                  color: "var(--text-secondary)",
                 }}
               >
-                {num}
-              </div>
-
-              <h2
-                className="font-semibold"
+                &#128202;
+              </span>
+              <span
+                className="text-sm font-bold"
                 style={{ color: "var(--text-primary)" }}
               >
-                {label}
-              </h2>
-              <p
-                className="mt-1 text-sm"
-                style={{ color: "var(--text-muted)" }}
-              >
-                {sub}
-              </p>
-
-              <div
-                className="mt-5 text-xs font-medium tracking-widest opacity-0 transition-opacity group-hover:opacity-100"
-                style={{ color: accent, letterSpacing: "0.15em" }}
-              >
-                VIEW →
-              </div>
-            </div>
-          </Link>
-        ))}
-      </div>
-
-      {/* ══════════ SCORE RULES ══════════ */}
-      <section
-        className="overflow-hidden rounded-xl"
-        style={{
-          background: "var(--bg-surface)",
-          border: "1px solid var(--border-primary)",
-        }}
-      >
-        {/* Section header */}
-        <div
-          className="flex items-center gap-4 px-6 py-3"
-          style={{ borderBottom: "1px solid var(--border-primary)" }}
-        >
-          <div
-            className="h-px flex-1"
-            style={{ background: "var(--border-primary)" }}
-          />
-          <span
-            className="font-display text-xs"
-            style={{
-              fontFamily:
-                "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-              color: "rgba(229,57,53,0.5)",
-              letterSpacing: "0.25em",
-            }}
-          >
-            SCORE RULES
-          </span>
-          <div
-            className="h-px flex-1"
-            style={{ background: "var(--border-primary)" }}
-          />
-        </div>
-
-        <div className="grid sm:grid-cols-3">
-          {/* Ranking points */}
-          <div
-            className="p-6 sm:[border-right:1px_solid_var(--border-primary)]"
-          >
-            <h3
-              className="mb-4 text-xs font-medium tracking-widest uppercase"
-              style={{ color: "var(--text-muted)", letterSpacing: "0.18em" }}
-            >
-              順位予想得点
-            </h3>
-            <div className="space-y-2">
-              {RANKING_RULES.map(({ diff, score }) => {
-                const isPositive = score.startsWith("+");
-                return (
-                  <div
-                    key={diff}
-                    className="flex items-center justify-between"
-                  >
-                    <span
-                      className="text-sm"
-                      style={{ color: "var(--text-secondary)" }}
-                    >
-                      {diff}
-                    </span>
-                    <span
-                      className="font-display text-base tabular-nums animate-flicker"
-                      style={{
-                        fontFamily:
-                          "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-                        color: isPositive
-                          ? "var(--stitch)"
-                          : "rgba(229,57,53,0.7)",
-                        letterSpacing: "0.05em",
-                      }}
-                    >
-                      {score}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Title points */}
-          <div
-            className="p-6 sm:[border-right:1px_solid_var(--border-primary)]"
-          >
-            <h3
-              className="mb-4 text-xs font-medium tracking-widest uppercase"
-              style={{ color: "var(--text-muted)", letterSpacing: "0.18em" }}
-            >
-              タイトル予想得点
-            </h3>
-            <div className="flex items-end justify-between">
-              <span
-                className="text-sm"
-                style={{ color: "var(--text-secondary)" }}
-              >
-                的中
-              </span>
-              <span
-                className="font-display text-4xl leading-none animate-amber-glow"
-                style={{
-                  fontFamily:
-                    "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-                  color: "var(--stitch)",
-                  letterSpacing: "0.05em",
-                }}
-              >
-                +3
+                {year}年 優勝予想分布
               </span>
             </div>
-            <p
-              className="mt-5 text-xs leading-relaxed"
-              style={{ color: "var(--text-muted)" }}
-            >
-              打率 · 打点 · 本塁打
-              <br />
-              最多勝 · 防御率 · セーブ
-            </p>
-          </div>
-
-          {/* Awards */}
-          <div className="p-6">
-            <h3
-              className="mb-4 text-xs font-medium tracking-widest uppercase"
-              style={{ color: "var(--text-muted)", letterSpacing: "0.18em" }}
-            >
-              副賞
-            </h3>
-            <div className="space-y-2.5">
-              {AWARDS.map(({ icon, label }) => (
-                <div
-                  key={label}
-                  className="flex items-center gap-2.5 text-sm"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  <span>{icon}</span>
-                  <span>{label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ══════════ YOUTUBE BANNER ══════════ */}
-      <section
-        className="relative overflow-hidden rounded-xl"
-        style={{
-          background: "var(--bg-surface)",
-          border: "1px solid rgba(229,57,53,0.15)",
-        }}
-      >
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background:
-              "linear-gradient(135deg, rgba(229,57,53,0.05) 0%, transparent 50%)",
-          }}
-        />
-
-        {/* Left red stripe */}
-        <div
-          aria-hidden="true"
-          className="absolute left-0 top-0 h-full w-[3px]"
-          style={{
-            background:
-              "linear-gradient(to bottom, var(--stitch), rgba(229,57,53,0.3) 70%, transparent)",
-          }}
-        />
-
-        <div className="relative flex items-start gap-5 p-6 sm:p-8">
-          <div
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded text-sm"
-            style={{
-              border: "1px solid rgba(229,57,53,0.25)",
-              background: "rgba(229,57,53,0.08)",
-              color: "var(--stitch)",
-            }}
-          >
-            ▶
-          </div>
-          <div className="flex-1">
-            <h2
-              className="font-semibold"
-              style={{ color: "var(--text-primary)" }}
-            >
-              プロ野球予想リーグ【YouTube】
-            </h2>
-            <p
-              className="mt-1.5 text-sm leading-relaxed"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              毎日の順位変動＋予想家スコアをショート動画でお届け。
-              <br className="hidden sm:block" />
-              週末は週間まとめ長尺動画で深掘り。
-            </p>
-            <a
-              href="https://www.youtube.com/@npb-predictions-ja"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-4 inline-flex items-center gap-2 rounded px-4 py-2 text-sm font-medium transition-all"
-              style={{
-                border: "1px solid rgba(229,57,53,0.25)",
-                background: "rgba(229,57,53,0.08)",
-                color: "var(--stitch)",
-              }}
-            >
-              チャンネルを見る →
-            </a>
-          </div>
-        </div>
-      </section>
-
-      {/* ══════════ PREDICTION MATRIX PREVIEW ══════════ */}
-      {predictions.length > 0 && (
-        <section>
-          <div className="mb-3 flex items-center justify-between">
-            <span
-              className="text-xs font-bold tracking-widest"
-              style={{
-                fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-                color: "rgba(229,57,53,0.5)",
-                letterSpacing: "0.25em",
-              }}
-            >
-              {year} PREDICTIONS
-            </span>
             <Link
               href="/predictions"
-              className="text-xs font-medium tracking-wider transition-colors hover:text-amber-400"
+              className="text-xs font-medium transition-colors"
               style={{
-                fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-                color: "var(--text-muted)",
-                letterSpacing: "0.12em",
+                color: "var(--stitch)",
+                letterSpacing: "0.08em",
               }}
             >
-              FULL VIEW →
+              全予想を見る &#8594;
             </Link>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            {(["central", "pacific"] as const).map((league) => {
-              const isC = league === "central";
-              const accentColor = isC ? "var(--stitch)" : "#38bdf8";
-              const headerBg = isC ? "#1a365d" : "#1a3a2a";
-              const pUsers = predictions.map((p) => p.user);
-
-              return (
-                <div key={league} className="overflow-hidden rounded-xl" style={{ background: "var(--bg-surface)" }}>
-                  {/* League banner */}
-                  <div
-                    className="flex items-center gap-2 px-3 py-2"
-                    style={{ background: headerBg, borderBottom: `2px solid ${accentColor}` }}
+          <div className="grid md:grid-cols-2">
+            {/* Central */}
+            {centralDist.length > 0 && (
+              <div
+                className="p-5"
+                style={{
+                  borderRight: "1px solid var(--border-primary)",
+                }}
+              >
+                <div className="mb-3 flex items-center gap-2">
+                  <span
+                    className="rounded px-1.5 py-0.5 text-[10px] font-black"
+                    style={{
+                      background: "var(--central)",
+                      color: "#fff",
+                    }}
                   >
-                    <span
-                      className="rounded px-1.5 py-0.5 text-[9px] font-black"
-                      style={{ background: accentColor, color: "#1a1a1a" }}
-                    >
-                      {isC ? "セ" : "パ"}
-                    </span>
-                    <span className="text-[11px] font-bold" style={{ color: "#fff" }}>
-                      {year}年 順位予想
-                    </span>
-                  </div>
-                  {/* Matrix */}
-                  <div className="overflow-x-auto p-1">
-                    <table className="w-full" style={{ borderCollapse: "separate", borderSpacing: "2px" }}>
-                      <thead>
-                        <tr>
-                          <th className="w-7 rounded px-1 py-1 text-center text-[11px]" style={{ background: "var(--bg-inset)", color: "var(--text-muted)" }}>#</th>
-                          {pUsers.map((u) => (
-                            <th key={u.id} className="rounded px-1 py-1 text-center text-[11px]" style={{ background: "var(--bg-inset)", color: "var(--text-muted)" }}>
-                              {u.name.slice(0, 4)}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {[1, 2, 3, 4, 5, 6].map((rank) => (
-                          <tr key={rank}>
-                            <td
-                              className="rounded px-1 py-1 text-center text-xs font-bold"
-                              style={{
-                                fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-                                background: "var(--bg-inset)",
-                                color: rank === 1 ? accentColor : "var(--text-muted)",
-                              }}
-                            >
-                              {rank}
-                            </td>
-                            {predictions.map((pred) => {
-                              const pick = pred.rankingPicks.find(
-                                (rp) => rp.league === league && rp.rank === rank
-                              );
-                              return (
-                                <td key={pred.id} className="p-0.5">
-                                  {pick ? (
-                                    <TeamBadge teamName={pick.teamName} variant="cell" />
-                                  ) : (
-                                    <div className="rounded text-center text-[10px]" style={{ background: "var(--bg-elevated)", padding: "0.35rem", color: "var(--border-primary)" }}>—</div>
-                                  )}
-                                </td>
-                              );
-                            })}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                    &#12475;
+                  </span>
+                  <span
+                    className="text-xs font-semibold"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
+                    セ・リーグ 1位予想
+                  </span>
                 </div>
-              );
-            })}
+                <div className="space-y-2.5">
+                  {centralDist.map((t) => (
+                    <DistributionBar key={t.teamName} team={t} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Pacific */}
+            {pacificDist.length > 0 && (
+              <div className="p-5">
+                <div className="mb-3 flex items-center gap-2">
+                  <span
+                    className="rounded px-1.5 py-0.5 text-[10px] font-black"
+                    style={{
+                      background: "var(--pacific)",
+                      color: "#fff",
+                    }}
+                  >
+                    &#12497;
+                  </span>
+                  <span
+                    className="text-xs font-semibold"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
+                    パ・リーグ 1位予想
+                  </span>
+                </div>
+                <div className="space-y-2.5">
+                  {pacificDist.map((t) => (
+                    <DistributionBar key={t.teamName} team={t} />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </section>
       )}
@@ -689,39 +504,38 @@ export default async function HomePage() {
             border: "1px solid var(--border-primary)",
           }}
         >
-          {/* Section header */}
+          {/* Header */}
           <div
-            className="flex items-center justify-between px-6 py-3"
+            className="flex items-center justify-between px-5 py-3"
             style={{ borderBottom: "1px solid var(--border-primary)" }}
           >
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <span
-                className="font-display text-xs"
+                className="flex h-7 w-7 items-center justify-center rounded text-xs"
                 style={{
-                  fontFamily:
-                    "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-                  color: "rgba(229,57,53,0.5)",
-                  letterSpacing: "0.25em",
+                  background: "var(--bg-elevated)",
+                  border: "1px solid var(--border-primary)",
+                  color: "var(--stitch)",
                 }}
+              >
+                &#128293;
+              </span>
+              <span
+                className="text-sm font-bold"
+                style={{ color: "var(--text-primary)" }}
               >
                 LATEST NEWS
               </span>
-              <div
-                className="h-px w-16"
-                style={{ background: "var(--border-primary)" }}
-              />
             </div>
             <Link
               href="/news"
-              className="text-xs font-medium tracking-wider transition-colors hover:text-amber-400"
+              className="text-xs font-medium transition-colors"
               style={{
-                fontFamily:
-                  "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-                color: "var(--text-muted)",
-                letterSpacing: "0.12em",
+                color: "var(--stitch)",
+                letterSpacing: "0.08em",
               }}
             >
-              VIEW ALL →
+              VIEW ALL &#8594;
             </Link>
           </div>
 
@@ -731,12 +545,148 @@ export default async function HomePage() {
         </section>
       )}
 
+      {/* ══════════ GROUPS (Coming Soon) ══════════ */}
+      <section
+        className="overflow-hidden rounded-xl"
+        style={{
+          background: "var(--bg-surface)",
+          border: "1px solid var(--border-primary)",
+        }}
+      >
+        <div className="px-6 py-8 text-center sm:px-10">
+          <span
+            className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-full text-xl"
+            style={{
+              background: "var(--bg-elevated)",
+              border: "1px solid var(--border-primary)",
+            }}
+          >
+            &#128101;
+          </span>
+          <h2
+            className="mt-3 text-lg font-bold"
+            style={{ color: "var(--text-primary)" }}
+          >
+            対決グループ
+          </h2>
+          <p
+            className="mt-1.5 text-sm"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            友達と予想を競おう！グループを作って順位を比較できます。
+          </p>
+          <div className="mt-5 flex flex-wrap justify-center gap-3">
+            <Link
+              href="/groups/new"
+              className="inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium transition-all"
+              style={{
+                background: "var(--field)",
+                color: "#fff",
+              }}
+            >
+              グループを作る
+            </Link>
+            <Link
+              href="/groups/join"
+              className="inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium transition-all"
+              style={{
+                background: "var(--bg-elevated)",
+                border: "1px solid var(--border-primary)",
+                color: "var(--text-secondary)",
+              }}
+            >
+              招待コードで参加
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════ SCORE RULES (Compact) ══════════ */}
+      <section
+        className="overflow-hidden rounded-xl"
+        style={{
+          background: "var(--bg-surface)",
+          border: "1px solid var(--border-primary)",
+        }}
+      >
+        {/* Header */}
+        <div
+          className="flex items-center gap-4 px-5 py-3"
+          style={{ borderBottom: "1px solid var(--border-primary)" }}
+        >
+          <span
+            className="flex h-7 w-7 items-center justify-center rounded text-xs"
+            style={{
+              background: "var(--bg-elevated)",
+              border: "1px solid var(--border-primary)",
+              color: "var(--text-secondary)",
+            }}
+          >
+            &#128207;
+          </span>
+          <span
+            className="text-sm font-bold"
+            style={{ color: "var(--text-primary)" }}
+          >
+            SCORE RULES
+          </span>
+        </div>
+
+        <div className="px-5 py-4">
+          {/* Chips */}
+          <div className="flex flex-wrap gap-2">
+            {SCORE_CHIPS.map((chip) => (
+              <div
+                key={chip.label}
+                className="flex items-center gap-1.5 rounded-full px-3 py-1.5"
+                style={{
+                  background: chip.positive
+                    ? "rgba(46,125,50,0.06)"
+                    : "rgba(229,57,53,0.06)",
+                  border: `1px solid ${
+                    chip.positive
+                      ? "rgba(46,125,50,0.2)"
+                      : "rgba(229,57,53,0.2)"
+                  }`,
+                }}
+              >
+                <span
+                  className="text-xs"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  {chip.label}
+                </span>
+                <span
+                  className="text-sm font-bold tabular-nums"
+                  style={{
+                    fontFamily:
+                      "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
+                    color: chip.positive ? "var(--field)" : "var(--stitch)",
+                    letterSpacing: "0.03em",
+                  }}
+                >
+                  {chip.score}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Extra info */}
+          <p
+            className="mt-3 text-xs leading-relaxed"
+            style={{ color: "var(--text-muted)" }}
+          >
+            順位予想は6チーム x 2リーグ = 最大+60点。タイトル的中で+3点ボーナス。
+          </p>
+        </div>
+      </section>
+
       {/* ══════════ PAST SEASONS ══════════ */}
       {seasons.length > 1 && (
         <section>
           <div className="mb-3 flex items-center gap-4">
             <span
-              className="font-display shrink-0 text-xs tracking-widest"
+              className="shrink-0 text-xs font-bold tracking-widest"
               style={{
                 fontFamily:
                   "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
@@ -758,11 +708,11 @@ export default async function HomePage() {
                 <Link
                   key={s.id}
                   href={`/standings?year=${s.year}`}
-                  className="rounded px-4 py-2.5 text-xs transition-all"
+                  className="rounded-lg px-4 py-2.5 text-xs font-medium transition-all"
                   style={{
                     border: "1px solid var(--border-primary)",
                     background: "var(--bg-elevated)",
-                    color: "var(--text-muted)",
+                    color: "var(--text-secondary)",
                   }}
                 >
                   {s.label}
@@ -773,4 +723,60 @@ export default async function HomePage() {
       )}
     </div>
   );
+}
+
+// ── Sub-components ──
+
+function DistributionBar({ team }: { team: TeamCount }) {
+  // Minimum bar width so even 1% is visible
+  const barWidth = Math.max(team.pct, 4);
+
+  return (
+    <div className="flex items-center gap-3">
+      <span
+        className="w-20 shrink-0 text-right text-sm font-semibold"
+        style={{ color: "var(--text-primary)" }}
+      >
+        {team.teamName}
+      </span>
+      <div
+        className="h-6 flex-1 overflow-hidden rounded"
+        style={{ background: "var(--bg-inset)" }}
+      >
+        <div
+          className="flex h-full items-center rounded px-2"
+          style={{
+            width: `${barWidth}%`,
+            background: team.color,
+            transition: "width 0.6s ease",
+            minWidth: "2rem",
+          }}
+        >
+          <span
+            className="text-xs font-bold tabular-nums"
+            style={{
+              color: needsDarkText(team.color) ? "#1a1a1a" : "#fff",
+              textShadow: needsDarkText(team.color)
+                ? "none"
+                : "0 1px 2px rgba(0,0,0,0.2)",
+            }}
+          >
+            {team.pct}%
+          </span>
+        </div>
+      </div>
+      <span
+        className="w-6 shrink-0 text-center text-xs tabular-nums"
+        style={{ color: "var(--text-muted)" }}
+      >
+        {team.count}
+      </span>
+    </div>
+  );
+}
+
+/** Returns true for light-colored team backgrounds that need dark text */
+function needsDarkText(color: string): boolean {
+  const lightColors = ["#FBBF24", "#F5D100"];
+  return lightColors.includes(color);
 }
