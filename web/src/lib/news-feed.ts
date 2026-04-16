@@ -9,8 +9,7 @@ import {
 } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { calcRankingPointForTeam } from "@/lib/scoring";
-import { generateArticleV2, type ArticleVarsV2 } from "@/lib/article-templates-v2";
-import { computeBoldness, getBoldnessLabel, getTimingLabel, getConsensusLabel } from "@/lib/article-templates";
+import { generateFullArticle, buildArticleVars } from "@/lib/article-templates-v3";
 
 export interface NewsItem {
   id: string;
@@ -22,10 +21,14 @@ export interface NewsItem {
   timestamp: number;
   icon: string;
   source?: string;
-  /** Newspaper-style headline (for prediction type) */
+  /** Newspaper-style headline */
   headline?: string;
-  /** Newspaper subtext */
-  subtext?: string;
+  /** Lead paragraph */
+  lead?: string;
+  /** Body paragraphs */
+  bodyParagraphs?: string[];
+  /** Quote */
+  quote?: string;
   /** Central league picks [1st, 2nd, ...] */
   centralPicks?: string[];
   /** Pacific league picks [1st, 2nd, ...] */
@@ -195,46 +198,27 @@ export async function generateNewsFeed(limit = 50): Promise<NewsItem[]> {
       const c1 = centralPicks[0] ?? "???";
       const p1 = pacificPicks[0] ?? "???";
 
-      // Generate newspaper article
-      const boldnessLevel = computeBoldness(c1, p1, allC1s, allP1s);
-      const month = pred.createdAt ? new Date(Number(pred.createdAt) * 1000).getMonth() + 1 : 3;
-      const popularC = mode(allC1s);
-      const popularPct = allC1s.length > 0
-        ? Math.round((allC1s.filter((t) => t === popularC).length / allC1s.length) * 100)
-        : 0;
-
-      const vars: ArticleVarsV2 = {
-        name: user.name,
-        year: season.year,
-        central1: c1,
-        pacific1: p1,
-        boldness: getBoldnessLabel(boldnessLevel),
-        timing: getTimingLabel(month),
-        timingBonus: month <= 3 ? "×1.00" : `×${Math.max(0.1, 1 - 0.9 * Math.sqrt(Math.min(1, (month - 3) * 30 / 181))).toFixed(2)}`,
-        consensus: getConsensusLabel(c1 === popularC ? 0.8 : 0.2),
-        popularPick: popularC,
-        popularPct,
-        lastYearC1: "",
-        lastYearP1: "",
-        c1LastRank: 0,
-        daysContext: "",
-        month,
-      };
-
-      const article = generateArticleV2(user.id, vars);
+      // Generate full newspaper article (v3)
+      const articleVars = buildArticleVars(
+        user.name, season.year, centralPicks, pacificPicks,
+        allC1s, allP1s, user.source,
+      );
+      const article = generateFullArticle(user.id, articleVars);
 
       newsItems.push({
         id: `prediction-${season.year}-${user.id}`,
         type: "prediction",
         title: article.headline,
-        body: article.subtext,
+        body: article.lead,
         commentator: user.name,
         year: season.year,
         timestamp: season.year * 10000000 + 3000 + pred.userId,
         icon: "📰",
         source: user.source ?? undefined,
         headline: article.headline,
-        subtext: article.subtext,
+        lead: article.lead,
+        bodyParagraphs: article.body,
+        quote: article.quote,
         centralPicks,
         pacificPicks,
       });

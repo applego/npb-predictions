@@ -16,7 +16,9 @@ interface NewsItem {
   icon: string;
   source?: string;
   headline?: string;
-  subtext?: string;
+  lead?: string;
+  bodyParagraphs?: string[];
+  quote?: string;
   centralPicks?: string[];
   pacificPicks?: string[];
 }
@@ -152,6 +154,130 @@ function HeroCard({ item }: { item: NewsItem }) {
           >
             <span>📎</span> ソースを見る <span style={{ fontSize: "0.6rem" }}>↗</span>
           </a>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Newspaper Article Card (for prediction type) ──
+
+function NewspaperCard({ item }: { item: NewsItem }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div
+      className="overflow-hidden rounded-xl"
+      style={{ background: "var(--bg-surface)", border: "1px solid var(--border-primary)" }}
+    >
+      {/* Top red bar */}
+      <div style={{ height: "3px", background: "var(--stitch)" }} />
+
+      <div className="p-5">
+        {/* Meta row */}
+        <div className="mb-2 flex items-center gap-2">
+          <span
+            className="rounded-sm px-1.5 py-0.5 text-[10px] font-bold"
+            style={{ background: "var(--stitch)", color: "#fff" }}
+          >
+            📰 予想速報
+          </span>
+          {item.year && (
+            <span className="text-[10px] font-bold" style={{ color: "var(--text-muted)", fontFamily: "var(--font-display)" }}>
+              {item.year}
+            </span>
+          )}
+          {item.source && (
+            <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+              📎 {item.source}
+            </span>
+          )}
+        </div>
+
+        {/* Headline — large, bold, newspaper-style */}
+        <h2
+          className="mb-3 leading-tight"
+          style={{
+            fontSize: "clamp(1.1rem, 2.5vw, 1.4rem)",
+            fontWeight: 900,
+            color: "var(--text-primary)",
+            lineHeight: 1.3,
+          }}
+        >
+          {item.headline ?? item.title}
+        </h2>
+
+        {/* Lead — bold, slightly larger */}
+        {item.lead && (
+          <p
+            className="mb-3 text-sm font-bold leading-relaxed"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            {item.lead}
+          </p>
+        )}
+
+        {/* Team badges */}
+        {item.centralPicks && item.centralPicks.length > 0 && (
+          <div className="mb-3 flex flex-wrap gap-3">
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] font-bold" style={{ color: "var(--text-muted)" }}>セ</span>
+              {item.centralPicks.map((team, i) => (
+                <TeamMini key={`c-${i}`} team={team} rank={i + 1} />
+              ))}
+            </div>
+            {item.pacificPicks && item.pacificPicks.length > 0 && (
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] font-bold" style={{ color: "var(--text-muted)" }}>パ</span>
+                {item.pacificPicks.map((team, i) => (
+                  <TeamMini key={`p-${i}`} team={team} rank={i + 1} />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Expand/collapse body */}
+        {item.bodyParagraphs && item.bodyParagraphs.length > 0 && (
+          <>
+            <button
+              type="button"
+              onClick={() => setExpanded(!expanded)}
+              className="mb-2 text-xs font-medium transition-colors"
+              style={{ color: "var(--stitch)" }}
+            >
+              {expanded ? "▲ 閉じる" : "▼ 続きを読む"}
+            </button>
+
+            {expanded && (
+              <div className="space-y-3">
+                {/* Body paragraphs */}
+                {item.bodyParagraphs.map((p, i) => (
+                  <p
+                    key={i}
+                    className="text-sm leading-relaxed"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
+                    {p}
+                  </p>
+                ))}
+
+                {/* Quote block */}
+                {item.quote && (
+                  <blockquote
+                    className="rounded-r-lg py-2 pl-4 text-sm italic leading-relaxed"
+                    style={{
+                      borderLeft: "3px solid var(--stitch)",
+                      color: "var(--text-secondary)",
+                      background: "var(--bg-elevated)",
+                    }}
+                  >
+                    {item.quote}
+                  </blockquote>
+                )}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
@@ -377,14 +503,16 @@ export function NewsClient({ items }: { items: NewsItem[] }) {
       ) : (
         <div className="space-y-4">
           {/* Hero */}
-          {hero && <HeroCard item={hero} />}
+          {hero && (hero.type === "prediction" ? <NewspaperCard item={hero} /> : <HeroCard item={hero} />)}
 
           {/* Grid */}
           {rest.length > 0 && (
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              {rest.map((item) => (
-                <NewsCard key={item.id} item={item} />
-              ))}
+              {rest.map((item) =>
+                item.type === "prediction"
+                  ? <NewspaperCard key={item.id} item={item} />
+                  : <NewsCard key={item.id} item={item} />
+              )}
             </div>
           )}
 
