@@ -113,27 +113,30 @@ function SourceBadgeChip({ source, sourceUrl }: { source: string | null; sourceU
     border: `1px solid ${colors.border}`,
     color: colors.text,
   };
+  const label = source ?? "その他";
   if (sourceUrl) {
     return (
       <a
         href={sourceUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium transition-opacity hover:opacity-80"
+        className="inline-flex max-w-[10rem] items-center rounded px-1.5 py-0.5 text-xs font-medium transition-opacity hover:opacity-80"
         style={chipStyle}
         onClick={(e) => e.stopPropagation()}
-        title={`${source ?? "その他"} — 別タブで開く`}
+        title={`${label} — 別タブで開く`}
       >
-        {source ?? "その他"} ↗
+        <span className="truncate">{label}</span>
+        <span className="ml-0.5 shrink-0">↗</span>
       </a>
     );
   }
   return (
     <span
-      className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium"
+      className="inline-flex max-w-[10rem] items-center rounded px-1.5 py-0.5 text-xs font-medium"
       style={chipStyle}
+      title={label}
     >
-      {source ?? "その他"}
+      <span className="truncate">{label}</span>
     </span>
   );
 }
@@ -389,7 +392,7 @@ function LeaderboardRow({
         </td>
 
         {/* Name + Source + Like */}
-        <td className="px-3 py-3 sm:px-4">
+        <td className="max-w-[16rem] px-3 py-3 sm:px-4">
           <div className="flex flex-wrap items-center gap-1.5">
             <Link
               href={`/rankings/commentators/${entry.slug}`}
