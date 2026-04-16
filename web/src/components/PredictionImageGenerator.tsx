@@ -2,13 +2,18 @@
 
 import { useRef, useCallback, useState } from "react";
 import { getTeamByName } from "@/lib/teams";
+import { getTwitterShareUrl } from "@/lib/share";
 
-interface PredictionImageGeneratorProps {
+interface DrawProps {
   userName: string;
   year: number;
   centralPicks: string[]; // shortName array, 1st to 6th
   pacificPicks: string[]; // shortName array, 1st to 6th
   article: { headline: string; subtext: string };
+}
+
+interface PredictionImageGeneratorProps extends DrawProps {
+  userId: number;
 }
 
 // Canvas constants
@@ -48,7 +53,7 @@ function roundRect(
  */
 function drawPredictionImage(
   canvas: HTMLCanvasElement,
-  props: PredictionImageGeneratorProps,
+  props: DrawProps,
 ) {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
@@ -236,6 +241,7 @@ function wrapText(
 }
 
 export default function PredictionImageGenerator({
+  userId,
   userName,
   year,
   centralPicks,
@@ -272,12 +278,44 @@ export default function PredictionImageGenerator({
     }, "image/png");
   }, [userName, year]);
 
-  const handleShare = useCallback(() => {
-    const text = `${userName}の${year}年プロ野球順位予想を公開! #NPB予想リーグ`;
-    const shareUrl = typeof window !== "undefined" ? window.location.href : "";
-    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`;
+  const handleShare = useCallback(async () => {
+    const canvas = canvasRef.current;
+    const twitterUrl = getTwitterShareUrl("prediction", { userId, year, userName });
+
+    // Try Web Share API with image file (works on mobile / modern browsers)
+    if (canvas && typeof navigator !== "undefined" && navigator.canShare) {
+      await new Promise<void>((resolve) => {
+        canvas.toBlob(async (blob) => {
+          if (!blob) { resolve(); return; }
+          const file = new File([blob], `npb-prediction-${userName}-${year}.png`, { type: "image/png" });
+          if (navigator.canShare({ files: [file] })) {
+            try {
+              await navigator.share({ files: [file], title: "NPB予想リーグ", text: `${userName}の${year}年プロ野球順位予想 #NPB予想リーグ` });
+              resolve();
+              return;
+            } catch {
+              // cancelled or failed → fall through
+            }
+          }
+          resolve();
+        }, "image/png");
+      });
+    }
+
+    // Desktop fallback: download image then open X compose
+    if (canvas) {
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `npb-prediction-${userName}-${year}.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }, "image/png");
+    }
     window.open(twitterUrl, "_blank", "noopener,noreferrer");
-  }, [userName, year]);
+  }, [userId, userName, year]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
@@ -298,15 +336,15 @@ export default function PredictionImageGenerator({
         <button
           onClick={handleGenerate}
           style={{
-            background: "var(--stitch)",
-            color: "#fff",
-            border: "none",
+            background: "transparent",
+            color: "var(--stitch)",
+            border: "1px solid var(--stitch)",
             borderRadius: "0.375rem",
-            padding: "0.625rem 1.25rem",
-            fontSize: "0.875rem",
+            padding: "0.375rem 0.75rem",
+            fontSize: "0.75rem",
             fontWeight: 600,
             cursor: "pointer",
-            letterSpacing: "0.04em",
+            width: "fit-content",
           }}
         >
           画像を生成する

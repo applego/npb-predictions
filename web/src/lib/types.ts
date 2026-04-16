@@ -63,6 +63,7 @@ export interface Prediction {
 export interface ScoreEntry {
   userId: number;
   userName: string;
+  slug?: string;
   rankingScore: number;
   titleScore: number;
   totalScore: number;

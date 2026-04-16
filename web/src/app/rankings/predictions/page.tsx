@@ -3,7 +3,6 @@ export const runtime = "edge";
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { Prediction, Season } from "@/lib/types";
-import { LEAGUE_LABELS } from "@/lib/types";
 import { getTeamByName } from "@/lib/teams";
 import ShareButton from "@/components/ShareButton";
 
@@ -51,28 +50,41 @@ export async function generateMetadata({
   return {
     title: `${year}年 順位予想一覧`,
     description: `${year}年NPB予想リーグ — 全予想家のセ・パ順位予想を一覧表示。`,
-    alternates: { canonical: `/predictions?year=${year}` },
   };
+}
+
+function TeamBadge({ teamName }: { teamName: string }) {
+  const team = getTeamByName(teamName);
+  if (!team) return <span className="text-xs" style={{ color: "var(--text-muted)" }}>—</span>;
+  return (
+    <div
+      className="flex items-center justify-center rounded-sm py-1 text-[11px] font-bold"
+      style={{
+        background: team.color,
+        color: team.textColor,
+        textShadow: team.textColor === "#fff" ? "0 1px 2px rgba(0,0,0,0.3)" : "none",
+      }}
+    >
+      {team.shortName}
+    </div>
+  );
 }
 
 export default async function PredictionsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ year?: string; league?: string }>;
+  searchParams: Promise<{ year?: string }>;
 }) {
-  const { year: yearParam, league: leagueParam } = await searchParams;
+  const { year: yearParam } = await searchParams;
   const year = yearParam ? parseInt(yearParam, 10) : await getActiveYear();
-  const league = leagueParam === "pacific" ? "pacific" : "central";
 
   const [predictions, allSeasons] = await Promise.all([
     getPredictions(year),
     getAllSeasons(),
   ]);
 
-  // Filter predictions that have picks for this league
-  const filtered = predictions.filter((p) =>
-    p.rankingPicks.some((rp) => rp.league === league)
-  );
+  // Only show predictions that have at least some picks
+  const filtered = predictions.filter((p) => p.rankingPicks.length > 0);
 
   return (
     <div className="space-y-5">
@@ -87,10 +99,10 @@ export default async function PredictionsPage({
               color: "var(--text-primary)",
             }}
           >
-            <span style={{ color: "var(--stitch)" }}>{year}</span> 順位予想一覧
+            <span style={{ color: "var(--stitch)" }}>{year}</span> {"\u9806\u4F4D\u4E88\u60F3\u4E00\u89A7"}
           </h1>
           <p className="mt-0.5 text-sm" style={{ color: "var(--text-muted)" }}>
-            {filtered.length}人 — {LEAGUE_LABELS[league]}
+            {filtered.length}{"\u4EBA"}
           </p>
         </div>
         <ShareButton type="scoreboard" year={year} />
@@ -104,7 +116,7 @@ export default async function PredictionsPage({
             .map((s) => (
               <Link
                 key={s.year}
-                href={`/predictions?year=${s.year}&league=${league}`}
+                href={`/rankings/predictions?year=${s.year}`}
                 className="rounded-sm px-3 py-2 text-xs font-medium"
                 style={{
                   fontFamily: "var(--font-display)",
@@ -120,45 +132,27 @@ export default async function PredictionsPage({
         </div>
       )}
 
-      {/* League tabs */}
-      <div className="flex gap-0">
-        {(["central", "pacific"] as const).map((l) => {
-          const active = l === league;
-          const color = l === "central" ? "var(--central)" : "var(--pacific)";
-          return (
-            <Link
-              key={l}
-              href={`/predictions?year=${year}&league=${l}`}
-              className="px-5 py-2.5 text-sm font-bold"
-              style={{
-                fontFamily: "var(--font-display)",
-                letterSpacing: "0.08em",
-                color: active ? "#fff" : "var(--text-muted)",
-                background: active ? color : "var(--bg-surface)",
-                borderBottom: active ? `3px solid ${color}` : "3px solid var(--border-primary)",
-              }}
-            >
-              {LEAGUE_LABELS[l]}
-            </Link>
-          );
-        })}
-        <div className="flex-1" style={{ borderBottom: "3px solid var(--border-primary)" }} />
-      </div>
-
-      {/* Matrix: predictors as ROWS, ranks 1-6 as COLUMNS */}
+      {/* Matrix: セ・パ横並び */}
       {filtered.length === 0 ? (
-        <div className="card rounded-lg p-10 text-center">
+        <div
+          className="rounded-xl p-10 text-center"
+          style={{ background: "var(--bg-surface)", border: "1px solid var(--border-primary)" }}
+        >
           <p style={{ color: "var(--text-muted)" }}>
-            {year}年{LEAGUE_LABELS[league]}の予想データがありません
+            {year}{"\u5E74\u306E\u4E88\u60F3\u30C7\u30FC\u30BF\u306F\u3042\u308A\u307E\u305B\u3093"}
           </p>
         </div>
       ) : (
-        <div className="card overflow-x-auto rounded-lg">
+        <div
+          className="overflow-x-auto rounded-xl"
+          style={{ background: "var(--bg-surface)", border: "1px solid var(--border-primary)" }}
+        >
           <table className="w-full" style={{ borderCollapse: "separate", borderSpacing: 0 }}>
             <thead>
               <tr>
                 <th
-                  className="sticky left-0 z-10 px-3 py-2.5 text-left text-xs"
+                  className="sticky left-0 z-10 px-3 py-1.5 text-left text-xs"
+                  rowSpan={2}
                   style={{
                     fontFamily: "var(--font-display)",
                     color: "var(--text-muted)",
@@ -166,32 +160,93 @@ export default async function PredictionsPage({
                     borderBottom: "2px solid var(--border-primary)",
                     letterSpacing: "0.08em",
                     minWidth: "8rem",
+                    verticalAlign: "bottom",
                   }}
                 >
-                  予想者
+                  {"\u4E88\u60F3\u8005"}
                 </th>
+                {/* セ・リーグ header */}
+                <th
+                  colSpan={6}
+                  className="px-1 py-1.5 text-center text-xs font-bold"
+                  style={{
+                    background: "var(--central, #1E40AF)",
+                    color: "#fff",
+                    letterSpacing: "0.1em",
+                    borderBottom: "1px solid rgba(255,255,255,0.2)",
+                  }}
+                >
+                  {"\u30BB\u30FB\u30EA\u30FC\u30B0"}
+                </th>
+                {/* Separator */}
+                <th
+                  rowSpan={2}
+                  className="w-1"
+                  style={{
+                    background: "var(--bg-inset)",
+                    borderBottom: "2px solid var(--border-primary)",
+                    minWidth: "4px",
+                    maxWidth: "4px",
+                  }}
+                />
+                {/* パ・リーグ header */}
+                <th
+                  colSpan={6}
+                  className="px-1 py-1.5 text-center text-xs font-bold"
+                  style={{
+                    background: "var(--pacific, #B91C1C)",
+                    color: "#fff",
+                    letterSpacing: "0.1em",
+                    borderBottom: "1px solid rgba(255,255,255,0.2)",
+                  }}
+                >
+                  {"\u30D1\u30FB\u30EA\u30FC\u30B0"}
+                </th>
+              </tr>
+              <tr>
+                {/* セ 1-6位 */}
                 {[1, 2, 3, 4, 5, 6].map((rank) => (
                   <th
-                    key={rank}
-                    className="px-1 py-2.5 text-center"
+                    key={`c-${rank}`}
+                    className="px-1 py-1.5 text-center"
                     style={{
                       fontFamily: "var(--font-display)",
-                      fontSize: "0.9rem",
+                      fontSize: "0.75rem",
                       color: rank === 1 ? "var(--dirt)" : "var(--text-muted)",
                       background: "var(--bg-inset)",
                       borderBottom: "2px solid var(--border-primary)",
-                      minWidth: "5rem",
+                      minWidth: "3.5rem",
                     }}
                   >
-                    {rank}位
+                    {rank}{"\u4F4D"}
+                  </th>
+                ))}
+                {/* パ 1-6位 */}
+                {[1, 2, 3, 4, 5, 6].map((rank) => (
+                  <th
+                    key={`p-${rank}`}
+                    className="px-1 py-1.5 text-center"
+                    style={{
+                      fontFamily: "var(--font-display)",
+                      fontSize: "0.75rem",
+                      color: rank === 1 ? "var(--dirt)" : "var(--text-muted)",
+                      background: "var(--bg-inset)",
+                      borderBottom: "2px solid var(--border-primary)",
+                      minWidth: "3.5rem",
+                    }}
+                  >
+                    {rank}{"\u4F4D"}
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filtered.map((pred, idx) => {
-                const picks = pred.rankingPicks
-                  .filter((rp) => rp.league === league)
+                const centralPicks = pred.rankingPicks
+                  .filter((rp) => rp.league === "central")
+                  .sort((a, b) => a.rank - b.rank);
+                const pacificPicks = pred.rankingPicks
+                  .filter((rp) => rp.league === "pacific")
                   .sort((a, b) => a.rank - b.rank);
 
                 return (
@@ -214,7 +269,7 @@ export default async function PredictionsPage({
                         {pred.user.name}
                       </div>
                       {pred.user.source && (
-                        <div className="text-xs" style={{ color: "var(--text-muted)" }}>
+                        <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>
                           {pred.user.sourceUrl ? (
                             <a
                               href={pred.user.sourceUrl}
@@ -223,7 +278,7 @@ export default async function PredictionsPage({
                               className="transition-opacity hover:opacity-70"
                               style={{ color: "var(--text-muted)" }}
                             >
-                              {pred.user.source} ↗
+                              {pred.user.source}
                             </a>
                           ) : (
                             pred.user.source
@@ -231,30 +286,32 @@ export default async function PredictionsPage({
                         </div>
                       )}
                     </td>
-                    {/* Rank cells 1-6 */}
+                    {/* セ 1-6 */}
                     {[1, 2, 3, 4, 5, 6].map((rank) => {
-                      const pick = picks.find((p) => p.rank === rank);
-                      const team = pick ? getTeamByName(pick.teamName) : null;
+                      const pick = centralPicks.find((p) => p.rank === rank);
                       return (
-                        <td key={rank} className="p-0.5">
-                          {team ? (
-                            <div
-                              className="flex items-center justify-center rounded-sm py-1.5 text-xs font-bold"
-                              style={{
-                                background: team.color,
-                                color: team.textColor,
-                                textShadow: team.textColor === "#fff" ? "0 1px 2px rgba(0,0,0,0.3)" : "none",
-                              }}
-                            >
-                              {team.shortName}
-                            </div>
-                          ) : (
-                            <div
-                              className="flex items-center justify-center rounded-sm py-1.5 text-xs"
-                              style={{ color: "var(--text-muted)" }}
-                            >
-                              —
-                            </div>
+                        <td key={`c-${rank}`} className="p-0.5">
+                          {pick ? <TeamBadge teamName={pick.teamName} /> : (
+                            <div className="flex items-center justify-center py-1 text-xs" style={{ color: "var(--text-muted)" }}>—</div>
+                          )}
+                        </td>
+                      );
+                    })}
+                    {/* Separator */}
+                    <td
+                      style={{
+                        background: "var(--bg-inset)",
+                        minWidth: "4px",
+                        maxWidth: "4px",
+                      }}
+                    />
+                    {/* パ 1-6 */}
+                    {[1, 2, 3, 4, 5, 6].map((rank) => {
+                      const pick = pacificPicks.find((p) => p.rank === rank);
+                      return (
+                        <td key={`p-${rank}`} className="p-0.5">
+                          {pick ? <TeamBadge teamName={pick.teamName} /> : (
+                            <div className="flex items-center justify-center py-1 text-xs" style={{ color: "var(--text-muted)" }}>—</div>
                           )}
                         </td>
                       );
@@ -269,7 +326,7 @@ export default async function PredictionsPage({
 
       {/* Stats */}
       <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-        データソース: ohtashp.com — {filtered.length}人の解説者・評論家の開幕前予想
+        {"\u30C7\u30FC\u30BF\u30BD\u30FC\u30B9"}: ohtashp.com — {filtered.length}{"\u4EBA\u306E\u89E3\u8AAC\u8005\u30FB\u8A55\u8AD6\u5BB6\u306E\u958B\u5E55\u524D\u4E88\u60F3"}
       </p>
     </div>
   );

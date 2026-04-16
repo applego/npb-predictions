@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import ShareButton from "@/components/ShareButton";
 import { getSeasons, getScoreboardData } from "@/lib/scoreboard";
+import { ScoreboardTable } from "./ScoreboardClient";
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -571,124 +572,18 @@ export default async function StandingsPage({
             </div>
           </div>
         ) : (
-          <div
-            className="overflow-x-auto rounded-xl"
-            style={{
-              background: "var(--bg-surface)",
-              border: "1px solid var(--border-primary)",
-            }}
-          >
-            <table className="w-full text-sm">
-              <thead>
-                <tr style={{ borderBottom: "2px solid var(--border-primary)" }}>
-                  {["#", "予想者", "順位点", "タイトル点", "合計", "趨勢"].map(
-                    (col, i) => (
-                      <th
-                        key={col}
-                        className={`px-3 py-2.5 text-xs font-medium ${i >= 2 && col !== "趨勢" ? "text-right" : "text-left"}`}
-                        style={{
-                          fontFamily: "var(--font-display)",
-                          color: "var(--text-muted)",
-                          letterSpacing: "0.1em",
-                          background: "var(--bg-inset)",
-                        }}
-                      >
-                        {col}
-                      </th>
-                    ),
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {currentData.scores.map((entry, idx) => {
-                  const isTop3 = idx < 3;
-                  const userHist = userHistory.find(
-                    (u) => u.userId === entry.userId,
-                  );
-                  return (
-                    <tr
-                      key={entry.userId}
-                      style={{
-                        borderBottom: "1px solid var(--border-primary)",
-                        background: isTop3
-                          ? "rgba(212,160,23,0.03)"
-                          : "transparent",
-                      }}
-                    >
-                      <td
-                        className="px-3 py-2.5"
-                        style={{
-                          fontFamily: "var(--font-display)",
-                          color: isTop3 ? "var(--dirt)" : "var(--text-muted)",
-                        }}
-                      >
-                        {getRankDisplay(idx)}
-                      </td>
-                      <td className="px-3 py-2.5">
-                        <span
-                          className="font-medium"
-                          style={{ color: "var(--text-primary)" }}
-                        >
-                          {entry.userName}
-                        </span>
-                      </td>
-                      <td
-                        className="px-3 py-2.5 text-right"
-                        style={{
-                          fontFamily: "var(--font-display)",
-                          color:
-                            entry.rankingScore > 0
-                              ? "var(--field)"
-                              : entry.rankingScore < 0
-                                ? "var(--stitch)"
-                                : "var(--text-muted)",
-                        }}
-                      >
-                        {fmtScore(entry.rankingScore)}
-                      </td>
-                      <td
-                        className="px-3 py-2.5 text-right"
-                        style={{
-                          fontFamily: "var(--font-display)",
-                          color:
-                            entry.titleScore > 0 ? "var(--field)" : "var(--text-muted)",
-                        }}
-                      >
-                        {fmtScore(entry.titleScore)}
-                      </td>
-                      <td className="px-3 py-2.5 text-right">
-                        <span
-                          className="inline-block rounded-sm px-2 py-0.5"
-                          style={{
-                            fontFamily: "var(--font-display)",
-                            fontWeight: 700,
-                            background: isTop3
-                              ? "rgba(212,160,23,0.08)"
-                              : "var(--bg-elevated)",
-                            color:
-                              entry.totalScore > 0
-                                ? "var(--dirt)"
-                                : "var(--stitch)",
-                            border: `1px solid ${isTop3 ? "rgba(212,160,23,0.2)" : "var(--border-primary)"}`,
-                          }}
-                        >
-                          {entry.totalScore}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2.5">
-                        {userHist && (
-                          <Sparkline
-                            byYear={userHist.byYear}
-                            years={activeYears}
-                          />
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <ScoreboardTable
+            scores={currentData.scores}
+            year={selectedYear}
+            sparklineData={Object.fromEntries(
+              userHistory
+                .filter((u) => u.byYear.size >= 2)
+                .map((u) => [
+                  u.userId,
+                  activeYears.filter((y) => u.byYear.has(y)).map((y) => u.byYear.get(y)!.score),
+                ]),
+            )}
+          />
         )
       )}
     </div>

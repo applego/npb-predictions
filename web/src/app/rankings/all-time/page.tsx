@@ -2,6 +2,7 @@ export const runtime = "edge";
 
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AllTimeTable } from "./AllTimeClient";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://npb-predictions.pages.dev";
 
@@ -106,145 +107,7 @@ export default async function AllTimeRankingsPage() {
         </div>
       ) : (
         <>
-          {/* Top 3 podium */}
-          <div className="grid gap-3 sm:grid-cols-3">
-            {data.commentators.slice(0, 3).map((c) => {
-              const isFirst = c.rank === 1;
-              return (
-                <Link
-                  key={c.userId}
-                  href={`/rankings/commentators/${c.slug}`}
-                  className="card rounded-lg p-4 transition-all hover:shadow-md"
-                  style={{
-                    borderColor: isFirst ? "var(--dirt)" : "var(--border-primary)",
-                    background: isFirst ? "rgba(212,160,23,0.04)" : "var(--bg-surface)",
-                  }}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">{getRankBadge(c.rank)}</span>
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-bold" style={{ color: "var(--text-primary)" }}>
-                        {c.name}
-                      </div>
-                      <div className="text-xs" style={{ color: "var(--text-muted)" }}>
-                        {c.yearsCount}年参加 · 平均{c.avgPerYear}/年
-                      </div>
-                    </div>
-                    <div
-                      className="rounded-sm px-2.5 py-1 text-center"
-                      style={{
-                        fontFamily: "var(--font-display)",
-                        fontSize: "1.1rem",
-                        background: isFirst ? "rgba(212,160,23,0.1)" : "var(--bg-elevated)",
-                        color: c.allTimeTotal > 0 ? "var(--dirt)" : "var(--stitch)",
-                        border: `1px solid ${isFirst ? "rgba(212,160,23,0.3)" : "var(--border-primary)"}`,
-                      }}
-                    >
-                      {fmtScore(c.allTimeTotal)}
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-
-          {/* Full table */}
-          <div className="card overflow-x-auto rounded-lg">
-            <table className="w-full text-sm">
-              <thead>
-                <tr style={{ borderBottom: "2px solid var(--border-primary)" }}>
-                  {["#", "解説者", "参加年", "平均/年", "最高", "偏差値", "通算"].map((col, i) => (
-                    <th
-                      key={col}
-                      className={`px-3 py-2.5 text-xs font-medium ${i <= 1 ? "text-left" : "text-right"}`}
-                      style={{
-                        fontFamily: "var(--font-display)",
-                        color: "var(--text-muted)",
-                        letterSpacing: "0.1em",
-                        background: "var(--bg-inset)",
-                      }}
-                    >
-                      {col}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {data.commentators.map((c) => {
-                  const isTop3 = c.rank <= 3;
-                  return (
-                    <tr
-                      key={c.userId}
-                      className="transition-colors"
-                      style={{
-                        borderBottom: "1px solid var(--border-primary)",
-                        background: isTop3 ? "rgba(212,160,23,0.02)" : "transparent",
-                      }}
-                    >
-                      <td className="px-3 py-2.5" style={{ fontFamily: "var(--font-display)", color: isTop3 ? "var(--dirt)" : "var(--text-muted)" }}>
-                        {getRankBadge(c.rank)}
-                      </td>
-                      <td className="px-3 py-2.5">
-                        <Link
-                          href={`/rankings/commentators/${c.slug}`}
-                          className="font-medium transition-colors hover:underline"
-                          style={{ color: "var(--text-primary)" }}
-                        >
-                          {c.name}
-                        </Link>
-                        {c.source && (
-                          <span className="ml-1.5 text-[10px]" style={{ color: "var(--text-muted)" }}>
-                            {c.source}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-3 py-2.5 text-right" style={{ color: "var(--text-muted)" }}>
-                        {c.yearsCount}
-                      </td>
-                      <td className="px-3 py-2.5 text-right" style={{
-                        fontFamily: "var(--font-display)",
-                        fontWeight: 700,
-                        color: c.avgPerYear > 0 ? "var(--field)" : c.avgPerYear < 0 ? "var(--stitch)" : "var(--text-muted)",
-                      }}>
-                        {c.avgPerYear > 0 ? `+${c.avgPerYear}` : c.avgPerYear}
-                      </td>
-                      <td className="px-3 py-2.5 text-right" style={{
-                        fontFamily: "var(--font-display)",
-                        color: c.bestScore > 0 ? "var(--dirt)" : "var(--text-muted)",
-                      }}>
-                        {fmtScore(c.bestScore)}
-                        {c.bestYear && <span className="ml-0.5 text-[10px]" style={{ color: "var(--text-muted)" }}>({c.bestYear})</span>}
-                      </td>
-                      <td className="px-3 py-2.5 text-right" style={{
-                        fontFamily: "var(--font-display)",
-                        color: c.avgDeviation && c.avgDeviation >= 55 ? "var(--field)" : c.avgDeviation && c.avgDeviation < 45 ? "var(--stitch)" : "var(--text-muted)",
-                      }}>
-                        {c.avgDeviation ?? "—"}
-                      </td>
-                      <td className="px-3 py-2.5 text-right">
-                        <span
-                          className="inline-block rounded-sm px-2 py-0.5"
-                          style={{
-                            fontFamily: "var(--font-display)",
-                            background: isTop3 ? "rgba(212,160,23,0.08)" : "var(--bg-elevated)",
-                            color: c.allTimeTotal > 0 ? "var(--dirt)" : "var(--stitch)",
-                            border: `1px solid ${isTop3 ? "rgba(212,160,23,0.2)" : "var(--border-primary)"}`,
-                          }}
-                        >
-                          {fmtScore(c.allTimeTotal)}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Year breakdown sparklines legend */}
-          <div className="text-xs" style={{ color: "var(--text-muted)" }}>
-            スコア計算: 完全一致 +5 / 1位差 +3 / 2位差 +1 / 3位差 -1 / 4位差 -3 / 5位差 -5
-          </div>
+          <AllTimeTable commentators={data.commentators} />
         </>
       )}
     </div>
