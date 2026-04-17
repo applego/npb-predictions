@@ -3,21 +3,44 @@ export const runtime = "edge";
 /**
  * POST /api/cron/update-standings
  *
- * Scrapes current NPB standings from npb.jp and saves a snapshot.
- * Then triggers score recalculation for all active seasons.
+ * Scrapes current NPB standings (Yahoo Sports Navi → npb.jp fallback),
+ * detects rank changes vs the latest snapshot, and saves a new snapshot
+ * only when something actually changed.
  *
  * Auth: x-cron-secret header must match CRON_SECRET env var.
- *       Can also be called from admin UI with x-admin-token matching ADMIN_SECRET.
+ *       Can also be called from admin UI with x-admin-secret matching ADMIN_SECRET.
  */
 
 import { NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { seasons, actualTeamStandings } from "@/db/schema";
-import { eq } from "drizzle-orm";
-import { scrapeNpbStandings } from "@/lib/scrape-npb";
+import { and, desc, eq } from "drizzle-orm";
+import { scrapeNpbStandings, type ScrapedStanding } from "@/lib/scrape-npb";
+import { scrapeYahooStandings } from "@/lib/scrape-yahoo";
+import { diffStandings } from "@/lib/rank-diff";
+
+async function scrapeWithFallback(): Promise<{
+  source: "yahoo" | "npb";
+  standings: ScrapedStanding[];
+  errors: string[];
+}> {
+  const errors: string[] = [];
+
+  try {
+    const yahoo = await scrapeYahooStandings();
+    if (yahoo.length >= 12) {
+      return { source: "yahoo", standings: yahoo, errors };
+    }
+    errors.push(`Yahoo returned only ${yahoo.length} rows`);
+  } catch (err) {
+    errors.push(`Yahoo: ${String(err)}`);
+  }
+
+  const npb = await scrapeNpbStandings();
+  return { source: "npb", standings: npb, errors };
+}
 
 export async function POST(req: Request) {
-  // Auth: accept either cron secret or admin secret
   const cronSecret = process.env.CRON_SECRET;
   const adminSecret = process.env.ADMIN_SECRET;
 
@@ -27,7 +50,6 @@ export async function POST(req: Request) {
   const authorized =
     (cronSecret && incomingCron === cronSecret) ||
     (adminSecret && incomingAdmin === adminSecret) ||
-    // Allow if neither secret is configured (dev/local)
     (!cronSecret && !adminSecret);
 
   if (!authorized) {
@@ -36,7 +58,6 @@ export async function POST(req: Request) {
 
   const db = getDb();
 
-  // Find active seasons
   const activeSeasons = await db
     .select()
     .from(seasons)
@@ -46,21 +67,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: "No active seasons", scraped: [] });
   }
 
-  // Scrape NPB
-  let standings;
+  let scrape;
   try {
-    standings = await scrapeNpbStandings();
+    scrape = await scrapeWithFallback();
   } catch (err) {
     return NextResponse.json(
       { error: `Scrape failed: ${String(err)}` },
-      { status: 502 }
+      { status: 502 },
     );
   }
 
-  if (standings.length === 0) {
+  if (scrape.standings.length === 0) {
     return NextResponse.json(
-      { error: "Scrape returned no standings (off-season?)" },
-      { status: 422 }
+      { error: "Scrape returned no standings (off-season?)", sourceErrors: scrape.errors },
+      { status: 422 },
     );
   }
 
@@ -68,26 +88,67 @@ export async function POST(req: Request) {
   const results = [];
 
   for (const season of activeSeasons) {
-    await db.insert(actualTeamStandings).values(
-      standings.map((s) => ({
-        seasonId: season.id,
-        league: s.league,
-        rank: s.rank,
-        teamName: s.teamName,
-        wins: s.wins,
-        losses: s.losses,
-        draws: s.draws,
-        isFinal: false,
-        snapshotDate: now,
-      }))
-    );
+    // Fetch the latest snapshot per team for diff
+    const latestRows = await db
+      .select()
+      .from(actualTeamStandings)
+      .where(eq(actualTeamStandings.seasonId, season.id))
+      .orderBy(desc(actualTeamStandings.snapshotDate))
+      .limit(24); // 12 teams × up to 2 most recent snapshots
 
-    results.push({ year: season.year, rows: standings.length });
+    // Keep only the most recent row per (league, teamName)
+    const latestPerTeam = new Map<string, typeof latestRows[number]>();
+    for (const r of latestRows) {
+      const key = `${r.league}:${r.teamName}`;
+      if (!latestPerTeam.has(key)) latestPerTeam.set(key, r);
+    }
+    const prev = [...latestPerTeam.values()].map((r) => ({
+      league: r.league as "central" | "pacific",
+      rank: r.rank,
+      teamName: r.teamName,
+    }));
+
+    const diff = diffStandings(prev, scrape.standings);
+
+    // Only insert a new snapshot if something changed OR this is the first snapshot
+    const shouldInsert = prev.length === 0 || diff.changed.length > 0;
+
+    if (shouldInsert) {
+      await db.insert(actualTeamStandings).values(
+        scrape.standings.map((s) => ({
+          seasonId: season.id,
+          league: s.league,
+          rank: s.rank,
+          teamName: s.teamName,
+          wins: s.wins,
+          losses: s.losses,
+          draws: s.draws,
+          isFinal: false,
+          snapshotDate: now,
+        })),
+      );
+    }
+
+    results.push({
+      year: season.year,
+      rows: scrape.standings.length,
+      inserted: shouldInsert,
+      changed: diff.changed.length,
+      topMoves: diff.topMoves.map((m) => ({
+        league: m.league,
+        team: m.teamName,
+        prev: m.prevRank,
+        now: m.newRank,
+        delta: m.delta,
+      })),
+    });
   }
 
   return NextResponse.json({
     scrapedAt: now.toISOString(),
-    standings,
+    source: scrape.source,
+    sourceErrors: scrape.errors,
+    standings: scrape.standings,
     seasons: results,
   });
 }
