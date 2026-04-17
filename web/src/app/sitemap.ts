@@ -5,7 +5,7 @@ import { getAllSeasons } from "@/lib/seo-queries";
 import { NPB_TEAMS } from "@/lib/teams";
 
 const BASE_URL =
-  process.env.NEXT_PUBLIC_BASE_URL ?? "https://npb-predictions.vercel.app";
+  process.env.NEXT_PUBLIC_BASE_URL ?? "https://npb-predictions.pages.dev";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // DB may be unavailable at build time — fall back to static years

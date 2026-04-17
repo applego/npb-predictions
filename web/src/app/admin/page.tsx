@@ -222,6 +222,7 @@ function UserSourceEditor({ user, onSaved }: { user: User; onSaved: () => void }
         <div key={ch.channelId}
           className="flex items-center gap-2 rounded border bg-gray-50 p-2 text-xs">
           {ch.thumbnail && (
+            /* eslint-disable-next-line @next/next/no-img-element */
             <img src={ch.thumbnail} alt="" className="h-8 w-8 rounded-full object-cover" />
           )}
           <div className="min-w-0 flex-1">

@@ -297,6 +297,7 @@ export default async function CommentatorDetailPage({
         <div className="px-5 py-5 sm:px-8">
           <div className="flex items-start gap-4">
             {user.avatarUrl && (
+              /* eslint-disable-next-line @next/next/no-img-element */
               <img
                 src={user.avatarUrl}
                 alt={user.name}

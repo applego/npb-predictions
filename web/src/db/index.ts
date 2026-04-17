@@ -5,7 +5,6 @@ import * as schema from "./schema";
 export function getDb() {
   const { env } = getRequestContext();
   // D1Database type from Cloudflare Workers runtime
-  // eslint-disable-next-line
   return drizzle((env as any).DB, { schema });
 }
 
