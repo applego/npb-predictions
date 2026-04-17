@@ -23,10 +23,59 @@ interface ScoreEntry {
   totalScore: number;
 }
 
+interface StandingEntry {
+  league: "central" | "pacific";
+  rank: number;
+  teamName: string;
+  wins: number;
+  losses: number;
+  draws: number;
+}
+
+interface RankChange {
+  league: "central" | "pacific";
+  teamName: string;
+  previousRank: number;
+  currentRank: number;
+  change: number;
+}
+
 interface ScoreboardResponse {
   season: { id: number; year: number };
   scores: ScoreEntry[];
+  standings: StandingEntry[];
+  changes: RankChange[];
 }
+
+const TEAM_COLORS: Record<string, { bg: string; text: string }> = {
+  "読売ジャイアンツ": { bg: "#F97316", text: "#fff" },
+  "阪神タイガース": { bg: "#FBBF24", text: "#1a1a1a" },
+  "横浜DeNAベイスターズ": { bg: "#2563EB", text: "#fff" },
+  "広島東洋カープ": { bg: "#DC2626", text: "#fff" },
+  "中日ドラゴンズ": { bg: "#1E40AF", text: "#fff" },
+  "東京ヤクルトスワローズ": { bg: "#059669", text: "#fff" },
+  "オリックス・バファローズ": { bg: "#1E3A5F", text: "#C8A951" },
+  "福岡ソフトバンクホークス": { bg: "#F5D100", text: "#1a1a1a" },
+  "千葉ロッテマリーンズ": { bg: "#1a1a1a", text: "#fff" },
+  "東北楽天ゴールデンイーグルス": { bg: "#B91C1C", text: "#fff" },
+  "埼玉西武ライオンズ": { bg: "#1D4ED8", text: "#fff" },
+  "北海道日本ハムファイターズ": { bg: "#1E3A5F", text: "#4FB3E0" },
+};
+
+const SHORT_NAMES: Record<string, string> = {
+  "読売ジャイアンツ": "巨人",
+  "阪神タイガース": "阪神",
+  "横浜DeNAベイスターズ": "DeNA",
+  "広島東洋カープ": "広島",
+  "中日ドラゴンズ": "中日",
+  "東京ヤクルトスワローズ": "ヤクルト",
+  "オリックス・バファローズ": "オリックス",
+  "福岡ソフトバンクホークス": "ソフトバンク",
+  "千葉ロッテマリーンズ": "ロッテ",
+  "東北楽天ゴールデンイーグルス": "楽天",
+  "埼玉西武ライオンズ": "西武",
+  "北海道日本ハムファイターズ": "日本ハム",
+};
 
 async function getCurrentScoreboard(): Promise<ScoreboardResponse | null> {
   try {
@@ -52,9 +101,158 @@ function getRankDisplay(index: number) {
   return `${index + 1}`;
 }
 
+function ChangeIndicator({ change }: { change: number }) {
+  if (change > 0) {
+    return (
+      <span className="inline-flex items-center gap-0.5 text-xs font-bold" style={{ color: "var(--field)" }}>
+        {"\u25B2"}{change}
+      </span>
+    );
+  }
+  if (change < 0) {
+    return (
+      <span className="inline-flex items-center gap-0.5 text-xs font-bold" style={{ color: "var(--stitch)" }}>
+        {"\u25BC"}{Math.abs(change)}
+      </span>
+    );
+  }
+  return (
+    <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+      {"\u2014"}
+    </span>
+  );
+}
+
+function StandingsTable({
+  league,
+  label,
+  badgeColor,
+  standings,
+  changes,
+}: {
+  league: "central" | "pacific";
+  label: string;
+  badgeColor: string;
+  standings: StandingEntry[];
+  changes: RankChange[];
+}) {
+  const leagueStandings = standings
+    .filter((s) => s.league === league)
+    .sort((a, b) => a.rank - b.rank);
+
+  if (leagueStandings.length === 0) return null;
+
+  const changeMap = new Map(
+    changes.filter((c) => c.league === league).map((c) => [c.teamName, c.change]),
+  );
+
+  return (
+    <div>
+      <div className="mb-2 flex items-center gap-2">
+        <span
+          className="rounded px-1.5 py-0.5 text-[10px] font-black"
+          style={{ background: badgeColor, color: "#fff" }}
+        >
+          {label}
+        </span>
+      </div>
+      <div
+        className="overflow-hidden rounded-lg"
+        style={{
+          border: "1px solid var(--border-primary)",
+        }}
+      >
+        <table className="w-full text-sm">
+          <thead>
+            <tr style={{ borderBottom: "2px solid var(--border-primary)" }}>
+              {["#", "\u30C1\u30FC\u30E0", "\u52DD", "\u6557", "\u5206", "\u5909\u52D5"].map(
+                (col, i) => (
+                  <th
+                    key={col}
+                    className={`px-3 py-2 text-xs font-medium ${i === 0 ? "w-8 text-center" : i === 1 ? "text-left" : "text-center"}`}
+                    style={{
+                      fontFamily: "var(--font-display)",
+                      color: "var(--text-muted)",
+                      letterSpacing: "0.1em",
+                      background: "var(--bg-inset)",
+                    }}
+                  >
+                    {col}
+                  </th>
+                ),
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            {leagueStandings.map((entry) => {
+              const teamColor = TEAM_COLORS[entry.teamName];
+              const shortName = SHORT_NAMES[entry.teamName] ?? entry.teamName;
+              const change = changeMap.get(entry.teamName) ?? 0;
+              return (
+                <tr
+                  key={entry.teamName}
+                  style={{ borderBottom: "1px solid var(--border-primary)" }}
+                >
+                  <td
+                    className="w-8 px-3 py-2 text-center"
+                    style={{
+                      fontFamily: "var(--font-display)",
+                      color: "var(--text-muted)",
+                    }}
+                  >
+                    {entry.rank}
+                  </td>
+                  <td className="px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      {teamColor && (
+                        <span
+                          className="inline-block h-3 w-3 rounded-sm"
+                          style={{ background: teamColor.bg }}
+                        />
+                      )}
+                      <span
+                        className="font-medium"
+                        style={{ color: "var(--text-primary)" }}
+                      >
+                        {shortName}
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    className="px-3 py-2 text-center tabular-nums"
+                    style={{ color: "var(--text-primary)" }}
+                  >
+                    {entry.wins}
+                  </td>
+                  <td
+                    className="px-3 py-2 text-center tabular-nums"
+                    style={{ color: "var(--text-primary)" }}
+                  >
+                    {entry.losses}
+                  </td>
+                  <td
+                    className="px-3 py-2 text-center tabular-nums"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    {entry.draws}
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    <ChangeIndicator change={change} />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 export default async function LivePage() {
   const data = await getCurrentScoreboard();
   const hasScores = data && data.scores.length > 0;
+  const hasStandings = data && data.standings && data.standings.length > 0;
 
   return (
     <div className="space-y-5">
@@ -186,6 +384,55 @@ export default async function LivePage() {
             </table>
           </div>
 
+          {/* Standings tables */}
+          {hasStandings && (
+            <section
+              className="overflow-hidden rounded-xl"
+              style={{
+                background: "var(--bg-surface)",
+                border: "1px solid var(--border-primary)",
+              }}
+            >
+              <div
+                className="flex items-center gap-3 px-5 py-3"
+                style={{ borderBottom: "1px solid var(--border-primary)" }}
+              >
+                <span
+                  className="flex h-7 w-7 items-center justify-center rounded text-xs"
+                  style={{
+                    background: "var(--bg-elevated)",
+                    border: "1px solid var(--border-primary)",
+                    color: "var(--text-secondary)",
+                  }}
+                >
+                  {"\u{26BE}"}
+                </span>
+                <span
+                  className="text-sm font-bold"
+                  style={{ color: "var(--text-primary)" }}
+                >
+                  {CURRENT_YEAR} {"\u5B9F\u7E3E\u9806\u4F4D"}
+                </span>
+              </div>
+              <div className="grid gap-5 p-5 md:grid-cols-2">
+                <StandingsTable
+                  league="central"
+                  label={"\u30BB"}
+                  badgeColor="var(--central, #1E40AF)"
+                  standings={data.standings}
+                  changes={data.changes}
+                />
+                <StandingsTable
+                  league="pacific"
+                  label={"\u30D1"}
+                  badgeColor="var(--pacific, #B91C1C)"
+                  standings={data.standings}
+                  changes={data.changes}
+                />
+              </div>
+            </section>
+          )}
+
           {/* CTA */}
           <div className="flex flex-wrap gap-3">
             <Link
@@ -221,7 +468,6 @@ export default async function LivePage() {
             border: "1px solid var(--border-primary)",
           }}
         >
-          {/* Stitch accent */}
           <div
             className="h-1 w-full"
             style={{
@@ -229,73 +475,7 @@ export default async function LivePage() {
                 "linear-gradient(90deg, var(--stitch), var(--stitch-light) 50%, transparent 100%)",
             }}
           />
-
           <div className="px-6 py-10 text-center sm:px-10">
-            {/* Your score card placeholder */}
-            <div
-              className="mx-auto mb-6 max-w-sm overflow-hidden rounded-lg"
-              style={{
-                background: "var(--bg-elevated)",
-                border: "1px solid var(--border-primary)",
-              }}
-            >
-              <div
-                className="px-4 py-2 text-left text-xs font-bold"
-                style={{
-                  borderBottom: "1px solid var(--border-primary)",
-                  color: "var(--text-muted)",
-                  fontFamily: "var(--font-display)",
-                  letterSpacing: "0.1em",
-                }}
-              >
-                {"\u{1F4C8}"} YOUR SCORE
-              </div>
-              <div className="px-4 py-4">
-                <div className="flex items-baseline justify-between">
-                  <span
-                    className="text-sm font-medium"
-                    style={{ color: "var(--text-secondary)" }}
-                  >
-                    {"\u4E88\u60F3\u30B9\u30B3\u30A2"}
-                  </span>
-                  <span
-                    style={{
-                      fontFamily: "var(--font-display)",
-                      fontSize: "1.5rem",
-                      color: "var(--text-muted)",
-                      letterSpacing: "0.04em",
-                    }}
-                  >
-                    ---
-                  </span>
-                </div>
-                <div
-                  className="mt-2 flex items-baseline justify-between"
-                  style={{
-                    borderTop: "1px solid var(--border-primary)",
-                    paddingTop: "8px",
-                  }}
-                >
-                  <span
-                    className="text-sm font-medium"
-                    style={{ color: "var(--text-secondary)" }}
-                  >
-                    {"\u30B0\u30EB\u30FC\u30D7\u5185\u9806\u4F4D"}
-                  </span>
-                  <span
-                    style={{
-                      fontFamily: "var(--font-display)",
-                      fontSize: "1rem",
-                      color: "var(--text-muted)",
-                    }}
-                  >
-                    --- / ---
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Explanation */}
             <span
               className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-full text-xl"
               style={{

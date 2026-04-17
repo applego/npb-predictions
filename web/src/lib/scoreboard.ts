@@ -94,6 +94,7 @@ export async function getScoreboardData(
     scores.push({
       userId: user.id,
       userName: user.name,
+      slug: user.slug,
       rankingScore,
       titleScore: 0,
       totalScore: rankingScore,

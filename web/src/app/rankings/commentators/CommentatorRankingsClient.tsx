@@ -315,11 +315,24 @@ function ExpandedDetail({ entry }: { entry: CommentatorData }) {
             <PredictionVsActualTable league="セ・リーグ" details={entry.centralDetails} />
             <PredictionVsActualTable league="パ・リーグ" details={entry.pacificDetails} />
           </div>
-          {entry.variant && (
-            <div className="text-xs" style={{ color: "var(--text-muted)" }}>
-              予想バリアント: {entry.variant}
-            </div>
-          )}
+          <div className="flex items-center justify-between">
+            {entry.variant && (
+              <div className="text-xs" style={{ color: "var(--text-muted)" }}>
+                予想バリアント: {entry.variant}
+              </div>
+            )}
+            <Link
+              href={`/commentators/${entry.slug}`}
+              className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-all"
+              style={{
+                background: "var(--bg-elevated)",
+                border: "1px solid var(--border-primary)",
+                color: "var(--stitch)",
+              }}
+            >
+              詳細を見る →
+            </Link>
+          </div>
         </div>
       </td>
     </tr>

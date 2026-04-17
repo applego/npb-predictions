@@ -10,6 +10,7 @@ const NAV_LINKS = [
   { href: "/rankings", label: "RANKINGS" },
   { href: "/groups", label: "GROUPS" },
   { href: "/news", label: "NEWS" },
+  { href: "/settings", label: "SETTINGS" },
 ];
 
 export function Nav() {
