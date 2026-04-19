@@ -22,6 +22,13 @@
       "when": 1776217895713,
       "tag": "0002_typical_magdalene",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1776567685888,
+      "tag": "0003_add_rank_to_score_snapshots",
+      "breakpoints": true
     }
   ]
 }

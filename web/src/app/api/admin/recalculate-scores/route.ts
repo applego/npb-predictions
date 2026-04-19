@@ -125,14 +125,21 @@ export async function POST(req: Request) {
     );
   });
 
-  // 6. Upsert score snapshots (insert new snapshot for today)
-  for (const r of results) {
+  // 6. Assign rank (1-based) by totalScore desc so clients can read rank from DB
+  //    instead of recomputing client-side or relying on localStorage.
+  const ranked = [...results]
+    .sort((a, b) => b.totalScore - a.totalScore)
+    .map((s, i) => ({ ...s, rank: i + 1 }));
+
+  // 7. Upsert score snapshots (insert new snapshot for today)
+  for (const r of ranked) {
     await getDb().insert(scoreSnapshots).values({
       userId: r.userId,
       seasonId: season.id,
       rankingScore: r.rankingScore,
       titleScore: r.titleScore,
       totalScore: r.totalScore,
+      rank: r.rank,
       snapshotDate: now,
     });
   }

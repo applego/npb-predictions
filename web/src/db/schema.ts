@@ -96,6 +96,7 @@ export const scoreSnapshots = sqliteTable("score_snapshots", {
   rankingScore: integer("ranking_score").default(0).notNull(),
   titleScore: integer("title_score").default(0).notNull(),
   totalScore: integer("total_score").default(0).notNull(),
+  rank: integer("rank"),
   snapshotDate: integer("snapshot_date", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
 }, (table) => [uniqueIndex("score_user_season_date_idx").on(table.userId, table.seasonId, table.snapshotDate)]);
 
