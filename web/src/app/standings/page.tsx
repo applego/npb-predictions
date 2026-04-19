@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { ScoreboardResponse } from "@/lib/types";
 import ShareButton from "@/components/ShareButton";
+import { BreadcrumbJsonLd } from "@/components/StructuredData";
 import {
   canonicalAlternates,
   clampDescription,
@@ -70,6 +71,9 @@ export default async function StandingsPage({
 
   return (
     <div className="space-y-6">
+      <BreadcrumbJsonLd
+        items={[{ label: `${year}年スコアボード` }]}
+      />
       {/* Page header */}
       <div className="flex items-start justify-between gap-4">
         <div>

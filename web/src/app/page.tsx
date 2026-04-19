@@ -8,6 +8,10 @@ import {
   clampDescription,
   socialPreview,
 } from "@/lib/seo-meta";
+import {
+  WebSiteJsonLd,
+  SiteNavigationJsonLd,
+} from "@/components/StructuredData";
 
 const HOME_TITLE = "NPB予想リーグ — プロ野球順位予想リーグ";
 const HOME_DESCRIPTION = clampDescription(
@@ -100,6 +104,16 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-8">
+      <WebSiteJsonLd description={HOME_DESCRIPTION} />
+      <SiteNavigationJsonLd
+        items={[
+          { label: "ホーム", href: "/" },
+          { label: "スコアボード", href: "/standings" },
+          { label: "予想比較", href: "/predictions" },
+          { label: "予想登録", href: "/predictions/new" },
+          { label: "過去シーズン", href: "/seo/past-seasons" },
+        ]}
+      />
       {/* ══════════ HERO ══════════ */}
       <section
         className="relative overflow-hidden rounded-2xl"

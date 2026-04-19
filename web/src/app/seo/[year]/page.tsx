@@ -5,7 +5,10 @@ import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 import { Breadcrumb } from "@/components/Breadcrumb";
-import { BreadcrumbJsonLd } from "@/components/StructuredData";
+import {
+  BreadcrumbJsonLd,
+  SportsEventJsonLd,
+} from "@/components/StructuredData";
 import { InternalLinks } from "@/components/InternalLinks";
 import {
   getSeasonByYear,
@@ -60,6 +63,12 @@ export default async function SeasonOverviewPage({ params }: Props) {
   return (
     <div>
       <BreadcrumbJsonLd items={breadcrumbItems} />
+      <SportsEventJsonLd
+        name={`${year}年 日本プロ野球（NPB）シーズン`}
+        year={year}
+        path={`/seo/${year}`}
+        description={`${year}年プロ野球シーズンの順位結果とタイトルホルダー`}
+      />
       <Breadcrumb items={breadcrumbItems} />
 
       <h1 className="mb-2 text-2xl font-bold">{year}年 NPBシーズン概要</h1>

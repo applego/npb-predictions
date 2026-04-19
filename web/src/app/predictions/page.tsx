@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { Prediction } from "@/lib/types";
 import { LEAGUE_LABELS, TITLE_CATEGORY_LABELS } from "@/lib/types";
 import ShareButton from "@/components/ShareButton";
+import { BreadcrumbJsonLd } from "@/components/StructuredData";
 import {
   canonicalAlternates,
   clampDescription,
@@ -75,6 +76,7 @@ export default async function PredictionsComparePage({
   if (predictions.length === 0) {
     return (
       <div className="space-y-6">
+        <BreadcrumbJsonLd items={[{ label: `${year}年予想比較` }]} />
         <h1 style={SECTION_HEADER_STYLE}>PREDICTIONS COMPARE</h1>
         <div
           className="rounded-xl p-10 text-center"
@@ -104,6 +106,7 @@ export default async function PredictionsComparePage({
 
   return (
     <div className="space-y-8">
+      <BreadcrumbJsonLd items={[{ label: `${year}年予想比較` }]} />
       {/* Page header */}
       <div className="flex items-start justify-between gap-4">
         <div>

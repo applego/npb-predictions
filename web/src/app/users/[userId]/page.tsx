@@ -7,6 +7,10 @@ import type { Prediction, ScoreboardResponse } from "@/lib/types";
 import { LEAGUE_LABELS, TITLE_CATEGORY_LABELS } from "@/lib/types";
 import ShareButton from "@/components/ShareButton";
 import {
+  BreadcrumbJsonLd,
+  PersonJsonLd,
+} from "@/components/StructuredData";
+import {
   canonicalAlternates,
   clampDescription,
   ogImageUrl,
@@ -128,8 +132,23 @@ export default async function UserDetailPage({
 
   const leagues = ["central", "pacific"] as const;
 
+  const personDescription = userScore
+    ? `${user.name}さんの${year}年NPB予想リーグ成績（総合${userRank + 1}位、合計${userScore.totalScore}pt）`
+    : `${user.name}さんの${year}年NPB予想リーグ参加記録`;
+
   return (
     <div className="space-y-6">
+      <PersonJsonLd
+        name={user.name}
+        path={`/users/${userId}?year=${year}`}
+        description={personDescription}
+      />
+      <BreadcrumbJsonLd
+        items={[
+          { label: "スコアボード", href: `/standings?year=${year}` },
+          { label: user.name },
+        ]}
+      />
       {/* Profile header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-4">

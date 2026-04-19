@@ -6,7 +6,11 @@ import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 import { Breadcrumb } from "@/components/Breadcrumb";
-import { BreadcrumbJsonLd, FaqJsonLd } from "@/components/StructuredData";
+import {
+  BreadcrumbJsonLd,
+  FaqJsonLd,
+  SportsEventJsonLd,
+} from "@/components/StructuredData";
 import { InternalLinks } from "@/components/InternalLinks";
 import {
   getSeasonByYear,
@@ -88,6 +92,12 @@ export default async function SeasonArchivePage({ params }: Props) {
     <div>
       <BreadcrumbJsonLd items={breadcrumbItems} />
       <FaqJsonLd items={faqItems} />
+      <SportsEventJsonLd
+        name={`${year}年 日本プロ野球（NPB）シーズンアーカイブ`}
+        year={year}
+        path={`/archive/${year}`}
+        description={`${year}年プロ野球シーズンの完全アーカイブ`}
+      />
       <Breadcrumb items={breadcrumbItems} />
 
       <h1 className="mb-2 text-2xl font-bold">{year}年 シーズンアーカイブ</h1>
