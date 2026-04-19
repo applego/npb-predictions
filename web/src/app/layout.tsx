@@ -1,10 +1,18 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { Bebas_Neue, Noto_Sans_JP } from "next/font/google";
 import { Providers } from "@/components/Providers";
 import { AuthHeader } from "@/components/AuthHeader";
 import { Nav } from "@/components/Nav";
 import { ThemeLoader } from "@/components/ThemeLoader";
+import { WebsiteJsonLd } from "@/components/StructuredData";
+import {
+  absoluteUrl,
+  canonicalAlternates,
+  clampDescription,
+  getSiteUrl,
+  SEO_TERMS,
+} from "@/lib/seo-meta";
 import "./globals.css";
 
 // Default fonts (fallback when settings haven't loaded yet)
@@ -21,18 +29,67 @@ const notoSansJP = Noto_Sans_JP({
   display: "swap",
 });
 
-const BASE_URL =
-  process.env.NEXT_PUBLIC_BASE_URL ?? "https://npb-predictions.pages.dev";
+const ROOT_DESCRIPTION = clampDescription(
+  `${SEO_TERMS.npbFull}の${SEO_TERMS.bothLeagues}順位予想を投稿・比較できる${SEO_TERMS.tagline}。解説者・評論家の的中率と年度ランキングを可視化します。`,
+);
 
 export const metadata: Metadata = {
   title: {
-    default: "NPB Predictions League | プロ野球順位予想リーグ",
-    template: "%s | NPB Predictions League",
+    default: `${SEO_TERMS.site} | ${SEO_TERMS.tagline}`,
+    template: `%s | ${SEO_TERMS.site}`,
   },
-  description: "プロ野球順位予想リーグ - 順位予想を比較して年間王者を決めよう。",
-  metadataBase: new URL(BASE_URL),
-  openGraph: { type: "website", locale: "ja_JP", siteName: "NPB Predictions League" },
+  description: ROOT_DESCRIPTION,
+  metadataBase: new URL(getSiteUrl()),
+  applicationName: SEO_TERMS.site,
+  keywords: [
+    SEO_TERMS.site,
+    SEO_TERMS.tagline,
+    SEO_TERMS.npbFull,
+    SEO_TERMS.npbShort,
+    SEO_TERMS.central,
+    SEO_TERMS.pacific,
+    SEO_TERMS.bothLeagues,
+    "順位予想",
+    "的中率",
+    "解説者 予想",
+    "プロ野球 スコアボード",
+  ],
+  alternates: canonicalAlternates("/"),
+  openGraph: {
+    type: "website",
+    locale: "ja_JP",
+    siteName: SEO_TERMS.site,
+    url: absoluteUrl("/"),
+    title: `${SEO_TERMS.site} | ${SEO_TERMS.tagline}`,
+    description: ROOT_DESCRIPTION,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${SEO_TERMS.site} | ${SEO_TERMS.tagline}`,
+    description: ROOT_DESCRIPTION,
+  },
   robots: { index: true, follow: true },
+  formatDetection: {
+    telephone: false,
+    email: false,
+    address: false,
+  },
+  appleWebApp: {
+    capable: true,
+    title: SEO_TERMS.site,
+    statusBarStyle: "black-translucent",
+  },
+  category: "sports",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0f172a" },
+  ],
+  colorScheme: "light dark",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -48,6 +105,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       >
         {/* Client component that loads settings and injects CSS variables */}
         <ThemeLoader />
+
+        <WebsiteJsonLd />
 
         <Providers>
           <header
