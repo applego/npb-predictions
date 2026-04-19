@@ -24,14 +24,15 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Missing query" }, { status: 400 });
   }
 
-  const apiKey =
-    process.env.YOUTUBE_DATA_API_KEY ??
-    process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+  const apiKey = process.env.YOUTUBE_DATA_API_KEY;
 
   if (!apiKey) {
     return NextResponse.json(
-      { error: "YOUTUBE_DATA_API_KEY が設定されていません" },
-      { status: 500 },
+      {
+        error:
+          "YOUTUBE_DATA_API_KEY が未設定です。管理者に Cloudflare Pages の環境変数追加を依頼してください。",
+      },
+      { status: 503 },
     );
   }
 
