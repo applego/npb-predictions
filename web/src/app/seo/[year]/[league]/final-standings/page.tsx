@@ -18,6 +18,7 @@ import { getTeamsByLeague } from "@/lib/teams";
 import {
   canonicalAlternates,
   clampDescription,
+  ogImageUrl,
   socialPreview,
 } from "@/lib/seo-meta";
 
@@ -35,10 +36,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     `${year}年日本プロ野球（NPB）${leagueName}の最終順位表。全チームの勝敗・引分・勝率を掲載し、NPB予想リーグの順位予想と照合できます。`
   );
   const pathname = `/seo/${year}/${league}/final-standings`;
+  const og = ogImageUrl("season", { year });
   return {
     title,
     description,
-    ...socialPreview({ title, description, pathname }),
+    ...socialPreview({ title, description, pathname, ogImage: og }),
     alternates: canonicalAlternates(pathname),
   };
 }

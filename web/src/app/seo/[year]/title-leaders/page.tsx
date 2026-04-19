@@ -17,6 +17,7 @@ import {
 import {
   canonicalAlternates,
   clampDescription,
+  ogImageUrl,
   socialPreview,
 } from "@/lib/seo-meta";
 
@@ -29,10 +30,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     `${year}年日本プロ野球（NPB）のタイトル一覧。セ・リーグとパ・リーグの首位打者・本塁打王・打点王・最多勝・防御率・セーブ王を網羅しています。`
   );
   const pathname = `/seo/${year}/title-leaders`;
+  const og = ogImageUrl("season", { year });
   return {
     title,
     description,
-    ...socialPreview({ title, description, pathname }),
+    ...socialPreview({ title, description, pathname, ogImage: og }),
     alternates: canonicalAlternates(pathname),
   };
 }

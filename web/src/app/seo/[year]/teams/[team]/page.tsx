@@ -17,6 +17,7 @@ import { getTeamBySlug, getTeamsByLeague } from "@/lib/teams";
 import {
   canonicalAlternates,
   clampDescription,
+  ogImageUrl,
   socialPreview,
 } from "@/lib/seo-meta";
 
@@ -35,10 +36,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     `${year}年プロ野球${leagueName}・${team.name}（${team.shortName}）のシーズン成績、順位推移、タイトルホルダー、NPB予想リーグでの予想順位をまとめています。`
   );
   const pathname = `/seo/${year}/teams/${teamSlug}`;
+  const og = ogImageUrl("team", { year, team: teamSlug });
   return {
     title,
     description,
-    ...socialPreview({ title, description, pathname }),
+    ...socialPreview({ title, description, pathname, ogImage: og }),
     alternates: canonicalAlternates(pathname),
   };
 }

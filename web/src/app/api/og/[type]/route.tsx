@@ -11,7 +11,9 @@ import {
   rankingPicks,
   scoreSnapshots,
   awards,
+  actualTeamStandings,
 } from "@/db/schema";
+import { getTeamBySlug } from "@/lib/teams";
 
 // Image dimensions per format
 const DIMENSIONS: Record<string, { width: number; height: number }> = {
@@ -60,6 +62,10 @@ export async function GET(
         return renderMonthlyChampionCard(searchParams, dims);
       case "weekly":
         return renderWeeklyCard(searchParams, dims);
+      case "season":
+        return renderSeasonCard(searchParams, dims);
+      case "team":
+        return renderTeamCard(searchParams, dims);
       default:
         return renderDefaultCard(dims);
     }
@@ -742,6 +748,328 @@ async function renderWeeklyCard(
         >
           npb-predictions.vercel.app
         </div>
+      </div>
+    ),
+    dims
+  );
+}
+
+// --- Season Card ---
+async function renderSeasonCard(
+  searchParams: URLSearchParams,
+  dims: { width: number; height: number }
+) {
+  const year = parseInt(
+    searchParams.get("year") ?? String(new Date().getFullYear()),
+    10
+  );
+
+  const season = await getDb().query.seasons.findFirst({
+    where: eq(seasons.year, year),
+  });
+  if (!season) return renderDefaultCard(dims);
+  const seasonId = season.id;
+
+  // Latest standings per league
+  async function topThree(league: "central" | "pacific") {
+    const all = await getDb()
+      .select()
+      .from(actualTeamStandings)
+      .where(
+        and(
+          eq(actualTeamStandings.seasonId, seasonId),
+          eq(actualTeamStandings.league, league)
+        )
+      )
+      .orderBy(desc(actualTeamStandings.snapshotDate));
+    const seen = new Set<string>();
+    const dedup: typeof all = [];
+    for (const row of all) {
+      if (seen.has(row.teamName)) continue;
+      seen.add(row.teamName);
+      dedup.push(row);
+    }
+    return dedup.sort((a, b) => a.rank - b.rank).slice(0, 3);
+  }
+
+  const [central, pacific] = await Promise.all([
+    topThree("central"),
+    topThree("pacific"),
+  ]);
+
+  const isPortrait = dims.height > dims.width;
+
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          backgroundColor: "#1a1a2e",
+          color: "white",
+          fontFamily: "sans-serif",
+          padding: isPortrait ? "80px 60px" : "40px 60px",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            marginBottom: isPortrait ? "60px" : "24px",
+          }}
+        >
+          <div
+            style={{
+              fontSize: isPortrait ? 28 : 16,
+              color: "#94a3b8",
+              marginBottom: "8px",
+            }}
+          >
+            NPB予想リーグ
+          </div>
+          <div
+            style={{
+              fontSize: isPortrait ? 64 : 48,
+              fontWeight: 800,
+            }}
+          >
+            {year}年プロ野球シーズン
+          </div>
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            flexDirection: isPortrait ? "column" : "row",
+            gap: isPortrait ? "40px" : "40px",
+            flex: 1,
+          }}
+        >
+          {[
+            { label: LEAGUE_LABELS.central, rows: central },
+            { label: LEAGUE_LABELS.pacific, rows: pacific },
+          ].map((league) => (
+            <div
+              key={league.label}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                flex: 1,
+                padding: "20px",
+                backgroundColor: "rgba(255,255,255,0.04)",
+                borderRadius: "12px",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: isPortrait ? 32 : 24,
+                  fontWeight: 700,
+                  color: "#86efac",
+                  marginBottom: "16px",
+                  borderBottom: "2px solid #2D5A27",
+                  paddingBottom: "8px",
+                }}
+              >
+                {league.label}
+              </div>
+              {league.rows.length > 0 ? (
+                league.rows.map((row) => (
+                  <div
+                    key={row.id}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "12px",
+                      padding: isPortrait ? "14px 0" : "8px 0",
+                      fontSize: isPortrait ? 30 : 22,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: isPortrait ? "44px" : "32px",
+                        fontWeight: 800,
+                        color: row.rank === 1 ? "#fbbf24" : "#94a3b8",
+                      }}
+                    >
+                      {row.rank}位
+                    </div>
+                    <div
+                      style={{
+                        width: isPortrait ? "12px" : "8px",
+                        height: isPortrait ? "36px" : "24px",
+                        backgroundColor:
+                          TEAM_COLORS[row.teamName] ?? "#6b7280",
+                        borderRadius: "4px",
+                      }}
+                    />
+                    <div style={{ fontWeight: 600 }}>{row.teamName}</div>
+                  </div>
+                ))
+              ) : (
+                <div
+                  style={{
+                    display: "flex",
+                    fontSize: isPortrait ? 24 : 16,
+                    color: "#64748b",
+                  }}
+                >
+                  データ準備中
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            marginTop: isPortrait ? "60px" : "16px",
+            fontSize: isPortrait ? 22 : 14,
+            color: "#64748b",
+          }}
+        >
+          {year}年シーズン順位・タイトル・予想
+        </div>
+      </div>
+    ),
+    dims
+  );
+}
+
+// --- Team Card ---
+async function renderTeamCard(
+  searchParams: URLSearchParams,
+  dims: { width: number; height: number }
+) {
+  const year = parseInt(
+    searchParams.get("year") ?? String(new Date().getFullYear()),
+    10
+  );
+  const teamSlug = searchParams.get("team") ?? "";
+  const team = getTeamBySlug(teamSlug);
+  if (!team) return renderDefaultCard(dims);
+
+  const season = await getDb().query.seasons.findFirst({
+    where: eq(seasons.year, year),
+  });
+
+  let rank: number | null = null;
+  let record = "";
+  if (season) {
+    const rows = await getDb()
+      .select()
+      .from(actualTeamStandings)
+      .where(
+        and(
+          eq(actualTeamStandings.seasonId, season.id),
+          eq(actualTeamStandings.teamName, team.shortName)
+        )
+      )
+      .orderBy(desc(actualTeamStandings.snapshotDate));
+    if (rows.length > 0) {
+      rank = rows[0].rank;
+      record = `${rows[0].wins}勝 ${rows[0].losses}敗 ${rows[0].draws}分`;
+    }
+  }
+
+  const isPortrait = dims.height > dims.width;
+
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: "#1a1a2e",
+          color: "white",
+          fontFamily: "sans-serif",
+          padding: isPortrait ? "80px 60px" : "40px 60px",
+        }}
+      >
+        <div
+          style={{
+            fontSize: isPortrait ? 28 : 18,
+            color: "#94a3b8",
+            marginBottom: "12px",
+          }}
+        >
+          NPB予想リーグ · {year}年シーズン
+        </div>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "20px",
+            marginBottom: isPortrait ? "36px" : "20px",
+          }}
+        >
+          <div
+            style={{
+              width: isPortrait ? "28px" : "20px",
+              height: isPortrait ? "100px" : "72px",
+              backgroundColor: TEAM_COLORS[team.shortName] ?? "#6b7280",
+              borderRadius: "8px",
+            }}
+          />
+          <div
+            style={{
+              fontSize: isPortrait ? 72 : 54,
+              fontWeight: 800,
+            }}
+          >
+            {team.name}
+          </div>
+        </div>
+        <div
+          style={{
+            fontSize: isPortrait ? 28 : 20,
+            color: "#86efac",
+            marginBottom: "24px",
+          }}
+        >
+          {LEAGUE_LABELS[team.league]}
+        </div>
+        {rank !== null && (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              padding: "24px 40px",
+              backgroundColor: "rgba(255,255,255,0.06)",
+              borderRadius: "16px",
+            }}
+          >
+            <div
+              style={{
+                fontSize: isPortrait ? 88 : 64,
+                fontWeight: 800,
+                color: "#fbbf24",
+              }}
+            >
+              {rank}位
+            </div>
+            {record && (
+              <div
+                style={{
+                  fontSize: isPortrait ? 26 : 18,
+                  color: "#cbd5e1",
+                  marginTop: "8px",
+                }}
+              >
+                {record}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     ),
     dims

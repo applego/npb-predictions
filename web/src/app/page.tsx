@@ -6,6 +6,7 @@ import type { Season } from "@/lib/types";
 import {
   canonicalAlternates,
   clampDescription,
+  ogImageUrl,
   socialPreview,
 } from "@/lib/seo-meta";
 import {
@@ -25,6 +26,7 @@ export const metadata: Metadata = {
     title: HOME_TITLE,
     description: HOME_DESCRIPTION,
     pathname: "/",
+    ogImage: ogImageUrl("season", { year: new Date().getFullYear() }),
   }),
   alternates: canonicalAlternates("/"),
 };

@@ -9,6 +9,7 @@ import { BreadcrumbJsonLd } from "@/components/StructuredData";
 import {
   canonicalAlternates,
   clampDescription,
+  ogImageUrl,
   socialPreview,
 } from "@/lib/seo-meta";
 
@@ -27,10 +28,11 @@ export async function generateMetadata({
     `${year}年NPB予想リーグの参加者全員の順位予想とタイトル予想を横並びで比較。セ・リーグとパ・リーグの予想を一覧で確認できます。`
   );
   const pathname = `/predictions?year=${year}`;
+  const og = ogImageUrl("scoreboard", { year });
   return {
     title,
     description,
-    ...socialPreview({ title, description, pathname }),
+    ...socialPreview({ title, description, pathname, ogImage: og }),
     alternates: canonicalAlternates(pathname),
   };
 }

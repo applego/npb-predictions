@@ -24,6 +24,7 @@ import {
 import {
   canonicalAlternates,
   clampDescription,
+  ogImageUrl,
   socialPreview,
 } from "@/lib/seo-meta";
 
@@ -36,10 +37,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     `${year}年日本プロ野球（NPB）シーズンの完全アーカイブ。セ・リーグ／パ・リーグの最終順位、タイトルホルダー、予想リーグの成績をまとめて確認できます。`
   );
   const pathname = `/archive/${year}`;
+  const og = ogImageUrl("season", { year });
   return {
     title,
     description,
-    ...socialPreview({ title, description, pathname }),
+    ...socialPreview({ title, description, pathname, ogImage: og }),
     alternates: canonicalAlternates(pathname),
   };
 }

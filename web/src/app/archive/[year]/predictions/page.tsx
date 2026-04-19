@@ -17,6 +17,7 @@ import {
 import {
   canonicalAlternates,
   clampDescription,
+  ogImageUrl,
   socialPreview,
 } from "@/lib/seo-meta";
 
@@ -29,10 +30,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     `${year}年NPB予想リーグの参加者全員の順位予想とタイトル予想を、実際のセ・リーグ／パ・リーグ最終順位と照合。的中率・スコア差を一覧で確認できます。`
   );
   const pathname = `/archive/${year}/predictions`;
+  const og = ogImageUrl("scoreboard", { year });
   return {
     title,
     description,
-    ...socialPreview({ title, description, pathname }),
+    ...socialPreview({ title, description, pathname, ogImage: og }),
     alternates: canonicalAlternates(pathname),
   };
 }

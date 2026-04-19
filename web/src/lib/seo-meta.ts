@@ -50,7 +50,13 @@ export function canonicalAlternates(pathname: string): Metadata["alternates"] {
  * Build the full OG image URL (absolute) for social previews.
  */
 export function ogImageUrl(
-  type: "prediction" | "scoreboard" | "monthly-champion" | "weekly",
+  type:
+    | "prediction"
+    | "scoreboard"
+    | "monthly-champion"
+    | "weekly"
+    | "season"
+    | "team",
   params: Record<string, string | number | undefined> = {}
 ): string {
   const qs = new URLSearchParams();

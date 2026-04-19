@@ -18,6 +18,7 @@ import {
 import {
   canonicalAlternates,
   clampDescription,
+  ogImageUrl,
   socialPreview,
 } from "@/lib/seo-meta";
 
@@ -35,10 +36,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     `${year}年プロ野球${leagueName}のタイトルホルダー一覧。首位打者・本塁打王・打点王・最多勝・防御率・セーブ王の選手と成績をまとめています。`
   );
   const pathname = `/seo/${year}/${league}/title-leaders`;
+  const og = ogImageUrl("season", { year });
   return {
     title,
     description,
-    ...socialPreview({ title, description, pathname }),
+    ...socialPreview({ title, description, pathname, ogImage: og }),
     alternates: canonicalAlternates(pathname),
   };
 }

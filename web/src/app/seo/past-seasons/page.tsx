@@ -12,6 +12,7 @@ import { getTeamsByLeague } from "@/lib/teams";
 import {
   canonicalAlternates,
   clampDescription,
+  ogImageUrl,
   socialPreview,
 } from "@/lib/seo-meta";
 
@@ -27,6 +28,7 @@ export const metadata: Metadata = {
     title: PAST_TITLE,
     description: PAST_DESCRIPTION,
     pathname: "/seo/past-seasons",
+    ogImage: ogImageUrl("season", { year: new Date().getFullYear() }),
   }),
   alternates: canonicalAlternates("/seo/past-seasons"),
 };
