@@ -51,19 +51,22 @@ export async function POST() {
   const now = new Date();
 
   for (const season of activeSeasons) {
-    await db.insert(actualTeamStandings).values(
-      standings.map((s) => ({
-        seasonId: season.id,
-        league: s.league,
-        rank: s.rank,
-        teamName: s.teamName,
-        wins: s.wins,
-        losses: s.losses,
-        draws: s.draws,
-        isFinal: false,
-        snapshotDate: now,
-      }))
-    );
+    await db
+      .insert(actualTeamStandings)
+      .values(
+        standings.map((s) => ({
+          seasonId: season.id,
+          league: s.league,
+          rank: s.rank,
+          teamName: s.teamName,
+          wins: s.wins,
+          losses: s.losses,
+          draws: s.draws,
+          isFinal: false,
+          snapshotDate: now,
+        }))
+      )
+      .onConflictDoNothing();
   }
 
   return NextResponse.json({

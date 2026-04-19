@@ -114,19 +114,22 @@ export async function POST(req: Request) {
     const shouldInsert = prev.length === 0 || diff.changed.length > 0;
 
     if (shouldInsert) {
-      await db.insert(actualTeamStandings).values(
-        scrape.standings.map((s) => ({
-          seasonId: season.id,
-          league: s.league,
-          rank: s.rank,
-          teamName: s.teamName,
-          wins: s.wins,
-          losses: s.losses,
-          draws: s.draws,
-          isFinal: false,
-          snapshotDate: now,
-        })),
-      );
+      await db
+        .insert(actualTeamStandings)
+        .values(
+          scrape.standings.map((s) => ({
+            seasonId: season.id,
+            league: s.league,
+            rank: s.rank,
+            teamName: s.teamName,
+            wins: s.wins,
+            losses: s.losses,
+            draws: s.draws,
+            isFinal: false,
+            snapshotDate: now,
+          })),
+        )
+        .onConflictDoNothing();
     }
 
     results.push({
