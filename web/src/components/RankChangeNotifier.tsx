@@ -40,7 +40,7 @@ export function RankChangeNotifier({ year }: { year?: number }) {
       );
       if (!res.ok) return;
       const data = (await res.json()) as MyRankResponse;
-      if (!data.rank) return;
+      if (!data.rank || data.totalUsers === 0) return;
 
       const key = storageKey(firebaseUser.uid, targetYear);
       const stored = localStorage.getItem(key);
