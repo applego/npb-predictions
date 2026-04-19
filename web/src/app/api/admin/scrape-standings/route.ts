@@ -50,28 +50,29 @@ export async function POST() {
 
   const now = new Date();
 
-  for (const season of activeSeasons) {
-    await db
-      .insert(actualTeamStandings)
-      .values(
-        standings.map((s) => ({
-          seasonId: season.id,
-          league: s.league,
-          rank: s.rank,
-          teamName: s.teamName,
-          wins: s.wins,
-          losses: s.losses,
-          draws: s.draws,
-          isFinal: false,
-          snapshotDate: now,
-        }))
-      )
-      .onConflictDoNothing();
-  }
+  // 複数 active シーズンがある場合は最新 year を採用する
+  const latestActive = activeSeasons.sort((a, b) => b.year - a.year)[0];
+
+  await db
+    .insert(actualTeamStandings)
+    .values(
+      standings.map((s) => ({
+        seasonId: latestActive.id,
+        league: s.league,
+        rank: s.rank,
+        teamName: s.teamName,
+        wins: s.wins,
+        losses: s.losses,
+        draws: s.draws,
+        isFinal: false,
+        snapshotDate: now,
+      }))
+    )
+    .onConflictDoNothing();
 
   return NextResponse.json({
     scrapedAt: now.toISOString(),
     standings,
-    savedToSeasons: activeSeasons.map((s) => s.year),
+    savedToSeason: latestActive.year,
   });
 }
