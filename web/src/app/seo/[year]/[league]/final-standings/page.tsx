@@ -15,6 +15,11 @@ import {
   type League,
 } from "@/lib/seo-queries";
 import { getTeamsByLeague } from "@/lib/teams";
+import {
+  canonicalAlternates,
+  clampDescription,
+  socialPreview,
+} from "@/lib/seo-meta";
 
 type Props = { params: Promise<{ year: string; league: string }> };
 
@@ -25,9 +30,16 @@ function isLeague(v: string): v is League {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { year, league } = await params;
   const leagueName = LEAGUE_LABELS[league] ?? league;
+  const title = `${year}年${leagueName}最終順位 — プロ野球順位予想の答え合わせ`;
+  const description = clampDescription(
+    `${year}年日本プロ野球（NPB）${leagueName}の最終順位表。全チームの勝敗・引分・勝率を掲載し、NPB予想リーグの順位予想と照合できます。`
+  );
+  const pathname = `/seo/${year}/${league}/final-standings`;
   return {
-    title: `${year}年 ${leagueName} 最終順位 | NPB Predictions League`,
-    description: `${year}年プロ野球${leagueName}の最終順位表。全チームの勝敗成績を掲載。`,
+    title,
+    description,
+    ...socialPreview({ title, description, pathname }),
+    alternates: canonicalAlternates(pathname),
   };
 }
 

@@ -14,6 +14,11 @@ import {
   TITLE_LABELS,
 } from "@/lib/seo-queries";
 import { getTeamBySlug, getTeamsByLeague } from "@/lib/teams";
+import {
+  canonicalAlternates,
+  clampDescription,
+  socialPreview,
+} from "@/lib/seo-meta";
 
 // Always use SSR — DB is not available at build time
 export const dynamic = "force-dynamic";
@@ -24,12 +29,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { year, team: teamSlug } = await params;
   const team = getTeamBySlug(teamSlug);
   if (!team) return { title: "Not Found" };
+  const leagueName = LEAGUE_LABELS[team.league] ?? team.league;
+  const title = `${year}年 ${team.name}の成績と順位予想 — NPB予想リーグ`;
+  const description = clampDescription(
+    `${year}年プロ野球${leagueName}・${team.name}（${team.shortName}）のシーズン成績、順位推移、タイトルホルダー、NPB予想リーグでの予想順位をまとめています。`
+  );
+  const pathname = `/seo/${year}/teams/${teamSlug}`;
   return {
-    title: `${year}年 ${team.name} 成績・順位 | NPB Predictions League`,
-    description: `${year}年${team.name}（${team.shortName}）のシーズン成績、順位推移、タイトルホルダー、予想リーグでの予想順位を掲載。`,
-    alternates: {
-      canonical: `/seo/${year}/teams/${teamSlug}`,
-    },
+    title,
+    description,
+    ...socialPreview({ title, description, pathname }),
+    alternates: canonicalAlternates(pathname),
   };
 }
 

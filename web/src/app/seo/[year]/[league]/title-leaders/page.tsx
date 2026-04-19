@@ -15,6 +15,11 @@ import {
   TITLE_LABELS,
   type League,
 } from "@/lib/seo-queries";
+import {
+  canonicalAlternates,
+  clampDescription,
+  socialPreview,
+} from "@/lib/seo-meta";
 
 type Props = { params: Promise<{ year: string; league: string }> };
 
@@ -25,9 +30,16 @@ function isLeague(v: string): v is League {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { year, league } = await params;
   const leagueName = LEAGUE_LABELS[league] ?? league;
+  const title = `${year}年${leagueName}タイトル — 首位打者・本塁打王・最多勝`;
+  const description = clampDescription(
+    `${year}年プロ野球${leagueName}のタイトルホルダー一覧。首位打者・本塁打王・打点王・最多勝・防御率・セーブ王の選手と成績をまとめています。`
+  );
+  const pathname = `/seo/${year}/${league}/title-leaders`;
   return {
-    title: `${year}年 ${leagueName} タイトルリーダー | NPB Predictions League`,
-    description: `${year}年プロ野球${leagueName}のタイトルホルダー（首位打者・本塁打王・最多勝など）一覧。`,
+    title,
+    description,
+    ...socialPreview({ title, description, pathname }),
+    alternates: canonicalAlternates(pathname),
   };
 }
 

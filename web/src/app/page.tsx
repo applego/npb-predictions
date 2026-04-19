@@ -3,18 +3,26 @@ export const runtime = "edge";
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { Season } from "@/lib/types";
+import {
+  canonicalAlternates,
+  clampDescription,
+  socialPreview,
+} from "@/lib/seo-meta";
+
+const HOME_TITLE = "NPB予想リーグ — プロ野球順位予想リーグ";
+const HOME_DESCRIPTION = clampDescription(
+  "プロ野球の順位予想・タイトル予想で年間王者を競うリーグ。セ・パ両リーグの予想を比較し、スコアボードで的中率や得点を追跡できます。"
+);
 
 export const metadata: Metadata = {
-  title: "NPB Predictions League | プロ野球順位予想リーグ",
-  description:
-    "5人の予想家がプロ野球順位・タイトルを予想して年間王者を競うリーグ。セ・パ両リーグの順位予想とタイトル予想で盛り上がろう。",
-  openGraph: {
-    title: "NPB Predictions League | プロ野球順位予想リーグ",
-    description:
-      "5人の予想家がプロ野球順位・タイトルを予想して年間王者を競うリーグ。",
-    type: "website",
-  },
-  alternates: { canonical: "/" },
+  title: HOME_TITLE,
+  description: HOME_DESCRIPTION,
+  ...socialPreview({
+    title: HOME_TITLE,
+    description: HOME_DESCRIPTION,
+    pathname: "/",
+  }),
+  alternates: canonicalAlternates("/"),
 };
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "";

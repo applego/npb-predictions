@@ -1,13 +1,63 @@
 export const runtime = "edge";
 
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Prediction, ScoreboardResponse } from "@/lib/types";
 import { LEAGUE_LABELS, TITLE_CATEGORY_LABELS } from "@/lib/types";
 import ShareButton from "@/components/ShareButton";
+import {
+  canonicalAlternates,
+  clampDescription,
+  ogImageUrl,
+  socialPreview,
+} from "@/lib/seo-meta";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "";
 const DEFAULT_YEAR = new Date().getFullYear();
+
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ userId: string }>;
+  searchParams: Promise<{ year?: string }>;
+}): Promise<Metadata> {
+  const { userId } = await params;
+  const { year: yearParam } = await searchParams;
+  const year = yearParam ? parseInt(yearParam, 10) : DEFAULT_YEAR;
+
+  const [prediction, scoreboard] = await Promise.all([
+    getUserPrediction(year, userId),
+    getScoreboard(year),
+  ]);
+
+  const userName = prediction?.user.name ?? "参加者";
+  const numericId = parseInt(userId, 10);
+  const userScore = scoreboard?.scores.find((s) => s.userId === numericId);
+  const userRankIndex =
+    scoreboard?.scores.findIndex((s) => s.userId === numericId) ?? -1;
+
+  const rankText =
+    userRankIndex >= 0 ? `総合${userRankIndex + 1}位` : "未ランク";
+  const scoreText = userScore
+    ? `合計${userScore.totalScore}pt（順位点${userScore.rankingScore}／タイトル点${userScore.titleScore}）`
+    : "スコア集計待ち";
+
+  const title = `${userName}の${year}年プロ野球順位予想 — NPB予想リーグ`;
+  const description = clampDescription(
+    `${userName}さんの${year}年NPB予想リーグ成績。${rankText}・${scoreText}。セ・パ両リーグの順位予想とタイトル予想の的中状況を確認できます。`
+  );
+  const pathname = `/users/${userId}?year=${year}`;
+  const og = ogImageUrl("prediction", { year, userId: numericId });
+
+  return {
+    title,
+    description,
+    ...socialPreview({ title, description, pathname, ogImage: og }),
+    alternates: canonicalAlternates(pathname),
+  };
+}
 
 async function getUserPrediction(
   year: number,

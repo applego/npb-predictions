@@ -9,19 +9,26 @@ import { BreadcrumbJsonLd } from "@/components/StructuredData";
 import { InternalLinks } from "@/components/InternalLinks";
 import { getAllSeasons } from "@/lib/seo-queries";
 import { getTeamsByLeague } from "@/lib/teams";
+import {
+  canonicalAlternates,
+  clampDescription,
+  socialPreview,
+} from "@/lib/seo-meta";
+
+const PAST_TITLE = "過去シーズン一覧 — NPB予想リーグ";
+const PAST_DESCRIPTION = clampDescription(
+  "NPB予想リーグの過去シーズン一覧。各年のセ・リーグ／パ・リーグ最終順位、タイトルホルダー、プロ野球順位予想の的中結果をアーカイブしています。"
+);
 
 export const metadata: Metadata = {
-  title: "過去シーズン一覧 | NPB Predictions League",
-  description:
-    "NPB Predictions Leagueの過去シーズン一覧。各年の順位結果・タイトルホルダー・予想リーグの成績を閲覧できます。",
-  openGraph: {
-    title: "過去シーズン一覧 | NPB Predictions League",
-    description: "NPB Predictions Leagueの過去シーズン一覧。各年の順位結果・タイトルホルダー・予想リーグの成績を閲覧できます。",
-    type: "website",
-  },
-  alternates: {
-    canonical: "/seo/past-seasons",
-  },
+  title: PAST_TITLE,
+  description: PAST_DESCRIPTION,
+  ...socialPreview({
+    title: PAST_TITLE,
+    description: PAST_DESCRIPTION,
+    pathname: "/seo/past-seasons",
+  }),
+  alternates: canonicalAlternates("/seo/past-seasons"),
 };
 
 export default async function PastSeasonsPage() {

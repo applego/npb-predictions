@@ -14,24 +14,26 @@ import {
   LEAGUE_LABELS,
 } from "@/lib/seo-queries";
 import { getTeamsByLeague } from "@/lib/teams";
+import {
+  canonicalAlternates,
+  clampDescription,
+  socialPreview,
+} from "@/lib/seo-meta";
 
 type Props = { params: Promise<{ year: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { year } = await params;
-  const title = `${year}年 NPBシーズン概要 | NPB Predictions League`;
-  const description = `${year}年プロ野球シーズンの順位結果・タイトルホルダー・予想リーグの成績をまとめたページです。`;
+  const title = `${year}年プロ野球シーズン概要 — NPB予想リーグ`;
+  const description = clampDescription(
+    `${year}年日本プロ野球（NPB）の順位結果・タイトルホルダー・予想リーグの成績をまとめたシーズン総覧。セ・リーグとパ・リーグの結果を俯瞰できます。`
+  );
+  const pathname = `/seo/${year}`;
   return {
     title,
     description,
-    openGraph: {
-      title,
-      description,
-      type: "website",
-    },
-    alternates: {
-      canonical: `/seo/${year}`,
-    },
+    ...socialPreview({ title, description, pathname }),
+    alternates: canonicalAlternates(pathname),
   };
 }
 

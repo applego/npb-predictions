@@ -14,14 +14,26 @@ import {
   LEAGUE_LABELS,
   TITLE_LABELS,
 } from "@/lib/seo-queries";
+import {
+  canonicalAlternates,
+  clampDescription,
+  socialPreview,
+} from "@/lib/seo-meta";
 
 type Props = { params: Promise<{ year: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { year } = await params;
+  const title = `${year}年プロ野球タイトルリーダー — セ・パ両リーグのタイトルホルダー`;
+  const description = clampDescription(
+    `${year}年日本プロ野球（NPB）のタイトル一覧。セ・リーグとパ・リーグの首位打者・本塁打王・打点王・最多勝・防御率・セーブ王を網羅しています。`
+  );
+  const pathname = `/seo/${year}/title-leaders`;
   return {
-    title: `${year}年 NPBタイトルリーダー | NPB Predictions League`,
-    description: `${year}年プロ野球の各タイトル（首位打者・本塁打王・最多勝など）のリーダー一覧。`,
+    title,
+    description,
+    ...socialPreview({ title, description, pathname }),
+    alternates: canonicalAlternates(pathname),
   };
 }
 

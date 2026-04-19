@@ -17,14 +17,26 @@ import {
   LEAGUE_LABELS,
   TITLE_LABELS,
 } from "@/lib/seo-queries";
+import {
+  canonicalAlternates,
+  clampDescription,
+  socialPreview,
+} from "@/lib/seo-meta";
 
 type Props = { params: Promise<{ year: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { year } = await params;
+  const title = `${year}年プロ野球シーズンアーカイブ — NPB予想リーグ`;
+  const description = clampDescription(
+    `${year}年日本プロ野球（NPB）シーズンの完全アーカイブ。セ・リーグ／パ・リーグの最終順位、タイトルホルダー、予想リーグの成績をまとめて確認できます。`
+  );
+  const pathname = `/archive/${year}`;
   return {
-    title: `${year}年 NPBシーズンアーカイブ | NPB Predictions League`,
-    description: `${year}年プロ野球シーズンの完全アーカイブ。最終順位・タイトル・予想リーグ結果を網羅。`,
+    title,
+    description,
+    ...socialPreview({ title, description, pathname }),
+    alternates: canonicalAlternates(pathname),
   };
 }
 

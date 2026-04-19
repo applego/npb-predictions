@@ -14,14 +14,26 @@ import {
   LEAGUE_LABELS,
   TITLE_LABELS,
 } from "@/lib/seo-queries";
+import {
+  canonicalAlternates,
+  clampDescription,
+  socialPreview,
+} from "@/lib/seo-meta";
 
 type Props = { params: Promise<{ year: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { year } = await params;
+  const title = `${year}年プロ野球順位予想の比較と的中結果 — NPB予想リーグ`;
+  const description = clampDescription(
+    `${year}年NPB予想リーグの参加者全員の順位予想とタイトル予想を、実際のセ・リーグ／パ・リーグ最終順位と照合。的中率・スコア差を一覧で確認できます。`
+  );
+  const pathname = `/archive/${year}/predictions`;
   return {
-    title: `${year}年 予想比較 | NPB Predictions League`,
-    description: `${year}年NPB Predictions Leagueの全参加者の順位予想・タイトル予想を横比較。実際の結果と照合。`,
+    title,
+    description,
+    ...socialPreview({ title, description, pathname }),
+    alternates: canonicalAlternates(pathname),
   };
 }
 

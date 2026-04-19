@@ -4,6 +4,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { ScoreboardResponse } from "@/lib/types";
 import ShareButton from "@/components/ShareButton";
+import {
+  canonicalAlternates,
+  clampDescription,
+  ogImageUrl,
+  socialPreview,
+} from "@/lib/seo-meta";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "";
 const DEFAULT_YEAR = new Date().getFullYear();
@@ -15,15 +21,17 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { year: yearParam } = await searchParams;
   const year = yearParam ? parseInt(yearParam, 10) : DEFAULT_YEAR;
+  const title = `${year}年スコアボード — NPB予想リーグ`;
+  const description = clampDescription(
+    `${year}年プロ野球順位予想リーグのスコアボード。参加者ごとの順位点・タイトル点・合計得点をセ・パ両リーグ横断で比較できます。`
+  );
+  const pathname = `/standings?year=${year}`;
+  const og = ogImageUrl("scoreboard", { year });
   return {
-    title: `${year}年 スコアボード`,
-    description: `${year}年NPB予想リーグ現在のスコアボード。各予想家の順位点・タイトル点・合計得点を確認。`,
-    openGraph: {
-      title: `${year}年 NPB予想リーグ スコアボード`,
-      description: `${year}年プロ野球順位予想リーグ — 現在の順位表`,
-      type: "website",
-    },
-    alternates: { canonical: `/standings?year=${year}` },
+    title,
+    description,
+    ...socialPreview({ title, description, pathname, ogImage: og }),
+    alternates: canonicalAlternates(pathname),
   };
 }
 
