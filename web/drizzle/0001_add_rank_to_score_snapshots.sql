@@ -1,0 +1,1 @@
+ALTER TABLE `score_snapshots` ADD `rank` integer;

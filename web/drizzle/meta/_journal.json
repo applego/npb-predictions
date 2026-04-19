@@ -8,6 +8,13 @@
       "when": 1775029952391,
       "tag": "0000_steady_phantom_reporter",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1776567476605,
+      "tag": "0001_add_rank_to_score_snapshots",
+      "breakpoints": true
     }
   ]
 }

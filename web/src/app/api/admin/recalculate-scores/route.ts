@@ -125,19 +125,26 @@ export async function POST(req: Request) {
     );
   });
 
-  // 6. Upsert score snapshots (insert new snapshot for today)
-  for (const r of results) {
+  // 6. Assign rank (1-based) by totalScore descending so cross-device clients
+  //    can read rank directly from the snapshot without relying on localStorage.
+  const rankedResults = [...results]
+    .sort((a, b) => b.totalScore - a.totalScore)
+    .map((r, idx) => ({ ...r, rank: idx + 1 }));
+
+  // 7. Upsert score snapshots (insert new snapshot for today)
+  for (const r of rankedResults) {
     await getDb().insert(scoreSnapshots).values({
       userId: r.userId,
       seasonId: season.id,
       rankingScore: r.rankingScore,
       titleScore: r.titleScore,
       totalScore: r.totalScore,
+      rank: r.rank,
       snapshotDate: now,
     });
   }
 
-  // 7. Calculate monthly champions from all historical snapshots
+  // 8. Calculate monthly champions from all historical snapshots
   const allSnapshots = await getDb()
     .select({
       userId: scoreSnapshots.userId,
@@ -149,7 +156,7 @@ export async function POST(req: Request) {
 
   const champions = calcMonthlyChampions(allSnapshots);
 
-  // 8. Upsert monthly champion awards
+  // 9. Upsert monthly champion awards
   // Delete existing monthly_champion awards for this season, then re-insert
   await getDb()
     .delete(awards)
@@ -169,7 +176,7 @@ export async function POST(req: Request) {
 
   return NextResponse.json({
     season: { id: season.id, year: season.year },
-    scores: results,
+    scores: rankedResults,
     monthlyChampions: champions,
     calculatedAt: now.toISOString(),
   });

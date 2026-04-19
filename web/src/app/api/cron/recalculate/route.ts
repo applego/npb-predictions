@@ -118,14 +118,21 @@ export async function POST(req: Request) {
       return calcUserScore(pred.userId, rPicks, tPicks, currentStandings, currentTitles);
     });
 
+    // Assign rank (1-based) by totalScore descending so cross-device clients
+    // can read rank directly from the snapshot without relying on localStorage.
+    const rankedScores = [...scores]
+      .sort((a, b) => b.totalScore - a.totalScore)
+      .map((r, idx) => ({ ...r, rank: idx + 1 }));
+
     // Insert score snapshots
-    for (const r of scores) {
+    for (const r of rankedScores) {
       await getDb().insert(scoreSnapshots).values({
         userId: r.userId,
         seasonId: season.id,
         rankingScore: r.rankingScore,
         titleScore: r.titleScore,
         totalScore: r.totalScore,
+        rank: r.rank,
         snapshotDate: now,
       });
     }
