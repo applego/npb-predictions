@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { Bebas_Neue, Noto_Sans_JP } from "next/font/google";
 import "./globals.css";
@@ -17,31 +17,68 @@ const notoSansJP = Noto_Sans_JP({
 });
 
 const BASE_URL =
-  process.env.NEXT_PUBLIC_BASE_URL ?? "https://npb-predictions.pages.dev";
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  process.env.NEXT_PUBLIC_BASE_URL ??
+  "https://npb-predictions.pages.dev";
+
+const DEFAULT_TITLE = "NPB予想リーグ — プロ野球順位予想リーグ";
+const DEFAULT_DESCRIPTION =
+  "プロ野球順位予想リーグ。セ・リーグとパ・リーグの順位予想とタイトル予想を比較し、NPB予想の的中率や得点をスコアボードで追跡できます。";
 
 export const metadata: Metadata = {
   title: {
-    default: "NPB Predictions League | プロ野球順位予想リーグ",
-    template: "%s | NPB Predictions League",
+    default: DEFAULT_TITLE,
+    template: "%s | NPB予想リーグ",
   },
-  description:
-    "プロ野球順位予想リーグ - 5人の予想を比較して年間王者を決めよう。セ・パ両リーグの順位予想とタイトル予想で競おう。",
+  description: DEFAULT_DESCRIPTION,
+  keywords: [
+    "プロ野球順位予想",
+    "NPB予想",
+    "NPB予想リーグ",
+    "セ・リーグ順位予想",
+    "パ・リーグ順位予想",
+    "プロ野球タイトル予想",
+    "首位打者",
+    "本塁打王",
+    "最多勝",
+  ],
   metadataBase: new URL(BASE_URL),
+  alternates: {
+    canonical: "/",
+    languages: {
+      "ja-JP": "/",
+    },
+  },
   openGraph: {
     type: "website",
     locale: "ja_JP",
-    siteName: "NPB Predictions League",
-    title: "NPB Predictions League | プロ野球順位予想リーグ",
-    description:
-      "プロ野球順位予想リーグ - 5人の予想を比較して年間王者を決めよう。",
+    siteName: "NPB予想リーグ",
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
   },
   twitter: {
     card: "summary_large_image",
-    title: "NPB Predictions League",
-    description:
-      "プロ野球順位予想リーグ - 5人の予想を比較して年間王者を決めよう。",
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
   },
   robots: { index: true, follow: true },
+  appleWebApp: {
+    capable: true,
+    title: "NPB予想リーグ",
+    statusBarStyle: "black-translucent",
+  },
+  formatDetection: {
+    telephone: false,
+    email: false,
+    address: false,
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#040912",
+  colorScheme: "dark",
+  width: "device-width",
+  initialScale: 1,
 };
 
 const NAV_LINKS = [
