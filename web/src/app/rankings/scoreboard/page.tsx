@@ -5,8 +5,17 @@ import Link from "next/link";
 import ShareButton from "@/components/ShareButton";
 import { getSeasons, getScoreboardData } from "@/lib/scoreboard";
 import { ScoreboardTable } from "./ScoreboardClient";
+import {
+  canonicalAlternates,
+  clampDescription,
+  ogImageUrl,
+  socialPreview,
+  SEO_TERMS,
+} from "@/lib/seo-meta";
 
 const CURRENT_YEAR = new Date().getFullYear();
+
+export const revalidate = 600;
 
 export async function generateMetadata({
   searchParams,
@@ -16,12 +25,30 @@ export async function generateMetadata({
   const { year: yearParam, view } = await searchParams;
   const year = yearParam ? parseInt(yearParam, 10) : CURRENT_YEAR;
   const isCurrent = year >= CURRENT_YEAR;
-  const suffix =
-    view === "trend" ? " 時系列" : isCurrent ? "" : " 最終結果";
+  const isTrend = view === "trend";
+  const suffix = isTrend ? " 時系列推移" : isCurrent ? "" : " 最終結果";
+  const title = `${year}年 スコアボード${suffix}`;
+  const description = clampDescription(
+    isTrend
+      ? `${year}年${SEO_TERMS.site}スコアボードの時系列推移。${SEO_TERMS.bothLeagues}順位予想の的中点を年度別に比較し、各予想家の成績を可視化します。`
+      : isCurrent
+        ? `${year}年${SEO_TERMS.npbFull}シーズンのスコアボード。${SEO_TERMS.bothLeagues}順位予想の的中点をリアルタイム集計して順位付けします。`
+        : `${year}年${SEO_TERMS.npbFull}シーズンの最終スコアボード。${SEO_TERMS.bothLeagues}順位予想の確定的中点とランキングを一覧で確認できます。`,
+  );
+  const pathname = `/rankings/scoreboard?year=${year}${isTrend ? "&view=trend" : ""}`;
+  const og = ogImageUrl("season", { year });
+
   return {
-    title: `${year}年 スコアボード${suffix}`,
-    description: `${year}年NPB予想リーグのスコアボード。各予想家の順位点・時系列推移を確認。`,
-    alternates: { canonical: `/rankings/scoreboard?year=${year}` },
+    title,
+    description,
+    keywords: [
+      SEO_TERMS.site,
+      `${year}年 スコアボード`,
+      `${SEO_TERMS.npbShort} 順位予想 スコア`,
+      "的中点 ランキング",
+    ],
+    alternates: canonicalAlternates(pathname),
+    ...socialPreview({ title, description, pathname, ogImage: og }),
   };
 }
 

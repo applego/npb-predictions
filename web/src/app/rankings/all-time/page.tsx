@@ -3,12 +3,36 @@ export const runtime = "edge";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AllTimeTable } from "./AllTimeClient";
+import {
+  absoluteUrl,
+  canonicalAlternates,
+  clampDescription,
+  ogImageUrl,
+  socialPreview,
+  SEO_TERMS,
+} from "@/lib/seo-meta";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://npb-predictions.pages.dev";
+const SITE_URL = absoluteUrl("/").replace(/\/$/, "");
 
 export const metadata: Metadata = {
   title: "通算ランキング | ALL-TIME RANKINGS",
-  description: "プロ野球解説者の通算順位予想的中ランキング。2014年からの全年通算スコアで比較。",
+  description: clampDescription(
+    `${SEO_TERMS.npbFull}解説者・評論家の通算順位予想的中ランキング。2014年からの全年通算スコアを集計し、${SEO_TERMS.bothLeagues}の的中率を比較します。`,
+  ),
+  keywords: [
+    SEO_TERMS.site,
+    "通算ランキング",
+    "解説者 的中率 通算",
+    `${SEO_TERMS.npbShort} 順位予想 歴代`,
+  ],
+  alternates: canonicalAlternates("/rankings/all-time"),
+  ...socialPreview({
+    title: "通算ランキング | NPB予想リーグ",
+    description:
+      "プロ野球解説者の通算順位予想的中ランキング。2014年からの全年通算スコアで比較。",
+    pathname: "/rankings/all-time",
+    ogImage: ogImageUrl("scoreboard", {}),
+  }),
 };
 
 interface YearScore {

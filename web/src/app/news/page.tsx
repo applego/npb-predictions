@@ -4,17 +4,36 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { NewsClient } from "./NewsClient";
 import { generateNewsFeed } from "@/lib/news-feed";
+import {
+  canonicalAlternates,
+  clampDescription,
+  ogImageUrl,
+  socialPreview,
+  SEO_TERMS,
+} from "@/lib/seo-meta";
+
+const NEWS_TITLE = "NEWS | ニュース・アクティビティ";
+const NEWS_DESCRIPTION = clampDescription(
+  `${SEO_TERMS.site}の最新ニュース。的中速報、ランキング変動、新規予想、${SEO_TERMS.bothLeagues}解説者の注目情報をまとめてチェックできます。`,
+);
 
 export const metadata: Metadata = {
-  title: "NEWS | ニュース・アクティビティ",
-  description:
-    "NPB順位予想リーグの最新ニュース。的中速報、ランキング変動、新規予想、解説者注目情報をチェック。",
-  openGraph: {
-    title: "NPB Predictions League — NEWS",
-    description:
-      "的中速報・ランキング変動・新規予想・解説者注目情報。",
-  },
-  alternates: { canonical: "/news" },
+  title: NEWS_TITLE,
+  description: NEWS_DESCRIPTION,
+  keywords: [
+    SEO_TERMS.site,
+    "プロ野球 予想 ニュース",
+    "的中速報",
+    "ランキング変動",
+    "解説者 予想",
+  ],
+  alternates: canonicalAlternates("/news"),
+  ...socialPreview({
+    title: NEWS_TITLE,
+    description: NEWS_DESCRIPTION,
+    pathname: "/news",
+    ogImage: ogImageUrl("weekly", {}),
+  }),
 };
 
 export default async function NewsPage() {

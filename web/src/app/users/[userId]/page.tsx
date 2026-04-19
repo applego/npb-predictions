@@ -1,5 +1,6 @@
 export const runtime = "edge";
 
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Prediction, ScoreboardResponse } from "@/lib/types";
@@ -9,8 +10,71 @@ import { ScoreHistoryChart, type ScoreHistoryEntry } from "@/components/ScoreHis
 import { getDb } from "@/db";
 import { users, seasons, predictions, rankingPicks, titlePicks, scoreSnapshots } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
+import {
+  canonicalAlternates,
+  clampDescription,
+  ogImageUrl,
+  socialPreview,
+  SEO_TERMS,
+} from "@/lib/seo-meta";
 
 const DEFAULT_YEAR = new Date().getFullYear();
+
+export const revalidate = 600;
+
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ userId: string }>;
+  searchParams: Promise<{ year?: string }>;
+}): Promise<Metadata> {
+  const { userId } = await params;
+  const { year: yearParam } = await searchParams;
+  const year = yearParam ? parseInt(yearParam, 10) : DEFAULT_YEAR;
+  const userIdNum = parseInt(userId, 10);
+  if (isNaN(userIdNum)) {
+    return { title: "ユーザー", robots: { index: false, follow: false } };
+  }
+
+  try {
+    const db = getDb();
+    const [user] = await db.select().from(users).where(eq(users.id, userIdNum));
+    if (!user) {
+      return { title: "ユーザー", robots: { index: false, follow: false } };
+    }
+
+    const pathname = `/users/${userIdNum}?year=${year}`;
+    const title = `${user.name} の${year}年予想`;
+    const description = clampDescription(
+      `${user.name}の${year}年${SEO_TERMS.npbFull}${SEO_TERMS.bothLeagues}順位予想とタイトル予想を表示。スコア推移と年度別成績も確認できます。`,
+    );
+    const og = ogImageUrl("prediction", { year, userId: userIdNum });
+
+    return {
+      title,
+      description,
+      keywords: [
+        SEO_TERMS.site,
+        `${user.name} 予想`,
+        `${year}年 ${SEO_TERMS.npbShort} 順位予想`,
+        user.name,
+      ],
+      alternates: canonicalAlternates(pathname),
+      ...socialPreview({
+        title: `${title} | ${SEO_TERMS.site}`,
+        description,
+        pathname,
+        ogImage: og,
+      }),
+    };
+  } catch {
+    return {
+      title: `ユーザー ${year}年予想`,
+      alternates: canonicalAlternates(`/users/${userIdNum}`),
+    };
+  }
+}
 
 // ── Direct DB helpers (avoids self-referential fetch on CF Pages) ──
 

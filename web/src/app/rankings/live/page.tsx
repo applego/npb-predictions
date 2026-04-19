@@ -2,12 +2,32 @@ export const runtime = "edge";
 
 import type { Metadata } from "next";
 import Link from "next/link";
+import {
+  canonicalAlternates,
+  clampDescription,
+  ogImageUrl,
+  socialPreview,
+  SEO_TERMS,
+} from "@/lib/seo-meta";
 
 export const metadata: Metadata = {
-  title: "2026 LIVE SCOREBOARD | NPB Predictions League",
-  description:
-    "2026年シーズンのリアルタイムスコアボード。実績順位が更新されるとスコアが自動計算されます。",
-  alternates: { canonical: "/rankings/live" },
+  title: "2026 LIVE SCOREBOARD",
+  description: clampDescription(
+    `2026年${SEO_TERMS.npbFull}シーズンのリアルタイムスコアボード。${SEO_TERMS.bothLeagues}の実績順位が更新されると、予想家のスコアが自動で再計算されます。`,
+  ),
+  keywords: [
+    SEO_TERMS.site,
+    "2026 スコアボード",
+    `${SEO_TERMS.npbShort} リアルタイム 順位`,
+    "予想 的中 速報",
+  ],
+  alternates: canonicalAlternates("/rankings/live"),
+  ...socialPreview({
+    title: "2026 LIVE SCOREBOARD | NPB予想リーグ",
+    description: "2026年シーズンのリアルタイム予想スコア。実績順位が更新されると自動計算。",
+    pathname: "/rankings/live",
+    ogImage: ogImageUrl("season", { year: 2026 }),
+  }),
 };
 
 const API_BASE =

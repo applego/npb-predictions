@@ -10,40 +10,65 @@ import {
   getAllCommentatorSlugs,
 } from "@/lib/commentator-queries";
 import { SOURCE_BADGE_CONFIG, getSourceBadgeColors } from "@/lib/commentator-types";
+import {
+  absoluteUrl,
+  canonicalAlternates,
+  clampDescription,
+  ogImageUrl,
+  SEO_TERMS,
+} from "@/lib/seo-meta";
 
 type SourceBadge = "YouTube" | "新聞" | "テレビ" | "ラジオ" | "雑誌" | "Web";
 const SOURCE_BADGE_COLORS = SOURCE_BADGE_CONFIG;
 
-const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://npb-predictions.vercel.app";
-
 type Props = { params: Promise<{ slug: string }> };
+
+export const revalidate = 3600;
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const data = await getCommentatorBySlug(decodeURIComponent(slug));
   if (!data) return { title: "Not Found" };
 
-  const title = `${data.name} - プロ野球順位予想 的中率 | NPB Predictions League`;
-  const description = `${data.name}のプロ野球順位予想的中率の推移。${data.years.map((y) => `${y.year}年: ${y.totalScore}点`).join("、")}。通算${data.allTimeTotal}点。`;
+  const title = `${data.name} - プロ野球順位予想 的中率`;
+  const recent = [...data.years].sort((a, b) => b.year - a.year).slice(0, 3);
+  const recentText = recent.map((y) => `${y.year}年${y.totalScore > 0 ? "+" : ""}${y.totalScore}点`).join("、");
+  const description = clampDescription(
+    `${data.name}の${SEO_TERMS.npbShort}順位予想的中率の推移。${recentText}。通算${data.allTimeTotal > 0 ? "+" : ""}${data.allTimeTotal}点、${data.years.length}シーズン参加。`,
+  );
+  const pathname = `/rankings/commentators/${slug}`;
+  const og = ogImageUrl("commentator", {
+    name: data.name,
+    total: data.allTimeTotal,
+    years: data.years.length,
+  });
 
   return {
     title,
     description,
+    keywords: [
+      SEO_TERMS.site,
+      data.name,
+      `${data.name} 予想`,
+      "プロ野球 解説者",
+      "順位予想 的中率",
+    ],
     openGraph: {
-      title,
+      title: `${title} | ${SEO_TERMS.site}`,
       description,
       type: "profile",
-      url: `${SITE_URL}/rankings/commentators/${slug}`,
+      siteName: SEO_TERMS.site,
+      locale: "ja_JP",
+      url: absoluteUrl(pathname),
+      images: [{ url: og, width: 1200, height: 630, alt: `${data.name} 予想的中率` }],
     },
     twitter: {
-      card: "summary",
+      card: "summary_large_image",
       title: `${data.name} - 順位予想的中率`,
       description,
+      images: [og],
     },
-    alternates: {
-      canonical: `/rankings/commentators/${slug}`,
-    },
+    alternates: canonicalAlternates(pathname),
   };
 }
 
@@ -140,7 +165,7 @@ export default async function CommentatorDetailPage({ params }: Props) {
     "@context": "https://schema.org",
     "@type": "Person",
     name: data.name,
-    url: `${SITE_URL}/rankings/commentators/${slug}`,
+    url: absoluteUrl(`/rankings/commentators/${slug}`),
     description: `プロ野球解説者。通算予想的中スコア ${data.allTimeTotal}点。`,
     knowsAbout: "Nippon Professional Baseball",
   };

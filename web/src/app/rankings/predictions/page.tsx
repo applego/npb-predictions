@@ -5,6 +5,13 @@ import Link from "next/link";
 import type { Prediction, Season } from "@/lib/types";
 import { getTeamByName } from "@/lib/teams";
 import ShareButton from "@/components/ShareButton";
+import {
+  canonicalAlternates,
+  clampDescription,
+  ogImageUrl,
+  socialPreview,
+  SEO_TERMS,
+} from "@/lib/seo-meta";
 
 const API_BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://npb-predictions.pages.dev";
 
@@ -40,6 +47,8 @@ async function getPredictions(year: number): Promise<Prediction[]> {
   }
 }
 
+export const revalidate = 600;
+
 export async function generateMetadata({
   searchParams,
 }: {
@@ -47,9 +56,26 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { year: yearParam } = await searchParams;
   const year = yearParam ? parseInt(yearParam, 10) : await getActiveYear();
+  const title = `${year}年 順位予想一覧`;
+  const description = clampDescription(
+    `${year}年${SEO_TERMS.npbFull}の${SEO_TERMS.bothLeagues}順位予想をまとめて比較。プロ野球解説者・評論家・一般参加者の開幕前予想を一覧で確認できます。`,
+  );
+  const pathname = `/rankings/predictions?year=${year}`;
+  const og = ogImageUrl("scoreboard", { year });
+
   return {
-    title: `${year}年 順位予想一覧`,
-    description: `${year}年NPB予想リーグ — 全予想家のセ・パ順位予想を一覧表示。`,
+    title,
+    description,
+    keywords: [
+      SEO_TERMS.site,
+      SEO_TERMS.tagline,
+      `${year}年 ${SEO_TERMS.npbShort} 順位予想`,
+      `${SEO_TERMS.central} 順位予想`,
+      `${SEO_TERMS.pacific} 順位予想`,
+      "解説者 予想",
+    ],
+    alternates: canonicalAlternates(pathname),
+    ...socialPreview({ title, description, pathname, ogImage: og }),
   };
 }
 

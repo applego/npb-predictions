@@ -49,14 +49,17 @@ export function canonicalAlternates(pathname: string): Metadata["alternates"] {
 /**
  * Build the full OG image URL (absolute) for social previews.
  */
+export type OgImageType =
+  | "prediction"
+  | "scoreboard"
+  | "monthly-champion"
+  | "weekly"
+  | "season"
+  | "team"
+  | "commentator";
+
 export function ogImageUrl(
-  type:
-    | "prediction"
-    | "scoreboard"
-    | "monthly-champion"
-    | "weekly"
-    | "season"
-    | "team",
+  type: OgImageType,
   params: Record<string, string | number | undefined> = {}
 ): string {
   const qs = new URLSearchParams();
