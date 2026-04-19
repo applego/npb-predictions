@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { NewsClient } from "./NewsClient";
 import { generateNewsFeed } from "@/lib/news-feed";
+import { BreadcrumbJsonLd } from "@/components/StructuredData";
 import {
   canonicalAlternates,
   clampDescription,
@@ -39,8 +40,11 @@ export const metadata: Metadata = {
 export default async function NewsPage() {
   const news = await generateNewsFeed(100);
 
+  const breadcrumbItems = [{ label: "ニュース" }];
+
   return (
     <div className="space-y-6">
+      <BreadcrumbJsonLd items={breadcrumbItems} />
       {/* Page Header */}
       <div className="flex items-end justify-between">
         <div>

@@ -3,6 +3,7 @@ export const runtime = "edge";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AllTimeTable } from "./AllTimeClient";
+import { BreadcrumbJsonLd } from "@/components/StructuredData";
 import {
   absoluteUrl,
   canonicalAlternates,
@@ -90,8 +91,14 @@ function getRankBadge(rank: number): string {
 export default async function AllTimeRankingsPage() {
   const data = await getAllTimeRankings();
 
+  const breadcrumbItems = [
+    { label: "ランキング", href: "/rankings/predictions" },
+    { label: "通算ランキング" },
+  ];
+
   return (
     <div className="space-y-6">
+      <BreadcrumbJsonLd items={breadcrumbItems} />
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>

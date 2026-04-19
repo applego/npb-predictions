@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Breadcrumb } from "@/components/Breadcrumb";
-import { BreadcrumbJsonLd } from "@/components/StructuredData";
+import { BreadcrumbJsonLd, PersonJsonLd } from "@/components/StructuredData";
 import {
   getCommentatorBySlug,
   getAllCommentatorSlugs,
@@ -160,22 +160,17 @@ export default async function CommentatorDetailPage({ params }: Props) {
     { label: data.name },
   ];
 
-  // JSON-LD for this person
-  const personJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Person",
-    name: data.name,
-    url: absoluteUrl(`/rankings/commentators/${slug}`),
-    description: `プロ野球解説者。通算予想的中スコア ${data.allTimeTotal}点。`,
-    knowsAbout: "Nippon Professional Baseball",
-  };
+  const personDescription = `${SEO_TERMS.npbFull}解説者。通算予想的中スコア ${data.allTimeTotal > 0 ? "+" : ""}${data.allTimeTotal}点、${data.years.length}シーズン参加。`;
+  const sameAs = data.sourceUrl ? [data.sourceUrl] : undefined;
 
   return (
     <>
       <BreadcrumbJsonLd items={breadcrumbs} />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(personJsonLd) }}
+      <PersonJsonLd
+        name={data.name}
+        pathname={`/rankings/commentators/${slug}`}
+        description={personDescription}
+        sameAs={sameAs}
       />
 
       <div className="space-y-6">

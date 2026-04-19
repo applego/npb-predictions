@@ -6,6 +6,10 @@ import ShareButton from "@/components/ShareButton";
 import { getSeasons, getScoreboardData } from "@/lib/scoreboard";
 import { ScoreboardTable } from "./ScoreboardClient";
 import {
+  BreadcrumbJsonLd,
+  SportsEventJsonLd,
+} from "@/components/StructuredData";
+import {
   canonicalAlternates,
   clampDescription,
   ogImageUrl,
@@ -236,8 +240,20 @@ export default async function StandingsPage({
 
   const reversedActiveYears = [...activeYears].reverse();
 
+  const breadcrumbItems = [
+    { label: "ランキング", href: "/rankings/predictions" },
+    { label: isTrend ? `時系列 ${selectedYear}` : `${selectedYear}年 スコアボード` },
+  ];
+
   return (
     <div className="space-y-5">
+      <BreadcrumbJsonLd items={breadcrumbItems} />
+      <SportsEventJsonLd
+        year={selectedYear}
+        league="both"
+        pathname={`/rankings/scoreboard?year=${selectedYear}${isTrend ? "&view=trend" : ""}`}
+        description={`${selectedYear}年${SEO_TERMS.npbFull}の予想リーグスコアボード`}
+      />
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>

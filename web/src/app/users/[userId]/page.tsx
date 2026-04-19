@@ -7,6 +7,7 @@ import type { Prediction, ScoreboardResponse } from "@/lib/types";
 import { LEAGUE_LABELS, TITLE_CATEGORY_LABELS } from "@/lib/types";
 import ShareButton from "@/components/ShareButton";
 import { ScoreHistoryChart, type ScoreHistoryEntry } from "@/components/ScoreHistoryChart";
+import { BreadcrumbJsonLd } from "@/components/StructuredData";
 import { getDb } from "@/db";
 import { users, seasons, predictions, rankingPicks, titlePicks, scoreSnapshots } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
@@ -257,8 +258,14 @@ export default async function UserDetailPage({
 
   const leagues = ["central", "pacific"] as const;
 
+  const breadcrumbItems = [
+    { label: "ユーザー", href: "/rankings/scoreboard" },
+    { label: `${user.name} (${year}年)` },
+  ];
+
   return (
     <div className="space-y-6">
+      <BreadcrumbJsonLd items={breadcrumbItems} />
       {/* Profile header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-4">

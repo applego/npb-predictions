@@ -2,6 +2,7 @@ export const runtime = "edge";
 
 import type { Metadata } from "next";
 import Link from "next/link";
+import { BreadcrumbJsonLd, SportsEventJsonLd } from "@/components/StructuredData";
 import {
   canonicalAlternates,
   clampDescription,
@@ -274,8 +275,20 @@ export default async function LivePage() {
   const hasScores = data && data.scores.length > 0;
   const hasStandings = data && data.standings && data.standings.length > 0;
 
+  const breadcrumbItems = [
+    { label: "ランキング", href: "/rankings/predictions" },
+    { label: `${CURRENT_YEAR} LIVE` },
+  ];
+
   return (
     <div className="space-y-5">
+      <BreadcrumbJsonLd items={breadcrumbItems} />
+      <SportsEventJsonLd
+        year={CURRENT_YEAR}
+        league="both"
+        pathname="/rankings/live"
+        description={`${CURRENT_YEAR}年${SEO_TERMS.npbFull}のリアルタイム予想スコア`}
+      />
       {/* Header */}
       <div>
         <h1

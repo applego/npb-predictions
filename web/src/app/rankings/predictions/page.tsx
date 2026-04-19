@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { Prediction, Season } from "@/lib/types";
 import { getTeamByName } from "@/lib/teams";
 import ShareButton from "@/components/ShareButton";
+import { BreadcrumbJsonLd } from "@/components/StructuredData";
 import {
   canonicalAlternates,
   clampDescription,
@@ -112,8 +113,14 @@ export default async function PredictionsPage({
   // Only show predictions that have at least some picks
   const filtered = predictions.filter((p) => p.rankingPicks.length > 0);
 
+  const breadcrumbItems = [
+    { label: "ランキング", href: "/rankings/predictions" },
+    { label: `${year}年 順位予想一覧` },
+  ];
+
   return (
     <div className="space-y-5">
+      <BreadcrumbJsonLd items={breadcrumbItems} />
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
