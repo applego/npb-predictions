@@ -141,6 +141,38 @@ export const awardsRelations = relations(awards, ({ one }) => ({ user: one(users
 export const battleGroupsRelations = relations(battleGroups, ({ one, many }) => ({ creator: one(users, { fields: [battleGroups.createdBy], references: [users.id] }), members: many(battleGroupMembers) }));
 export const battleGroupMembersRelations = relations(battleGroupMembers, ({ one }) => ({ group: one(battleGroups, { fields: [battleGroupMembers.groupId], references: [battleGroups.id] }), user: one(users, { fields: [battleGroupMembers.userId], references: [users.id] }) }));
 
+export type GameStatus = "scheduled" | "in_progress" | "final" | "postponed" | "cancelled";
+export type GameLeague = "central" | "pacific" | "interleague";
+
+export const gameResults = sqliteTable("game_results", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  seasonId: integer("season_id").notNull().references(() => seasons.id),
+  gameDate: text("game_date").notNull(),
+  league: text("league").$type<GameLeague>().notNull(),
+  homeTeam: text("home_team").notNull(),
+  awayTeam: text("away_team").notNull(),
+  homeScore: integer("home_score"),
+  awayScore: integer("away_score"),
+  status: text("status").$type<GameStatus>().notNull(),
+  winner: text("winner"),
+  stadium: text("stadium"),
+  snapshotDate: integer("snapshot_date", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
+}, (table) => [uniqueIndex("game_results_season_date_home_away_idx").on(table.seasonId, table.gameDate, table.homeTeam, table.awayTeam)]);
+
+export const gameResultsRelations = relations(gameResults, ({ one }) => ({
+  season: one(seasons, { fields: [gameResults.seasonId], references: [seasons.id] }),
+}));
+
+export const scrapeFailureEvents = sqliteTable("scrape_failure_events", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  source: text("source").notNull(),
+  errorMessage: text("error_message"),
+  httpStatus: integer("http_status"),
+  htmlSnippet: text("html_snippet"),
+  resolvedAt: integer("resolved_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
+});
+
 // Likes (anonymous, fingerprint-based)
 export const likes = sqliteTable("likes", {
   id: integer("id").primaryKey({ autoIncrement: true }),

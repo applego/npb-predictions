@@ -18,6 +18,12 @@ const TABS = [
     matches: ["/rankings/live"],
   },
   {
+    href: "/rankings/titles",
+    icon: "\u{1F451}",
+    label: "\u30BF\u30A4\u30C8\u30EB",
+    matches: ["/rankings/titles"],
+  },
+  {
     href: "/rankings/scoreboard",
     icon: "\u{1F3C6}",
     label: "\u7D50\u679C",
