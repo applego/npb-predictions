@@ -15,6 +15,7 @@ import { getDb } from "@/db";
 import { seasons, actualTitleSnapshots } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { scrapeNpbTitles } from "@/lib/scrape-titles";
+import { withRetry, markSourceResolved } from "@/lib/scrape-retry";
 
 export async function POST(req: Request) {
   const cronSecret = process.env.CRON_SECRET;
@@ -42,13 +43,23 @@ export async function POST(req: Request) {
 
   const results = [];
   for (const season of activeSeasons) {
-    let titles;
-    try {
-      titles = await scrapeNpbTitles(season.year);
-    } catch (err) {
-      results.push({ year: season.year, error: String(err), inserted: 0 });
+    const retry = await withRetry(() => scrapeNpbTitles(season.year), {
+      label: `npb-titles:${season.year}`,
+      attempts: 3,
+      backoffMs: 500,
+      db,
+    });
+    if (!retry.ok) {
+      results.push({
+        year: season.year,
+        error: String(retry.error),
+        inserted: 0,
+        attempts: retry.attempts,
+      });
       continue;
     }
+    const titles = retry.value;
+    await markSourceResolved(db, `npb-titles:${season.year}`);
 
     if (titles.length === 0) {
       results.push({ year: season.year, inserted: 0, note: "No titles scraped (off-season?)" });

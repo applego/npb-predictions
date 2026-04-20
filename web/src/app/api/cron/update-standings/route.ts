@@ -18,26 +18,54 @@ import { and, desc, eq } from "drizzle-orm";
 import { scrapeNpbStandings, type ScrapedStanding } from "@/lib/scrape-npb";
 import { scrapeYahooStandings } from "@/lib/scrape-yahoo";
 import { diffStandings } from "@/lib/rank-diff";
+import { withRetry, markSourceResolved, logScrapeFailure } from "@/lib/scrape-retry";
+import type { DbClient } from "@/db";
 
-async function scrapeWithFallback(): Promise<{
+async function scrapeWithFallback(db: DbClient): Promise<{
   source: "yahoo" | "npb";
   standings: ScrapedStanding[];
   errors: string[];
+  attempts: { yahoo: number; npb: number };
 }> {
   const errors: string[] = [];
 
-  try {
-    const yahoo = await scrapeYahooStandings();
-    if (yahoo.length >= 12) {
-      return { source: "yahoo", standings: yahoo, errors };
-    }
-    errors.push(`Yahoo returned only ${yahoo.length} rows`);
-  } catch (err) {
-    errors.push(`Yahoo: ${String(err)}`);
+  const yahooRetry = await withRetry(
+    async () => {
+      const rows = await scrapeYahooStandings();
+      if (rows.length < 12) throw new Error(`Yahoo returned only ${rows.length} rows`);
+      return rows;
+    },
+    { label: "yahoo-standings", attempts: 2, backoffMs: 300, db },
+  );
+  if (yahooRetry.ok) {
+    await markSourceResolved(db, "yahoo-standings");
+    return {
+      source: "yahoo",
+      standings: yahooRetry.value,
+      errors,
+      attempts: { yahoo: yahooRetry.attempts, npb: 0 },
+    };
   }
+  errors.push(`Yahoo: ${String(yahooRetry.error)}`);
 
-  const npb = await scrapeNpbStandings();
-  return { source: "npb", standings: npb, errors };
+  const npbRetry = await withRetry(() => scrapeNpbStandings(), {
+    label: "npb-standings",
+    attempts: 3,
+    backoffMs: 500,
+    db,
+  });
+  if (!npbRetry.ok) {
+    errors.push(`npb.jp: ${String(npbRetry.error)}`);
+    await logScrapeFailure(db, "npb-standings-fallback-exhausted", npbRetry.error);
+    throw new Error(errors.join("; "));
+  }
+  await markSourceResolved(db, "npb-standings");
+  return {
+    source: "npb",
+    standings: npbRetry.value,
+    errors,
+    attempts: { yahoo: yahooRetry.attempts, npb: npbRetry.attempts },
+  };
 }
 
 export async function POST(req: Request) {
@@ -69,7 +97,7 @@ export async function POST(req: Request) {
 
   let scrape;
   try {
-    scrape = await scrapeWithFallback();
+    scrape = await scrapeWithFallback(db);
   } catch (err) {
     return NextResponse.json(
       { error: `Scrape failed: ${String(err)}` },

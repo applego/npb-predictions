@@ -14,6 +14,7 @@ import { getDb } from "@/db";
 import { seasons, gameResults } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { scrapeYahooGames } from "@/lib/scrape-games";
+import { withRetry, markSourceResolved } from "@/lib/scrape-retry";
 
 function todayInJst(): string {
   const now = new Date();
@@ -51,12 +52,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: "No active seasons" });
   }
 
-  let games;
-  try {
-    games = await scrapeYahooGames(date);
-  } catch (err) {
-    return NextResponse.json({ error: `Scrape failed: ${String(err)}` }, { status: 502 });
+  const retry = await withRetry(() => scrapeYahooGames(date), {
+    label: `yahoo-games:${date}`,
+    attempts: 3,
+    backoffMs: 500,
+    db,
+  });
+  if (!retry.ok) {
+    return NextResponse.json(
+      { error: `Scrape failed: ${String(retry.error)}`, attempts: retry.attempts },
+      { status: 502 },
+    );
   }
+  const games = retry.value;
+  await markSourceResolved(db, `yahoo-games:${date}`);
 
   if (games.length === 0) {
     return NextResponse.json({ date, games: 0, note: "No games on this date" });
