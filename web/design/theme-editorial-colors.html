@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>雑誌エディトリアル — 配色パターン12種</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Noto+Serif+JP:wght@400;600;700;900&family=Zen+Old+Mincho:wght@700;900&family=Shippori+Mincho:wght@700;900&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #e5e5e5;
+  font-family: "Noto Sans JP", -apple-system, sans-serif;
+  padding: 24px;
+  min-height: 100vh;
+}
+.header {
+  background: #111; color: #fff;
+  padding: 20px 28px;
+  margin: -24px -24px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.header h1 { font-size: 18px; letter-spacing: 0.08em; }
+.header p { font-size: 12px; color: #aaa; }
+.controls {
+  background: #fff; padding: 16px 20px; margin-bottom: 20px;
+  display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
+  border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,.08);
+}
+.controls label { font-size: 12px; color: #555; font-weight: 600; }
+.controls select, .controls input[type=range] {
+  padding: 6px 10px; border: 1px solid #d4d4d8; border-radius: 4px; font-size: 12px;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 20px;
+}
+.grid.zoom-1x { grid-template-columns: repeat(auto-fill, minmax(480px, 1fr)); }
+.grid.zoom-2x { grid-template-columns: 1fr; }
+
+.card {
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,.1);
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.card:hover { transform: translateY(-3px); box-shadow: 0 4px 14px rgba(0,0,0,.15); }
+.card.selected { outline: 3px solid #2563eb; }
+
+.card-head {
+  padding: 12px 14px;
+  background: #fafafa;
+  border-bottom: 1px solid #e5e5e5;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.card-head .code { font-size: 11px; color: #999; font-family: "Oswald", sans-serif; letter-spacing: 0.1em; }
+.card-head .name { font-weight: 700; font-size: 14px; }
+.card-head .palette-dots { display: flex; gap: 4px; }
+.card-head .dot { width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(0,0,0,.1); }
+
+/* ========== Editorial template body (scaled) ========== */
+.preview {
+  padding: 24px;
+  font-family: "Noto Sans JP", sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 380px;
+}
+.preview .tagline-top {
+  font-family: "Shippori Mincho", "Noto Serif JP", serif;
+  font-size: 8px; letter-spacing: 0.55em;
+  color: var(--accent); margin-bottom: 6px; text-align: center;
+}
+.preview .brand {
+  font-family: "Shippori Mincho", "Noto Serif JP", serif;
+  font-weight: 900; font-size: 22px; text-align: center;
+  letter-spacing: -0.02em; line-height: 1.15;
+}
+.preview .brand .a { color: var(--accent); font-size: 26px; }
+.preview .tagline-bottom {
+  font-family: "Shippori Mincho", "Noto Serif JP", serif;
+  font-size: 9px; letter-spacing: 0.25em; color: var(--sub);
+  text-align: center; margin-top: 6px;
+}
+.preview .rule {
+  height: 1px; background: var(--ink); margin: 14px 0; position: relative;
+}
+.preview .rule::before {
+  content: "◆"; position: absolute; top: -8px; left: 50%;
+  transform: translateX(-50%); background: var(--bg);
+  padding: 0 8px; color: var(--accent); font-size: 10px;
+}
+.preview nav {
+  display: flex; justify-content: center; gap: 16px; margin: 12px 0;
+}
+.preview nav a {
+  text-decoration: none; color: var(--sub);
+  font-family: "Shippori Mincho", serif; font-weight: 700; font-size: 11px;
+  padding: 4px 0; border-bottom: 2px solid transparent;
+}
+.preview nav a.active { color: var(--ink); border-bottom-color: var(--accent); }
+.preview .issue {
+  font-family: "Shippori Mincho", serif; font-size: 9px;
+  letter-spacing: 0.25em; color: var(--sub);
+  text-align: center; margin: 12px 0 2px;
+}
+.preview .headline {
+  font-family: "Shippori Mincho", serif;
+  font-weight: 900; font-size: 22px; line-height: 1.25;
+  letter-spacing: -0.02em; text-align: center;
+  margin-bottom: 4px;
+}
+.preview .headline .em { color: var(--accent); }
+.preview .lead {
+  font-family: "Shippori Mincho", serif;
+  font-size: 11px; color: var(--sub);
+  line-height: 1.8; margin: 10px auto 14px;
+  text-align: center; max-width: 90%;
+}
+.preview .ctas { display: flex; gap: 8px; justify-content: center; margin-bottom: 14px; }
+.preview .btn-p {
+  background: var(--ink); color: var(--bg);
+  font-family: "Shippori Mincho", serif; font-weight: 700;
+  padding: 8px 16px; border: none; font-size: 11px; cursor: pointer;
+  letter-spacing: 0.04em;
+}
+.preview .btn-g {
+  background: transparent; color: var(--ink);
+  font-family: "Shippori Mincho", serif; font-weight: 700;
+  padding: 8px 16px; border: 1px solid var(--ink); font-size: 11px; cursor: pointer;
+}
+.preview .card-inner {
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 14px;
+}
+.preview .card-inner h3 {
+  font-family: "Shippori Mincho", serif;
+  font-size: 12px; font-weight: 900;
+  padding-bottom: 8px; border-bottom: 1px solid var(--ink);
+  margin-bottom: 10px;
+  display: flex; justify-content: space-between; align-items: baseline;
+}
+.preview .card-inner h3 .meta { font-size: 9px; color: var(--mute); font-weight: 400; }
+.preview table { width: 100%; border-collapse: collapse; font-size: 10px; }
+.preview table th {
+  font-family: "Shippori Mincho", serif; text-align: left;
+  padding: 6px 4px; border-bottom: 1px solid var(--ink);
+  font-size: 9px; letter-spacing: 0.05em; font-weight: 700;
+}
+.preview table td {
+  padding: 8px 4px; border-bottom: 1px dashed var(--border);
+}
+.preview .rnk {
+  font-family: "Shippori Mincho", serif;
+  font-weight: 900; font-size: 16px; color: var(--mute);
+}
+.preview .rnk.g { color: var(--accent); font-size: 18px; }
+.preview .rnk.s { color: var(--ink); }
+.preview .cname {
+  font-family: "Shippori Mincho", serif; font-weight: 700; font-size: 12px;
+}
+.preview .badge {
+  display: inline-block; font-family: "Shippori Mincho", serif;
+  font-size: 8px; padding: 1px 5px;
+  background: var(--accent); color: var(--badge-text, #fff);
+  margin-left: 4px; letter-spacing: 0.05em;
+}
+.preview .score {
+  font-family: "Shippori Mincho", serif;
+  font-weight: 900; font-size: 14px; color: var(--accent);
+}
+.preview .chip-row { display: flex; gap: 2px; }
+.preview .chip {
+  font-size: 8px; font-weight: 700; padding: 2px 4px;
+  color: #fff; min-width: 28px; text-align: center;
+}
+.preview .hit { outline: 1.5px solid var(--success); outline-offset: -1.5px; }
+
+/* ========== Palettes ========== */
+.p01 { /* E1 Cream Crimson (current default) */
+  --bg: #f5f2ea; --ink: #1c1917; --sub: #57534e; --mute: #a8a29e;
+  --accent: #991b1b; --card: #fff; --border: #d6d3d1; --success: #15803d;
+}
+.p02 { /* E2 Pure Paper */
+  --bg: #ffffff; --ink: #0a0a0a; --sub: #525252; --mute: #a3a3a3;
+  --accent: #dc2626; --card: #fafafa; --border: #e5e5e5; --success: #16a34a;
+}
+.p03 { /* E3 Sepia */
+  --bg: #f0e6d2; --ink: #3b2817; --sub: #6b5339; --mute: #b5a481;
+  --accent: #7c2d12; --card: #faf3e2; --border: #d6c6a4; --success: #4d7c0f;
+}
+.p04 { /* E4 Forest Ivory */
+  --bg: #faf6ea; --ink: #14532d; --sub: #3f6346; --mute: #86a58a;
+  --accent: #b91c1c; --card: #ffffff; --border: #d4d8c9; --success: #65a30d;
+}
+.p05 { /* E5 Navy Ivory (日本野球伝統色) */
+  --bg: #faf7f2; --ink: #0c1b33; --sub: #334960; --mute: #8a95a3;
+  --accent: #b91c1c; --card: #fff; --border: #cdd3dc; --success: #15803d;
+}
+.p06 { /* E6 Stone Orange (earthy rustic) */
+  --bg: #ede4d3; --ink: #1c1917; --sub: #57534e; --mute: #a8a29e;
+  --accent: #c44536; --card: #f8f0df; --border: #cdb898; --success: #4d7c0f;
+}
+.p07 { /* E7 Charcoal Gold (dark luxury) */
+  --bg: #1c1917; --ink: #f5f1e8; --sub: #a8a29e; --mute: #6b6562;
+  --accent: #c9a961; --card: #2a2523; --border: #3d3634; --success: #65a30d;
+}
+.p07 .preview .btn-p { color: #1c1917; background: #c9a961; }
+.p07 .preview .btn-g { border-color: #c9a961; color: #c9a961; }
+.p07 .preview .rule::before { background: #1c1917; }
+.p07 .preview .badge { color: #1c1917; }
+
+.p08 { /* E8 Midnight Red (cinema noir) */
+  --bg: #0c0c0c; --ink: #f5f5f5; --sub: #a3a3a3; --mute: #525252;
+  --accent: #e63946; --card: #1a1a1a; --border: #2a2a2a; --success: #4ade80;
+}
+.p08 .preview .btn-p { color: #0c0c0c; background: #f5f5f5; }
+.p08 .preview .btn-g { border-color: #f5f5f5; }
+.p08 .preview .rule::before { background: #0c0c0c; }
+
+.p09 { /* E9 Rose Plum (ladies mag) */
+  --bg: #fdf4f0; --ink: #1c1917; --sub: #78716c; --mute: #d6d3d1;
+  --accent: #5b1f3c; --card: #fff; --border: #eadbd2; --success: #059669;
+}
+.p10 { /* E10 Matcha Cream (和風) */
+  --bg: #faf6e8; --ink: #1c1917; --sub: #5a5c4e; --mute: #a8a99a;
+  --accent: #4a6b3a; --card: #fff; --border: #d4d7c1; --success: #166534;
+}
+.p11 { /* E11 Sky Vermillion (米国スコアボード) */
+  --bg: #f0f4f8; --ink: #1e3a8a; --sub: #475569; --mute: #94a3b8;
+  --accent: #dc2626; --card: #fff; --border: #cbd5e1; --success: #15803d;
+}
+.p12 { /* E12 Paper Black (high contrast) */
+  --bg: #ffffff; --ink: #000000; --sub: #404040; --mute: #a3a3a3;
+  --accent: #000000; --card: #fff; --border: #000; --success: #000;
+}
+.p12 .preview .card-inner { border: 2px solid #000; }
+.p12 .preview .badge { color: #fff; background: #000; }
+.p12 .preview .rnk.g { color: #000; }
+.p12 .preview .score { color: #000; text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <h1>雑誌エディトリアル — 配色パターン 12種</h1>
+    <p>同じ Pattern E レイアウトで、配色だけを変えた比較</p>
+  </div>
+  <div>
+    <label>サイズ:
+      <select id="zoom" onchange="document.getElementById('grid').className='grid '+this.value">
+        <option value="zoom-0x">小 (3列)</option>
+        <option value="zoom-1x">中 (2列)</option>
+        <option value="zoom-2x">大 (1列)</option>
+      </select>
+    </label>
+  </div>
+</div>
+
+<div class="grid zoom-0x" id="grid">
+
+<!-- Reusable card template rendered per palette -->
+<script>
+const palettes = [
+  { id: 1, code: "E1", name: "Cream Crimson", note: "現 E。クリーム × 深紅", dots: ["#f5f2ea","#1c1917","#991b1b"] },
+  { id: 2, code: "E2", name: "Pure Paper", note: "まっしろ × 赤。clean newsprint", dots: ["#ffffff","#0a0a0a","#dc2626"] },
+  { id: 3, code: "E3", name: "Sepia Archive", note: "セピア × 茶。retrospective", dots: ["#f0e6d2","#3b2817","#7c2d12"] },
+  { id: 4, code: "E4", name: "Forest Ivory", note: "アイボリー × 深緑。ボタニカル", dots: ["#faf6ea","#14532d","#b91c1c"] },
+  { id: 5, code: "E5", name: "Navy Ivory", note: "紺 × 赤。日本野球伝統色", dots: ["#faf7f2","#0c1b33","#b91c1c"] },
+  { id: 6, code: "E6", name: "Stone Orange", note: "ストーン × 朱。earthy rustic", dots: ["#ede4d3","#1c1917","#c44536"] },
+  { id: 7, code: "E7", name: "Charcoal Gold", note: "黒 × ゴールド。dark luxury", dots: ["#1c1917","#f5f1e8","#c9a961"] },
+  { id: 8, code: "E8", name: "Midnight Red", note: "漆黒 × 赤。cinema noir", dots: ["#0c0c0c","#f5f5f5","#e63946"] },
+  { id: 9, code: "E9", name: "Rose Plum", note: "ローズ × プラム。女性誌", dots: ["#fdf4f0","#1c1917","#5b1f3c"] },
+  { id:10, code: "E10", name: "Matcha Cream", note: "クリーム × 抹茶。和モダン", dots: ["#faf6e8","#1c1917","#4a6b3a"] },
+  { id:11, code: "E11", name: "Sky Vermillion", note: "ブルー × 赤。米国スコアボード風", dots: ["#f0f4f8","#1e3a8a","#dc2626"] },
+  { id:12, code: "E12", name: "Paper Black", note: "黒一色。最高コントラスト", dots: ["#ffffff","#000000","#000000"] },
+];
+
+const cardTemplate = (p) => `
+<div class="card">
+  <div class="card-head">
+    <div><div class="code">${p.code}</div><div class="name">${p.name}</div></div>
+    <div class="palette-dots">
+      ${p.dots.map(c => `<div class="dot" style="background:${c}"></div>`).join("")}
+    </div>
+  </div>
+  <div class="preview p${String(p.id).padStart(2,"0")}">
+    <div class="tagline-top">◆ P R O  B A S E B A L L  C O L L E C T I V E  W I S D O M ◆</div>
+    <div class="brand">プロ野球<br><span class="a">みんなの順位予想</span></div>
+    <div class="tagline-bottom">${p.note}</div>
+    <div class="rule"></div>
+    <nav>
+      <a class="active" href="#">予想</a>
+      <a href="#">解説者</a>
+      <a href="#">スコア</a>
+      <a href="#">ニュース</a>
+    </nav>
+    <div class="issue">特集 ー 2025 的中率ランキング</div>
+    <h1 class="headline">本当に当たる予想家は、<br><span class="em">誰</span>だったのか。</h1>
+    <p class="lead">テレビ・新聞・YouTube。128名の予想を集約、順位と照合して「的中率」を算出する。</p>
+    <div class="ctas">
+      <button class="btn-p">予想を登録</button>
+      <button class="btn-g">ランキング</button>
+    </div>
+    <div class="card-inner">
+      <h3>2025 合算 的中率ランキング <span class="meta">128名 TOP3</span></h3>
+      <table>
+        <thead><tr><th>順位</th><th>解説者</th><th>セ</th><th>パ</th><th style="text-align:right">得点</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="rnk g">1</span></td>
+            <td><span class="cname">里崎智也</span><span class="badge">YT</span></td>
+            <td><div class="chip-row"><span class="chip hit" style="background:#FBBF24;color:#1a1a1a">阪</span><span class="chip hit" style="background:#2563EB">De</span><span class="chip" style="background:#F97316">巨</span><span class="chip hit" style="background:#DC2626">広</span><span class="chip" style="background:#059669">ヤ</span><span class="chip" style="background:#1E40AF">中</span></div></td>
+            <td><div class="chip-row"><span class="chip hit" style="background:#F5D100;color:#1a1a1a">ソ</span><span class="chip hit" style="background:#B91C1C">楽</span><span class="chip" style="background:#1E3A5F;color:#4FB3E0">ハ</span><span class="chip" style="background:#1E3A5F;color:#C8A951">オ</span><span class="chip hit" style="background:#1D4ED8">西</span><span class="chip" style="background:#1a1a1a">ロ</span></div></td>
+            <td style="text-align:right"><div class="score">+84</div></td>
+          </tr>
+          <tr>
+            <td><span class="rnk s">2</span></td>
+            <td><span class="cname">達川光男</span><span class="badge">TV</span></td>
+            <td><div class="chip-row"><span class="chip hit" style="background:#FBBF24;color:#1a1a1a">阪</span><span class="chip" style="background:#F97316">巨</span><span class="chip hit" style="background:#2563EB">De</span><span class="chip hit" style="background:#DC2626">広</span><span class="chip" style="background:#1E40AF">中</span><span class="chip" style="background:#059669">ヤ</span></div></td>
+            <td><div class="chip-row"><span class="chip hit" style="background:#F5D100;color:#1a1a1a">ソ</span><span class="chip" style="background:#1E3A5F;color:#4FB3E0">ハ</span><span class="chip hit" style="background:#B91C1C">楽</span><span class="chip" style="background:#1E3A5F;color:#C8A951">オ</span><span class="chip" style="background:#1a1a1a">ロ</span><span class="chip hit" style="background:#1D4ED8">西</span></div></td>
+            <td style="text-align:right"><div class="score">+71</div></td>
+          </tr>
+          <tr>
+            <td><span class="rnk s">3</span></td>
+            <td><span class="cname">江川卓</span><span class="badge">TV</span></td>
+            <td><div class="chip-row"><span class="chip hit" style="background:#FBBF24;color:#1a1a1a">阪</span><span class="chip" style="background:#F97316">巨</span><span class="chip hit" style="background:#2563EB">De</span><span class="chip" style="background:#1E40AF">中</span><span class="chip hit" style="background:#DC2626">広</span><span class="chip" style="background:#059669">ヤ</span></div></td>
+            <td><div class="chip-row"><span class="chip hit" style="background:#F5D100;color:#1a1a1a">ソ</span><span class="chip" style="background:#B91C1C">楽</span><span class="chip hit" style="background:#1E3A5F;color:#4FB3E0">ハ</span><span class="chip" style="background:#1D4ED8">西</span><span class="chip" style="background:#1E3A5F;color:#C8A951">オ</span><span class="chip" style="background:#1a1a1a">ロ</span></div></td>
+            <td style="text-align:right"><div class="score">+68</div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>`;
+
+document.getElementById("grid").innerHTML = palettes.map(cardTemplate).join("");
+
+// Click to zoom selected
+document.getElementById("grid").addEventListener("click", (e) => {
+  const card = e.target.closest(".card");
+  if (!card) return;
+  document.querySelectorAll(".card.selected").forEach(c => c.classList.remove("selected"));
+  card.classList.add("selected");
+});
+</script>
+
+</div>
+</body>
+</html>

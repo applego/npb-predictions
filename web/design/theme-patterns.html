@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>プロ野球みんなの順位予想 — テーマパターン比較</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Noto+Serif+JP:wght@400;600;700;900&family=DotGothic16&family=Zen+Old+Mincho:wght@700;900&family=Shippori+Mincho:wght@700;900&family=Bebas+Neue&family=Oswald:wght@500;700&family=M+PLUS+Rounded+1c:wght@500;700;900&family=DM+Serif+Display:ital@0;1&family=Bodoni+Moda:wght@400;700;900&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #e5e5e5;
+  font-family: -apple-system, "Noto Sans JP", sans-serif;
+  padding: 20px;
+}
+.pattern-nav {
+  position: sticky; top: 0; z-index: 100;
+  background: #111; color: #fff;
+  padding: 12px 20px;
+  margin: -20px -20px 20px;
+  display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+}
+.pattern-nav h1 { font-size: 14px; letter-spacing: 0.1em; margin-right: 20px; }
+.pattern-nav a { color: #fff; text-decoration: none; font-size: 13px; padding: 6px 12px; border: 1px solid #444; border-radius: 2px; }
+.pattern-nav a:hover { background: #fff; color: #000; }
+.pattern-section {
+  background: #fff;
+  margin-bottom: 40px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.12);
+  overflow: hidden;
+}
+.pattern-title-bar {
+  background: #111; color: #fff;
+  padding: 16px 24px;
+  display: flex; align-items: baseline; justify-content: space-between;
+  font-family: -apple-system, sans-serif;
+}
+.pattern-title-bar .id {
+  font-size: 48px; font-weight: 900; line-height: 1; margin-right: 16px;
+  opacity: 0.3;
+}
+.pattern-title-bar h2 { font-size: 20px; font-weight: 700; }
+.pattern-title-bar .sub { font-size: 12px; color: #999; margin-top: 4px; letter-spacing: 0.1em; }
+.pattern-body { padding: 0; }
+
+/* ============================================
+   PATTERN A — 新聞スポーツ欄 (Newspaper Classic)
+   Polished & authoritative. Current direction.
+   ============================================ */
+.pA {
+  --bg: #faf7f2; --text: #18181b; --text-sub: #52525b; --text-mute: #a1a1aa;
+  --accent: #dc2626; --card: #fff; --border: #d4d4d8; --success: #16a34a;
+  --hit-bg: #f0fdf4;
+  --font-body: "Noto Sans JP", sans-serif;
+  --font-serif: "Shippori Mincho", "Noto Serif JP", serif;
+}
+.pA .body {
+  background: var(--bg); color: var(--text); font-family: var(--font-body);
+  padding: 24px 28px;
+}
+.pA .masthead {
+  border-top: 4px double var(--text);
+  border-bottom: 1px solid var(--text);
+  padding: 16px 0 10px; display: flex; justify-content: space-between; align-items: baseline;
+}
+.pA .brand { font-family: var(--font-serif); font-weight: 900; font-size: 34px; letter-spacing: -0.02em; }
+.pA .brand .a { color: var(--accent); }
+.pA .date { font-family: var(--font-serif); font-size: 13px; color: var(--text-sub); }
+.pA .masthead-sub {
+  font-family: var(--font-serif); font-size: 10px; letter-spacing: 0.6em;
+  color: var(--text-sub); text-align: center; padding: 6px 0 14px;
+  border-bottom: 1px double var(--border);
+}
+.pA nav { display: flex; border-bottom: 2px solid var(--text); margin: 18px 0; }
+.pA nav a {
+  padding: 10px 16px; text-decoration: none; color: var(--text-sub);
+  font-family: var(--font-serif); font-weight: 700; font-size: 14px;
+  border-right: 1px solid var(--border);
+}
+.pA nav a.active { background: var(--text); color: #fff; }
+.pA .kicker { font-family: var(--font-serif); font-size: 11px; color: var(--accent); letter-spacing: 0.3em; font-weight: 700; }
+.pA .headline {
+  font-family: var(--font-serif); font-weight: 900; font-size: 38px;
+  line-height: 1.15; letter-spacing: -0.02em; margin: 10px 0 6px;
+}
+.pA .lead {
+  font-family: var(--font-serif); font-size: 15px; color: var(--text-sub);
+  max-width: 560px; line-height: 1.7; margin: 8px 0 16px;
+  border-left: 3px solid var(--accent); padding-left: 12px;
+}
+.pA .ctas { display: flex; gap: 10px; margin-bottom: 20px; }
+.pA .btn-p { background: var(--accent); color: #fff; font-family: var(--font-serif); font-weight: 700; padding: 11px 20px; border: none; font-size: 14px; cursor: pointer; }
+.pA .btn-g { background: transparent; color: var(--text); font-family: var(--font-serif); font-weight: 700; padding: 11px 20px; border: 2px solid var(--text); font-size: 14px; cursor: pointer; }
+.pA .card { background: var(--card); border: 1px solid var(--border); padding: 16px 18px; }
+.pA .card h3 { font-family: var(--font-serif); font-size: 17px; padding-bottom: 8px; border-bottom: 2px solid var(--text); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: baseline; }
+.pA .card h3 .meta { font-family: var(--font-body); font-size: 11px; color: var(--text-mute); font-weight: 400; }
+.pA table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.pA table th { font-family: var(--font-serif); font-weight: 700; text-align: left; padding: 8px; border-bottom: 2px solid var(--text); font-size: 11px; letter-spacing: 0.08em; }
+.pA table td { padding: 9px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.pA .rnk { display: inline-block; width: 26px; height: 26px; line-height: 26px; text-align: center; font-family: var(--font-serif); font-weight: 900; font-size: 14px; background: var(--text); color: #fff; }
+.pA .rnk.g { background: #d4a017; color: #18181b; }
+.pA .rnk.s { background: #a1a1aa; color: #18181b; }
+.pA .rnk.b { background: #b87333; }
+.pA .cname { font-family: var(--font-serif); font-weight: 700; font-size: 15px; }
+.pA .badge { display: inline-block; font-size: 10px; padding: 2px 6px; border: 1px solid var(--text); margin-left: 6px; font-weight: 500; background: var(--bg); }
+.pA .score { font-family: var(--font-serif); font-weight: 900; font-size: 18px; color: var(--accent); }
+.pA .bd { font-size: 10px; color: var(--text-mute); }
+.pA .chip-row { display: flex; gap: 4px; }
+.pA .chip { font-family: var(--font-serif); font-size: 10px; font-weight: 700; padding: 3px 6px; color: #fff; min-width: 38px; text-align: center; }
+.pA .hit { outline: 2px solid var(--success); outline-offset: -2px; }
+
+/* ============================================
+   PATTERN B — スポーツ紙ド派手 (Tabloid Bold)
+   Aggressive, shout-y, newsstand vibe.
+   ============================================ */
+.pB {
+  --bg: #0a0a0a; --text: #f5f5f5; --text-sub: #a3a3a3;
+  --accent: #facc15; --red: #dc2626; --card: #141414; --border: #262626;
+  --success: #4ade80;
+  --font-body: "Noto Sans JP", sans-serif;
+  --font-display: "Zen Old Mincho", "Shippori Mincho", serif;
+}
+.pB .body { background: var(--bg); color: var(--text); font-family: var(--font-body); padding: 24px 28px; }
+.pB .masthead {
+  display: flex; align-items: center; justify-content: space-between; padding: 10px 0 14px;
+  border-bottom: 6px solid var(--red);
+}
+.pB .brand { font-family: var(--font-display); font-weight: 900; font-size: 44px; letter-spacing: -0.04em; line-height: 1; }
+.pB .brand .a { color: var(--accent); }
+.pB .brand .b { color: var(--red); }
+.pB .date-block { text-align: right; font-size: 11px; color: var(--text-sub); font-family: var(--font-display); }
+.pB nav { display: flex; gap: 2px; background: var(--red); padding: 4px; margin: 16px 0; overflow-x: auto; }
+.pB nav a { padding: 12px 18px; text-decoration: none; color: #fff; font-family: var(--font-display); font-weight: 900; font-size: 15px; white-space: nowrap; }
+.pB nav a.active { background: var(--bg); color: var(--accent); }
+.pB .kicker { display: inline-block; background: var(--accent); color: #000; padding: 4px 10px; font-family: var(--font-display); font-weight: 900; font-size: 12px; letter-spacing: 0.1em; }
+.pB .headline {
+  font-family: var(--font-display); font-weight: 900; font-size: 54px; line-height: 1.05;
+  letter-spacing: -0.04em; margin: 12px 0 8px;
+}
+.pB .headline .hl { background: var(--red); color: #fff; padding: 0 8px; }
+.pB .lead { font-size: 15px; color: var(--text-sub); max-width: 600px; line-height: 1.7; margin: 12px 0 20px; }
+.pB .ctas { display: flex; gap: 10px; margin-bottom: 24px; }
+.pB .btn-p { background: var(--accent); color: #000; font-family: var(--font-display); font-weight: 900; padding: 14px 24px; border: none; font-size: 16px; cursor: pointer; letter-spacing: 0.05em; }
+.pB .btn-g { background: transparent; color: var(--accent); font-family: var(--font-display); font-weight: 900; padding: 14px 24px; border: 2px solid var(--accent); font-size: 16px; cursor: pointer; }
+.pB .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; margin: 16px 0; }
+.pB .stat { background: var(--card); padding: 14px; border-left: 3px solid var(--accent); }
+.pB .stat .num { font-family: var(--font-display); font-weight: 900; font-size: 30px; color: var(--accent); line-height: 1; }
+.pB .stat .label { font-size: 10px; letter-spacing: 0.2em; color: var(--text-sub); margin-top: 4px; }
+.pB .card { background: var(--card); border: 1px solid var(--border); padding: 18px; }
+.pB .card h3 { font-family: var(--font-display); font-size: 20px; padding-bottom: 10px; border-bottom: 3px solid var(--red); margin-bottom: 10px; color: var(--accent); }
+.pB table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.pB table th { font-family: var(--font-display); font-weight: 900; text-align: left; padding: 10px 8px; border-bottom: 2px solid var(--accent); font-size: 12px; color: var(--accent); letter-spacing: 0.1em; }
+.pB table td { padding: 10px 8px; border-bottom: 1px solid var(--border); }
+.pB .rnk { display: inline-block; width: 28px; height: 28px; line-height: 28px; text-align: center; font-family: var(--font-display); font-weight: 900; font-size: 16px; background: var(--red); color: #fff; }
+.pB .rnk.g { background: var(--accent); color: #000; }
+.pB .rnk.s { background: #e5e5e5; color: #000; }
+.pB .rnk.b { background: #d97706; }
+.pB .cname { font-family: var(--font-display); font-weight: 700; font-size: 15px; color: #fff; }
+.pB .badge { display: inline-block; font-size: 10px; padding: 2px 6px; background: var(--red); color: #fff; margin-left: 6px; }
+.pB .score { font-family: var(--font-display); font-weight: 900; font-size: 22px; color: var(--accent); }
+.pB .bd { font-size: 10px; color: var(--text-sub); }
+.pB .chip-row { display: flex; gap: 3px; }
+.pB .chip { font-size: 10px; font-weight: 700; padding: 3px 6px; color: #fff; min-width: 38px; text-align: center; }
+.pB .hit { outline: 2px solid var(--success); outline-offset: -2px; }
+
+/* ============================================
+   PATTERN C — ミニマル / データファースト (Clean Minimal)
+   FiveThirtyEight風。白背景、数字主役、上品。
+   ============================================ */
+.pC {
+  --bg: #ffffff; --text: #0f172a; --text-sub: #64748b; --text-mute: #94a3b8;
+  --accent: #0891b2; --accent-alt: #be123c;
+  --card: #f8fafc; --border: #e2e8f0; --success: #059669;
+  --font-body: "Noto Sans JP", -apple-system, sans-serif;
+  --font-display: "Oswald", "Noto Sans JP", sans-serif;
+}
+.pC .body { background: var(--bg); color: var(--text); font-family: var(--font-body); padding: 32px 40px; }
+.pC .masthead { padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+.pC .brand { font-family: var(--font-display); font-weight: 700; font-size: 22px; letter-spacing: 0.06em; text-transform: uppercase; }
+.pC .brand .a { color: var(--accent); }
+.pC .tagline { font-size: 11px; color: var(--text-mute); letter-spacing: 0.12em; margin-top: 4px; text-transform: uppercase; }
+.pC nav { display: flex; gap: 24px; margin: 24px 0; border-bottom: 1px solid var(--border); }
+.pC nav a { padding: 12px 0; text-decoration: none; color: var(--text-sub); font-size: 13px; font-weight: 600; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.pC nav a.active { color: var(--accent); border-bottom-color: var(--accent); }
+.pC .headline { font-size: 34px; font-weight: 700; line-height: 1.25; letter-spacing: -0.02em; margin: 12px 0 6px; }
+.pC .lead { font-size: 15px; color: var(--text-sub); max-width: 600px; line-height: 1.7; margin: 10px 0 20px; }
+.pC .ctas { display: flex; gap: 10px; margin-bottom: 28px; }
+.pC .btn-p { background: var(--accent); color: #fff; padding: 11px 22px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; border-radius: 6px; }
+.pC .btn-g { background: transparent; color: var(--text); padding: 11px 22px; border: 1px solid var(--border); font-size: 13px; font-weight: 600; cursor: pointer; border-radius: 6px; }
+.pC .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 16px 0; }
+.pC .stat { background: var(--card); padding: 16px; border-radius: 8px; }
+.pC .stat .num { font-family: var(--font-display); font-weight: 700; font-size: 28px; color: var(--text); line-height: 1; }
+.pC .stat .label { font-size: 11px; color: var(--text-mute); margin-top: 6px; letter-spacing: 0.05em; }
+.pC .card { background: #fff; border: 1px solid var(--border); padding: 20px; border-radius: 10px; }
+.pC .card h3 { font-size: 14px; font-weight: 700; color: var(--text-sub); letter-spacing: 0.08em; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: baseline; text-transform: uppercase; }
+.pC .card h3 .meta { font-size: 11px; color: var(--text-mute); font-weight: 400; letter-spacing: 0.05em; }
+.pC table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.pC table th { text-align: left; padding: 8px 10px; color: var(--text-mute); font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; border-bottom: 1px solid var(--border); }
+.pC table td { padding: 12px 10px; border-bottom: 1px solid var(--border); }
+.pC .rnk { display: inline-block; width: 24px; height: 24px; line-height: 24px; text-align: center; font-family: var(--font-display); font-weight: 700; font-size: 13px; border-radius: 50%; background: var(--card); color: var(--text-sub); }
+.pC .rnk.g { background: #fef3c7; color: #92400e; }
+.pC .rnk.s { background: #e2e8f0; color: #334155; }
+.pC .rnk.b { background: #fed7aa; color: #7c2d12; }
+.pC .cname { font-weight: 600; font-size: 14px; }
+.pC .badge { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 10px; background: var(--card); color: var(--text-sub); margin-left: 6px; }
+.pC .score { font-family: var(--font-display); font-weight: 700; font-size: 18px; color: var(--text); }
+.pC .score.hi { color: var(--success); }
+.pC .bd { font-size: 11px; color: var(--text-mute); }
+.pC .chip-row { display: flex; gap: 4px; }
+.pC .chip { font-size: 10px; font-weight: 600; padding: 3px 7px; color: #fff; min-width: 38px; text-align: center; border-radius: 4px; }
+.pC .hit { outline: 2px solid var(--success); outline-offset: -2px; }
+
+/* ============================================
+   PATTERN D — スタジアム LED (Stadium Scoreboard)
+   Dark, retro-pixel 野球場感, 夜のナイター。
+   ============================================ */
+.pD {
+  --bg: #030711; --text: #e0f2fe; --text-sub: #94a3b8;
+  --accent: #fbbf24; --green: #16a34a; --red: #dc2626;
+  --card: #0c1222; --border: #1e3a5f;
+  --font-body: "Noto Sans JP", sans-serif;
+  --font-dot: "DotGothic16", "Noto Sans JP", monospace;
+  --font-display: "Bebas Neue", "DotGothic16", sans-serif;
+}
+.pD .body { background: var(--bg); color: var(--text); font-family: var(--font-body); padding: 24px 28px; }
+.pD .masthead {
+  background: linear-gradient(180deg, #0c1222 0%, #030711 100%);
+  border: 2px solid var(--accent);
+  border-radius: 4px;
+  padding: 20px;
+  position: relative;
+  box-shadow: 0 0 24px rgba(251,191,36,0.12) inset;
+}
+.pD .masthead::before, .pD .masthead::after {
+  content: "●"; position: absolute; top: 8px; color: var(--accent); font-size: 10px;
+}
+.pD .masthead::before { left: 10px; }
+.pD .masthead::after { right: 10px; }
+.pD .brand {
+  font-family: var(--font-dot); font-weight: 400; font-size: 30px;
+  color: var(--accent); letter-spacing: 0.08em; text-align: center;
+  text-shadow: 0 0 8px rgba(251,191,36,0.6);
+}
+.pD .masthead-sub {
+  font-family: var(--font-dot); font-size: 10px; letter-spacing: 0.5em;
+  color: var(--text-sub); text-align: center; margin-top: 6px;
+}
+.pD nav { display: flex; gap: 4px; margin: 20px 0; }
+.pD nav a {
+  flex: 1; padding: 12px 12px; text-decoration: none; color: var(--text-sub);
+  font-family: var(--font-dot); font-size: 13px; letter-spacing: 0.1em; text-align: center;
+  border: 1px solid var(--border); background: var(--card);
+}
+.pD nav a.active { background: var(--accent); color: #000; border-color: var(--accent); }
+.pD .kicker {
+  display: inline-block; font-family: var(--font-dot); font-size: 11px;
+  color: var(--accent); letter-spacing: 0.3em; padding: 4px 10px; border: 1px solid var(--accent);
+}
+.pD .headline {
+  font-family: var(--font-dot); font-weight: 400; font-size: 36px;
+  line-height: 1.2; letter-spacing: 0.02em; margin: 12px 0 6px; color: var(--accent);
+  text-shadow: 0 0 12px rgba(251,191,36,0.4);
+}
+.pD .lead { font-size: 14px; color: var(--text-sub); max-width: 600px; line-height: 1.7; margin: 12px 0 20px; }
+.pD .ctas { display: flex; gap: 10px; margin-bottom: 24px; }
+.pD .btn-p { background: var(--accent); color: #000; font-family: var(--font-dot); padding: 12px 22px; border: none; font-size: 14px; cursor: pointer; letter-spacing: 0.08em; }
+.pD .btn-g { background: transparent; color: var(--accent); font-family: var(--font-dot); padding: 12px 22px; border: 1px solid var(--accent); font-size: 14px; cursor: pointer; }
+.pD .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 18px 0; }
+.pD .stat { background: var(--card); padding: 14px; border: 1px solid var(--border); text-align: center; }
+.pD .stat .num { font-family: var(--font-dot); font-weight: 400; font-size: 26px; color: var(--accent); line-height: 1; letter-spacing: 0.05em; }
+.pD .stat .label { font-family: var(--font-dot); font-size: 10px; color: var(--text-sub); margin-top: 6px; letter-spacing: 0.15em; }
+.pD .card { background: var(--card); border: 1px solid var(--border); border-radius: 4px; padding: 18px; }
+.pD .card h3 { font-family: var(--font-dot); font-size: 14px; padding-bottom: 10px; border-bottom: 1px dashed var(--border); margin-bottom: 10px; color: var(--accent); letter-spacing: 0.1em; display: flex; justify-content: space-between; align-items: baseline; }
+.pD .card h3 .meta { font-size: 10px; color: var(--text-sub); letter-spacing: 0.05em; }
+.pD table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.pD table th { font-family: var(--font-dot); font-weight: 400; text-align: left; padding: 8px; border-bottom: 1px solid var(--accent); color: var(--accent); font-size: 11px; letter-spacing: 0.1em; }
+.pD table td { padding: 10px 8px; border-bottom: 1px dashed var(--border); }
+.pD .rnk { display: inline-block; width: 26px; height: 26px; line-height: 26px; text-align: center; font-family: var(--font-dot); font-size: 13px; background: var(--card); color: var(--accent); border: 1px solid var(--accent); }
+.pD .rnk.g { background: var(--accent); color: #000; box-shadow: 0 0 8px rgba(251,191,36,.6); }
+.pD .rnk.s { background: #e5e5e5; color: #000; }
+.pD .rnk.b { background: #b87333; color: #fff; }
+.pD .cname { font-weight: 700; font-size: 14px; color: var(--text); }
+.pD .badge { display: inline-block; font-family: var(--font-dot); font-size: 9px; padding: 2px 6px; border: 1px solid var(--border); color: var(--text-sub); margin-left: 6px; letter-spacing: 0.08em; }
+.pD .score { font-family: var(--font-dot); font-size: 20px; color: var(--accent); letter-spacing: 0.05em; }
+.pD .bd { font-family: var(--font-dot); font-size: 10px; color: var(--text-sub); letter-spacing: 0.05em; }
+.pD .chip-row { display: flex; gap: 3px; }
+.pD .chip { font-family: var(--font-dot); font-size: 10px; padding: 3px 6px; color: #fff; min-width: 38px; text-align: center; letter-spacing: 0.05em; }
+.pD .hit { outline: 2px solid var(--green); outline-offset: -2px; box-shadow: 0 0 4px var(--green); }
+
+/* ============================================
+   PATTERN E — 雑誌風 (Magazine Editorial)
+   Number誌風。写真なしでも誌面感、余白大、セリフ混在。
+   ============================================ */
+.pE {
+  --bg: #f5f2ea; --text: #1c1917; --text-sub: #57534e; --text-mute: #a8a29e;
+  --accent: #991b1b; --card: #fff; --border: #d6d3d1; --success: #15803d;
+  --font-body: "Noto Sans JP", sans-serif;
+  --font-mincho: "Zen Old Mincho", "Shippori Mincho", serif;
+}
+.pE .body { background: var(--bg); color: var(--text); font-family: var(--font-body); padding: 40px 48px; }
+.pE .masthead { text-align: center; padding-bottom: 20px; }
+.pE .tagline-top { font-family: var(--font-mincho); font-size: 10px; letter-spacing: 0.6em; color: var(--accent); margin-bottom: 8px; }
+.pE .brand { font-family: var(--font-mincho); font-weight: 900; font-size: 52px; letter-spacing: -0.03em; line-height: 1.1; }
+.pE .brand .a { color: var(--accent); font-size: 60px; }
+.pE .tagline-bottom { font-family: var(--font-mincho); font-size: 12px; letter-spacing: 0.3em; color: var(--text-sub); margin-top: 10px; }
+.pE .masthead-rule { height: 1px; background: var(--text); margin: 20px 0; position: relative; }
+.pE .masthead-rule::before { content: "◆"; position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--bg); padding: 0 12px; color: var(--accent); }
+.pE nav { display: flex; justify-content: center; gap: 28px; margin: 20px 0 30px; }
+.pE nav a { padding: 8px 0; text-decoration: none; color: var(--text-sub); font-family: var(--font-mincho); font-size: 15px; font-weight: 700; border-bottom: 2px solid transparent; }
+.pE nav a.active { color: var(--text); border-bottom-color: var(--accent); }
+.pE .issue { font-family: var(--font-mincho); font-size: 11px; letter-spacing: 0.3em; color: var(--text-sub); margin-bottom: 4px; }
+.pE .headline { font-family: var(--font-mincho); font-weight: 900; font-size: 44px; line-height: 1.2; letter-spacing: -0.02em; margin: 6px 0 10px; }
+.pE .headline .emphasize { color: var(--accent); }
+.pE .lead { font-family: var(--font-mincho); font-size: 16px; color: var(--text-sub); max-width: 620px; line-height: 1.9; margin: 14px auto 24px; text-align: center; }
+.pE .ctas { display: flex; gap: 12px; justify-content: center; margin-bottom: 32px; }
+.pE .btn-p { background: var(--text); color: var(--bg); font-family: var(--font-mincho); font-weight: 700; padding: 14px 28px; border: none; font-size: 14px; cursor: pointer; letter-spacing: 0.05em; }
+.pE .btn-g { background: transparent; color: var(--text); font-family: var(--font-mincho); font-weight: 700; padding: 14px 28px; border: 1px solid var(--text); font-size: 14px; cursor: pointer; }
+.pE .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); margin: 28px 0; border: 1px solid var(--border); }
+.pE .stat { background: var(--card); padding: 18px; text-align: center; }
+.pE .stat .num { font-family: var(--font-mincho); font-weight: 900; font-size: 32px; color: var(--accent); line-height: 1; }
+.pE .stat .label { font-family: var(--font-mincho); font-size: 11px; color: var(--text-sub); margin-top: 6px; letter-spacing: 0.15em; }
+.pE .card { background: var(--card); padding: 24px; border: 1px solid var(--border); }
+.pE .card h3 { font-family: var(--font-mincho); font-size: 18px; font-weight: 900; padding-bottom: 12px; border-bottom: 1px solid var(--text); margin-bottom: 14px; display: flex; justify-content: space-between; align-items: baseline; }
+.pE .card h3 .meta { font-size: 11px; color: var(--text-mute); font-weight: 400; }
+.pE table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.pE table th { font-family: var(--font-mincho); font-weight: 700; text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--text); font-size: 11px; letter-spacing: 0.08em; }
+.pE table td { padding: 12px 8px; border-bottom: 1px dashed var(--border); }
+.pE .rnk { font-family: var(--font-mincho); font-weight: 900; font-size: 24px; color: var(--text-mute); }
+.pE .rnk.g { color: var(--accent); font-size: 26px; }
+.pE .rnk.s { color: var(--text); font-size: 24px; }
+.pE .rnk.b { color: #b87333; font-size: 22px; }
+.pE .cname { font-family: var(--font-mincho); font-weight: 700; font-size: 16px; }
+.pE .badge { display: inline-block; font-family: var(--font-mincho); font-size: 10px; padding: 2px 7px; background: var(--accent); color: #fff; margin-left: 6px; letter-spacing: 0.05em; }
+.pE .score { font-family: var(--font-mincho); font-weight: 900; font-size: 22px; color: var(--accent); }
+.pE .bd { font-family: var(--font-mincho); font-size: 11px; color: var(--text-mute); letter-spacing: 0.05em; }
+.pE .chip-row { display: flex; gap: 3px; }
+.pE .chip { font-family: var(--font-mincho); font-size: 10px; font-weight: 700; padding: 3px 6px; color: #fff; min-width: 38px; text-align: center; }
+.pE .hit { outline: 2px solid var(--success); outline-offset: -2px; }
+
+/* ============================================
+   PATTERN F — BRUTUS / カルチャー誌 (Continental Culture)
+   余白・大きな章番号・2コラム意識・欧州モダン
+   ============================================ */
+.pF {
+  --bg: #ffffff; --ink: #111111; --sub: #555555; --mute: #999999;
+  --rule: #111111; --card: #fafafa; --accent: #d90429;
+  --border: #e5e5e5; --success: #15803d;
+  --font-body: "Noto Serif JP", serif;
+  --font-display: "DM Serif Display", "Zen Old Mincho", serif;
+  --font-mono: "Oswald", sans-serif;
+}
+.pF .body { background: var(--bg); color: var(--ink); font-family: var(--font-body); padding: 48px 56px; }
+.pF .masthead { display: grid; grid-template-columns: 80px 1fr 140px; gap: 20px; align-items: end; border-bottom: 2px solid var(--rule); padding-bottom: 20px; }
+.pF .issue-num { font-family: var(--font-display); font-size: 72px; line-height: 0.9; color: var(--accent); font-style: italic; }
+.pF .brand-group { text-align: left; }
+.pF .brand { font-family: var(--font-display); font-weight: 400; font-size: 46px; line-height: 1; letter-spacing: -0.02em; font-style: italic; }
+.pF .brand .a { color: var(--accent); font-style: italic; }
+.pF .tagline { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.3em; color: var(--sub); margin-top: 10px; text-transform: uppercase; }
+.pF .masthead-meta { text-align: right; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.2em; color: var(--sub); text-transform: uppercase; line-height: 1.8; }
+.pF nav { display: flex; gap: 32px; margin: 28px 0; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+.pF nav a { text-decoration: none; color: var(--sub); font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500; }
+.pF nav a.active { color: var(--ink); border-bottom: 2px solid var(--accent); padding-bottom: 12px; margin-bottom: -13px; }
+.pF .article-meta { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.3em; color: var(--accent); text-transform: uppercase; margin-top: 24px; }
+.pF .headline { font-family: var(--font-display); font-weight: 400; font-size: 58px; line-height: 1.05; letter-spacing: -0.02em; margin: 8px 0 0; font-style: italic; }
+.pF .headline .em { color: var(--accent); }
+.pF .subhead { font-family: var(--font-display); font-size: 22px; line-height: 1.4; color: var(--sub); margin-top: 14px; font-style: italic; }
+.pF .lead { font-size: 15px; color: var(--sub); max-width: 520px; line-height: 1.9; margin: 20px 0 24px; }
+.pF .lead::first-letter { font-family: var(--font-display); font-size: 44px; line-height: 1; float: left; padding: 4px 8px 0 0; color: var(--accent); font-style: italic; }
+.pF .ctas { display: flex; gap: 12px; margin-bottom: 30px; }
+.pF .btn-p { background: var(--ink); color: var(--bg); font-family: var(--font-mono); padding: 14px 24px; border: none; font-size: 12px; letter-spacing: 0.15em; text-transform: uppercase; cursor: pointer; font-weight: 600; }
+.pF .btn-g { background: transparent; color: var(--ink); font-family: var(--font-mono); padding: 14px 24px; border: 1px solid var(--ink); font-size: 12px; letter-spacing: 0.15em; text-transform: uppercase; cursor: pointer; font-weight: 600; }
+.pF .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); margin: 28px 0; }
+.pF .stat { padding: 20px; border-right: 1px solid var(--border); }
+.pF .stat:last-child { border-right: none; }
+.pF .stat .num { font-family: var(--font-display); font-size: 34px; font-style: italic; line-height: 1; color: var(--ink); }
+.pF .stat .label { font-family: var(--font-mono); font-size: 10px; color: var(--sub); margin-top: 8px; letter-spacing: 0.15em; text-transform: uppercase; }
+.pF .card { background: var(--bg); padding: 0; }
+.pF .card h3 { font-family: var(--font-display); font-style: italic; font-size: 28px; margin-bottom: 16px; font-weight: 400; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--rule); padding-bottom: 12px; }
+.pF .card h3 .meta { font-family: var(--font-mono); font-size: 11px; color: var(--sub); letter-spacing: 0.15em; text-transform: uppercase; font-style: normal; }
+.pF table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.pF table th { font-family: var(--font-mono); font-weight: 600; text-align: left; padding: 12px 10px; border-bottom: 1px solid var(--rule); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--sub); }
+.pF table td { padding: 14px 10px; border-bottom: 1px solid var(--border); }
+.pF .rnk { font-family: var(--font-display); font-size: 26px; font-style: italic; font-weight: 400; color: var(--mute); line-height: 1; }
+.pF .rnk.g { color: var(--accent); font-size: 30px; }
+.pF .rnk.s { color: var(--ink); }
+.pF .rnk.b { color: #555; }
+.pF .cname { font-family: var(--font-display); font-size: 17px; font-style: italic; }
+.pF .badge { display: inline-block; font-family: var(--font-mono); font-size: 9px; padding: 2px 7px; border: 1px solid var(--border); color: var(--sub); margin-left: 8px; letter-spacing: 0.1em; text-transform: uppercase; }
+.pF .score { font-family: var(--font-display); font-style: italic; font-size: 24px; color: var(--accent); }
+.pF .bd { font-family: var(--font-mono); font-size: 10px; color: var(--mute); letter-spacing: 0.05em; }
+.pF .chip-row { display: flex; gap: 3px; }
+.pF .chip { font-family: var(--font-mono); font-size: 10px; font-weight: 600; padding: 3px 6px; color: #fff; min-width: 38px; text-align: center; letter-spacing: 0.05em; }
+.pF .hit { outline: 2px solid var(--success); outline-offset: -2px; }
+
+/* ============================================
+   PATTERN G — POPEYE / カジュアル (Pop Youth)
+   丸ゴシック・黄 + パステル・アイコン・親しみやすさ
+   ============================================ */
+.pG {
+  --bg: #fffbeb; --ink: #1f2937; --sub: #6b7280; --mute: #9ca3af;
+  --yellow: #fbbf24; --pink: #ec4899; --teal: #14b8a6; --orange: #fb923c;
+  --card: #ffffff; --border: #fde68a; --success: #22c55e;
+  --font-body: "M PLUS Rounded 1c", "Zen Kaku Gothic New", sans-serif;
+}
+.pG .body { background: var(--bg); color: var(--ink); font-family: var(--font-body); padding: 28px 32px; }
+.pG .masthead { display: flex; align-items: center; gap: 16px; padding: 16px 20px; background: var(--yellow); border-radius: 20px; position: relative; }
+.pG .masthead::before { content: "⚾"; position: absolute; left: -14px; top: -14px; width: 40px; height: 40px; background: var(--pink); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; transform: rotate(-12deg); }
+.pG .brand { font-weight: 900; font-size: 28px; line-height: 1.1; letter-spacing: -0.02em; flex: 1; }
+.pG .brand .a { color: var(--pink); }
+.pG .date-badge { background: #1f2937; color: #fff; padding: 8px 14px; border-radius: 100px; font-weight: 700; font-size: 12px; }
+.pG nav { display: flex; gap: 8px; margin: 20px 0; flex-wrap: wrap; }
+.pG nav a { padding: 10px 18px; text-decoration: none; color: var(--ink); font-weight: 700; font-size: 14px; background: var(--card); border: 2px solid var(--border); border-radius: 100px; }
+.pG nav a.active { background: var(--pink); color: #fff; border-color: var(--pink); }
+.pG nav a .emoji { margin-right: 4px; }
+.pG .kicker { display: inline-block; background: var(--teal); color: #fff; padding: 6px 14px; font-weight: 900; font-size: 12px; border-radius: 100px; margin: 10px 0 6px; transform: rotate(-2deg); }
+.pG .headline { font-weight: 900; font-size: 40px; line-height: 1.25; letter-spacing: -0.02em; margin: 4px 0 8px; }
+.pG .headline .yellow-hl { background: var(--yellow); padding: 0 8px; border-radius: 6px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.pG .lead { font-size: 15px; color: var(--sub); max-width: 580px; line-height: 1.8; margin: 12px 0 20px; font-weight: 500; }
+.pG .ctas { display: flex; gap: 10px; margin-bottom: 24px; flex-wrap: wrap; }
+.pG .btn-p { background: var(--pink); color: #fff; font-weight: 900; padding: 14px 28px; border: none; font-size: 15px; cursor: pointer; border-radius: 100px; box-shadow: 4px 4px 0 var(--ink); }
+.pG .btn-g { background: var(--card); color: var(--ink); font-weight: 900; padding: 14px 28px; border: 2px solid var(--ink); font-size: 15px; cursor: pointer; border-radius: 100px; }
+.pG .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 16px 0; }
+.pG .stat { background: var(--card); padding: 16px; border-radius: 16px; border: 2px solid var(--border); text-align: center; }
+.pG .stat:nth-child(1) { background: #fef3c7; }
+.pG .stat:nth-child(2) { background: #fce7f3; }
+.pG .stat:nth-child(3) { background: #ccfbf1; }
+.pG .stat:nth-child(4) { background: #fed7aa; }
+.pG .stat .num { font-weight: 900; font-size: 32px; color: var(--ink); line-height: 1; }
+.pG .stat .label { font-size: 11px; color: var(--sub); margin-top: 6px; font-weight: 700; }
+.pG .card { background: var(--card); padding: 20px; border-radius: 20px; border: 2px solid var(--border); }
+.pG .card h3 { font-weight: 900; font-size: 20px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: baseline; }
+.pG .card h3::before { content: "🏆"; margin-right: 8px; }
+.pG .card h3 .meta { font-size: 12px; color: var(--sub); font-weight: 500; }
+.pG table { width: 100%; border-collapse: separate; border-spacing: 0 4px; font-size: 13px; }
+.pG table th { text-align: left; padding: 8px 10px; color: var(--sub); font-size: 11px; font-weight: 700; }
+.pG table td { padding: 12px 10px; background: var(--bg); vertical-align: middle; }
+.pG table tr td:first-child { border-radius: 12px 0 0 12px; }
+.pG table tr td:last-child { border-radius: 0 12px 12px 0; }
+.pG .rnk { display: inline-block; width: 30px; height: 30px; line-height: 30px; text-align: center; font-weight: 900; font-size: 14px; border-radius: 50%; background: var(--mute); color: #fff; }
+.pG .rnk.g { background: var(--yellow); color: var(--ink); }
+.pG .rnk.s { background: #e5e7eb; color: var(--ink); }
+.pG .rnk.b { background: var(--orange); }
+.pG .cname { font-weight: 900; font-size: 15px; }
+.pG .badge { display: inline-block; font-size: 10px; padding: 3px 8px; background: var(--teal); color: #fff; margin-left: 6px; border-radius: 100px; font-weight: 700; }
+.pG .score { font-weight: 900; font-size: 22px; color: var(--pink); }
+.pG .bd { font-size: 11px; color: var(--mute); font-weight: 500; }
+.pG .chip-row { display: flex; gap: 3px; }
+.pG .chip { font-weight: 700; font-size: 10px; padding: 4px 7px; color: #fff; min-width: 38px; text-align: center; border-radius: 4px; }
+.pG .hit { outline: 2px solid var(--success); outline-offset: -2px; }
+
+/* ============================================
+   PATTERN H — GQ / エスクァイア (Luxury Men's)
+   ダーク + ゴールド・Bodoni・重厚、プレミアム
+   ============================================ */
+.pH {
+  --bg: #0f0f0f; --ink: #f5f1e8; --sub: #a8a29e; --mute: #6b6562;
+  --gold: #c9a961; --gold-soft: #8a7548; --cream: #f5f1e8;
+  --card: #1a1a1a; --border: #2a2a2a; --accent: #9b1c1c; --success: #65a30d;
+  --font-body: "Noto Serif JP", serif;
+  --font-display: "Bodoni Moda", "Shippori Mincho", serif;
+  --font-sans: "Oswald", "Noto Sans JP", sans-serif;
+}
+.pH .body { background: var(--bg); color: var(--ink); font-family: var(--font-body); padding: 36px 44px; }
+.pH .masthead { text-align: center; padding-bottom: 20px; border-bottom: 1px solid var(--gold-soft); }
+.pH .issue-ref { font-family: var(--font-sans); font-size: 10px; letter-spacing: 0.6em; color: var(--gold); margin-bottom: 14px; text-transform: uppercase; }
+.pH .brand { font-family: var(--font-display); font-weight: 400; font-size: 54px; letter-spacing: -0.02em; line-height: 1; }
+.pH .brand .a { color: var(--gold); font-style: italic; }
+.pH .masthead-rule { height: 2px; background: var(--gold); width: 60px; margin: 16px auto 10px; }
+.pH .tagline { font-family: var(--font-sans); font-size: 11px; letter-spacing: 0.4em; color: var(--mute); text-transform: uppercase; }
+.pH nav { display: flex; justify-content: center; gap: 36px; margin: 28px 0; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+.pH nav a { text-decoration: none; color: var(--sub); font-family: var(--font-sans); font-size: 12px; letter-spacing: 0.25em; text-transform: uppercase; font-weight: 500; }
+.pH nav a.active { color: var(--gold); }
+.pH .feature-label { font-family: var(--font-sans); font-size: 11px; letter-spacing: 0.4em; color: var(--gold); text-transform: uppercase; text-align: center; margin: 20px 0 6px; }
+.pH .headline { font-family: var(--font-display); font-weight: 700; font-size: 54px; line-height: 1.1; letter-spacing: -0.02em; text-align: center; margin: 6px 0 12px; }
+.pH .headline .em { font-style: italic; color: var(--gold); }
+.pH .subhead { font-family: var(--font-display); font-style: italic; font-size: 20px; color: var(--sub); text-align: center; margin: 12px 0; }
+.pH .lead { font-size: 15px; color: var(--sub); max-width: 580px; line-height: 1.9; margin: 18px auto 28px; text-align: center; font-style: italic; }
+.pH .ctas { display: flex; justify-content: center; gap: 14px; margin-bottom: 36px; }
+.pH .btn-p { background: var(--gold); color: var(--bg); font-family: var(--font-sans); font-weight: 700; padding: 14px 32px; border: none; font-size: 12px; letter-spacing: 0.25em; text-transform: uppercase; cursor: pointer; }
+.pH .btn-g { background: transparent; color: var(--gold); font-family: var(--font-sans); font-weight: 700; padding: 14px 32px; border: 1px solid var(--gold); font-size: 12px; letter-spacing: 0.25em; text-transform: uppercase; cursor: pointer; }
+.pH .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--gold-soft); border: 1px solid var(--gold-soft); margin: 24px 0; }
+.pH .stat { background: var(--bg); padding: 20px; text-align: center; }
+.pH .stat .num { font-family: var(--font-display); font-weight: 700; font-size: 34px; color: var(--gold); line-height: 1; font-style: italic; }
+.pH .stat .label { font-family: var(--font-sans); font-size: 10px; color: var(--mute); margin-top: 8px; letter-spacing: 0.2em; text-transform: uppercase; }
+.pH .card { background: var(--card); padding: 28px; border: 1px solid var(--border); }
+.pH .card h3 { font-family: var(--font-display); font-size: 26px; font-style: italic; font-weight: 400; color: var(--gold); padding-bottom: 12px; border-bottom: 1px solid var(--gold-soft); margin-bottom: 16px; display: flex; justify-content: space-between; align-items: baseline; }
+.pH .card h3 .meta { font-family: var(--font-sans); font-size: 11px; color: var(--mute); letter-spacing: 0.2em; text-transform: uppercase; font-style: normal; font-weight: 400; }
+.pH table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.pH table th { font-family: var(--font-sans); font-weight: 600; text-align: left; padding: 10px 10px; border-bottom: 1px solid var(--gold-soft); font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--gold); }
+.pH table td { padding: 14px 10px; border-bottom: 1px solid var(--border); }
+.pH .rnk { display: inline-block; width: 28px; height: 28px; line-height: 28px; text-align: center; font-family: var(--font-display); font-weight: 700; font-size: 15px; font-style: italic; border: 1px solid var(--gold-soft); color: var(--sub); }
+.pH .rnk.g { background: var(--gold); color: var(--bg); border-color: var(--gold); }
+.pH .rnk.s { background: var(--cream); color: var(--bg); border-color: var(--cream); }
+.pH .rnk.b { background: #8b5a2b; color: var(--cream); border-color: #8b5a2b; }
+.pH .cname { font-family: var(--font-display); font-size: 17px; color: var(--cream); }
+.pH .badge { display: inline-block; font-family: var(--font-sans); font-size: 9px; padding: 2px 7px; border: 1px solid var(--gold-soft); color: var(--gold); margin-left: 8px; letter-spacing: 0.15em; text-transform: uppercase; }
+.pH .score { font-family: var(--font-display); font-weight: 700; font-size: 26px; color: var(--gold); font-style: italic; }
+.pH .bd { font-family: var(--font-sans); font-size: 10px; color: var(--mute); letter-spacing: 0.1em; text-transform: uppercase; }
+.pH .chip-row { display: flex; gap: 3px; }
+.pH .chip { font-family: var(--font-sans); font-size: 10px; font-weight: 600; padding: 3px 6px; color: #fff; min-width: 38px; text-align: center; letter-spacing: 0.05em; }
+.pH .hit { outline: 2px solid var(--success); outline-offset: -2px; }
+
+/* ============================================
+   PATTERN I — 月刊ベースボール (Japanese Sports Weekly)
+   情報密度高い、紺・赤、実用的、昭和の野球雑誌感
+   ============================================ */
+.pI {
+  --bg: #f5f4f0; --ink: #0c1b33; --sub: #475569; --mute: #94a3b8;
+  --navy: #0c1b33; --navy-mid: #1e3a5f; --red: #c8102e; --red-dark: #8b0020;
+  --card: #ffffff; --border: #cbd5e1; --success: #16a34a;
+  --font-body: "Zen Kaku Gothic New", "Noto Sans JP", sans-serif;
+  --font-display: "Shippori Mincho", "Noto Serif JP", serif;
+  --font-cond: "Oswald", sans-serif;
+}
+.pI .body { background: var(--bg); color: var(--ink); font-family: var(--font-body); padding: 16px 20px; font-size: 13px; }
+.pI .masthead { background: var(--navy); color: #fff; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; position: relative; border-bottom: 4px solid var(--red); }
+.pI .masthead::after { content: ""; position: absolute; left: 0; right: 0; bottom: -8px; height: 4px; background: var(--red); }
+.pI .brand { font-family: var(--font-display); font-weight: 900; font-size: 26px; letter-spacing: -0.02em; }
+.pI .brand .a { color: var(--red); }
+.pI .issue-info { text-align: right; font-family: var(--font-cond); font-size: 11px; line-height: 1.5; color: #cbd5e1; letter-spacing: 0.05em; }
+.pI .issue-info strong { color: #fff; font-size: 14px; }
+.pI nav { display: flex; background: #fff; border: 1px solid var(--border); border-top: none; margin-bottom: 16px; }
+.pI nav a { flex: 1; padding: 10px 8px; text-decoration: none; color: var(--navy); font-weight: 700; font-size: 13px; text-align: center; border-right: 1px solid var(--border); }
+.pI nav a:last-child { border-right: none; }
+.pI nav a.active { background: var(--red); color: #fff; }
+.pI .top-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; margin-bottom: 14px; }
+.pI .hero { background: var(--card); border: 1px solid var(--border); padding: 18px; border-left: 6px solid var(--red); }
+.pI .kicker { display: inline-block; background: var(--red); color: #fff; padding: 3px 10px; font-weight: 900; font-size: 10px; letter-spacing: 0.15em; margin-bottom: 10px; }
+.pI .headline { font-family: var(--font-display); font-weight: 900; font-size: 28px; line-height: 1.25; letter-spacing: -0.02em; margin-bottom: 8px; }
+.pI .headline .em { color: var(--red); }
+.pI .lead { font-size: 13px; color: var(--sub); line-height: 1.7; }
+.pI .hero-cta { display: flex; gap: 8px; margin-top: 12px; }
+.pI .btn-p { background: var(--red); color: #fff; padding: 10px 16px; border: none; font-weight: 900; font-size: 13px; cursor: pointer; }
+.pI .btn-g { background: var(--card); color: var(--navy); padding: 10px 16px; border: 1px solid var(--navy); font-weight: 700; font-size: 13px; cursor: pointer; }
+.pI .side { background: var(--card); border: 1px solid var(--border); padding: 14px; }
+.pI .side h4 { background: var(--navy); color: #fff; padding: 6px 10px; font-weight: 900; font-size: 11px; letter-spacing: 0.15em; margin: -14px -14px 10px; }
+.pI .stat-list { list-style: none; }
+.pI .stat-list li { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed var(--border); font-size: 12px; }
+.pI .stat-list li .k { color: var(--sub); }
+.pI .stat-list li .v { font-family: var(--font-cond); font-weight: 700; color: var(--red); font-size: 16px; line-height: 1; }
+.pI .card { background: var(--card); border: 1px solid var(--border); padding: 0; }
+.pI .card h3 { background: var(--navy); color: #fff; padding: 10px 14px; font-family: var(--font-display); font-weight: 900; font-size: 15px; letter-spacing: 0.05em; display: flex; justify-content: space-between; align-items: center; }
+.pI .card h3 .meta { font-family: var(--font-cond); font-weight: 500; font-size: 11px; letter-spacing: 0.1em; }
+.pI .card h3::before { content: "▶ "; color: var(--red); }
+.pI table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.pI table th { background: #eef2f7; text-align: left; padding: 7px 8px; font-weight: 700; font-size: 11px; border-bottom: 1px solid var(--border); color: var(--navy); letter-spacing: 0.05em; }
+.pI table td { padding: 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.pI table tr:nth-child(even) td { background: #f8fafc; }
+.pI .rnk { display: inline-block; width: 22px; height: 22px; line-height: 22px; text-align: center; font-family: var(--font-cond); font-weight: 700; font-size: 13px; background: var(--navy); color: #fff; }
+.pI .rnk.g { background: var(--red); color: #fff; }
+.pI .rnk.s { background: #64748b; color: #fff; }
+.pI .rnk.b { background: #78350f; color: #fff; }
+.pI .cname { font-weight: 700; font-size: 13px; color: var(--navy); }
+.pI .badge { display: inline-block; font-family: var(--font-cond); font-size: 10px; padding: 1px 5px; background: var(--navy); color: #fff; margin-left: 6px; letter-spacing: 0.05em; }
+.pI .score { font-family: var(--font-cond); font-weight: 700; font-size: 18px; color: var(--red); }
+.pI .bd { font-family: var(--font-cond); font-size: 10px; color: var(--sub); letter-spacing: 0.05em; }
+.pI .chip-row { display: flex; gap: 2px; }
+.pI .chip { font-size: 10px; font-weight: 700; padding: 3px 5px; color: #fff; min-width: 32px; text-align: center; }
+.pI .hit { outline: 2px solid var(--success); outline-offset: -2px; }
+
+/* shared mock data */
+.pattern-body > .body { min-height: 500px; }
+</style>
+</head>
+<body>
+<nav class="pattern-nav">
+  <h1>プロ野球みんなの順位予想 — THEME PATTERNS</h1>
+  <a href="#pA">A. 新聞</a>
+  <a href="#pB">B. スポーツ紙</a>
+  <a href="#pC">C. ミニマル</a>
+  <a href="#pD">D. スタジアムLED</a>
+  <a href="#pE">E. 雑誌 Number</a>
+  <a href="#pF">F. BRUTUS</a>
+  <a href="#pG">G. POPEYE</a>
+  <a href="#pH">H. GQ</a>
+  <a href="#pI">I. 月刊ベースボール</a>
+</nav>
+
+<!-- PATTERN A -->
+<section class="pattern-section pA" id="pA">
+  <div class="pattern-title-bar">
+    <div style="display:flex; align-items:baseline">
+      <div class="id">A</div>
+      <div>
+        <h2>新聞スポーツ欄風 (Newspaper Classic)</h2>
+        <div class="sub">WARM WHITE × 赤 · 明朝見出し · 権威的で落ち着いた印象</div>
+      </div>
+    </div>
+  </div>
+  <div class="pattern-body">
+    <div class="body">
+      <header class="masthead">
+        <div class="brand">プロ野球<span class="a">みんなの順位予想</span></div>
+        <div class="date">2026年（令和8年）4月20日　月曜日</div>
+      </header>
+      <div class="masthead-sub">プ　ロ　野　球　順　位　予　想　紙</div>
+      <nav>
+        <a class="active" href="#">予想</a>
+        <a href="#">解説者</a>
+        <a href="#">スコア</a>
+        <a href="#">ニュース</a>
+      </nav>
+      <div class="kicker">◆ 2026 シーズン進行中 ◆</div>
+      <h1 class="headline">プロ野球 順位予想、<br>本当に当たるのは誰か。</h1>
+      <p class="lead">テレビ・新聞・YouTube — あらゆる解説者の予想を集約、実際の順位と照合して「的中率」を算出。</p>
+      <div class="ctas"><button class="btn-p">▶ あなたの予想を登録する</button><button class="btn-g">解説者ランキング</button></div>
+      <div class="card">
+        <h3>2025 合算 的中率ランキング <span class="meta">128名 / スコア順</span></h3>
+        <table>
+          <thead><tr><th>順位</th><th>解説者</th><th>セ予想</th><th>パ予想</th><th style="text-align:right">得点</th></tr></thead>
+          <tbody>
+            <tr><td><span class="rnk g">1</span></td><td><span class="cname">里崎智也</span><span class="badge">YouTube</span></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#FBBF24;color:#1a1a1a">阪神</span><span class="chip hit" style="background:#2563EB">DeNA</span><span class="chip" style="background:#F97316">巨人</span><span class="chip hit" style="background:#DC2626">広島</span><span class="chip" style="background:#059669">ヤ</span><span class="chip" style="background:#1E40AF">中日</span></div></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#F5D100;color:#1a1a1a">ソ</span><span class="chip hit" style="background:#B91C1C">楽天</span><span class="chip" style="background:#1E3A5F;color:#4FB3E0">ハム</span><span class="chip" style="background:#1E3A5F;color:#C8A951">オ</span><span class="chip hit" style="background:#1D4ED8">西武</span><span class="chip" style="background:#1a1a1a">ロ</span></div></td>
+              <td style="text-align:right"><div class="score">+84</div><div class="bd">順位72 / 個人12</div></td></tr>
+            <tr><td><span class="rnk s">2</span></td><td><span class="cname">達川光男</span><span class="badge">広島テレビ</span></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#FBBF24;color:#1a1a1a">阪神</span><span class="chip" style="background:#F97316">巨人</span><span class="chip hit" style="background:#2563EB">DeNA</span><span class="chip hit" style="background:#DC2626">広島</span><span class="chip" style="background:#1E40AF">中日</span><span class="chip" style="background:#059669">ヤ</span></div></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#F5D100;color:#1a1a1a">ソ</span><span class="chip" style="background:#1E3A5F;color:#4FB3E0">ハム</span><span class="chip hit" style="background:#B91C1C">楽天</span><span class="chip" style="background:#1E3A5F;color:#C8A951">オ</span><span class="chip" style="background:#1a1a1a">ロ</span><span class="chip hit" style="background:#1D4ED8">西武</span></div></td>
+              <td style="text-align:right"><div class="score">+71</div><div class="bd">順位65 / 個人6</div></td></tr>
+            <tr><td><span class="rnk b">3</span></td><td><span class="cname">江川卓</span><span class="badge">日テレ</span></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#FBBF24;color:#1a1a1a">阪神</span><span class="chip" style="background:#F97316">巨人</span><span class="chip hit" style="background:#2563EB">DeNA</span><span class="chip" style="background:#1E40AF">中日</span><span class="chip hit" style="background:#DC2626">広島</span><span class="chip" style="background:#059669">ヤ</span></div></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#F5D100;color:#1a1a1a">ソ</span><span class="chip" style="background:#B91C1C">楽天</span><span class="chip hit" style="background:#1E3A5F;color:#4FB3E0">ハム</span><span class="chip" style="background:#1D4ED8">西武</span><span class="chip" style="background:#1E3A5F;color:#C8A951">オ</span><span class="chip" style="background:#1a1a1a">ロ</span></div></td>
+              <td style="text-align:right"><div class="score">+68</div><div class="bd">順位60 / 個人8</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PATTERN B -->
+<section class="pattern-section pB" id="pB">
+  <div class="pattern-title-bar">
+    <div style="display:flex; align-items:baseline"><div class="id">B</div><div>
+      <h2>スポーツ紙ド派手 (Tabloid Bold)</h2>
+      <div class="sub">黒地 × 黄 × 赤 · ド派手見出し · 駅の売店感</div>
+    </div></div>
+  </div>
+  <div class="pattern-body">
+    <div class="body">
+      <header class="masthead">
+        <div class="brand">プロ野球<span class="b">みんなの</span><span class="a">順位予想</span></div>
+        <div class="date-block">2026 / 4 / 20<br>MON</div>
+      </header>
+      <nav><a class="active" href="#">予想</a><a href="#">解説者</a><a href="#">スコア</a><a href="#">ニュース</a></nav>
+      <div class="kicker">★ 2026 SHUGYO ★</div>
+      <h1 class="headline"><span class="hl">本命</span>を当てるのは誰だ！！</h1>
+      <p class="lead">解説者・YouTuber・新聞記者 — 128名の予想を全部集めて的中率を公開。見る前に賭けるな。</p>
+      <div class="ctas"><button class="btn-p">▶ 参戦する</button><button class="btn-g">ランキング</button></div>
+      <div class="stats">
+        <div class="stat"><div class="num">1,435</div><div class="label">予想</div></div>
+        <div class="stat"><div class="num">128</div><div class="label">解説者</div></div>
+        <div class="stat"><div class="num">12</div><div class="label">球団</div></div>
+        <div class="stat"><div class="num">13</div><div class="label">シーズン</div></div>
+      </div>
+      <div class="card">
+        <h3>2025 合算 的中率ランキング TOP3</h3>
+        <table>
+          <thead><tr><th>位</th><th>解説者</th><th>セ</th><th>パ</th><th style="text-align:right">得点</th></tr></thead>
+          <tbody>
+            <tr><td><span class="rnk g">1</span></td><td><span class="cname">里崎智也</span><span class="badge">YouTube</span></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#FBBF24;color:#000">阪神</span><span class="chip hit" style="background:#2563EB">DeNA</span><span class="chip" style="background:#F97316">巨人</span><span class="chip hit" style="background:#DC2626">広島</span><span class="chip" style="background:#059669">ヤ</span><span class="chip" style="background:#1E40AF">中日</span></div></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#F5D100;color:#000">ソ</span><span class="chip hit" style="background:#B91C1C">楽天</span><span class="chip" style="background:#1E3A5F;color:#4FB3E0">ハ</span><span class="chip" style="background:#1E3A5F;color:#C8A951">オ</span><span class="chip hit" style="background:#1D4ED8">西</span><span class="chip" style="background:#1a1a1a">ロ</span></div></td>
+              <td style="text-align:right"><div class="score">+84</div><div class="bd">順位72 / 個人12</div></td></tr>
+            <tr><td><span class="rnk s">2</span></td><td><span class="cname">達川光男</span><span class="badge">テレビ</span></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#FBBF24;color:#000">阪神</span><span class="chip" style="background:#F97316">巨人</span><span class="chip hit" style="background:#2563EB">DeNA</span><span class="chip hit" style="background:#DC2626">広島</span><span class="chip" style="background:#1E40AF">中日</span><span class="chip" style="background:#059669">ヤ</span></div></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#F5D100;color:#000">ソ</span><span class="chip" style="background:#1E3A5F;color:#4FB3E0">ハ</span><span class="chip hit" style="background:#B91C1C">楽天</span><span class="chip" style="background:#1E3A5F;color:#C8A951">オ</span><span class="chip" style="background:#1a1a1a">ロ</span><span class="chip hit" style="background:#1D4ED8">西</span></div></td>
+              <td style="text-align:right"><div class="score">+71</div><div class="bd">順位65 / 個人6</div></td></tr>
+            <tr><td><span class="rnk b">3</span></td><td><span class="cname">江川卓</span><span class="badge">日テレ</span></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#FBBF24;color:#000">阪神</span><span class="chip" style="background:#F97316">巨人</span><span class="chip hit" style="background:#2563EB">DeNA</span><span class="chip" style="background:#1E40AF">中日</span><span class="chip hit" style="background:#DC2626">広島</span><span class="chip" style="background:#059669">ヤ</span></div></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#F5D100;color:#000">ソ</span><span class="chip" style="background:#B91C1C">楽天</span><span class="chip hit" style="background:#1E3A5F;color:#4FB3E0">ハ</span><span class="chip" style="background:#1D4ED8">西</span><span class="chip" style="background:#1E3A5F;color:#C8A951">オ</span><span class="chip" style="background:#1a1a1a">ロ</span></div></td>
+              <td style="text-align:right"><div class="score">+68</div><div class="bd">順位60 / 個人8</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PATTERN C -->
+<section class="pattern-section pC" id="pC">
+  <div class="pattern-title-bar">
+    <div style="display:flex; align-items:baseline"><div class="id">C</div><div>
+      <h2>ミニマル / データファースト (Clean Minimal)</h2>
+      <div class="sub">白背景 · Oswald見出し · FiveThirtyEight 的な上品データ主義</div>
+    </div></div>
+  </div>
+  <div class="pattern-body">
+    <div class="body">
+      <header class="masthead">
+        <div class="brand">プロ野球 <span class="a">みんなの順位予想</span></div>
+        <div class="tagline">NPB PREDICTIONS LEAGUE · 2026 SEASON</div>
+      </header>
+      <nav><a class="active" href="#">予想</a><a href="#">解説者</a><a href="#">スコア</a><a href="#">ニュース</a></nav>
+      <h1 class="headline">プロ野球 順位予想、本当に当たるのは誰か。</h1>
+      <p class="lead">テレビ・新聞・YouTube — あらゆる解説者の予想を集約、実際の順位と照合して「的中率」を算出。</p>
+      <div class="ctas"><button class="btn-p">予想を登録する</button><button class="btn-g">ランキングを見る</button></div>
+      <div class="stats">
+        <div class="stat"><div class="num">1,435</div><div class="label">解説者の予想</div></div>
+        <div class="stat"><div class="num">128</div><div class="label">ACTIVE 解説者</div></div>
+        <div class="stat"><div class="num">13</div><div class="label">シーズン</div></div>
+        <div class="stat"><div class="num">毎日 08:00</div><div class="label">自動更新</div></div>
+      </div>
+      <div class="card">
+        <h3>2025 合算 的中率ランキング <span class="meta">128名</span></h3>
+        <table>
+          <thead><tr><th>Rank</th><th>Commentator</th><th>Central</th><th>Pacific</th><th style="text-align:right">Score</th></tr></thead>
+          <tbody>
+            <tr><td><span class="rnk g">1</span></td><td><span class="cname">里崎智也</span><span class="badge">YouTube</span></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#FBBF24;color:#1a1a1a">阪神</span><span class="chip hit" style="background:#2563EB">DeNA</span><span class="chip" style="background:#F97316">巨人</span><span class="chip hit" style="background:#DC2626">広島</span><span class="chip" style="background:#059669">ヤ</span><span class="chip" style="background:#1E40AF">中日</span></div></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#F5D100;color:#1a1a1a">ソ</span><span class="chip hit" style="background:#B91C1C">楽天</span><span class="chip" style="background:#1E3A5F;color:#4FB3E0">ハム</span><span class="chip" style="background:#1E3A5F;color:#C8A951">オ</span><span class="chip hit" style="background:#1D4ED8">西武</span><span class="chip" style="background:#1a1a1a">ロ</span></div></td>
+              <td style="text-align:right"><div class="score hi">+84</div><div class="bd">72 + 12</div></td></tr>
+            <tr><td><span class="rnk s">2</span></td><td><span class="cname">達川光男</span><span class="badge">テレビ</span></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#FBBF24;color:#1a1a1a">阪神</span><span class="chip" style="background:#F97316">巨人</span><span class="chip hit" style="background:#2563EB">DeNA</span><span class="chip hit" style="background:#DC2626">広島</span><span class="chip" style="background:#1E40AF">中日</span><span class="chip" style="background:#059669">ヤ</span></div></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#F5D100;color:#1a1a1a">ソ</span><span class="chip" style="background:#1E3A5F;color:#4FB3E0">ハム</span><span class="chip hit" style="background:#B91C1C">楽天</span><span class="chip" style="background:#1E3A5F;color:#C8A951">オ</span><span class="chip" style="background:#1a1a1a">ロ</span><span class="chip hit" style="background:#1D4ED8">西武</span></div></td>
+              <td style="text-align:right"><div class="score hi">+71</div><div class="bd">65 + 6</div></td></tr>
+            <tr><td><span class="rnk b">3</span></td><td><span class="cname">江川卓</span><span class="badge">日テレ</span></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#FBBF24;color:#1a1a1a">阪神</span><span class="chip" style="background:#F97316">巨人</span><span class="chip hit" style="background:#2563EB">DeNA</span><span class="chip" style="background:#1E40AF">中日</span><span class="chip hit" style="background:#DC2626">広島</span><span class="chip" style="background:#059669">ヤ</span></div></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#F5D100;color:#1a1a1a">ソ</span><span class="chip" style="background:#B91C1C">楽天</span><span class="chip hit" style="background:#1E3A5F;color:#4FB3E0">ハム</span><span class="chip" style="background:#1D4ED8">西武</span><span class="chip" style="background:#1E3A5F;color:#C8A951">オ</span><span class="chip" style="background:#1a1a1a">ロ</span></div></td>
+              <td style="text-align:right"><div class="score">+68</div><div class="bd">60 + 8</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PATTERN D -->
+<section class="pattern-section pD" id="pD">
+  <div class="pattern-title-bar">
+    <div style="display:flex; align-items:baseline"><div class="id">D</div><div>
+      <h2>スタジアム LED (Stadium Scoreboard)</h2>
+      <div class="sub">ナイター感 · ドットフォント · 黒地の電光掲示板</div>
+    </div></div>
+  </div>
+  <div class="pattern-body">
+    <div class="body">
+      <header class="masthead">
+        <div class="brand">プロ野球 みんなの順位予想</div>
+        <div class="masthead-sub">N P B  P R E D I C T I O N  L E A G U E</div>
+      </header>
+      <nav><a class="active" href="#">予想</a><a href="#">解説者</a><a href="#">スコア</a><a href="#">ニュース</a></nav>
+      <div class="kicker">◆ 2026 SEASON ◆</div>
+      <h1 class="headline">THE BEST PREDICTOR<br>WILL WIN THE GAME.</h1>
+      <p class="lead">128名の解説者予想を集約、毎日自動で的中率を再計算。スタメン発表のような速報体験で。</p>
+      <div class="ctas"><button class="btn-p">PLAY BALL ▶</button><button class="btn-g">SCOREBOARD</button></div>
+      <div class="stats">
+        <div class="stat"><div class="num">1435</div><div class="label">PREDICTIONS</div></div>
+        <div class="stat"><div class="num">128</div><div class="label">COMMENTATORS</div></div>
+        <div class="stat"><div class="num">12</div><div class="label">TEAMS</div></div>
+        <div class="stat"><div class="num">13</div><div class="label">SEASONS</div></div>
+      </div>
+      <div class="card">
+        <h3>2025 COMBINED LEADERBOARD <span class="meta">TOP 3 / 128</span></h3>
+        <table>
+          <thead><tr><th>POS</th><th>NAME</th><th>CENTRAL</th><th>PACIFIC</th><th style="text-align:right">SCORE</th></tr></thead>
+          <tbody>
+            <tr><td><span class="rnk g">1</span></td><td><span class="cname">里崎智也</span><span class="badge">YT</span></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#FBBF24;color:#000">阪神</span><span class="chip hit" style="background:#2563EB">DeNA</span><span class="chip" style="background:#F97316">巨人</span><span class="chip hit" style="background:#DC2626">広島</span><span class="chip" style="background:#059669">ヤ</span><span class="chip" style="background:#1E40AF">中日</span></div></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#F5D100;color:#000">ソ</span><span class="chip hit" style="background:#B91C1C">楽天</span><span class="chip" style="background:#1E3A5F;color:#4FB3E0">ハ</span><span class="chip" style="background:#1E3A5F;color:#C8A951">オ</span><span class="chip hit" style="background:#1D4ED8">西</span><span class="chip" style="background:#1a1a1a">ロ</span></div></td>
+              <td style="text-align:right"><div class="score">+84</div><div class="bd">72 / 12</div></td></tr>
+            <tr><td><span class="rnk s">2</span></td><td><span class="cname">達川光男</span><span class="badge">TV</span></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#FBBF24;color:#000">阪神</span><span class="chip" style="background:#F97316">巨人</span><span class="chip hit" style="background:#2563EB">DeNA</span><span class="chip hit" style="background:#DC2626">広島</span><span class="chip" style="background:#1E40AF">中日</span><span class="chip" style="background:#059669">ヤ</span></div></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#F5D100;color:#000">ソ</span><span class="chip" style="background:#1E3A5F;color:#4FB3E0">ハ</span><span class="chip hit" style="background:#B91C1C">楽天</span><span class="chip" style="background:#1E3A5F;color:#C8A951">オ</span><span class="chip" style="background:#1a1a1a">ロ</span><span class="chip hit" style="background:#1D4ED8">西</span></div></td>
+              <td style="text-align:right"><div class="score">+71</div><div class="bd">65 / 6</div></td></tr>
+            <tr><td><span class="rnk b">3</span></td><td><span class="cname">江川卓</span><span class="badge">TV</span></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#FBBF24;color:#000">阪神</span><span class="chip" style="background:#F97316">巨人</span><span class="chip hit" style="background:#2563EB">DeNA</span><span class="chip" style="background:#1E40AF">中日</span><span class="chip hit" style="background:#DC2626">広島</span><span class="chip" style="background:#059669">ヤ</span></div></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#F5D100;color:#000">ソ</span><span class="chip" style="background:#B91C1C">楽天</span><span class="chip hit" style="background:#1E3A5F;color:#4FB3E0">ハ</span><span class="chip" style="background:#1D4ED8">西</span><span class="chip" style="background:#1E3A5F;color:#C8A951">オ</span><span class="chip" style="background:#1a1a1a">ロ</span></div></td>
+              <td style="text-align:right"><div class="score">+68</div><div class="bd">60 / 8</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PATTERN E -->
+<section class="pattern-section pE" id="pE">
+  <div class="pattern-title-bar">
+    <div style="display:flex; align-items:baseline"><div class="id">E</div><div>
+      <h2>雑誌エディトリアル (Magazine Editorial)</h2>
+      <div class="sub">Number 誌風 · 余白大 · センター揃えの明朝大見出し</div>
+    </div></div>
+  </div>
+  <div class="pattern-body">
+    <div class="body">
+      <header class="masthead">
+        <div class="tagline-top">◆ P R O  B A S E B A L L  C O L L E C T I V E  W I S D O M ◆</div>
+        <div class="brand">プロ野球<br><span class="a">みんなの順位予想</span></div>
+        <div class="tagline-bottom">2　0　2　6 　 S E A S O N</div>
+      </header>
+      <div class="masthead-rule"></div>
+      <nav><a class="active" href="#">予想</a><a href="#">解説者</a><a href="#">スコア</a><a href="#">ニュース</a></nav>
+      <div style="text-align:center">
+        <div class="issue">特集 ー 2025 的中率ランキング</div>
+        <h1 class="headline">本当に当たる予想家は、<br><span class="emphasize">誰</span>だったのか。</h1>
+      </div>
+      <p class="lead">テレビ・新聞・YouTube — あらゆる解説者の予想を集約、実際の順位と照合して「的中率」を算出する。主観も忖度も数字の前では無意味だ。</p>
+      <div class="ctas"><button class="btn-p">予想を登録する</button><button class="btn-g">ランキングを見る</button></div>
+      <div class="stats">
+        <div class="stat"><div class="num">1,435</div><div class="label">解説者の予想</div></div>
+        <div class="stat"><div class="num">128</div><div class="label">現役解説者</div></div>
+        <div class="stat"><div class="num">13</div><div class="label">シーズン</div></div>
+        <div class="stat"><div class="num">毎日</div><div class="label">自動更新</div></div>
+      </div>
+      <div class="card">
+        <h3>2025 合算 的中率ランキング <span class="meta">128名</span></h3>
+        <table>
+          <thead><tr><th>順位</th><th>解説者</th><th>セ</th><th>パ</th><th style="text-align:right">得点</th></tr></thead>
+          <tbody>
+            <tr><td><span class="rnk g">1</span></td><td><span class="cname">里崎智也</span><span class="badge">YouTube</span></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#FBBF24;color:#1a1a1a">阪神</span><span class="chip hit" style="background:#2563EB">DeNA</span><span class="chip" style="background:#F97316">巨人</span><span class="chip hit" style="background:#DC2626">広島</span><span class="chip" style="background:#059669">ヤ</span><span class="chip" style="background:#1E40AF">中日</span></div></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#F5D100;color:#1a1a1a">ソ</span><span class="chip hit" style="background:#B91C1C">楽天</span><span class="chip" style="background:#1E3A5F;color:#4FB3E0">ハム</span><span class="chip" style="background:#1E3A5F;color:#C8A951">オ</span><span class="chip hit" style="background:#1D4ED8">西武</span><span class="chip" style="background:#1a1a1a">ロ</span></div></td>
+              <td style="text-align:right"><div class="score">+84</div><div class="bd">順位72 / 個人12</div></td></tr>
+            <tr><td><span class="rnk s">2</span></td><td><span class="cname">達川光男</span><span class="badge">テレビ</span></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#FBBF24;color:#1a1a1a">阪神</span><span class="chip" style="background:#F97316">巨人</span><span class="chip hit" style="background:#2563EB">DeNA</span><span class="chip hit" style="background:#DC2626">広島</span><span class="chip" style="background:#1E40AF">中日</span><span class="chip" style="background:#059669">ヤ</span></div></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#F5D100;color:#1a1a1a">ソ</span><span class="chip" style="background:#1E3A5F;color:#4FB3E0">ハム</span><span class="chip hit" style="background:#B91C1C">楽天</span><span class="chip" style="background:#1E3A5F;color:#C8A951">オ</span><span class="chip" style="background:#1a1a1a">ロ</span><span class="chip hit" style="background:#1D4ED8">西武</span></div></td>
+              <td style="text-align:right"><div class="score">+71</div><div class="bd">順位65 / 個人6</div></td></tr>
+            <tr><td><span class="rnk b">3</span></td><td><span class="cname">江川卓</span><span class="badge">日テレ</span></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#FBBF24;color:#1a1a1a">阪神</span><span class="chip" style="background:#F97316">巨人</span><span class="chip hit" style="background:#2563EB">DeNA</span><span class="chip" style="background:#1E40AF">中日</span><span class="chip hit" style="background:#DC2626">広島</span><span class="chip" style="background:#059669">ヤ</span></div></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#F5D100;color:#1a1a1a">ソ</span><span class="chip" style="background:#B91C1C">楽天</span><span class="chip hit" style="background:#1E3A5F;color:#4FB3E0">ハム</span><span class="chip" style="background:#1D4ED8">西武</span><span class="chip" style="background:#1E3A5F;color:#C8A951">オ</span><span class="chip" style="background:#1a1a1a">ロ</span></div></td>
+              <td style="text-align:right"><div class="score">+68</div><div class="bd">順位60 / 個人8</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PATTERN F -->
+<section class="pattern-section pF" id="pF">
+  <div class="pattern-title-bar">
+    <div style="display:flex; align-items:baseline"><div class="id">F</div><div>
+      <h2>BRUTUS / カルチャー誌</h2>
+      <div class="sub">欧州モダン · 余白大 · イタリック大見出し · コンテンプラティブ</div>
+    </div></div>
+  </div>
+  <div class="pattern-body">
+    <div class="body">
+      <header class="masthead">
+        <div class="issue-num">N°<br>042</div>
+        <div class="brand-group">
+          <div class="brand">プロ野球 <span class="a">みんなの順位予想</span></div>
+          <div class="tagline">A MAGAZINE FOR THE CURIOUS BASEBALL READER</div>
+        </div>
+        <div class="masthead-meta">VOL.042<br>2026 / 04 / 20<br>MONDAY</div>
+      </header>
+      <nav><a class="active" href="#">予想 · Predictions</a><a href="#">解説者 · Talents</a><a href="#">スコア · Scoreboard</a><a href="#">ニュース · News</a></nav>
+      <div class="article-meta">特集 — 2025 シーズン結果検証</div>
+      <h1 class="headline">本当に<span class="em">当たる</span>予想家は、<br>誰だったのか。</h1>
+      <div class="subhead">— テレビ、新聞、YouTube を横断する、<br>日本で唯一の野球予想ランキング。</div>
+      <p class="lead">128名の解説者予想を集約し、実際の順位と照合して的中率を算出する。主観も忖度も数字の前では無意味だ。毎日 08:00 JST に再計算。</p>
+      <div class="ctas"><button class="btn-p">START PREDICTING</button><button class="btn-g">VIEW RANKING</button></div>
+      <div class="stats">
+        <div class="stat"><div class="num">1,435</div><div class="label">Predictions</div></div>
+        <div class="stat"><div class="num">128</div><div class="label">Commentators</div></div>
+        <div class="stat"><div class="num">13</div><div class="label">Seasons</div></div>
+        <div class="stat"><div class="num">Daily</div><div class="label">Auto-update</div></div>
+      </div>
+      <div class="card">
+        <h3>2025 合算 的中率ランキング <span class="meta">128 Names</span></h3>
+        <table>
+          <thead><tr><th>#</th><th>Name</th><th>Central</th><th>Pacific</th><th style="text-align:right">Score</th></tr></thead>
+          <tbody>
+            <tr><td><span class="rnk g">01</span></td><td><span class="cname">里崎智也</span><span class="badge">YouTube</span></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#FBBF24;color:#1a1a1a">阪神</span><span class="chip hit" style="background:#2563EB">DeNA</span><span class="chip" style="background:#F97316">巨人</span><span class="chip hit" style="background:#DC2626">広島</span><span class="chip" style="background:#059669">ヤ</span><span class="chip" style="background:#1E40AF">中日</span></div></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#F5D100;color:#1a1a1a">ソ</span><span class="chip hit" style="background:#B91C1C">楽天</span><span class="chip" style="background:#1E3A5F;color:#4FB3E0">ハム</span><span class="chip" style="background:#1E3A5F;color:#C8A951">オ</span><span class="chip hit" style="background:#1D4ED8">西武</span><span class="chip" style="background:#1a1a1a">ロ</span></div></td>
+              <td style="text-align:right"><div class="score">+84</div><div class="bd">72 + 12</div></td></tr>
+            <tr><td><span class="rnk s">02</span></td><td><span class="cname">達川光男</span><span class="badge">TV</span></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#FBBF24;color:#1a1a1a">阪神</span><span class="chip" style="background:#F97316">巨人</span><span class="chip hit" style="background:#2563EB">DeNA</span><span class="chip hit" style="background:#DC2626">広島</span><span class="chip" style="background:#1E40AF">中日</span><span class="chip" style="background:#059669">ヤ</span></div></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#F5D100;color:#1a1a1a">ソ</span><span class="chip" style="background:#1E3A5F;color:#4FB3E0">ハム</span><span class="chip hit" style="background:#B91C1C">楽天</span><span class="chip" style="background:#1E3A5F;color:#C8A951">オ</span><span class="chip" style="background:#1a1a1a">ロ</span><span class="chip hit" style="background:#1D4ED8">西武</span></div></td>
+              <td style="text-align:right"><div class="score">+71</div><div class="bd">65 + 6</div></td></tr>
+            <tr><td><span class="rnk b">03</span></td><td><span class="cname">江川卓</span><span class="badge">TV</span></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#FBBF24;color:#1a1a1a">阪神</span><span class="chip" style="background:#F97316">巨人</span><span class="chip hit" style="background:#2563EB">DeNA</span><span class="chip" style="background:#1E40AF">中日</span><span class="chip hit" style="background:#DC2626">広島</span><span class="chip" style="background:#059669">ヤ</span></div></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#F5D100;color:#1a1a1a">ソ</span><span class="chip" style="background:#B91C1C">楽天</span><span class="chip hit" style="background:#1E3A5F;color:#4FB3E0">ハム</span><span class="chip" style="background:#1D4ED8">西武</span><span class="chip" style="background:#1E3A5F;color:#C8A951">オ</span><span class="chip" style="background:#1a1a1a">ロ</span></div></td>
+              <td style="text-align:right"><div class="score">+68</div><div class="bd">60 + 8</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PATTERN G -->
+<section class="pattern-section pG" id="pG">
+  <div class="pattern-title-bar">
+    <div style="display:flex; align-items:baseline"><div class="id">G</div><div>
+      <h2>POPEYE / カジュアル</h2>
+      <div class="sub">丸ゴシック · 黄 + パステル · 親しみやすさ · 若い層向け</div>
+    </div></div>
+  </div>
+  <div class="pattern-body">
+    <div class="body">
+      <header class="masthead">
+        <div class="brand">プロ野球 <span class="a">みんなの順位予想</span></div>
+        <div class="date-badge">2026 / 04 / 20</div>
+      </header>
+      <nav>
+        <a class="active" href="#"><span class="emoji">⚾</span>予想</a>
+        <a href="#"><span class="emoji">🎙</span>解説者</a>
+        <a href="#"><span class="emoji">🏆</span>スコア</a>
+        <a href="#"><span class="emoji">📰</span>ニュース</a>
+      </nav>
+      <div class="kicker">◆ 2026 SEASON NOW ◆</div>
+      <h1 class="headline">誰の予想が <span class="yellow-hl">いちばん当たる</span>？</h1>
+      <p class="lead">テレビ・新聞・YouTube。128名の解説者予想を集めて、実際の順位と照合。ランキング毎日更新中！あなたも参戦しよう。</p>
+      <div class="ctas"><button class="btn-p">⚡ 参戦する</button><button class="btn-g">ランキングを見る →</button></div>
+      <div class="stats">
+        <div class="stat"><div class="num">1,435</div><div class="label">予想数</div></div>
+        <div class="stat"><div class="num">128</div><div class="label">解説者</div></div>
+        <div class="stat"><div class="num">12</div><div class="label">球団</div></div>
+        <div class="stat"><div class="num">13</div><div class="label">シーズン</div></div>
+      </div>
+      <div class="card">
+        <h3>2025 的中率ランキング <span class="meta">TOP 3 / 128名中</span></h3>
+        <table>
+          <thead><tr><th>順位</th><th>解説者</th><th>セ</th><th>パ</th><th style="text-align:right">得点</th></tr></thead>
+          <tbody>
+            <tr><td><span class="rnk g">1</span></td><td><span class="cname">里崎智也</span><span class="badge">YouTube</span></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#FBBF24;color:#1a1a1a">阪神</span><span class="chip hit" style="background:#2563EB">DeNA</span><span class="chip" style="background:#F97316">巨人</span><span class="chip hit" style="background:#DC2626">広島</span><span class="chip" style="background:#059669">ヤ</span><span class="chip" style="background:#1E40AF">中日</span></div></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#F5D100;color:#1a1a1a">ソ</span><span class="chip hit" style="background:#B91C1C">楽天</span><span class="chip" style="background:#1E3A5F;color:#4FB3E0">ハム</span><span class="chip" style="background:#1E3A5F;color:#C8A951">オ</span><span class="chip hit" style="background:#1D4ED8">西武</span><span class="chip" style="background:#1a1a1a">ロ</span></div></td>
+              <td style="text-align:right"><div class="score">+84</div><div class="bd">72 + 12</div></td></tr>
+            <tr><td><span class="rnk s">2</span></td><td><span class="cname">達川光男</span><span class="badge">テレビ</span></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#FBBF24;color:#1a1a1a">阪神</span><span class="chip" style="background:#F97316">巨人</span><span class="chip hit" style="background:#2563EB">DeNA</span><span class="chip hit" style="background:#DC2626">広島</span><span class="chip" style="background:#1E40AF">中日</span><span class="chip" style="background:#059669">ヤ</span></div></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#F5D100;color:#1a1a1a">ソ</span><span class="chip" style="background:#1E3A5F;color:#4FB3E0">ハム</span><span class="chip hit" style="background:#B91C1C">楽天</span><span class="chip" style="background:#1E3A5F;color:#C8A951">オ</span><span class="chip" style="background:#1a1a1a">ロ</span><span class="chip hit" style="background:#1D4ED8">西武</span></div></td>
+              <td style="text-align:right"><div class="score">+71</div><div class="bd">65 + 6</div></td></tr>
+            <tr><td><span class="rnk b">3</span></td><td><span class="cname">江川卓</span><span class="badge">日テレ</span></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#FBBF24;color:#1a1a1a">阪神</span><span class="chip" style="background:#F97316">巨人</span><span class="chip hit" style="background:#2563EB">DeNA</span><span class="chip" style="background:#1E40AF">中日</span><span class="chip hit" style="background:#DC2626">広島</span><span class="chip" style="background:#059669">ヤ</span></div></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#F5D100;color:#1a1a1a">ソ</span><span class="chip" style="background:#B91C1C">楽天</span><span class="chip hit" style="background:#1E3A5F;color:#4FB3E0">ハム</span><span class="chip" style="background:#1D4ED8">西武</span><span class="chip" style="background:#1E3A5F;color:#C8A951">オ</span><span class="chip" style="background:#1a1a1a">ロ</span></div></td>
+              <td style="text-align:right"><div class="score">+68</div><div class="bd">60 + 8</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PATTERN H -->
+<section class="pattern-section pH" id="pH">
+  <div class="pattern-title-bar">
+    <div style="display:flex; align-items:baseline"><div class="id">H</div><div>
+      <h2>GQ / ラグジュアリー</h2>
+      <div class="sub">黒 × ゴールド · Bodoni · 重厚 · プレミアム大人志向</div>
+    </div></div>
+  </div>
+  <div class="pattern-body">
+    <div class="body">
+      <header class="masthead">
+        <div class="issue-ref">◆ V O L . 4 2 · A P R · 2 0 2 6 ◆</div>
+        <div class="brand">プロ野球<br><span class="a">みんなの順位予想</span></div>
+        <div class="masthead-rule"></div>
+        <div class="tagline">THE DEFINITIVE NPB PREDICTION JOURNAL</div>
+      </header>
+      <nav><a class="active" href="#">Predictions</a><a href="#">Commentators</a><a href="#">Scoreboard</a><a href="#">News</a></nav>
+      <div class="feature-label">— FEATURE STORY —</div>
+      <h1 class="headline">The <span class="em">Oracle</span> of the Ballpark.</h1>
+      <div class="subhead">誰が、どの番組で、どれほど当てたのか。</div>
+      <p class="lead">128名の解説者予想を集約し、NPB公式結果と照合。テレビ朝日、スポーツ報知、YouTubeまで横断する、日本で唯一の野球予想検証サイト。</p>
+      <div class="ctas"><button class="btn-p">ENTER YOUR PREDICTION</button><button class="btn-g">VIEW RANKINGS</button></div>
+      <div class="stats">
+        <div class="stat"><div class="num">1,435</div><div class="label">Predictions</div></div>
+        <div class="stat"><div class="num">128</div><div class="label">Commentators</div></div>
+        <div class="stat"><div class="num">13</div><div class="label">Seasons</div></div>
+        <div class="stat"><div class="num">Daily</div><div class="label">Auto-update</div></div>
+      </div>
+      <div class="card">
+        <h3>2025 THE LEADERBOARD <span class="meta">128 Names Ranked</span></h3>
+        <table>
+          <thead><tr><th>Pos</th><th>Commentator</th><th>Central</th><th>Pacific</th><th style="text-align:right">Score</th></tr></thead>
+          <tbody>
+            <tr><td><span class="rnk g">1</span></td><td><span class="cname">里崎智也</span><span class="badge">YouTube</span></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#FBBF24;color:#1a1a1a">阪神</span><span class="chip hit" style="background:#2563EB">DeNA</span><span class="chip" style="background:#F97316">巨人</span><span class="chip hit" style="background:#DC2626">広島</span><span class="chip" style="background:#059669">ヤ</span><span class="chip" style="background:#1E40AF">中日</span></div></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#F5D100;color:#1a1a1a">ソ</span><span class="chip hit" style="background:#B91C1C">楽天</span><span class="chip" style="background:#1E3A5F;color:#4FB3E0">ハム</span><span class="chip" style="background:#1E3A5F;color:#C8A951">オ</span><span class="chip hit" style="background:#1D4ED8">西武</span><span class="chip" style="background:#1a1a1a">ロ</span></div></td>
+              <td style="text-align:right"><div class="score">+84</div><div class="bd">72 + 12</div></td></tr>
+            <tr><td><span class="rnk s">2</span></td><td><span class="cname">達川光男</span><span class="badge">TV</span></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#FBBF24;color:#1a1a1a">阪神</span><span class="chip" style="background:#F97316">巨人</span><span class="chip hit" style="background:#2563EB">DeNA</span><span class="chip hit" style="background:#DC2626">広島</span><span class="chip" style="background:#1E40AF">中日</span><span class="chip" style="background:#059669">ヤ</span></div></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#F5D100;color:#1a1a1a">ソ</span><span class="chip" style="background:#1E3A5F;color:#4FB3E0">ハム</span><span class="chip hit" style="background:#B91C1C">楽天</span><span class="chip" style="background:#1E3A5F;color:#C8A951">オ</span><span class="chip" style="background:#1a1a1a">ロ</span><span class="chip hit" style="background:#1D4ED8">西武</span></div></td>
+              <td style="text-align:right"><div class="score">+71</div><div class="bd">65 + 6</div></td></tr>
+            <tr><td><span class="rnk b">3</span></td><td><span class="cname">江川卓</span><span class="badge">TV</span></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#FBBF24;color:#1a1a1a">阪神</span><span class="chip" style="background:#F97316">巨人</span><span class="chip hit" style="background:#2563EB">DeNA</span><span class="chip" style="background:#1E40AF">中日</span><span class="chip hit" style="background:#DC2626">広島</span><span class="chip" style="background:#059669">ヤ</span></div></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#F5D100;color:#1a1a1a">ソ</span><span class="chip" style="background:#B91C1C">楽天</span><span class="chip hit" style="background:#1E3A5F;color:#4FB3E0">ハム</span><span class="chip" style="background:#1D4ED8">西武</span><span class="chip" style="background:#1E3A5F;color:#C8A951">オ</span><span class="chip" style="background:#1a1a1a">ロ</span></div></td>
+              <td style="text-align:right"><div class="score">+68</div><div class="bd">60 + 8</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PATTERN I -->
+<section class="pattern-section pI" id="pI">
+  <div class="pattern-title-bar">
+    <div style="display:flex; align-items:baseline"><div class="id">I</div><div>
+      <h2>月刊ベースボール / 野球雑誌</h2>
+      <div class="sub">紺 × 赤 · 情報密度高 · 実用的 · 昭和の野球専門誌感</div>
+    </div></div>
+  </div>
+  <div class="pattern-body">
+    <div class="body">
+      <header class="masthead">
+        <div class="brand">プロ野球 <span class="a">みんなの順位予想</span></div>
+        <div class="issue-info"><strong>第42号</strong><br>2026年4月20日発行<br>通巻 No.500</div>
+      </header>
+      <nav><a class="active" href="#">予想</a><a href="#">解説者</a><a href="#">スコア</a><a href="#">ニュース</a><a href="#">アーカイブ</a></nav>
+      <div class="top-grid">
+        <div class="hero">
+          <span class="kicker">◆ 徹底検証 / 2025 シーズン結果 ◆</span>
+          <h1 class="headline">的中率<span class="em">No.1</span>の予想家は、<br>本当に「当たる」のか。</h1>
+          <p class="lead">テレビ・新聞・YouTube を横断。128名の解説者予想を NPB公式結果と照合、順位点 + 個人タイトル点で算出。毎日 08:00 JST に再計算される。</p>
+          <div class="hero-cta"><button class="btn-p">▶ 予想を登録</button><button class="btn-g">ランキングを見る</button></div>
+        </div>
+        <div class="side">
+          <h4>本日のSTATS</h4>
+          <ul class="stat-list">
+            <li><span class="k">解説者予想</span><span class="v">1,435</span></li>
+            <li><span class="k">現役解説者</span><span class="v">128</span></li>
+            <li><span class="k">NPB球団</span><span class="v">12</span></li>
+            <li><span class="k">対象シーズン</span><span class="v">13</span></li>
+            <li><span class="k">更新頻度</span><span class="v">毎日</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="card">
+        <h3>2025 セ・パ合算 的中率ランキング <span class="meta">128名中 TOP3</span></h3>
+        <table>
+          <thead><tr><th style="width:32px">順位</th><th>解説者</th><th>セ・リーグ予想</th><th>パ・リーグ予想</th><th style="text-align:right; width:90px">得点</th></tr></thead>
+          <tbody>
+            <tr><td><span class="rnk g">1</span></td><td><span class="cname">里崎智也</span><span class="badge">YT</span></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#FBBF24;color:#1a1a1a">阪神</span><span class="chip hit" style="background:#2563EB">DeNA</span><span class="chip" style="background:#F97316">巨人</span><span class="chip hit" style="background:#DC2626">広島</span><span class="chip" style="background:#059669">ヤ</span><span class="chip" style="background:#1E40AF">中日</span></div></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#F5D100;color:#1a1a1a">ソ</span><span class="chip hit" style="background:#B91C1C">楽天</span><span class="chip" style="background:#1E3A5F;color:#4FB3E0">ハム</span><span class="chip" style="background:#1E3A5F;color:#C8A951">オ</span><span class="chip hit" style="background:#1D4ED8">西武</span><span class="chip" style="background:#1a1a1a">ロ</span></div></td>
+              <td style="text-align:right"><div class="score">+84</div><div class="bd">72 / 12</div></td></tr>
+            <tr><td><span class="rnk s">2</span></td><td><span class="cname">達川光男</span><span class="badge">TV</span></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#FBBF24;color:#1a1a1a">阪神</span><span class="chip" style="background:#F97316">巨人</span><span class="chip hit" style="background:#2563EB">DeNA</span><span class="chip hit" style="background:#DC2626">広島</span><span class="chip" style="background:#1E40AF">中日</span><span class="chip" style="background:#059669">ヤ</span></div></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#F5D100;color:#1a1a1a">ソ</span><span class="chip" style="background:#1E3A5F;color:#4FB3E0">ハム</span><span class="chip hit" style="background:#B91C1C">楽天</span><span class="chip" style="background:#1E3A5F;color:#C8A951">オ</span><span class="chip" style="background:#1a1a1a">ロ</span><span class="chip hit" style="background:#1D4ED8">西武</span></div></td>
+              <td style="text-align:right"><div class="score">+71</div><div class="bd">65 / 6</div></td></tr>
+            <tr><td><span class="rnk b">3</span></td><td><span class="cname">江川卓</span><span class="badge">TV</span></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#FBBF24;color:#1a1a1a">阪神</span><span class="chip" style="background:#F97316">巨人</span><span class="chip hit" style="background:#2563EB">DeNA</span><span class="chip" style="background:#1E40AF">中日</span><span class="chip hit" style="background:#DC2626">広島</span><span class="chip" style="background:#059669">ヤ</span></div></td>
+              <td><div class="chip-row"><span class="chip hit" style="background:#F5D100;color:#1a1a1a">ソ</span><span class="chip" style="background:#B91C1C">楽天</span><span class="chip hit" style="background:#1E3A5F;color:#4FB3E0">ハム</span><span class="chip" style="background:#1D4ED8">西武</span><span class="chip" style="background:#1E3A5F;color:#C8A951">オ</span><span class="chip" style="background:#1a1a1a">ロ</span></div></td>
+              <td style="text-align:right"><div class="score">+68</div><div class="bd">60 / 8</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

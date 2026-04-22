@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>プロ野球みんなの順位予想 — 新聞スポーツ欄風テーマ プレビュー</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Serif+JP:wght@600;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:        #faf7f2;
+  --text:     #18181b;
+  --text-sub: #52525b;
+  --text-mute:#a1a1aa;
+  --accent:   #dc2626;
+  --accent-soft:#fef2f2;
+  --card:     #ffffff;
+  --border:   #d4d4d8;
+  --border-strong:#18181b;
+  --success:  #16a34a;
+  --hit-bg:   #f0fdf4;
+  --miss-bg:  #fef2f2;
+  --font-body: "Noto Sans JP", -apple-system, sans-serif;
+  --font-serif: "Noto Serif JP", "Hiragino Mincho ProN", serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 16px;
+}
+.section-label {
+  font-family: var(--font-serif);
+  font-size: 12px;
+  letter-spacing: 0.3em;
+  color: var(--accent);
+  margin: 32px 0 8px;
+  text-transform: uppercase;
+}
+.section-label::before { content: "■ "; }
+
+/* Newspaper masthead */
+.masthead {
+  border-top: 3px solid var(--text);
+  border-bottom: 1px solid var(--text);
+  padding: 14px 0 10px;
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.masthead .brand {
+  font-family: var(--font-serif);
+  font-weight: 900;
+  font-size: 32px;
+  letter-spacing: -0.02em;
+}
+.masthead .brand .accent { color: var(--accent); }
+.masthead .date {
+  font-family: var(--font-serif);
+  font-size: 13px;
+  color: var(--text-sub);
+}
+.masthead-sub {
+  font-family: var(--font-serif);
+  font-size: 11px;
+  letter-spacing: 0.5em;
+  color: var(--text-sub);
+  text-align: center;
+  padding: 6px 0 14px;
+  border-bottom: 1px double var(--border);
+}
+
+/* Nav */
+nav.tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--text);
+  margin: 20px 0;
+}
+nav.tabs a {
+  padding: 10px 18px;
+  text-decoration: none;
+  color: var(--text-sub);
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 14px;
+  border-right: 1px solid var(--border);
+}
+nav.tabs a.active {
+  background: var(--text);
+  color: #fff;
+}
+nav.tabs a .sub {
+  display: block;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  color: var(--text-mute);
+  font-family: var(--font-body);
+  margin-top: 2px;
+}
+nav.tabs a.active .sub { color: rgba(255,255,255,0.6); }
+
+/* Headline */
+.headline {
+  font-family: var(--font-serif);
+  font-weight: 900;
+  font-size: 40px;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin: 14px 0 6px;
+}
+.kicker {
+  font-family: var(--font-serif);
+  font-size: 12px;
+  color: var(--accent);
+  letter-spacing: 0.2em;
+  font-weight: 700;
+}
+.lead {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  color: var(--text-sub);
+  max-width: 560px;
+  line-height: 1.7;
+  margin: 8px 0 16px;
+  border-left: 3px solid var(--accent);
+  padding-left: 12px;
+}
+
+/* CTA */
+.cta-row { display: flex; gap: 10px; margin: 12px 0 20px; }
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  padding: 12px 22px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  letter-spacing: 0.05em;
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-serif);
+  font-weight: 700;
+  padding: 12px 22px;
+  border: 2px solid var(--text);
+  cursor: pointer;
+  font-size: 14px;
+}
+
+/* Card */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 16px 18px;
+  margin-bottom: 14px;
+}
+.card h3 {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 18px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--text);
+  display: flex; align-items: baseline; justify-content: space-between;
+}
+.card h3 .meta { font-family: var(--font-body); font-size: 11px; color: var(--text-mute); font-weight: 400; }
+
+/* Ranking table */
+table.ranking {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+table.ranking th {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  text-align: left;
+  padding: 8px 8px;
+  border-bottom: 2px solid var(--text);
+  background: var(--bg);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+table.ranking td {
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+table.ranking tr:hover td { background: rgba(220,38,38,0.03); }
+
+.rank-badge {
+  display: inline-block;
+  width: 28px; height: 28px; line-height: 28px;
+  text-align: center;
+  font-family: var(--font-serif);
+  font-weight: 900;
+  font-size: 15px;
+  background: var(--text);
+  color: #fff;
+}
+.rank-badge.gold { background: #d4a017; color: #18181b; }
+.rank-badge.silver { background: #a1a1aa; color: #18181b; }
+.rank-badge.bronze { background: #b87333; }
+
+.commentator {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 15px;
+}
+.source-badge {
+  display: inline-block;
+  font-size: 10px;
+  padding: 2px 6px;
+  border: 1px solid var(--border-strong);
+  margin-left: 6px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  background: var(--bg);
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.score {
+  font-family: var(--font-serif);
+  font-weight: 900;
+  font-size: 18px;
+  color: var(--accent);
+}
+.score-breakdown {
+  font-size: 10px;
+  color: var(--text-mute);
+  font-family: var(--font-body);
+}
+
+/* Team chips */
+.teams-row { display: flex; gap: 4px; flex-wrap: wrap; }
+.team-chip {
+  font-family: var(--font-serif);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 6px;
+  color: #fff;
+  min-width: 42px;
+  text-align: center;
+}
+.hit { outline: 2px solid var(--success); outline-offset: -2px; }
+
+/* Comparison table (expanded row) */
+.comparison {
+  background: var(--bg);
+  padding: 12px;
+  margin-top: 4px;
+  border-left: 3px solid var(--accent);
+}
+.comparison h4 {
+  font-family: var(--font-serif);
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  margin-bottom: 8px;
+  color: var(--text-sub);
+}
+table.compare {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+table.compare th, table.compare td {
+  padding: 4px 8px;
+  text-align: center;
+  border: 1px solid var(--border);
+  font-family: var(--font-serif);
+  font-weight: 600;
+}
+table.compare th { background: var(--text); color: #fff; font-size: 10px; letter-spacing: 0.1em; }
+table.compare td.hit { background: var(--hit-bg); color: var(--success); }
+table.compare td.miss { background: var(--miss-bg); color: var(--accent); }
+
+/* Stats */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  margin: 14px 0;
+}
+.stat {
+  background: var(--card);
+  padding: 14px 10px;
+  text-align: center;
+}
+.stat .num {
+  font-family: var(--font-serif);
+  font-weight: 900;
+  font-size: 28px;
+  line-height: 1;
+  color: var(--accent);
+}
+.stat .label {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--text-mute);
+  margin-top: 4px;
+}
+
+/* Standings grid */
+.standings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.standings-league {
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+.standings-league h4 {
+  font-family: var(--font-serif);
+  font-weight: 900;
+  font-size: 15px;
+  padding: 8px 12px;
+  background: var(--text);
+  color: #fff;
+  letter-spacing: 0.08em;
+}
+.standings-league table { width: 100%; border-collapse: collapse; }
+.standings-league td { padding: 8px 10px; border-bottom: 1px solid var(--border); font-size: 13px; }
+.standings-league .w { text-align: right; color: var(--success); font-family: var(--font-serif); font-weight: 700; }
+.standings-league .l { text-align: right; color: var(--accent); font-family: var(--font-serif); font-weight: 700; }
+.standings-league .rate { text-align: right; font-family: var(--font-serif); font-weight: 700; }
+
+/* footer-ish */
+.foot-note {
+  font-size: 11px;
+  color: var(--text-mute);
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+  margin-top: 20px;
+  line-height: 1.6;
+}
+
+/* Container */
+.page { max-width: 980px; margin: 0 auto; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- === HOME === -->
+  <div class="section-label">HOME  / ホーム</div>
+
+  <header class="masthead">
+    <div class="brand">プロ野球<span class="accent">みんなの順位予想</span></div>
+    <div class="date">2026年（令和8年）4月20日　月曜日</div>
+  </header>
+  <div class="masthead-sub">プ　ロ　野　球　順　位　予　想　紙</div>
+
+  <nav class="tabs">
+    <a class="active" href="#">予想<span class="sub">PREDICTIONS</span></a>
+    <a href="#">解説者<span class="sub">COMMENTATORS</span></a>
+    <a href="#">スコア<span class="sub">SCOREBOARD</span></a>
+    <a href="#">ニュース<span class="sub">NEWS</span></a>
+  </nav>
+
+  <div class="kicker">◆ 2026 シーズン進行中 ◆</div>
+  <h1 class="headline">プロ野球 順位予想、<br>本当に当たるのは誰か。</h1>
+  <p class="lead">
+    テレビ・新聞・YouTube — あらゆる解説者の予想を集約、実際の順位と照合して「的中率」を算出する日本唯一の野球予想ランキング。
+  </p>
+
+  <div class="cta-row">
+    <button class="btn-primary">▶ あなたの予想を登録する</button>
+    <button class="btn-ghost">解説者ランキング</button>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat"><div class="num">1,435</div><div class="label">解説者の予想</div></div>
+    <div class="stat"><div class="num">13</div><div class="label">シーズン</div></div>
+    <div class="stat"><div class="num">12</div><div class="label">NPB チーム</div></div>
+    <div class="stat"><div class="num">毎日</div><div class="label">自動更新</div></div>
+  </div>
+
+  <!-- === COMMENTATOR RANKING === -->
+  <div class="section-label">COMMENTATOR RANKINGS / 解説者ランキング</div>
+
+  <div class="card">
+    <h3>2025 セ・パ合算 的中率ランキング <span class="meta">128名 / スコア順</span></h3>
+    <table class="ranking">
+      <thead>
+        <tr>
+          <th style="width:40px">順位</th>
+          <th>解説者</th>
+          <th>セ予想</th>
+          <th>パ予想</th>
+          <th style="text-align:right">得点</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="rank-badge gold">1</span></td>
+          <td>
+            <div class="commentator">
+              里崎智也
+              <span class="source-badge">YouTube</span>
+            </div>
+          </td>
+          <td>
+            <div class="teams-row">
+              <span class="team-chip hit" style="background:#FBBF24;color:#1a1a1a">阪神</span>
+              <span class="team-chip hit" style="background:#2563EB">DeNA</span>
+              <span class="team-chip" style="background:#F97316">巨人</span>
+              <span class="team-chip hit" style="background:#DC2626">広島</span>
+              <span class="team-chip" style="background:#059669">ヤ</span>
+              <span class="team-chip" style="background:#1E40AF">中日</span>
+            </div>
+          </td>
+          <td>
+            <div class="teams-row">
+              <span class="team-chip hit" style="background:#F5D100;color:#1a1a1a">ソ</span>
+              <span class="team-chip hit" style="background:#B91C1C">楽天</span>
+              <span class="team-chip" style="background:#1E3A5F;color:#4FB3E0">ハム</span>
+              <span class="team-chip" style="background:#1E3A5F;color:#C8A951">オ</span>
+              <span class="team-chip hit" style="background:#1D4ED8">西武</span>
+              <span class="team-chip" style="background:#1a1a1a">ロ</span>
+            </div>
+          </td>
+          <td style="text-align:right">
+            <span class="score">+84</span>
+            <div class="score-breakdown">順位72 / 個人12</div>
+          </td>
+        </tr>
+        <tr>
+          <td><span class="rank-badge silver">2</span></td>
+          <td>
+            <div class="commentator">
+              達川光男
+              <span class="source-badge">広島テレビ朝刊</span>
+            </div>
+          </td>
+          <td>
+            <div class="teams-row">
+              <span class="team-chip hit" style="background:#FBBF24;color:#1a1a1a">阪神</span>
+              <span class="team-chip" style="background:#F97316">巨人</span>
+              <span class="team-chip hit" style="background:#2563EB">DeNA</span>
+              <span class="team-chip hit" style="background:#DC2626">広島</span>
+              <span class="team-chip" style="background:#1E40AF">中日</span>
+              <span class="team-chip" style="background:#059669">ヤ</span>
+            </div>
+          </td>
+          <td>
+            <div class="teams-row">
+              <span class="team-chip hit" style="background:#F5D100;color:#1a1a1a">ソ</span>
+              <span class="team-chip" style="background:#1E3A5F;color:#4FB3E0">ハム</span>
+              <span class="team-chip hit" style="background:#B91C1C">楽天</span>
+              <span class="team-chip" style="background:#1E3A5F;color:#C8A951">オ</span>
+              <span class="team-chip" style="background:#1a1a1a">ロ</span>
+              <span class="team-chip hit" style="background:#1D4ED8">西武</span>
+            </div>
+          </td>
+          <td style="text-align:right">
+            <span class="score">+71</span>
+            <div class="score-breakdown">順位65 / 個人6</div>
+          </td>
+        </tr>
+        <tr>
+          <td><span class="rank-badge bronze">3</span></td>
+          <td>
+            <div class="commentator">
+              江川卓
+              <span class="source-badge">日テレ</span>
+            </div>
+          </td>
+          <td>
+            <div class="teams-row">
+              <span class="team-chip hit" style="background:#FBBF24;color:#1a1a1a">阪神</span>
+              <span class="team-chip" style="background:#F97316">巨人</span>
+              <span class="team-chip hit" style="background:#2563EB">DeNA</span>
+              <span class="team-chip" style="background:#1E40AF">中日</span>
+              <span class="team-chip hit" style="background:#DC2626">広島</span>
+              <span class="team-chip" style="background:#059669">ヤ</span>
+            </div>
+          </td>
+          <td>
+            <div class="teams-row">
+              <span class="team-chip hit" style="background:#F5D100;color:#1a1a1a">ソ</span>
+              <span class="team-chip" style="background:#B91C1C">楽天</span>
+              <span class="team-chip hit" style="background:#1E3A5F;color:#4FB3E0">ハム</span>
+              <span class="team-chip" style="background:#1D4ED8">西武</span>
+              <span class="team-chip" style="background:#1E3A5F;color:#C8A951">オ</span>
+              <span class="team-chip" style="background:#1a1a1a">ロ</span>
+            </div>
+          </td>
+          <td style="text-align:right">
+            <span class="score">+68</span>
+            <div class="score-breakdown">順位60 / 個人8</div>
+          </td>
+        </tr>
+        <tr>
+          <td><span class="rank-badge">4</span></td>
+          <td>
+            <div class="commentator">
+              高木豊
+              <span class="source-badge">YouTube</span>
+            </div>
+          </td>
+          <td>
+            <div class="teams-row">
+              <span class="team-chip" style="background:#F97316">巨人</span>
+              <span class="team-chip hit" style="background:#FBBF24;color:#1a1a1a">阪神</span>
+              <span class="team-chip hit" style="background:#2563EB">DeNA</span>
+              <span class="team-chip hit" style="background:#DC2626">広島</span>
+              <span class="team-chip" style="background:#1E40AF">中日</span>
+              <span class="team-chip" style="background:#059669">ヤ</span>
+            </div>
+          </td>
+          <td>
+            <div class="teams-row">
+              <span class="team-chip hit" style="background:#F5D100;color:#1a1a1a">ソ</span>
+              <span class="team-chip" style="background:#1E3A5F;color:#4FB3E0">ハム</span>
+              <span class="team-chip" style="background:#B91C1C">楽天</span>
+              <span class="team-chip" style="background:#1a1a1a">ロ</span>
+              <span class="team-chip" style="background:#1E3A5F;color:#C8A951">オ</span>
+              <span class="team-chip hit" style="background:#1D4ED8">西武</span>
+            </div>
+          </td>
+          <td style="text-align:right">
+            <span class="score">+52</span>
+            <div class="score-breakdown">順位46 / 個人6</div>
+          </td>
+        </tr>
+
+        <!-- Expanded row -->
+        <tr>
+          <td colspan="5" style="padding:0; border:none">
+            <div class="comparison">
+              <h4>― 里崎智也・予想 vs 実際 ―</h4>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
+                <table class="compare">
+                  <tr><th>順位</th><th>予想</th><th>実際</th><th>判定</th></tr>
+                  <tr><td>1</td><td>阪神</td><td>阪神</td><td class="hit">◎</td></tr>
+                  <tr><td>2</td><td>DeNA</td><td>巨人</td><td class="miss">×1</td></tr>
+                  <tr><td>3</td><td>巨人</td><td>DeNA</td><td class="miss">×1</td></tr>
+                  <tr><td>4</td><td>広島</td><td>広島</td><td class="hit">◎</td></tr>
+                  <tr><td>5</td><td>ヤクルト</td><td>中日</td><td class="miss">×1</td></tr>
+                  <tr><td>6</td><td>中日</td><td>ヤクルト</td><td class="miss">×1</td></tr>
+                </table>
+                <table class="compare">
+                  <tr><th>順位</th><th>予想</th><th>実際</th><th>判定</th></tr>
+                  <tr><td>1</td><td>SB</td><td>SB</td><td class="hit">◎</td></tr>
+                  <tr><td>2</td><td>楽天</td><td>楽天</td><td class="hit">◎</td></tr>
+                  <tr><td>3</td><td>ハム</td><td>ロッテ</td><td class="miss">×2</td></tr>
+                  <tr><td>4</td><td>オリ</td><td>ハム</td><td class="miss">×1</td></tr>
+                  <tr><td>5</td><td>西武</td><td>西武</td><td class="hit">◎</td></tr>
+                  <tr><td>6</td><td>ロッテ</td><td>オリ</td><td class="miss">×2</td></tr>
+                </table>
+              </div>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- === SCOREBOARD === -->
+  <div class="section-label">SCOREBOARD / 2025 最終順位表</div>
+
+  <div class="standings-grid">
+    <div class="standings-league">
+      <h4>◆ セントラル・リーグ</h4>
+      <table>
+        <tr><td style="width:20px"><span class="rank-badge gold">1</span></td><td>阪神</td><td class="w">74勝</td><td class="l">58敗</td><td class="rate">.561</td></tr>
+        <tr><td><span class="rank-badge silver">2</span></td><td>巨人</td><td class="w">72勝</td><td class="l">60敗</td><td class="rate">.545</td></tr>
+        <tr><td><span class="rank-badge bronze">3</span></td><td>DeNA</td><td class="w">70勝</td><td class="l">62敗</td><td class="rate">.530</td></tr>
+        <tr><td><span class="rank-badge">4</span></td><td>広島</td><td class="w">66勝</td><td class="l">66敗</td><td class="rate">.500</td></tr>
+        <tr><td><span class="rank-badge">5</span></td><td>中日</td><td class="w">60勝</td><td class="l">72敗</td><td class="rate">.455</td></tr>
+        <tr><td><span class="rank-badge">6</span></td><td>ヤクルト</td><td class="w">56勝</td><td class="l">76敗</td><td class="rate">.424</td></tr>
+      </table>
+    </div>
+    <div class="standings-league">
+      <h4>◆ パシフィック・リーグ</h4>
+      <table>
+        <tr><td style="width:20px"><span class="rank-badge gold">1</span></td><td>ソフトバンク</td><td class="w">82勝</td><td class="l">50敗</td><td class="rate">.621</td></tr>
+        <tr><td><span class="rank-badge silver">2</span></td><td>楽天</td><td class="w">75勝</td><td class="l">57敗</td><td class="rate">.568</td></tr>
+        <tr><td><span class="rank-badge bronze">3</span></td><td>ロッテ</td><td class="w">68勝</td><td class="l">64敗</td><td class="rate">.515</td></tr>
+        <tr><td><span class="rank-badge">4</span></td><td>日ハム</td><td class="w">65勝</td><td class="l">67敗</td><td class="rate">.492</td></tr>
+        <tr><td><span class="rank-badge">5</span></td><td>西武</td><td class="w">58勝</td><td class="l">74敗</td><td class="rate">.439</td></tr>
+        <tr><td><span class="rank-badge">6</span></td><td>オリックス</td><td class="w">52勝</td><td class="l">80敗</td><td class="rate">.394</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="foot-note">
+    プロ野球みんなの順位予想　| 解説者 的中率 Database | 2026年 シーズン対応<br>
+    データ出典: NPB公式, Yahoo!スポナビ（自動更新） | ランキングは毎日 08:00 JST に再計算されます
+  </div>
+
+</div>
+</body>
+</html>
