@@ -77,7 +77,7 @@ function ScorePreview({
 export default function SettingsPage() {
   const [numFont, setNumFont] = useState("bebas");
   const [bodyFont, setBodyFont] = useState("noto");
-  const [colorTheme, setColorTheme] = useState("baseball");
+  const [colorTheme, setColorTheme] = useState("editorial-navy-ivory");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 

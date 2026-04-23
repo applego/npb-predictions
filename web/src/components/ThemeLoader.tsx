@@ -18,7 +18,7 @@ export function ThemeLoader() {
         const s = data as Record<string, string>;
         const numFontId = s.font_number ?? "bebas";
         const bodyFontId = s.font_body ?? "noto";
-        const themeId = s.color_theme ?? "baseball";
+        const themeId = s.color_theme ?? "editorial-navy-ivory";
 
         const numFont = getNumberFont(numFontId);
         const bodyFont = getBodyFont(bodyFontId);
