@@ -19,7 +19,7 @@ export const runtime = "edge";
 import { NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { users, seasons, predictions, rankingPicks } from "@/db/schema";
-import { desc, eq, inArray } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { generateNewsFeed } from "@/lib/news-feed";
 
 interface FeatureStatus {
@@ -138,15 +138,15 @@ async function checkCommentatorRanking(): Promise<FeatureStatus> {
     if (latestSeason.length === 0) {
       return { ...base, latestError: "no seasons row — ranking impossible" };
     }
-    const commentatorIds = commentators.map((c) => c.id);
-    const predCount = await db
-      .select({ id: predictions.id })
+    // Use INNER JOIN + COUNT instead of inArray() to avoid the SQLite
+    // 99-variable bind limit when commentator count > ~99 (D1_ERROR observed
+    // in production). One row, two table scan — cheap and bounded.
+    const predCountRows = await db
+      .select({ count: sql<number>`count(*)` })
       .from(predictions)
-      .where(
-        commentatorIds.length > 0
-          ? inArray(predictions.userId, commentatorIds)
-          : eq(predictions.seasonId, latestSeason[0].id),
-      );
+      .innerJoin(users, eq(predictions.userId, users.id))
+      .where(eq(users.role, "commentator"));
+    const commentatorPredictionCount = Number(predCountRows[0]?.count ?? 0);
     return {
       ...base,
       healthy: true,
@@ -155,7 +155,7 @@ async function checkCommentatorRanking(): Promise<FeatureStatus> {
       detail: {
         commentatorCount: commentators.length,
         latestYear: latestSeason[0].year,
-        commentatorPredictionCount: predCount.length,
+        commentatorPredictionCount,
       },
     };
   } catch (e) {

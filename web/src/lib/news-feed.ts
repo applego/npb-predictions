@@ -48,17 +48,65 @@ export async function generateNewsFeed(limit = 50): Promise<NewsItem[]> {
   const db = getDb();
   const newsItems: NewsItem[] = [];
 
-  const allSeasons = await db.select().from(seasons).orderBy(desc(seasons.year));
-  const allUsers = await db.select().from(users);
+  // ── Prefetch everything ONCE to stay under CF Workers subrequest limit ──
+  // Previously this function ran ~6 queries per season × 13 seasons + spotlight
+  // queries per variant ⇒ 80+ subrequests, hitting "Too many API requests by
+  // single Worker invocation". Now 6 fixed queries, group in memory.
+  const [allSeasons, allUsers, allStandings, allPredictions, allPicks, allScores] =
+    await Promise.all([
+      db.select().from(seasons).orderBy(desc(seasons.year)),
+      db.select().from(users),
+      db.select().from(actualTeamStandings).orderBy(desc(actualTeamStandings.snapshotDate)),
+      db.select().from(predictions).orderBy(desc(predictions.createdAt)),
+      db.select().from(rankingPicks),
+      db.select().from(scoreSnapshots).orderBy(desc(scoreSnapshots.totalScore)),
+    ]);
+
   const userMap = new Map(allUsers.map((u) => [u.id, u]));
+
+  // Group lookups by seasonId / predictionId
+  const standingsBySeason = new Map<number, typeof allStandings>();
+  for (const r of allStandings) {
+    const arr = standingsBySeason.get(r.seasonId) ?? [];
+    arr.push(r);
+    standingsBySeason.set(r.seasonId, arr);
+  }
+  const predictionsBySeason = new Map<number, typeof allPredictions>();
+  for (const p of allPredictions) {
+    const arr = predictionsBySeason.get(p.seasonId) ?? [];
+    arr.push(p);
+    predictionsBySeason.set(p.seasonId, arr);
+  }
+  const picksByPredId = new Map<number, typeof allPicks>();
+  for (const rp of allPicks) {
+    const arr = picksByPredId.get(rp.predictionId) ?? [];
+    arr.push(rp);
+    picksByPredId.set(rp.predictionId, arr);
+  }
+  const scoresBySeason = new Map<number, typeof allScores>();
+  for (const s of allScores) {
+    const arr = scoresBySeason.get(s.seasonId) ?? [];
+    arr.push(s);
+    scoresBySeason.set(s.seasonId, arr);
+  }
+
+  // Helper: best score for (userId, year) using prefetched scores+seasons
+  const seasonByYear = new Map<number, typeof allSeasons[number]>();
+  for (const s of allSeasons) seasonByYear.set(s.year, s);
+  function bestScoreFor(userId: number, year: number): number {
+    const season = seasonByYear.get(year);
+    if (!season) return -Infinity;
+    const scores = scoresBySeason.get(season.id) ?? [];
+    let best = -Infinity;
+    for (const row of scores) {
+      if (row.userId === userId && row.totalScore > best) best = row.totalScore;
+    }
+    return best;
+  }
 
   for (const season of allSeasons) {
     // ── 1. 的中速報 (hit) ──
-    const seasonStandings = await db
-      .select()
-      .from(actualTeamStandings)
-      .where(eq(actualTeamStandings.seasonId, season.id))
-      .orderBy(desc(actualTeamStandings.snapshotDate));
+    const seasonStandings = standingsBySeason.get(season.id) ?? [];
 
     const standingsMap = new Map<string, { league: string; rank: number; teamName: string }>();
     for (const row of seasonStandings) {
@@ -75,16 +123,13 @@ export async function generateNewsFeed(limit = 50): Promise<NewsItem[]> {
     }
 
     if (standingsMap.size > 0) {
-      const seasonPredictions = await db
-        .select()
-        .from(predictions)
-        .where(eq(predictions.seasonId, season.id));
+      const seasonPredictions = predictionsBySeason.get(season.id) ?? [];
 
       const predIds = seasonPredictions.map((p) => p.id);
 
       if (predIds.length > 0) {
-        const allPicks = await db.select().from(rankingPicks);
-        const relevantPicks = allPicks.filter((rp) => predIds.includes(rp.predictionId));
+        const predIdSet = new Set(predIds);
+        const relevantPicks = allPicks.filter((rp) => predIdSet.has(rp.predictionId));
         const predUserMap = new Map(seasonPredictions.map((p) => [p.id, p.userId]));
 
         for (const pick of relevantPicks) {
@@ -118,15 +163,12 @@ export async function generateNewsFeed(limit = 50): Promise<NewsItem[]> {
     }
 
     // ── 2. ランキング変動 (ranking) ──
-    const seasonScores = await db
-      .select({
-        userId: scoreSnapshots.userId,
-        totalScore: scoreSnapshots.totalScore,
-        snapshotDate: scoreSnapshots.snapshotDate,
-      })
-      .from(scoreSnapshots)
-      .where(eq(scoreSnapshots.seasonId, season.id))
-      .orderBy(desc(scoreSnapshots.totalScore));
+    const seasonScores = (scoresBySeason.get(season.id) ?? [])
+      .map((r) => ({
+        userId: r.userId,
+        totalScore: r.totalScore,
+        snapshotDate: r.snapshotDate,
+      }));
 
     const seenScoreUsers = new Set<number>();
     const topScores = seasonScores.filter((row) => {
@@ -155,20 +197,7 @@ export async function generateNewsFeed(limit = 50): Promise<NewsItem[]> {
     });
 
     // ── 3. 新規予想 (prediction) — newspaper article style ──
-    const seasonPreds = await db
-      .select()
-      .from(predictions)
-      .where(eq(predictions.seasonId, season.id))
-      .orderBy(desc(predictions.createdAt));
-
-    // Get all ranking picks for article generation
-    const allPicksForSeason = await db.select().from(rankingPicks);
-    const picksByPredId = new Map<number, typeof allPicksForSeason>();
-    for (const rp of allPicksForSeason) {
-      const arr = picksByPredId.get(rp.predictionId) ?? [];
-      arr.push(rp);
-      picksByPredId.set(rp.predictionId, arr);
-    }
+    const seasonPreds = predictionsBySeason.get(season.id) ?? [];
 
     // Collect all 1st picks for boldness calculation
     const allC1s: string[] = [];
@@ -229,11 +258,7 @@ export async function generateNewsFeed(limit = 50): Promise<NewsItem[]> {
   const usersByBaseName = new Map<string, { userId: number; name: string; variant: string | null; source: string | null; year: number }[]>();
 
   for (const season of allSeasons) {
-    const seasonPreds = await db
-      .select({ userId: predictions.userId })
-      .from(predictions)
-      .where(eq(predictions.seasonId, season.id));
-
+    const seasonPreds = predictionsBySeason.get(season.id) ?? [];
     const predUserIds = new Set(seasonPreds.map((p) => p.userId));
 
     for (const userId of predUserIds) {
@@ -262,17 +287,8 @@ export async function generateNewsFeed(limit = 50): Promise<NewsItem[]> {
 
     let bestScore = -Infinity;
     for (const v of variants) {
-      const scores = await db
-        .select({ totalScore: scoreSnapshots.totalScore })
-        .from(scoreSnapshots)
-        .innerJoin(seasons, eq(scoreSnapshots.seasonId, seasons.id))
-        .where(and(eq(scoreSnapshots.userId, v.userId), eq(seasons.year, year)))
-        .orderBy(desc(scoreSnapshots.totalScore))
-        .limit(1);
-
-      if (scores.length > 0 && scores[0].totalScore > bestScore) {
-        bestScore = scores[0].totalScore;
-      }
+      const s = bestScoreFor(v.userId, year);
+      if (s > bestScore) bestScore = s;
     }
 
     const scoreText = bestScore > -Infinity ? `最高${fmtScore(bestScore)}点` : "";
