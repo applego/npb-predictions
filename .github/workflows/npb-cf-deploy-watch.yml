@@ -1,0 +1,128 @@
+name: NPB CF Deploy Watch
+
+# Detect Cloudflare Pages production deploys that are stale or failed.
+# Companion to npb-feature-health-alert.yml: feature-health checks the app
+# layer; this checks the deploy layer (CF Pages git-integration / wrangler).
+#
+# Two failure modes covered:
+#   1) Latest CF deploy on main = Failure       → open issue, label cf:deploy-failure
+#   2) Latest CF deploy SHA != origin/main HEAD → open issue, label cf:deploy-stale
+#
+# Closes auto-generated issues automatically when health is restored.
+
+on:
+  schedule:
+    # Same cadence as feature-health (offset by 5 min to avoid herd)
+    - cron: "20 4-14 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: npb-cf-deploy-watch
+  cancel-in-progress: false
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  check-and-alert:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get latest commit on main
+        id: main_sha
+        run: |
+          SHA=$(git rev-parse origin/main)
+          SHORT=$(echo "$SHA" | cut -c1-7)
+          AGE_SEC=$(( $(date +%s) - $(git log -1 --format=%ct origin/main) ))
+          AGE_MIN=$(( AGE_SEC / 60 ))
+          echo "sha=$SHA"     >> $GITHUB_OUTPUT
+          echo "short=$SHORT" >> $GITHUB_OUTPUT
+          echo "age_min=$AGE_MIN" >> $GITHUB_OUTPUT
+          echo "main HEAD: $SHORT (age ${AGE_MIN}m)"
+
+      - name: Fetch served build-info
+        id: served
+        run: |
+          BODY=$(curl -s "${{ secrets.NPB_SITE_URL }}/api/build-info" || echo '{}')
+          echo "$BODY" > /tmp/build-info.json
+          cat /tmp/build-info.json
+          SERVED=$(jq -r '.commitSha // "unknown"' /tmp/build-info.json)
+          SERVED_SHORT=$(jq -r '.commitShaShort // (.commitSha // "unknown")[0:7]' /tmp/build-info.json)
+          BUILT_AT=$(jq -r '.builtAt // "unknown"' /tmp/build-info.json)
+          echo "sha=$SERVED"      >> $GITHUB_OUTPUT
+          echo "short=$SERVED_SHORT" >> $GITHUB_OUTPUT
+          echo "built_at=$BUILT_AT" >> $GITHUB_OUTPUT
+
+      - name: Compute staleness
+        id: state
+        run: |
+          MAIN_SHA="${{ steps.main_sha.outputs.sha }}"
+          SERVED_SHA="${{ steps.served.outputs.sha }}"
+          AGE_MIN="${{ steps.main_sha.outputs.age_min }}"
+          STALE=0
+          # Only flag stale if main has been settled for >= 30min — gives CF time to deploy.
+          if [ "$SERVED_SHA" != "$MAIN_SHA" ] && [ "$SERVED_SHA" != "unknown" ] && [ "$AGE_MIN" -ge 30 ]; then
+            STALE=1
+          fi
+          echo "stale=$STALE" >> $GITHUB_OUTPUT
+
+      - name: Open / update STALE issue
+        if: steps.state.outputs.stale == '1'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          LABEL="cf:deploy-stale"
+          MAIN_SHORT="${{ steps.main_sha.outputs.short }}"
+          SERVED_SHORT="${{ steps.served.outputs.short }}"
+          BUILT_AT="${{ steps.served.outputs.built_at }}"
+          AGE_MIN="${{ steps.main_sha.outputs.age_min }}"
+
+          EXISTING=$(gh issue list --label "auto-generated" --label "$LABEL" --state open --json number -L 1 | jq 'length')
+          if [ "$EXISTING" -gt 0 ]; then
+            NUM=$(gh issue list --label "auto-generated" --label "$LABEL" --state open --json number -L 1 | jq -r '.[0].number')
+            gh issue comment "$NUM" --body "🔔 まだstale: served=\`$SERVED_SHORT\` < main=\`$MAIN_SHORT\` (main age ${AGE_MIN}m)"
+            exit 0
+          fi
+
+          cat > /tmp/issue_body.md <<EOF
+## Cloudflare Pages 本番が main から遅れています
+
+- **served**: \`$SERVED_SHORT\` (built at $BUILT_AT)
+- **main HEAD**: \`$MAIN_SHORT\` (age ${AGE_MIN}m)
+
+mainに新しいコミットがあるのに本番が更新されていません。CF Pages git連携の build失敗、またはbillingで GitHub Actions の deploy job が動いていない可能性。
+
+### 確認手順
+1. \`npx wrangler pages deployment list --project-name=npb-predictions\` で最新deploy status確認
+2. Status=Failure ならビルドログ確認
+3. 緊急なら手動で:
+   \`\`\`bash
+   cd web && ./scripts/deploy.sh
+   \`\`\`
+
+### br 登録
+\`\`\`bash
+br create --title "CF deploy stale: served=$SERVED_SHORT vs main=$MAIN_SHORT" --labels "needs-fix,deploy,auto" --priority 1
+\`\`\`
+
+---
+🤖 自動生成 by \`npb-cf-deploy-watch.yml\`
+EOF
+          gh issue create \
+            --title "[auto] CF Pages 本番が stale ($SERVED_SHORT < $MAIN_SHORT)" \
+            --body-file /tmp/issue_body.md \
+            --label "auto-generated,deploy,needs-fix,$LABEL"
+
+      - name: Auto-close resolved STALE issue
+        if: steps.state.outputs.stale == '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          LABEL="cf:deploy-stale"
+          OPEN_NUMS=$(gh issue list --label "auto-generated" --label "$LABEL" --state open --json number -L 20 | jq -r '.[].number')
+          for NUM in $OPEN_NUMS; do
+            gh issue comment "$NUM" --body "✅ deploy同期確認 (served=${{ steps.served.outputs.short }} == main=${{ steps.main_sha.outputs.short }})。自動クローズ。"
+            gh issue close "$NUM"
+          done

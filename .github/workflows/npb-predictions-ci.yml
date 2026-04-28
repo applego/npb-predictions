@@ -1,0 +1,77 @@
+name: CI / Deploy
+
+on:
+  push:
+    branches: [main, dev]
+    paths:
+      - 'web/**'
+      - '.github/workflows/npb-predictions-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'web/**'
+      - '.github/workflows/npb-predictions-ci.yml'
+
+defaults:
+  run:
+    working-directory: web
+
+jobs:
+  ci:
+    # self-hosted を選ぶ理由: GitHub Actions の billing障害で ubuntu-latest が停止しても
+    # mac-2016-intel runner が動いていればデプロイ経路を維持できる (R2 — durability対策)。
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Build for Cloudflare Pages
+        run: npx @cloudflare/next-on-pages
+
+      # wrangler-action v3 は `command` 入力を改行で split して各行を別コマンドとして
+      # 実行する。`github.event.head_commit.message` は squash merge 時に commit body
+      # まで含んで複数行になり、2行目以降が `npx wrangler <body行>` として実行されて
+      # exit 1 する (旧 monorepo run #24969115153 で発生)。1行目だけ抽出し、shell 特殊文字も剥ぐ。
+      - name: Sanitize commit message
+        id: commit_msg
+        env:
+          RAW_MSG: ${{ github.event.head_commit.message }}
+        run: |
+          first_line=$(printf '%s' "$RAW_MSG" | head -n1 | tr -d '"`$\\')
+          if [ -z "$first_line" ]; then
+            first_line="${{ github.sha }}"
+          fi
+          echo "msg=$first_line" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy to Cloudflare Pages (dev)
+        if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy .vercel/output/static --project-name=npb-predictions --commit-dirty=true --commit-message="${{ steps.commit_msg.outputs.msg }}"
+          workingDirectory: web
+
+      - name: Deploy to Cloudflare Pages (production)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy .vercel/output/static --project-name=npb-predictions --branch=main --commit-dirty=true --commit-message="${{ steps.commit_msg.outputs.msg }}"
+          workingDirectory: web

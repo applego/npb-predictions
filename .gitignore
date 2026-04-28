@@ -1,0 +1,38 @@
+# Node
+node_modules/
+.npm/
+
+# Next.js
+.next/
+.vercel/
+out/
+
+# Wrangler
+.wrangler/
+
+# Playwright
+playwright-report/
+test-results/
+
+# Misc
+.DS_Store
+*.log
+.env
+.env.local
+.env.*.local
+.idea/
+.vscode/
+*.swp
+
+# Drizzle
+.drizzle/
+
+# Coverage
+coverage/
+
+# Beads internal
+.beads/.br_history/
+.beads/.br_recovery/
+.beads/*.db-shm
+.beads/*.db-wal
+.beads/last-touched

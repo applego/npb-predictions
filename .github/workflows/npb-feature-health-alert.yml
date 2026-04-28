@@ -1,0 +1,123 @@
+name: NPB Feature Health Alert
+
+# Check runtime health of main user-facing features (image-gen / news-feed /
+# commentator-ranking) and auto-open a GitHub Issue when one breaks.
+# Mirrors npb-scrape-alert.yml but for UI features instead of scrapers.
+
+on:
+  schedule:
+    # 30 min cadence, same window as scrape-alert (JST 13:30-23:59 = UTC 04:30-14:59)
+    - cron: "15 4-14 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: npb-feature-health-alert
+  cancel-in-progress: false
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  check-and-alert:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch feature health
+        id: health
+        run: |
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.NPB_SITE_URL }}/api/cron/feature-health")
+          BODY=$(echo "$RESPONSE" | head -n -1)
+          STATUS=$(echo "$RESPONSE" | tail -n 1)
+          echo "HTTP: $STATUS"
+          echo "$BODY" > /tmp/feature-health.json
+          cat /tmp/feature-health.json
+
+          if [ "$STATUS" != "200" ]; then
+            echo "::warning::feature-health endpoint returned $STATUS"
+            exit 0
+          fi
+
+          NEEDS_ATTENTION=$(jq '.needsAttention | length' /tmp/feature-health.json)
+          echo "needs_attention=$NEEDS_ATTENTION" >> $GITHUB_OUTPUT
+
+      - name: Open / update issues per failing feature
+        if: steps.health.outputs.needs_attention != '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          jq -c '.needsAttention[]' /tmp/feature-health.json | while read -r src; do
+            SOURCE=$(echo "$src" | jq -r '.source')
+            ERROR=$(echo "$src" | jq -r '.latestError // "unknown"')
+            AT=$(echo "$src" | jq -r '.latestAt // "unknown"')
+            DETAIL=$(echo "$src" | jq -c '.detail // {}')
+
+            LABEL="feature:${SOURCE}"
+            EXISTING=$(gh issue list --label "auto-generated" --label "$LABEL" --state open --json number -L 1 | jq 'length')
+            if [ "$EXISTING" -gt 0 ]; then
+              NUM=$(gh issue list --label "auto-generated" --label "$LABEL" --state open --json number -L 1 | jq -r '.[0].number')
+              echo "既存 Issue #$NUM あり、コメント追記"
+              gh issue comment "$NUM" --body "🔔 不健全継続: $AT / error: \`$ERROR\`"
+              continue
+            fi
+
+            cat > /tmp/issue_body.md <<EOF
+## 機能の不健全を検知しました
+
+- **feature**: \`$SOURCE\`
+- **最終チェック**: $AT
+
+### エラーメッセージ
+\`\`\`
+$ERROR
+\`\`\`
+
+### 詳細
+\`\`\`json
+$DETAIL
+\`\`\`
+
+### 修復手順のヒント
+
+該当機能ごとに確認するファイルは以下のあたり:
+
+- \`image-gen\` → \`src/app/api/og/[type]/route.tsx\`, \`src/components/PredictionImageGenerator.tsx\`
+- \`news-feed\` → \`src/lib/news-feed.ts\`, \`src/app/news/NewsClient.tsx\`
+- \`commentator-ranking\` → \`src/app/rankings/commentators/\`, \`src/lib/scoring.ts\`
+
+1. ローカルで再現: \`npm run dev\` → \`/api/cron/feature-health\` を叩く
+2. 該当実装とテストを修正
+3. \`npx playwright test e2e/\${SOURCE}.e2e.ts\` が通るまで
+4. typecheck + vitest → PR → merge → 次回 cron で自動 close
+
+### br 登録（ローカルエージェント向け）
+\`\`\`bash
+br create --title "feature修復: $SOURCE" --labels "needs-fix,feature,auto" --priority 1
+\`\`\`
+
+---
+🤖 自動生成 by \`npb-feature-health-alert.yml\`
+EOF
+
+            gh issue create \
+              --title "[auto] 機能不健全: $SOURCE" \
+              --body-file /tmp/issue_body.md \
+              --label "auto-generated,feature,needs-fix,$LABEL"
+          done
+
+      - name: Auto-close resolved feature issues
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          jq -c '.allSources[] | select(.healthy == true)' /tmp/feature-health.json | while read -r src; do
+            SOURCE=$(echo "$src" | jq -r '.source')
+            LABEL="feature:${SOURCE}"
+            OPEN_NUMS=$(gh issue list --label "auto-generated" --label "$LABEL" --state open --json number -L 20 | jq -r '.[].number')
+            for NUM in $OPEN_NUMS; do
+              gh issue comment "$NUM" --body "✅ 復旧を確認。自動クローズします。"
+              gh issue close "$NUM"
+            done
+          done

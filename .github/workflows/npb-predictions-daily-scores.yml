@@ -1,0 +1,152 @@
+name: NPB Predictions - Daily Standings + Titles + Games + Score Recalculation
+
+on:
+  schedule:
+    # 08:00 JST (daily housekeeping — standings/titles + score recalc)
+    - cron: "0 23 * * *"
+    # Every 30 minutes during game window (JST 13:00-23:59 = UTC 04:00-14:59) for live games
+    - cron: "*/30 4-14 * * *"
+  workflow_dispatch:
+    inputs:
+      year:
+        description: "Season year (defaults to current year)"
+        required: false
+        default: ""
+      skip_scrape:
+        description: "Skip NPB standings scrape (recalculate only)"
+        required: false
+        default: "false"
+        type: boolean
+
+jobs:
+  update-and-recalculate:
+    name: Scrape NPB Standings → Recalculate Scores
+    runs-on: self-hosted
+    steps:
+      - name: Determine season year
+        id: year
+        run: |
+          if [ -n "${{ github.event.inputs.year }}" ]; then
+            echo "year=${{ github.event.inputs.year }}" >> $GITHUB_OUTPUT
+          else
+            echo "year=$(date +'%Y')" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Determine run type
+        id: runtype
+        run: |
+          # schedule.cron が "0 23 * * *" なら daily、"*/30 ..." なら live
+          CRON='${{ github.event.schedule }}'
+          if [ "$CRON" = "0 23 * * *" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "mode=daily" >> $GITHUB_OUTPUT
+          else
+            echo "mode=live" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Scrape NPB standings and save snapshot
+        if: ${{ github.event.inputs.skip_scrape != 'true' && steps.runtype.outputs.mode == 'daily' }}
+        env:
+          NPB_API_BASE: ${{ secrets.NPB_API_BASE }}
+          NPB_CRON_SECRET: ${{ secrets.NPB_CRON_SECRET }}
+        run: |
+          if [ -z "$NPB_API_BASE" ]; then
+            echo "::warning::NPB_API_BASE secret not set — skipping scrape."
+            exit 0
+          fi
+
+          echo "Scraping NPB standings from npb.jp..."
+
+          HTTP_STATUS=$(curl -s -o /tmp/scrape-response.json -w "%{http_code}" \
+            -X POST \
+            -H "Content-Type: application/json" \
+            ${NPB_CRON_SECRET:+-H "x-cron-secret: $NPB_CRON_SECRET"} \
+            "${NPB_API_BASE}/api/cron/update-standings")
+
+          echo "HTTP status: $HTTP_STATUS"
+          cat /tmp/scrape-response.json
+
+          if [ "$HTTP_STATUS" -eq 422 ]; then
+            echo "::notice::Off-season — no standings available, skipping."
+            exit 0
+          elif [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 300 ]; then
+            ROWS=$(python3 -c "import json; d=json.load(open('/tmp/scrape-response.json')); print(len(d.get('standings', [])))" 2>/dev/null || echo "?")
+            echo "::notice::Scraped $ROWS team standings from npb.jp"
+          else
+            echo "::error::Standings scrape failed with HTTP $HTTP_STATUS"
+            exit 1
+          fi
+
+      - name: Scrape NPB title leaders (daily only)
+        if: ${{ steps.runtype.outputs.mode == 'daily' }}
+        env:
+          NPB_API_BASE: ${{ secrets.NPB_API_BASE }}
+          NPB_CRON_SECRET: ${{ secrets.NPB_CRON_SECRET }}
+        run: |
+          if [ -z "$NPB_API_BASE" ]; then
+            echo "::warning::NPB_API_BASE not set — skipping titles."
+            exit 0
+          fi
+          HTTP_STATUS=$(curl -s -o /tmp/titles-response.json -w "%{http_code}" \
+            -X POST \
+            -H "x-cron-secret: $NPB_CRON_SECRET" \
+            "${NPB_API_BASE}/api/cron/update-titles")
+          echo "Titles HTTP: $HTTP_STATUS"
+          cat /tmp/titles-response.json || true
+          if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 300 ]; then
+            echo "::notice::タイトル更新成功"
+          else
+            echo "::warning::タイトル更新失敗 HTTP $HTTP_STATUS (alert workflow で検知される)"
+          fi
+
+      - name: Scrape NPB game results (both daily and live)
+        env:
+          NPB_API_BASE: ${{ secrets.NPB_API_BASE }}
+          NPB_CRON_SECRET: ${{ secrets.NPB_CRON_SECRET }}
+        run: |
+          if [ -z "$NPB_API_BASE" ]; then
+            echo "::warning::NPB_API_BASE not set — skipping games."
+            exit 0
+          fi
+          HTTP_STATUS=$(curl -s -o /tmp/games-response.json -w "%{http_code}" \
+            -X POST \
+            -H "x-cron-secret: $NPB_CRON_SECRET" \
+            "${NPB_API_BASE}/api/cron/update-games")
+          echo "Games HTTP: $HTTP_STATUS"
+          cat /tmp/games-response.json || true
+          if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 300 ]; then
+            GAMES=$(jq -r '.games | length // 0' /tmp/games-response.json 2>/dev/null || echo "?")
+            echo "::notice::$GAMES 試合取得"
+          else
+            echo "::warning::試合結果取得失敗 HTTP $HTTP_STATUS"
+          fi
+
+      - name: Recalculate scores for active season
+        if: ${{ steps.runtype.outputs.mode == 'daily' }}
+        env:
+          NPB_API_BASE: ${{ secrets.NPB_API_BASE }}
+          NPB_CRON_SECRET: ${{ secrets.NPB_CRON_SECRET }}
+        run: |
+          if [ -z "$NPB_API_BASE" ]; then
+            echo "::warning::NPB_API_BASE secret not set — skipping recalculation."
+            exit 0
+          fi
+
+          YEAR="${{ steps.year.outputs.year }}"
+          echo "Recalculating scores for year: $YEAR"
+
+          HTTP_STATUS=$(curl -s -o /tmp/recalc-response.json -w "%{http_code}" \
+            -X POST \
+            -H "Content-Type: application/json" \
+            ${NPB_CRON_SECRET:+-H "x-cron-secret: $NPB_CRON_SECRET"} \
+            "${NPB_API_BASE}/api/cron/recalculate")
+
+          echo "HTTP status: $HTTP_STATUS"
+          cat /tmp/recalc-response.json
+
+          if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 300 ]; then
+            USERS=$(python3 -c "import json; d=json.load(open('/tmp/recalc-response.json')); print(sum(r.get('usersRecalculated',0) for r in json.load(open('/tmp/recalc-response.json')).get('processed', [])))" 2>/dev/null || echo "?")
+            echo "::notice::Scores recalculated for $USERS users (year=$YEAR)"
+          else
+            echo "::error::Recalculation failed with HTTP $HTTP_STATUS"
+            exit 1
+          fi

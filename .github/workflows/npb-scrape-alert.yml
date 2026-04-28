@@ -1,0 +1,105 @@
+name: NPB Scraper Failure Alert
+
+on:
+  schedule:
+    # Check every 30 minutes during scrape hours (JST 13:30-23:59 = UTC 04:30-14:59)
+    - cron: "30 4-14 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: npb-scrape-alert
+  cancel-in-progress: false
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  check-and-alert:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch scrape health
+        id: health
+        run: |
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.NPB_SITE_URL }}/api/cron/scrape-health")
+          BODY=$(echo "$RESPONSE" | head -n -1)
+          STATUS=$(echo "$RESPONSE" | tail -n 1)
+          echo "HTTP: $STATUS"
+          echo "$BODY" > /tmp/health.json
+          cat /tmp/health.json
+
+          if [ "$STATUS" != "200" ]; then
+            echo "::warning::health endpoint returned $STATUS"
+            exit 0
+          fi
+
+          NEEDS_ATTENTION=$(jq '.needsAttention | length' /tmp/health.json)
+          echo "needs_attention=$NEEDS_ATTENTION" >> "$GITHUB_OUTPUT"
+          echo "Sources needing attention: $NEEDS_ATTENTION"
+
+      - name: Create or update Issue per failing source
+        if: steps.health.outputs.needs_attention != '0' && steps.health.outputs.needs_attention != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          jq -c '.needsAttention[]' /tmp/health.json | while read -r src; do
+            SOURCE=$(echo "$src" | jq -r '.source')
+            COUNT=$(echo "$src" | jq -r '.unresolvedCount')
+            ERROR=$(echo "$src" | jq -r '.latestError // "unknown"')
+            AT=$(echo "$src" | jq -r '.latestAt // "unknown"')
+            SNIPPET=$(echo "$src" | jq -r '.latestHtmlSnippet // ""')
+            STATUS=$(echo "$src" | jq -r '.latestHttpStatus // "n/a"')
+
+            # Deduplicate: check if an open issue with the same source label exists
+            LABEL="scraper:${SOURCE}"
+            EXISTING=$(gh issue list --label "auto-generated" --label "$LABEL" --state open --json number -L 1 | jq 'length')
+            if [ "$EXISTING" -gt 0 ]; then
+              NUM=$(gh issue list --label "auto-generated" --label "$LABEL" --state open --json number -L 1 | jq -r '.[0].number')
+              echo "既存 Issue #$NUM あり、コメント追記"
+              gh issue comment "$NUM" --body "🔔 失敗継続中: $COUNT 件未解決 (最終 $AT, HTTP $STATUS)"
+              continue
+            fi
+
+            # Build body
+            cat > /tmp/issue_body.md <<EOF
+## スクレイプ失敗を検知しました
+
+- **source**: \`$SOURCE\`
+- **連続未解決数**: $COUNT
+- **最終失敗**: $AT
+- **HTTP status**: $STATUS
+
+### エラーメッセージ
+\`\`\`
+$ERROR
+\`\`\`
+
+### HTML スニペット（先頭2KB）
+\`\`\`html
+$SNIPPET
+\`\`\`
+
+### 修復手順のヒント
+1. 上記 HTML を読んでパーサー側で想定しているセレクタ/正規表現との差分を確認
+2. \`src/lib/scrape-*.ts\` の該当パーサーを修正
+3. \`src/lib/__tests__/scrape-*.test.ts\` にフィクスチャを追加して再現テスト
+4. typecheck + vitest → PR → merge → 次回 cron で復旧確認
+
+### br 登録（ローカルエージェント向け）
+\`\`\`bash
+br create --title "scraper修復: $SOURCE" --labels "needs-fix,scraper,auto" --priority 1
+\`\`\`
+
+---
+🤖 自動生成 by \`npb-scrape-alert.yml\`
+EOF
+
+            gh issue create \
+              --title "[auto] スクレイプ失敗: $SOURCE ($COUNT 件連続)" \
+              --body-file /tmp/issue_body.md \
+              --label "auto-generated,scraper,needs-fix,$LABEL"
+          done

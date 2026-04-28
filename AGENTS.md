@@ -1,102 +1,120 @@
-# AGENTS.md — npb-predictions
+# AGENTS.md — applego/npb-predictions
 
-> **このファイルは各 institution の AGENTS.md テンプレートです。**
-> `npb-predictions` を会社名に置換して使う。
-> GOAL/KGI/KPI/KDI はすべて `GOAL.md` を Single Source of Truth とし、ここには書かない。
+NPB 予想リーグプラットフォーム。Next.js + Cloudflare Pages + Drizzle + Playwright。
+
+このリポジトリは元々 `applego/hohho_worlds` の `companies/npb-predictions/` にあったが、2026-04-28 に独立 repo として split された。詳細は [hohho_worlds の plans/plan_split_companies.md](https://github.com/applego/hohho_worlds/blob/main/plans/plan_split_companies.md) 参照。
 
 ---
 
-## 1. ミッション & 目標 → GOAL.md を読む
+## 1. ミッション & 目標
+
+- KGI/KPI/KDI: `GOAL.md` を Single Source of Truth とする
+- 自律スコープ: `GOAL.md` の `autonomy:` セクション — tier1/2/3 の境界を必ず確認
+
+---
+
+## 2. このリポジトリの構成
+
+```
+.
+├─ web/                Next.js アプリ (本体)
+│  ├─ src/             ソース
+│  ├─ e2e/             Playwright E2E テスト
+│  ├─ drizzle/         DB マイグレーション
+│  └─ scripts/         deploy.sh, seed 等
+├─ data/               予想データ・コメンテーター情報
+├─ marketing/          マーケ素材
+├─ scripts/            スクレイピング・同期スクリプト
+├─ docs/               技術ドキュメント
+├─ .beads/             br (beads_rust) の独立 instance
+├─ .github/workflows/  CI / Deploy
+├─ GOAL.md             KGI/KPI/KDI SSOT
+├─ MARKETING_STRATEGY.md
+├─ MONETIZATION.md
+├─ SPEC.md
+└─ DEPLOY_CHECKLIST.md
+```
+
+---
+
+## 3. タスクを取る
 
 ```bash
-cat ./GOAL.md
+br list --status open
+bv --robot-triage --json | head -5
 ```
 
-- **KGI** (遅行指標・北極星): GOAL.md の `kgis:` セクション
-- **KPI** (先行指標・週次): GOAL.md の `kpis:` セクション
-- **KDI** (日次行動指標): GOAL.md の `kdis:` セクション
-- **自律スコープ**: GOAL.md の `autonomy:` セクション — tier1/2/3 の境界を必ず確認
-
----
-
-## 2. 自分のタスクを取る
+完了時:
 
 ```bash
-# このcompanyのopen beadを取る
-br list --label "company:npb-predictions" --status open
-
-# 優先度付きで取る（推奨）
-bv --robot-triage --filter "company:npb-predictions" --json | head -5
-
-# タスクを着手状態にする
-br update <TASK_ID> --status in_progress
+br close <id>
+ms feedback add <skill_id> --positive --comment "..."
+br sync --flush-only
+git add .beads/ <changed files>
+git commit -m "..."
 ```
 
 ---
 
-## 3. レイヤー別ロール
-
-| Layer | ロール | 主な作業 | 使う Executor |
-|-------|--------|----------|--------------|
-| L1 | architect | GOAL.md更新, KPI設計, 戦略決定 | claude_opus |
-| L2 | implementer | 機能実装, リファクタ, テスト | gemini / claude_code |
-| L3 | executor | SNS投稿, コンテンツ生成, 日次タスク | gemini-flash |
-
-自分のタスクの `role:` ラベルを確認してから作業する:
-```bash
-br show <TASK_ID>  # labels に role:architect / role:implementer 等
-```
-
----
-
-## 4. 完了条件（全タスク共通）
+## 4. 開発フロー
 
 ```bash
-# 1. テスト / UBS チェック
-ubs <changed_files>
+# Web 開発
+cd web
+npm install
+npm run dev          # http://localhost:3000
 
-# 2. コミット
-git add <files> && git commit -m "feat(npb-predictions): 変更内容 ref:TASK_ID"
+# テスト
+npm test             # vitest
+npx playwright test  # E2E (要 build)
 
-# 3. タスク完了
-br close <TASK_ID>
+# build
+npm run build
+npx @cloudflare/next-on-pages
 
-# 4. スキルフィードバック
-ms feedback add <used_skill_id> --positive --comment "type:feature 理由:..."
-
-# 5. push
-git push
+# デプロイ (手動)
+./scripts/deploy.sh
 ```
 
 ---
 
-## 5. エスカレーション
+## 5. CI / Deploy
 
-| 状況 | アクション |
-|------|-----------|
-| KPI が3サイクル停滞 | br create "🚨 KPI stagnant: npb-predictions" --label "escalation:kpi_stagnant" |
-| GOAL.md の数値を更新したい | `autonomy.tier1_allowed` に `goal_progress_update` があれば自律実行 OK |
-| API/外部サービス連携を追加 | `autonomy.tier2_notify` → agent mail でユーザーに通知してから実行 |
-| 予算増加・会社の追加/削除 | `autonomy.tier3_block` → **必ずユーザーに確認** |
+- **`.github/workflows/npb-predictions-ci.yml`**: main/dev push で self-hosted runner (mac-2016-intel) でテスト + Cloudflare Pages deploy
+- **`.github/workflows/npb-cf-deploy-watch.yml`**: deploy stale 検知 + 自動 issue 作成
+- **`.github/workflows/npb-feature-health-alert.yml`**: feature-health 監視
+- **`.github/workflows/npb-predictions-daily-scores.yml`**: NPB 試合結果取り込み
+- **`.github/workflows/npb-scrape-alert.yml`**: スクレイプ失敗監視
 
----
-
-## 6. 参照ファイル一覧
-
-```
-companies/npb-predictions/
-├── GOAL.md          ← KGI/KPI/KDI/P&L/autonomy の SSOT
-├── AGENTS.md        ← このファイル（プロトコル）
-└── ...              ← 実装ファイル
-
-_state/
-├── executor-config.yaml   ← executor ルーティング設定
-└── events/                ← flywheel イベントログ
-
-_state/reports/
-└── flash-latest.json      ← KPI フラッシュレポート（最新）
-```
+### Secrets (GitHub → applego/npb-predictions → Settings → Secrets)
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_ACCOUNT_ID`
+- `YOUTUBE_DATA_API_KEY` (optional, for content sync)
+- `UNSPLASH_ACCESS_KEY` (optional, for og images)
 
 ---
 
-_このテンプレートを使う場合は `npb-predictions` を実際の会社名に置換し、不要なセクションを削除すること。_
+## 6. Cloudflare Pages
+
+- Project name: `npb-predictions`
+- Production branch: `main`
+- Build output: `.vercel/output/static`
+- Build command: `npm run build && npx @cloudflare/next-on-pages`
+- Root directory: `web`
+
+---
+
+## 7. hohho_worlds との連携
+
+このリポジトリは独立しているが、`hohho_worlds` の flywheel orchestrator から `gh API` 経由で workflow を dispatch される。`hohho_worlds/repos.yaml` に entry がある。
+
+- 大きな構造変更や institution との連携は `hohho_worlds` の epic に登録する
+- 単独で完結する機能改修・バグ修正・運用は本 repo の bead で完結させる
+
+---
+
+## 8. 品質保証
+
+- `ubs .` でコミット前にスキャン
+- E2E テストで escape hatch を作らない (silent skip / OR条件 / 内容未検証 → 全て NG)
+- UI 変更時は Playwright でスクリーンショット確認

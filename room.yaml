@@ -5,7 +5,7 @@ description: NPB予想リーグプラットフォーム
 status: active
 
 br:
-  project_path: companies/npb-predictions
+  project_path: .
   labels: [npb, predictions, web]
 
 agents: []
