@@ -108,6 +108,9 @@ function HeroCard({ item }: { item: NewsItem }) {
 
   return (
     <div
+      data-testid="news-item"
+      data-news-type={item.type}
+      data-news-year={item.year}
       className="relative overflow-hidden rounded-2xl"
       style={{
         background: `linear-gradient(135deg, ${s.bg} 0%, var(--bg-surface) 60%)`,
@@ -167,6 +170,9 @@ function NewspaperCard({ item }: { item: NewsItem }) {
 
   return (
     <div
+      data-testid="news-item"
+      data-news-type={item.type}
+      data-news-year={item.year}
       className="overflow-hidden rounded-xl"
       style={{ background: "var(--bg-surface)", border: "1px solid var(--border-primary)" }}
     >
@@ -291,6 +297,9 @@ function NewsCard({ item }: { item: NewsItem }) {
 
   return (
     <div
+      data-testid="news-item"
+      data-news-type={item.type}
+      data-news-year={item.year}
       className="group relative flex gap-3 overflow-hidden rounded-xl p-4 transition-all hover:shadow-sm"
       style={{
         background: "var(--bg-surface)",
@@ -492,6 +501,7 @@ export function NewsClient({ items }: { items: NewsItem[] }) {
 
       {displayed.length === 0 ? (
         <div
+          data-testid="news-empty-state"
           className="rounded-2xl p-12 text-center"
           style={{ background: "var(--bg-surface)", border: "1px solid var(--border-primary)" }}
         >
