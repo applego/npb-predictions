@@ -376,6 +376,10 @@ function LeaderboardRow({
   return (
     <>
       <tr
+        data-testid="commentator-row"
+        data-rank-index={rank}
+        data-display-score={displayScore}
+        data-commentator-slug={entry.slug}
         className="cursor-pointer transition-colors"
         onClick={onToggle}
         style={{
