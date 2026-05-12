@@ -25,7 +25,10 @@ const API_BASE =
 
 async function getSeasons(): Promise<Season[]> {
   try {
-    const res = await fetch(`${API_BASE}/api/seasons`, { cache: "no-store" });
+    const res = await fetch(`${API_BASE}/api/seasons`, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
     if (!res.ok) return [];
     return res.json() as Promise<Season[]>;
   } catch {
@@ -49,6 +52,7 @@ async function getLatestNews(): Promise<NewsItem[]> {
   try {
     const res = await fetch(`${API_BASE}/api/news?limit=5`, {
       cache: "no-store",
+      signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) return [];
     return res.json() as Promise<NewsItem[]>;
@@ -61,6 +65,7 @@ async function getPredictions(year: number): Promise<Prediction[]> {
   try {
     const res = await fetch(`${API_BASE}/api/seasons/${year}/predictions`, {
       cache: "no-store",
+      signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) return [];
     return res.json() as Promise<Prediction[]>;
@@ -80,7 +85,7 @@ async function getTopCommentators(
   try {
     const res = await fetch(
       `${API_BASE}/api/rankings/commentators?year=${year}&league=all`,
-      { cache: "no-store" }
+      { cache: "no-store", signal: AbortSignal.timeout(8000) }
     );
     if (!res.ok) return null;
     return res.json() as Promise<CommentatorRankingResponse>;

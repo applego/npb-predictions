@@ -16,17 +16,24 @@ import {
 import "./globals.css";
 
 // Default fonts (fallback when settings haven't loaded yet)
+// preload: false + explicit fallback shrinks dev-mode google fonts retries
+// (Next.js retries every weight/subset on each restart — harmless in prod
+//  thanks to build-time prefetch, but ~37 retries during dev startup).
 const bebasNeue = Bebas_Neue({
   weight: "400",
   subsets: ["latin"],
   variable: "--font-display-default",
   display: "swap",
+  preload: false,
+  fallback: ["Impact", "system-ui", "sans-serif"],
 });
 
 const notoSansJP = Noto_Sans_JP({
   subsets: ["latin"],
   variable: "--font-body-default",
   display: "swap",
+  preload: false,
+  fallback: ["Hiragino Sans", "Hiragino Kaku Gothic ProN", "system-ui", "sans-serif"],
 });
 
 const ROOT_DESCRIPTION = clampDescription(
