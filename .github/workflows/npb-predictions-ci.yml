@@ -18,9 +18,10 @@ defaults:
 
 jobs:
   ci:
-    # self-hosted を選ぶ理由: GitHub Actions の billing障害で ubuntu-latest が停止しても
-    # mac-2016-intel runner が動いていればデプロイ経路を維持できる (R2 — durability対策)。
-    runs-on: self-hosted
+    # 2026-05-17: self-hosted runner (mac-2016-intel) が長期停止し CI/Deploy が
+    # 24時間タイムアウト連発したため ubuntu-latest に切替。durability の代替策は
+    # GitHub Hosted Runners の billing 監視 + 別途 cloudflare 側 git 連携を検討。
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
