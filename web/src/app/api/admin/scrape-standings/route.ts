@@ -7,7 +7,7 @@ export const runtime = "edge";
  * active seasons, and returns the scraped data.
  *
  * Called from the admin UI "NPBから自動取得" button.
- * No separate auth — admin UI itself requires Firebase login with admin UID.
+ * Requires a verified Firebase ID Token belonging to an admin UID.
  */
 
 import { NextResponse } from "next/server";
@@ -15,8 +15,11 @@ import { getDb } from "@/db";
 import { seasons, actualTeamStandings } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { scrapeNpbStandings } from "@/lib/scrape-npb";
+import { requireAdmin } from "@/lib/auth-server";
 
-export async function POST() {
+export async function POST(req: Request) {
+  const auth = await requireAdmin(req);
+  if (auth instanceof Response) return auth;
   const db = getDb();
 
   const activeSeasons = await db

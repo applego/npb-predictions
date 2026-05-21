@@ -3,14 +3,19 @@ export const runtime = "edge";
 import { NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { users } from "@/db/schema";
-import { asc, eq } from "drizzle-orm";
+import { asc } from "drizzle-orm";
+import { requireAdmin } from "@/lib/auth-server";
 
-export async function GET() {
+export async function GET(req: Request) {
+  const auth = await requireAdmin(req);
+  if (auth instanceof Response) return auth;
   const rows = await getDb().select().from(users).orderBy(asc(users.id));
   return NextResponse.json(rows);
 }
 
 export async function POST(req: Request) {
+  const auth = await requireAdmin(req);
+  if (auth instanceof Response) return auth;
   const body = (await req.json()) as {
     name: string;
     slug: string;

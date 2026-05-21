@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import type { Season, User } from "@/lib/types";
+import type { Season } from "@/lib/types";
 import { LEAGUE_LABELS, TITLE_CATEGORY_LABELS } from "@/lib/types";
 import { useAuth } from "@/contexts/AuthContext";
+import { fetchWithAuth } from "@/lib/fetch-with-auth";
 
 const CENTRAL_TEAMS = [
   "読売ジャイアンツ",
@@ -171,9 +172,7 @@ export default function NewPredictionPage() {
   const router = useRouter();
   const { firebaseUser, appUser, loading: authLoading, signIn } = useAuth();
 
-  const [users, setUsers] = useState<User[]>([]);
   const [seasons, setSeasons] = useState<Season[]>([]);
-  const [userId, setUserId] = useState<number | "">("");
   const [seasonId, setSeasonId] = useState<number | "">("");
   const [rankings, setRankings] = useState<RankingState>(initRankings());
   const [titles, setTitles] = useState<TitleState>(initTitles());
@@ -183,25 +182,16 @@ export default function NewPredictionPage() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
   useEffect(() => {
-    Promise.all([
-      fetch("/api/users").then((r) => r.json() as Promise<User[]>).catch(() => []),
-      fetch("/api/seasons").then((r) => r.json() as Promise<Season[]>).catch(() => []),
-    ]).then(([u, s]) => {
-      setUsers(u as User[]);
-      setSeasons(s as Season[]);
-      // Auto-select active season
-      const active = (s as Season[]).find((season) => season.isActive);
-      if (active) setSeasonId(active.id);
-      setIsLoadingData(false);
-    }).catch(() => setIsLoadingData(false));
+    fetch("/api/seasons")
+      .then((r) => r.json() as Promise<Season[]>)
+      .then((s) => {
+        setSeasons(s);
+        const active = s.find((season) => season.isActive);
+        if (active) setSeasonId(active.id);
+        setIsLoadingData(false);
+      })
+      .catch(() => setIsLoadingData(false));
   }, []);
-
-  // Auto-select the logged-in user
-  useEffect(() => {
-    if (appUser && users.length > 0) {
-      setUserId(appUser.id);
-    }
-  }, [appUser, users]);
 
   function handleRankingChange(
     league: "central" | "pacific",
@@ -231,7 +221,7 @@ export default function NewPredictionPage() {
   }
 
   function validateStep1() {
-    if (!userId) return "ユーザーを選択してください";
+    if (!appUser) return "ログインユーザーが取得できませんでした";
     if (!seasonId) return "シーズンを選択してください";
     return null;
   }
@@ -267,7 +257,6 @@ export default function NewPredictionPage() {
       }))
     );
     return {
-      userId: Number(userId),
       seasonId: Number(seasonId),
       rankings: rankPayloads,
       titles: titlePayloads,
@@ -275,23 +264,38 @@ export default function NewPredictionPage() {
   }
 
   async function handleSubmit() {
+    if (!appUser) {
+      setError("ログインユーザーが取得できませんでした");
+      return;
+    }
     const v2 = validateStep2();
     if (v2) { setError(v2); return; }
     setSubmitting(true);
     setError(null);
     try {
-      const res = await fetch("/api/predictions", {
+      const payload = JSON.stringify(buildPayload());
+      let res = await fetchWithAuth("/api/predictions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(buildPayload()),
+        body: payload,
       });
+      if (res.status === 409) {
+        // Prediction already exists for this season — fall back to update.
+        res = await fetchWithAuth("/api/predictions", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: payload,
+        });
+      }
       if (!res.ok) {
-        const d = await (res.json() as Promise<any>).catch(() => ({}));
+        const d = await (res.json() as Promise<{ error?: string }>).catch(
+          () => ({} as { error?: string })
+        );
         throw new Error(d.error ?? `HTTP ${res.status}`);
       }
       router.push("/predictions");
     } catch (e) {
-      setError(String(e));
+      setError(e instanceof Error ? e.message : String(e));
     } finally {
       setSubmitting(false);
     }
@@ -416,22 +420,24 @@ export default function NewPredictionPage() {
           <div className="space-y-4">
             <div>
               <label className="mb-1 block text-sm font-medium">
-                ユーザー名 <span className="text-red-500">*</span>
+                ユーザー
               </label>
-              <select
-                value={userId}
-                onChange={(e) =>
-                  setUserId(e.target.value ? Number(e.target.value) : "")
-                }
-                className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              >
-                <option value="">— 選択してください —</option>
-                {users.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.name}
-                  </option>
-                ))}
-              </select>
+              <div className="flex items-center gap-3 rounded border border-gray-200 bg-gray-50 px-3 py-2 text-sm">
+                {appUser?.avatarUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={appUser.avatarUrl}
+                    alt=""
+                    className="h-8 w-8 rounded-full"
+                  />
+                )}
+                <span className="font-medium text-gray-800">
+                  {appUser?.name ?? "（取得中...）"}
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-gray-500">
+                ログイン中のアカウントで予想を登録します
+              </p>
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium">
@@ -496,7 +502,7 @@ export default function NewPredictionPage() {
           {/* Summary */}
           <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
             <p className="mb-1 text-sm font-semibold text-blue-800">
-              確認: {users.find((u) => u.id === userId)?.name} さんの予想
+              確認: {appUser?.name} さんの予想
             </p>
             <p className="text-sm text-blue-700">
               {selectedSeason?.label} — 順位予想 12項目 + タイトル予想{" "}

@@ -25,7 +25,14 @@ export const users = sqliteTable("users", {
   firebaseUid: text("firebase_uid"),
   email: text("email"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
-});
+}, (table) => [
+  // Partial unique index: enforces one user per Firebase UID but leaves
+  // legacy rows without a linked Firebase identity untouched.
+  // Created by migration 0005_security_hardening.sql.
+  uniqueIndex("users_firebase_uid_unique_idx")
+    .on(table.firebaseUid)
+    .where(sql`${table.firebaseUid} IS NOT NULL`),
+]);
 
 export const seasons = sqliteTable("seasons", {
   id: integer("id").primaryKey({ autoIncrement: true }),

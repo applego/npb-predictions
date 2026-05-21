@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { fetchWithAuth } from "@/lib/fetch-with-auth";
 
 // --- Admin UID check ---
 
@@ -30,7 +31,7 @@ interface ApiResult {
 
 async function apiPost(url: string, body: unknown): Promise<ApiResult> {
   try {
-    const res = await fetch(url, {
+    const res = await fetchWithAuth(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -253,7 +254,7 @@ function UserManager() {
 
   async function loadUsers() {
     try {
-      const res = await fetch("/api/admin/users");
+      const res = await fetchWithAuth("/api/admin/users");
       if (res.ok) setUsers((await res.json()) as User[]);
     } catch { /* ignore */ }
   }
@@ -573,7 +574,7 @@ function StandingsUpdater() {
     setScraping(true);
     setResult(null);
     try {
-      const res = await fetch("/api/admin/scrape-standings", { method: "POST" });
+      const res = await fetchWithAuth("/api/admin/scrape-standings", { method: "POST" });
       const data = await res.json() as { standings?: ScrapedStanding[]; error?: string; scrapedAt?: string; savedToSeasons?: number[] };
       if (!res.ok) {
         setResult({ ok: false, error: data.error ?? res.statusText });
