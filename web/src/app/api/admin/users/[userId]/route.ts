@@ -4,11 +4,14 @@ import { NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { requireAdmin } from "@/lib/auth-server";
 
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ userId: string }> },
 ) {
+  const auth = await requireAdmin(req);
+  if (auth instanceof Response) return auth;
   const { userId } = await params;
   const uid = parseInt(userId, 10);
   if (Number.isNaN(uid)) {

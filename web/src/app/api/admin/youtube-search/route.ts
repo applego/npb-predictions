@@ -1,6 +1,7 @@
 export const runtime = "edge";
 
 import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/auth-server";
 
 interface YTSearchItem {
   id: { channelId: string };
@@ -18,6 +19,8 @@ interface YTSearchResponse {
 }
 
 export async function GET(req: Request) {
+  const auth = await requireAdmin(req);
+  if (auth instanceof Response) return auth;
   const { searchParams } = new URL(req.url);
   const q = searchParams.get("q");
   if (!q?.trim()) {

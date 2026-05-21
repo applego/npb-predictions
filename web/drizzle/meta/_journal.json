@@ -36,6 +36,13 @@
       "when": 1776656703407,
       "tag": "0004_known_retro_girl",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1779338109644,
+      "tag": "0005_security_hardening",
+      "breakpoints": true
     }
   ]
 }

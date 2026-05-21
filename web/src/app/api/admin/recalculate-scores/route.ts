@@ -21,6 +21,7 @@ import {
   type ActualStanding,
   type ActualTitle,
 } from "@/lib/scoring";
+import { requireAdmin } from "@/lib/auth-server";
 
 /**
  * POST /api/admin/recalculate-scores?year=2026
@@ -30,6 +31,8 @@ import {
  * Also determines monthly champions and writes awards.
  */
 export async function POST(req: Request) {
+  const auth = await requireAdmin(req);
+  if (auth instanceof Response) return auth;
   const { searchParams } = new URL(req.url);
   const yearParam = searchParams.get("year");
   if (!yearParam) {
