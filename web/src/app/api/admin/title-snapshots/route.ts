@@ -3,6 +3,7 @@ export const runtime = "edge";
 import { NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { actualTitleSnapshots } from "@/db/schema";
+import { requireAdmin } from "@/lib/auth-server";
 
 interface TitleSnapshotInput {
   seasonId: number;
@@ -21,6 +22,8 @@ interface TitleSnapshotInput {
 }
 
 export async function POST(req: Request) {
+  const auth = await requireAdmin(req);
+  if (auth instanceof Response) return auth;
   const body = (await req.json()) as { snapshots: TitleSnapshotInput[] };
 
   const inserted = await getDb()

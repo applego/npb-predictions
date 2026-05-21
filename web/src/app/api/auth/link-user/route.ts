@@ -4,35 +4,53 @@ import { NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { z } from "zod";
+import { verifyIdToken } from "@/lib/auth-server";
 
-interface LinkUserBody {
-  firebaseUid: string;
-  email: string | null;
-  displayName: string | null;
-  photoURL: string | null;
-}
+const BodySchema = z.object({
+  // firebaseUid is no longer trusted from the body — we verify it against the token.
+  // It's accepted for legacy compatibility but ignored.
+  firebaseUid: z.string().optional(),
+  email: z.string().email().nullable().optional(),
+  displayName: z.string().max(200).nullable().optional(),
+  photoURL: z.string().url().max(2048).nullable().optional(),
+});
 
 export async function POST(req: Request) {
-  const body = (await req.json()) as LinkUserBody;
-
-  if (!body.firebaseUid) {
+  // 1. Verify the bearer token first — this is the only trusted source of firebaseUid.
+  const token = await verifyIdToken(req);
+  if (!token) {
     return NextResponse.json(
-      { error: "firebaseUid is required" },
+      { error: "Unauthorized: valid Firebase ID token required" },
+      { status: 401 }
+    );
+  }
+
+  // 2. Parse + validate body.
+  let body: z.infer<typeof BodySchema>;
+  try {
+    const raw = await req.json();
+    body = BodySchema.parse(raw);
+  } catch {
+    return NextResponse.json(
+      { error: "Invalid request body" },
       { status: 400 }
     );
   }
 
+  // Token's uid is authoritative; body.firebaseUid is ignored.
+  const firebaseUid = token.uid;
+  const tokenEmail = token.email;
   const db = getDb();
 
-  // 1. Check if a user with this firebaseUid already exists
+  // 3. Already linked? Return existing user.
   const existingByUid = await db
     .select()
     .from(users)
-    .where(eq(users.firebaseUid, body.firebaseUid))
+    .where(eq(users.firebaseUid, firebaseUid))
     .limit(1);
 
   if (existingByUid.length > 0) {
-    // Already linked — return the existing user
     const user = existingByUid[0];
     return NextResponse.json({
       id: user.id,
@@ -44,53 +62,70 @@ export async function POST(req: Request) {
     });
   }
 
-  // 2. Check if a user with matching email exists (link by email)
-  if (body.email) {
+  // 4. Try to link by email — but ONLY if:
+  //    a) the token's email is verified (otherwise an attacker could claim any email), and
+  //    b) the existing row has no firebaseUid yet (otherwise we'd overwrite someone else's link).
+  if (tokenEmail && token.emailVerified) {
     const existingByEmail = await db
       .select()
       .from(users)
-      .where(eq(users.email, body.email))
+      .where(eq(users.email, tokenEmail))
       .limit(1);
 
     if (existingByEmail.length > 0) {
-      // Link firebaseUid to the existing user
       const user = existingByEmail[0];
-      await db
-        .update(users)
-        .set({
-          firebaseUid: body.firebaseUid,
-          avatarUrl: user.avatarUrl ?? body.photoURL,
-        })
-        .where(eq(users.id, user.id));
-
+      if (user.firebaseUid && user.firebaseUid !== firebaseUid) {
+        // Refuse to overwrite an existing link — this would be account takeover.
+        return NextResponse.json(
+          { error: "This email is already linked to another account" },
+          { status: 409 }
+        );
+      }
+      if (!user.firebaseUid) {
+        await db
+          .update(users)
+          .set({
+            firebaseUid,
+            avatarUrl: user.avatarUrl ?? body.photoURL ?? null,
+          })
+          .where(eq(users.id, user.id));
+      }
       return NextResponse.json({
         id: user.id,
         name: user.name,
         slug: user.slug,
-        avatarUrl: user.avatarUrl ?? body.photoURL,
+        avatarUrl: user.avatarUrl ?? body.photoURL ?? null,
         role: user.role,
-        firebaseUid: body.firebaseUid,
+        firebaseUid,
       });
     }
   }
 
-  // 3. Create a new user
-  const displayName = body.displayName ?? body.email ?? "Guest";
-  const slug = displayName
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    || `user-${Date.now()}`;
+  // 5. Create a new user. Use token email when available (verified or not — we still
+  // need *some* identifier — but the firebaseUid is the real identity).
+  const displayName =
+    body.displayName?.trim() ||
+    tokenEmail?.split("@")[0] ||
+    `user-${firebaseUid.slice(0, 8)}`;
+
+  const baseSlug =
+    displayName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "") || `user-${firebaseUid.slice(0, 8)}`;
+
+  // Ensure slug uniqueness with a short suffix derived from uid.
+  const slug = `${baseSlug}-${firebaseUid.slice(0, 6)}`;
 
   const [newUser] = await db
     .insert(users)
     .values({
       name: displayName,
       slug,
-      avatarUrl: body.photoURL,
+      avatarUrl: body.photoURL ?? null,
       role: "friend",
-      firebaseUid: body.firebaseUid,
-      email: body.email,
+      firebaseUid,
+      email: tokenEmail,
     })
     .returning();
 
