@@ -1,0 +1,6 @@
+interface:
+  display_name: "Npb Predictions"
+  short_description: "Repo-specific patterns and workflows for npb-predictions"
+  default_prompt: "Use the npb-predictions repo skill to follow existing architecture, testing, and workflow conventions."
+policy:
+  allow_implicit_invocation: true
