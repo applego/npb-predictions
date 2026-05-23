@@ -91,4 +91,21 @@ test.describe("OG image generation", () => {
       }
     });
   }
+
+  // 2026-05-23: anti-fallback guard — empty / 1x1 / NPB-only default cards
+  // are < 20KB. A real card with rendered Japanese typography + ranking rows
+  // is >25KB. This catches the silent "PNG returned but it's the default
+  // logo" regression that PR #6 left in place.
+  test("/api/og/prediction returns REAL card (not default fallback)", async ({
+    request,
+  }) => {
+    const userId = await resolveSampleUserId(request);
+    const res = await request.get(`/api/og/prediction?userId=${userId}`);
+    expect(res.status()).toBeLessThan(500);
+    const body = await res.body();
+    expect(
+      body.length,
+      "prediction must be the real newspaper card (>25KB), not the ASCII fallback",
+    ).toBeGreaterThan(25_000);
+  });
 });
