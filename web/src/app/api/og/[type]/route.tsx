@@ -1,5 +1,6 @@
 export const runtime = "edge";
 
+import type { ReactElement } from "react";
 import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
 import { getDb } from "@/db";
@@ -50,26 +51,127 @@ export async function GET(
   const format = searchParams.get("format") ?? "twitter";
   const dims = DIMENSIONS[format] ?? DIMENSIONS.twitter;
 
+  // Font is required for satori to render Japanese without crashing the
+  // worker (root cause of OG 0B bug 2026-05-22). Load once, share across
+  // all card renderers via parameter. If load fails, every card falls
+  // back to renderDefaultCard which uses ASCII-only logo.
+  const fontData = await loadFont().catch((err) => {
+    console.warn("OG font load failed:", err);
+    return null;
+  });
+
+  // `return await` is required so the catch actually traps async throws.
+  // Without await, satori errors during render escape the try and CF Worker
+  // returns 200 with an empty body.
   try {
     switch (type) {
       case "prediction":
-        return renderPredictionCard(searchParams, dims);
+        return await renderPredictionCard(searchParams, dims, fontData);
       case "scoreboard":
-        return renderScoreboardCard(searchParams, dims);
+        return await renderScoreboardCard(searchParams, dims, fontData);
       case "monthly-champion":
-        return renderMonthlyChampionCard(searchParams, dims);
+        return await renderMonthlyChampionCard(searchParams, dims, fontData);
       case "weekly":
-        return renderWeeklyCard(searchParams, dims);
+        return await renderWeeklyCard(searchParams, dims, fontData);
       case "season":
-        return renderSeasonCard(searchParams, dims);
+        return await renderSeasonCard(searchParams, dims, fontData);
       case "commentator":
-        return renderCommentatorCard(searchParams, dims);
+        return await renderCommentatorCard(searchParams, dims, fontData);
       default:
-        return renderDefaultCard(dims);
+        return await renderDefaultCard(dims);
     }
   } catch (e) {
     console.error("OG image generation error:", e);
-    return renderDefaultCard(dims);
+    return await renderDefaultCard(dims, fontData);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Font loading + shared options builder
+// ---------------------------------------------------------------------------
+
+async function loadFont(): Promise<ArrayBuffer> {
+  // Try fontsource via jsdelivr first — Google Fonts CSS→woff2 chain has
+  // intermittently returned empty/error responses inside CF Pages Edge
+  // runtime (root cause of OG 0B bug). jsdelivr serves binary directly,
+  // single hop, no User-Agent sniffing.
+  const sources = [
+    "https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-jp@5/files/noto-sans-jp-japanese-700-normal.woff2",
+    "https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-jp@5/files/noto-sans-jp-latin-700-normal.woff2",
+  ];
+  for (const url of sources) {
+    try {
+      const res = await fetch(url);
+      if (res.ok) {
+        const buf = await res.arrayBuffer();
+        if (buf.byteLength > 1000) return buf;
+      }
+    } catch (e) {
+      console.warn("OG font source failed:", url, e);
+    }
+  }
+  // Last resort: Google Fonts via CSS extraction (legacy path).
+  const cssUrl =
+    "https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@700;900&display=swap";
+  const css = await fetch(cssUrl).then((r) => r.text());
+  const match = css.match(/src:\s*url\(([^)]+)\)\s*format\('woff2'\)/);
+  if (!match?.[1]) throw new Error("All font sources failed");
+  return fetch(match[1]).then((r) => r.arrayBuffer());
+}
+
+type OgOptions = {
+  width: number;
+  height: number;
+  fonts?: Array<{
+    name: string;
+    data: ArrayBuffer;
+    weight: 700;
+    style: "normal";
+  }>;
+};
+
+function ogOptions(
+  dims: { width: number; height: number },
+  fontData: ArrayBuffer | null,
+): OgOptions {
+  if (!fontData) return { ...dims };
+  return {
+    ...dims,
+    fonts: [
+      {
+        name: "NotoSansJP",
+        data: fontData,
+        weight: 700,
+        style: "normal",
+      },
+    ],
+  };
+}
+
+// Eager render: ImageResponse is a lazy stream — satori errors during PNG
+// encoding bypass any try/catch around `new ImageResponse(...)` and the
+// Worker returns 200 + empty body. By awaiting arrayBuffer() we surface
+// the error here and can fall back to renderDefaultCard safely.
+async function safeImageResponse(
+  jsx: ReactElement,
+  dims: { width: number; height: number },
+  fontData: ArrayBuffer | null,
+  label: string,
+): Promise<Response> {
+  try {
+    const img = new ImageResponse(jsx, ogOptions(dims, fontData));
+    const buf = await img.arrayBuffer();
+    return new Response(buf, {
+      status: 200,
+      headers: {
+        "content-type": "image/png",
+        "cache-control":
+          "public, immutable, no-transform, max-age=31536000",
+      },
+    });
+  } catch (err) {
+    console.error(`OG render error (${label}):`, err);
+    return await renderDefaultCard(dims);
   }
 }
 
@@ -77,25 +179,27 @@ export async function GET(
 
 async function renderPredictionCard(
   searchParams: URLSearchParams,
-  dims: { width: number; height: number }
+  dims: { width: number; height: number },
+  fontData: ArrayBuffer | null,
 ) {
+  if (!fontData) return await renderDefaultCard(dims);
   const year = parseInt(searchParams.get("year") ?? String(new Date().getFullYear()), 10);
   const userId = parseInt(searchParams.get("userId") ?? "0", 10);
 
-  if (!userId) return renderDefaultCard(dims);
+  if (!userId) return await renderDefaultCard(dims);
 
   // Fetch user + prediction data
   const user = await getDb().query.users.findFirst({
     where: eq(users.id, userId),
   });
 
-  if (!user) return renderDefaultCard(dims);
+  if (!user) return await renderDefaultCard(dims);
 
   const season = await getDb().query.seasons.findFirst({
     where: eq(seasons.year, year),
   });
 
-  if (!season) return renderDefaultCard(dims);
+  if (!season) return await renderDefaultCard(dims);
 
   const prediction = await getDb().query.predictions.findFirst({
     where: and(
@@ -117,7 +221,7 @@ async function renderPredictionCard(
 
   const isPortrait = dims.height > dims.width;
 
-  return new ImageResponse(
+  return await safeImageResponse(
     (
       <div
         style={{
@@ -259,7 +363,9 @@ async function renderPredictionCard(
         </div>
       </div>
     ),
-    dims
+    dims,
+    fontData,
+    "og-card",
   );
 }
 
@@ -267,15 +373,17 @@ async function renderPredictionCard(
 
 async function renderScoreboardCard(
   searchParams: URLSearchParams,
-  dims: { width: number; height: number }
+  dims: { width: number; height: number },
+  fontData: ArrayBuffer | null,
 ) {
+  if (!fontData) return await renderDefaultCard(dims);
   const year = parseInt(searchParams.get("year") ?? String(new Date().getFullYear()), 10);
 
   const season = await getDb().query.seasons.findFirst({
     where: eq(seasons.year, year),
   });
 
-  if (!season) return renderDefaultCard(dims);
+  if (!season) return await renderDefaultCard(dims);
 
   // Get latest score snapshots
   const scores = await getDb().query.scoreSnapshots.findMany({
@@ -296,7 +404,7 @@ async function renderScoreboardCard(
 
   const isPortrait = dims.height > dims.width;
 
-  return new ImageResponse(
+  return await safeImageResponse(
     (
       <div
         style={{
@@ -424,7 +532,9 @@ async function renderScoreboardCard(
         </div>
       </div>
     ),
-    dims
+    dims,
+    fontData,
+    "og-card",
   );
 }
 
@@ -432,8 +542,10 @@ async function renderScoreboardCard(
 
 async function renderMonthlyChampionCard(
   searchParams: URLSearchParams,
-  dims: { width: number; height: number }
+  dims: { width: number; height: number },
+  fontData: ArrayBuffer | null,
 ) {
+  if (!fontData) return await renderDefaultCard(dims);
   const year = parseInt(searchParams.get("year") ?? String(new Date().getFullYear()), 10);
   const month = parseInt(searchParams.get("month") ?? String(new Date().getMonth() + 1), 10);
 
@@ -441,7 +553,7 @@ async function renderMonthlyChampionCard(
     where: eq(seasons.year, year),
   });
 
-  if (!season) return renderDefaultCard(dims);
+  if (!season) return await renderDefaultCard(dims);
 
   // Find the monthly champion award
   const award = await getDb().query.awards.findFirst({
@@ -462,7 +574,7 @@ async function renderMonthlyChampionCard(
 
   const isPortrait = dims.height > dims.width;
 
-  return new ImageResponse(
+  return await safeImageResponse(
     (
       <div
         style={{
@@ -551,7 +663,9 @@ async function renderMonthlyChampionCard(
         </div>
       </div>
     ),
-    dims
+    dims,
+    fontData,
+    "og-card",
   );
 }
 
@@ -559,15 +673,17 @@ async function renderMonthlyChampionCard(
 
 async function renderWeeklyCard(
   searchParams: URLSearchParams,
-  dims: { width: number; height: number }
+  dims: { width: number; height: number },
+  fontData: ArrayBuffer | null,
 ) {
+  if (!fontData) return await renderDefaultCard(dims);
   const year = parseInt(searchParams.get("year") ?? String(new Date().getFullYear()), 10);
 
   const season = await getDb().query.seasons.findFirst({
     where: eq(seasons.year, year),
   });
 
-  if (!season) return renderDefaultCard(dims);
+  if (!season) return await renderDefaultCard(dims);
 
   // Get all score snapshots, sorted by date descending
   const allScores = await getDb().query.scoreSnapshots.findMany({
@@ -576,7 +692,7 @@ async function renderWeeklyCard(
     with: { user: true },
   });
 
-  if (allScores.length === 0) return renderDefaultCard(dims);
+  if (allScores.length === 0) return await renderDefaultCard(dims);
 
   // Find latest snapshot date and 7 days prior
   const latestDate = allScores[0].snapshotDate;
@@ -614,7 +730,7 @@ async function renderWeeklyCard(
 
   const weekLabel = `${(weekAgo.getMonth() + 1)}/${weekAgo.getDate()} - ${(latestDate.getMonth() + 1)}/${latestDate.getDate()}`;
 
-  return new ImageResponse(
+  return await safeImageResponse(
     (
       <div
         style={{
@@ -748,7 +864,9 @@ async function renderWeeklyCard(
         </div>
       </div>
     ),
-    dims
+    dims,
+    fontData,
+    "og-card",
   );
 }
 
@@ -756,8 +874,10 @@ async function renderWeeklyCard(
 
 async function renderSeasonCard(
   searchParams: URLSearchParams,
-  dims: { width: number; height: number }
+  dims: { width: number; height: number },
+  fontData: ArrayBuffer | null,
 ) {
+  if (!fontData) return await renderDefaultCard(dims);
   const year = parseInt(
     searchParams.get("year") ?? String(new Date().getFullYear()),
     10
@@ -803,7 +923,7 @@ async function renderSeasonCard(
 
   const isPortrait = dims.height > dims.width;
 
-  return new ImageResponse(
+  return await safeImageResponse(
     (
       <div
         style={{
@@ -945,7 +1065,9 @@ async function renderSeasonCard(
         </div>
       </div>
     ),
-    dims
+    dims,
+    fontData,
+    "og-card",
   );
 }
 
@@ -953,8 +1075,10 @@ async function renderSeasonCard(
 
 async function renderCommentatorCard(
   searchParams: URLSearchParams,
-  dims: { width: number; height: number }
+  dims: { width: number; height: number },
+  fontData: ArrayBuffer | null,
 ) {
+  if (!fontData) return await renderDefaultCard(dims);
   const name = searchParams.get("name") ?? "解説者";
   const total = parseInt(searchParams.get("total") ?? "0", 10);
   const years = parseInt(searchParams.get("years") ?? "0", 10);
@@ -964,7 +1088,7 @@ async function renderCommentatorCard(
   const positive = total >= 0;
   const scoreColor = positive ? "#4ade80" : "#f87171";
 
-  return new ImageResponse(
+  return await safeImageResponse(
     (
       <div
         style={{
@@ -1136,16 +1260,33 @@ async function renderCommentatorCard(
         </div>
       </div>
     ),
-    dims
+    dims,
+    fontData,
+    "og-card",
   );
 }
 
 // --- Default fallback card ---
+// Eager render directly here (NOT via safeImageResponse) to avoid recursion
+// when satori fails inside safeImageResponse and tries to fall back here.
 
-function renderDefaultCard(dims: { width: number; height: number }) {
+const MINIMAL_PNG = new Uint8Array([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d,
+  0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+  0x08, 0x06, 0x00, 0x00, 0x00, 0x1f, 0x15, 0xc4, 0x89, 0x00, 0x00, 0x00,
+  0x0a, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9c, 0x63, 0x00, 0x01, 0x00, 0x00,
+  0x05, 0x00, 0x01, 0x0d, 0x0a, 0x2d, 0xb4, 0x00, 0x00, 0x00, 0x00, 0x49,
+  0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82,
+]);
+
+async function renderDefaultCard(
+  dims: { width: number; height: number },
+  fontData: ArrayBuffer | null = null,
+): Promise<Response> {
   const isPortrait = dims.height > dims.width;
 
-  return new ImageResponse(
+  try {
+    const img = new ImageResponse(
     (
       <div
         style={{
@@ -1190,10 +1331,26 @@ function renderDefaultCard(dims: { width: number; height: number }) {
             marginTop: "12px",
           }}
         >
-          プロ野球順位予想リーグ
+          {/* ASCII only — satori must render this even when font load fails */}
+          npb-predictions.pages.dev
         </div>
       </div>
     ),
-    dims
-  );
+      ogOptions(dims, fontData),
+    );
+    const buf = await img.arrayBuffer();
+    return new Response(buf, {
+      status: 200,
+      headers: {
+        "content-type": "image/png",
+        "cache-control": "public, immutable, no-transform, max-age=31536000",
+      },
+    });
+  } catch (err) {
+    console.error("renderDefaultCard satori failed, returning 1x1 PNG:", err);
+    return new Response(MINIMAL_PNG, {
+      status: 200,
+      headers: { "content-type": "image/png" },
+    });
+  }
 }
