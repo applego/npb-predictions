@@ -65,4 +65,30 @@ test.describe("OG image generation", () => {
     const ct = res.headers()["content-type"] ?? "";
     expect(ct).toMatch(/image\/|text\//);
   });
+
+  // 2026-05-23: regression guard — previously /api/og/season|commentator
+  // returned 200 + 0B body when satori crashed mid-render on missing font.
+  // Each route now must always emit a non-empty PNG.
+  for (const route of ["season", "commentator", "standings"] as const) {
+    test(`/api/og/${route} returns non-empty PNG`, async ({ request }) => {
+      const userId = await resolveSampleUserId(request);
+      const url =
+        route === "standings"
+          ? `/api/og/${route}`
+          : `/api/og/${route}?userId=${userId}`;
+      const res = await request.get(url);
+      expect(res.status(), `${route} must not 5xx`).toBeLessThan(500);
+      const ct = res.headers()["content-type"] ?? "";
+      expect(ct).toMatch(/image\/(png|jpeg)/);
+      const body = await res.body();
+      expect(body.length, `${route} body must be non-empty`).toBeGreaterThan(
+        100,
+      );
+      if (ct.includes("png")) {
+        // PNG magic: 89 50 4E 47
+        expect(body[0]).toBe(0x89);
+        expect(body[1]).toBe(0x50);
+      }
+    });
+  }
 });
