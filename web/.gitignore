@@ -29,3 +29,6 @@ next-env.d.ts
 playwright-report/
 test-results/
 .deploy-log
+
+# wrangler/miniflare local D1 state (regenerated per dev session)
+.wrangler/

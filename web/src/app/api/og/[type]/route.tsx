@@ -50,20 +50,23 @@ export async function GET(
   const format = searchParams.get("format") ?? "twitter";
   const dims = DIMENSIONS[format] ?? DIMENSIONS.twitter;
 
+  // `return await` is required so the catch actually traps async throws.
+  // Without await, satori errors during render escape the try and CF Worker
+  // returns 200 with an empty body (root cause of OG 0B bug 2026-05-22).
   try {
     switch (type) {
       case "prediction":
-        return renderPredictionCard(searchParams, dims);
+        return await renderPredictionCard(searchParams, dims);
       case "scoreboard":
-        return renderScoreboardCard(searchParams, dims);
+        return await renderScoreboardCard(searchParams, dims);
       case "monthly-champion":
-        return renderMonthlyChampionCard(searchParams, dims);
+        return await renderMonthlyChampionCard(searchParams, dims);
       case "weekly":
-        return renderWeeklyCard(searchParams, dims);
+        return await renderWeeklyCard(searchParams, dims);
       case "season":
-        return renderSeasonCard(searchParams, dims);
+        return await renderSeasonCard(searchParams, dims);
       case "commentator":
-        return renderCommentatorCard(searchParams, dims);
+        return await renderCommentatorCard(searchParams, dims);
       default:
         return renderDefaultCard(dims);
     }

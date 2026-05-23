@@ -51,6 +51,15 @@ jobs:
       - name: Build for Cloudflare Pages
         run: npx @cloudflare/next-on-pages
 
+      # 2026-05-23: deploy 前に Playwright E2E スモークを走らせる (永続保証)。
+      # 過去 OG 画像が 0B を返す bug を E2E が検知していたのに CI で回って
+      # おらず prod に出てしまった反省。落ちたら deploy しない。
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E smoke (against built CF Pages output)
+        run: npm run test:e2e
+
       # wrangler-action v3 は `command` 入力を改行で split して各行を別コマンドとして
       # 実行する。`github.event.head_commit.message` は squash merge 時に commit body
       # まで含んで複数行になり、2行目以降が `npx wrangler <body行>` として実行されて

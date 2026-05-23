@@ -51,11 +51,19 @@ export async function GET(request: NextRequest) {
 
   try {
     const [fontData, userData] = await Promise.all([
-      loadFont().catch(() => null),
+      loadFont().catch((err) => {
+        console.warn("OG font load failed, will fallback:", err);
+        return null;
+      }),
       fetchPredictionData(userId, year),
     ]);
 
     if (!userData) return renderFallback();
+    // Font is required for Japanese-heavy newspaper layout. If Google Fonts
+    // fetch failed (CF Pages Edge sometimes blocks/timeouts), satori would
+    // crash mid-render and CF Worker returns 200 with empty body — render
+    // the simpler fallback (ASCII-dominant) instead.
+    if (!fontData) return renderFallback();
 
     const { user, centralPicks, pacificPicks, allCentral1s, allPacific1s } =
       userData;
@@ -88,25 +96,28 @@ export async function GET(request: NextRequest) {
     const template = selectTemplate(userId, year);
     const article = renderTemplate(template, vars);
 
-    return new ImageResponse(
-      newspaperLayout(user.name, year, article, centralPicks, pacificPicks),
-      {
-        width: OG_WIDTH,
-        height: OG_HEIGHT,
-        ...(fontData
-          ? {
-              fonts: [
-                {
-                  name: "NotoSansJP",
-                  data: fontData,
-                  weight: 700,
-                  style: "normal",
-                },
-              ],
-            }
-          : {}),
-      },
-    );
+    try {
+      return new ImageResponse(
+        newspaperLayout(user.name, year, article, centralPicks, pacificPicks),
+        {
+          width: OG_WIDTH,
+          height: OG_HEIGHT,
+          fonts: [
+            {
+              name: "NotoSansJP",
+              data: fontData,
+              weight: 700,
+              style: "normal",
+            },
+          ],
+        },
+      );
+    } catch (renderErr) {
+      // Satori can throw on unsupported CSS or invalid JSX shape; if that
+      // happens we'd otherwise stream an empty body. Catch and fallback.
+      console.error("OG prediction satori render error:", renderErr);
+      return renderFallback();
+    }
   } catch (e) {
     console.error("OG prediction image error:", e);
     return renderFallback();
