@@ -25,17 +25,31 @@ import {
 const OG_WIDTH = 1200;
 const OG_HEIGHT = 630;
 
-// Fetch Noto Sans JP Bold (subset) at build/runtime from Google Fonts
+// Fetch Noto Sans JP Bold at build/runtime. jsdelivr first (single hop,
+// reliable inside CF Pages Edge runtime); Google Fonts CSS chain as last
+// resort. Google Fonts intermittently returns empty/error responses to
+// CF Worker fetches (root cause of OG 0B bug 2026-05-22).
 async function loadFont(): Promise<ArrayBuffer> {
-  const url =
-    "https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@700;900&display=swap";
-  const css = await fetch(url).then((r) => r.text());
-
-  // Extract the first woff2 URL from the CSS
-  const match = css.match(/src:\s*url\(([^)]+)\)\s*format\('woff2'\)/);
-  if (!match?.[1]) {
-    throw new Error("Failed to extract font URL from Google Fonts CSS");
+  const sources = [
+    "https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-jp@5/files/noto-sans-jp-japanese-700-normal.woff2",
+    "https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-jp@5/files/noto-sans-jp-latin-700-normal.woff2",
+  ];
+  for (const url of sources) {
+    try {
+      const res = await fetch(url);
+      if (res.ok) {
+        const buf = await res.arrayBuffer();
+        if (buf.byteLength > 1000) return buf;
+      }
+    } catch (e) {
+      console.warn("OG font source failed:", url, e);
+    }
   }
+  const cssUrl =
+    "https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@700;900&display=swap";
+  const css = await fetch(cssUrl).then((r) => r.text());
+  const match = css.match(/src:\s*url\(([^)]+)\)\s*format\('woff2'\)/);
+  if (!match?.[1]) throw new Error("All font sources failed");
   return fetch(match[1]).then((r) => r.arrayBuffer());
 }
 
@@ -96,8 +110,11 @@ export async function GET(request: NextRequest) {
     const template = selectTemplate(userId, year);
     const article = renderTemplate(template, vars);
 
+    // Eager render: satori errors during PNG encoding happen mid-stream
+    // and bypass try/catch around `new ImageResponse(...)`. By awaiting
+    // arrayBuffer() we surface the error here and can fall back safely.
     try {
-      return new ImageResponse(
+      const img = new ImageResponse(
         newspaperLayout(user.name, year, article, centralPicks, pacificPicks),
         {
           width: OG_WIDTH,
@@ -112,9 +129,16 @@ export async function GET(request: NextRequest) {
           ],
         },
       );
+      const buf = await img.arrayBuffer();
+      return new Response(buf, {
+        status: 200,
+        headers: {
+          "content-type": "image/png",
+          "cache-control":
+            "public, immutable, no-transform, max-age=31536000",
+        },
+      });
     } catch (renderErr) {
-      // Satori can throw on unsupported CSS or invalid JSX shape; if that
-      // happens we'd otherwise stream an empty body. Catch and fallback.
       console.error("OG prediction satori render error:", renderErr);
       return renderFallback();
     }
@@ -579,7 +603,8 @@ function renderFallback() {
             marginTop: "12px",
           }}
         >
-          #NPB予想リーグ
+          {/* ASCII only — must render even when font load fails */}
+          #NPB-LEAGUE
         </div>
       </div>
     ),
