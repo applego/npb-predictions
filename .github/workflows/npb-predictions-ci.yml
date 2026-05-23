@@ -57,6 +57,20 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
+      # 2026-05-23: E2E は wrangler pages dev (miniflare local D1) を立てる。
+      # API route (/api/users/.../history etc) が DB lookup するので、schema
+      # を migrate + seed を投入しておかないと 500 で test が落ちる。
+      # drizzle/*.sql を順に適用 → src/db/seed-commentators.sql で初期データ。
+      - name: Migrate local D1 (schema)
+        run: |
+          for f in drizzle/*.sql; do
+            echo "Applying $f"
+            npx wrangler d1 execute npb-predictions --local --file="$f"
+          done
+
+      - name: Seed local D1 (commentators + predictions)
+        run: npx wrangler d1 execute npb-predictions --local --file=src/db/seed-commentators.sql
+
       - name: E2E smoke (against built CF Pages output)
         run: npm run test:e2e
 
