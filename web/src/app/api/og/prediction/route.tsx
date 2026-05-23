@@ -30,9 +30,11 @@ const OG_HEIGHT = 630;
 // resort. Google Fonts intermittently returns empty/error responses to
 // CF Worker fetches (root cause of OG 0B bug 2026-05-22).
 async function loadFont(): Promise<ArrayBuffer> {
+  // CRITICAL: satori only accepts WOFF/TTF/OTF (NOT woff2). CF Pages tail
+  // confirmed: "Error: Unsupported OpenType signature wOF2" when woff2 used.
   const sources = [
-    "https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-jp@5/files/noto-sans-jp-japanese-700-normal.woff2",
-    "https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-jp@5/files/noto-sans-jp-latin-700-normal.woff2",
+    "https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-jp@5/files/noto-sans-jp-japanese-700-normal.woff",
+    "https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-jp@5/files/noto-sans-jp-latin-700-normal.woff",
   ];
   for (const url of sources) {
     try {
@@ -45,12 +47,8 @@ async function loadFont(): Promise<ArrayBuffer> {
       console.warn("OG font source failed:", url, e);
     }
   }
-  const cssUrl =
-    "https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@700;900&display=swap";
-  const css = await fetch(cssUrl).then((r) => r.text());
-  const match = css.match(/src:\s*url\(([^)]+)\)\s*format\('woff2'\)/);
-  if (!match?.[1]) throw new Error("All font sources failed");
-  return fetch(match[1]).then((r) => r.arrayBuffer());
+  // No Google Fonts fallback: returns woff2 which satori rejects.
+  throw new Error("All font sources failed (woff)");
 }
 
 export async function GET(request: NextRequest) {
@@ -272,6 +270,7 @@ function newspaperLayout(
         >
           <div
             style={{
+              display: "flex",
               fontSize: 18,
               fontWeight: 900,
               letterSpacing: "0.08em",
@@ -282,6 +281,7 @@ function newspaperLayout(
           </div>
           <div
             style={{
+              display: "flex",
               fontSize: 14,
               color: "#666",
             }}
@@ -364,6 +364,7 @@ function newspaperLayout(
           >
             <div
               style={{
+                display: "flex",
                 fontSize: 26,
                 fontWeight: 900,
                 lineHeight: 1.3,
@@ -376,6 +377,7 @@ function newspaperLayout(
             </div>
             <div
               style={{
+                display: "flex",
                 fontSize: 14,
                 color: "#555",
                 paddingLeft: "16px",
