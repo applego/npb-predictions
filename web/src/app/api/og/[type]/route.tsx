@@ -95,9 +95,11 @@ async function loadFont(): Promise<ArrayBuffer> {
   // intermittently returned empty/error responses inside CF Pages Edge
   // runtime (root cause of OG 0B bug). jsdelivr serves binary directly,
   // single hop, no User-Agent sniffing.
+  // CRITICAL: satori only accepts WOFF/TTF/OTF (NOT woff2). CF Pages tail
+  // confirmed: "Error: Unsupported OpenType signature wOF2" when woff2 used.
   const sources = [
-    "https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-jp@5/files/noto-sans-jp-japanese-700-normal.woff2",
-    "https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-jp@5/files/noto-sans-jp-latin-700-normal.woff2",
+    "https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-jp@5/files/noto-sans-jp-japanese-700-normal.woff",
+    "https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-jp@5/files/noto-sans-jp-latin-700-normal.woff",
   ];
   for (const url of sources) {
     try {
@@ -110,13 +112,9 @@ async function loadFont(): Promise<ArrayBuffer> {
       console.warn("OG font source failed:", url, e);
     }
   }
-  // Last resort: Google Fonts via CSS extraction (legacy path).
-  const cssUrl =
-    "https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@700;900&display=swap";
-  const css = await fetch(cssUrl).then((r) => r.text());
-  const match = css.match(/src:\s*url\(([^)]+)\)\s*format\('woff2'\)/);
-  if (!match?.[1]) throw new Error("All font sources failed");
-  return fetch(match[1]).then((r) => r.arrayBuffer());
+  // No Google Fonts fallback: it returns woff2 which satori rejects with
+  // "Unsupported OpenType signature wOF2". jsdelivr serves woff directly.
+  throw new Error("All font sources failed (woff)");
 }
 
 type OgOptions = {
@@ -247,6 +245,7 @@ async function renderPredictionCard(
           <div style={{ display: "flex", flexDirection: "column" }}>
             <div
               style={{
+                display: "flex",
                 fontSize: isPortrait ? 28 : 16,
                 color: "#94a3b8",
                 marginBottom: "4px",
@@ -256,6 +255,7 @@ async function renderPredictionCard(
             </div>
             <div
               style={{
+                display: "flex",
                 fontSize: isPortrait ? 56 : 36,
                 fontWeight: 800,
               }}
@@ -303,6 +303,7 @@ async function renderPredictionCard(
             >
               <div
                 style={{
+                  display: "flex",
                   fontSize: isPortrait ? 32 : 22,
                   fontWeight: 700,
                   color: "#86efac",
@@ -326,6 +327,7 @@ async function renderPredictionCard(
                 >
                   <div
                     style={{
+                      display: "flex",
                       width: isPortrait ? "44px" : "32px",
                       fontWeight: 700,
                       color: pick.rank <= 3 ? "#fbbf24" : "#94a3b8",
@@ -335,6 +337,7 @@ async function renderPredictionCard(
                   </div>
                   <div
                     style={{
+                      display: "flex",
                       width: isPortrait ? "12px" : "8px",
                       height: isPortrait ? "36px" : "24px",
                       backgroundColor:
@@ -429,6 +432,7 @@ async function renderScoreboardCard(
         >
           <div
             style={{
+              display: "flex",
               fontSize: isPortrait ? 28 : 16,
               color: "#94a3b8",
               marginBottom: "8px",
@@ -438,6 +442,7 @@ async function renderScoreboardCard(
           </div>
           <div
             style={{
+              display: "flex",
               fontSize: isPortrait ? 56 : 40,
               fontWeight: 800,
             }}
@@ -471,6 +476,7 @@ async function renderScoreboardCard(
               >
                 <div
                   style={{
+                    display: "flex",
                     fontSize: isPortrait ? 44 : 28,
                     fontWeight: 800,
                     color: rankColors[idx] ?? "#94a3b8",
@@ -481,6 +487,7 @@ async function renderScoreboardCard(
                 </div>
                 <div
                   style={{
+                    display: "flex",
                     flex: 1,
                     fontSize: isPortrait ? 36 : 24,
                     fontWeight: 700,
@@ -497,6 +504,7 @@ async function renderScoreboardCard(
                 >
                   <div
                     style={{
+                      display: "flex",
                       fontSize: isPortrait ? 40 : 28,
                       fontWeight: 800,
                       color: idx === 0 ? "#fbbf24" : "white",
@@ -506,6 +514,7 @@ async function renderScoreboardCard(
                   </div>
                   <div
                     style={{
+                      display: "flex",
                       fontSize: isPortrait ? 20 : 13,
                       color: "#94a3b8",
                     }}
@@ -592,6 +601,7 @@ async function renderMonthlyChampionCard(
       >
         <div
           style={{
+            display: "flex",
             fontSize: isPortrait ? 28 : 16,
             color: "#94a3b8",
             marginBottom: "12px",
@@ -602,6 +612,7 @@ async function renderMonthlyChampionCard(
 
         <div
           style={{
+            display: "flex",
             fontSize: isPortrait ? 48 : 32,
             fontWeight: 800,
             color: "#fbbf24",
@@ -631,6 +642,7 @@ async function renderMonthlyChampionCard(
 
         <div
           style={{
+            display: "flex",
             fontSize: isPortrait ? 64 : 44,
             fontWeight: 800,
             marginBottom: "8px",
@@ -642,6 +654,7 @@ async function renderMonthlyChampionCard(
         {award && (
           <div
             style={{
+              display: "flex",
               fontSize: isPortrait ? 28 : 18,
               color: "#86efac",
             }}
@@ -653,6 +666,7 @@ async function renderMonthlyChampionCard(
         {/* Footer */}
         <div
           style={{
+            display: "flex",
             position: "absolute",
             bottom: isPortrait ? "40px" : "20px",
             fontSize: isPortrait ? 22 : 14,
@@ -755,6 +769,7 @@ async function renderWeeklyCard(
         >
           <div
             style={{
+              display: "flex",
               fontSize: isPortrait ? 28 : 16,
               color: "#94a3b8",
               marginBottom: "8px",
@@ -764,6 +779,7 @@ async function renderWeeklyCard(
           </div>
           <div
             style={{
+              display: "flex",
               fontSize: isPortrait ? 48 : 36,
               fontWeight: 800,
             }}
@@ -772,6 +788,7 @@ async function renderWeeklyCard(
           </div>
           <div
             style={{
+              display: "flex",
               fontSize: isPortrait ? 24 : 16,
               color: "#86efac",
               marginTop: "8px",
@@ -804,6 +821,7 @@ async function renderWeeklyCard(
             >
               <div
                 style={{
+                  display: "flex",
                   fontSize: isPortrait ? 44 : 28,
                   fontWeight: 800,
                   color: idx === 0 ? "#fbbf24" : "#94a3b8",
@@ -814,6 +832,7 @@ async function renderWeeklyCard(
               </div>
               <div
                 style={{
+                  display: "flex",
                   flex: 1,
                   fontSize: isPortrait ? 36 : 24,
                   fontWeight: 700,
@@ -830,6 +849,7 @@ async function renderWeeklyCard(
               >
                 <div
                   style={{
+                    display: "flex",
                     fontSize: isPortrait ? 40 : 28,
                     fontWeight: 800,
                     color: entry.delta > 0 ? "#4ade80" : entry.delta < 0 ? "#f87171" : "#94a3b8",
@@ -839,6 +859,7 @@ async function renderWeeklyCard(
                 </div>
                 <div
                   style={{
+                    display: "flex",
                     fontSize: isPortrait ? 20 : 13,
                     color: "#94a3b8",
                   }}
@@ -948,6 +969,7 @@ async function renderSeasonCard(
         >
           <div
             style={{
+              display: "flex",
               fontSize: isPortrait ? 26 : 16,
               color: "#94a3b8",
               marginBottom: "4px",
@@ -957,6 +979,7 @@ async function renderSeasonCard(
           </div>
           <div
             style={{
+              display: "flex",
               fontSize: isPortrait ? 80 : 56,
               fontWeight: 800,
               letterSpacing: "0.04em",
@@ -966,6 +989,7 @@ async function renderSeasonCard(
           </div>
           <div
             style={{
+              display: "flex",
               fontSize: isPortrait ? 24 : 16,
               color: "#86efac",
               marginTop: "4px",
@@ -994,6 +1018,7 @@ async function renderSeasonCard(
             >
               <div
                 style={{
+                  display: "flex",
                   fontSize: isPortrait ? 30 : 22,
                   fontWeight: 700,
                   color: l.accent,
@@ -1007,6 +1032,7 @@ async function renderSeasonCard(
               {l.picks.length === 0 ? (
                 <div
                   style={{
+                    display: "flex",
                     fontSize: isPortrait ? 22 : 16,
                     color: "#64748b",
                     padding: "12px 0",
@@ -1028,6 +1054,7 @@ async function renderSeasonCard(
                   >
                     <div
                       style={{
+                        display: "flex",
                         width: isPortrait ? "44px" : "32px",
                         fontWeight: 700,
                         color: p.rank === 1 ? "#fbbf24" : "#cbd5e1",
@@ -1037,6 +1064,7 @@ async function renderSeasonCard(
                     </div>
                     <div
                       style={{
+                        display: "flex",
                         width: isPortrait ? "10px" : "8px",
                         height: isPortrait ? "30px" : "22px",
                         backgroundColor: TEAM_COLORS[p.teamName] ?? "#64748b",
@@ -1114,6 +1142,7 @@ async function renderCommentatorCard(
           <div style={{ display: "flex", flexDirection: "column" }}>
             <div
               style={{
+                display: "flex",
                 fontSize: isPortrait ? 26 : 16,
                 color: "#94a3b8",
                 marginBottom: "4px",
@@ -1123,6 +1152,7 @@ async function renderCommentatorCard(
             </div>
             <div
               style={{
+                display: "flex",
                 fontSize: isPortrait ? 22 : 14,
                 color: "#86efac",
               }}
@@ -1159,6 +1189,7 @@ async function renderCommentatorCard(
         >
           <div
             style={{
+              display: "flex",
               fontSize: isPortrait ? 92 : 64,
               fontWeight: 800,
               letterSpacing: "0.02em",
@@ -1180,6 +1211,7 @@ async function renderCommentatorCard(
             <div style={{ display: "flex", flexDirection: "column" }}>
               <div
                 style={{
+                  display: "flex",
                   fontSize: isPortrait ? 20 : 14,
                   color: "#94a3b8",
                   letterSpacing: "0.1em",
@@ -1189,6 +1221,7 @@ async function renderCommentatorCard(
               </div>
               <div
                 style={{
+                  display: "flex",
                   fontSize: isPortrait ? 72 : 56,
                   fontWeight: 800,
                   color: scoreColor,
@@ -1202,6 +1235,7 @@ async function renderCommentatorCard(
             <div style={{ display: "flex", flexDirection: "column" }}>
               <div
                 style={{
+                  display: "flex",
                   fontSize: isPortrait ? 20 : 14,
                   color: "#94a3b8",
                   letterSpacing: "0.1em",
@@ -1211,6 +1245,7 @@ async function renderCommentatorCard(
               </div>
               <div
                 style={{
+                  display: "flex",
                   fontSize: isPortrait ? 72 : 56,
                   fontWeight: 800,
                   color: "#fbbf24",
@@ -1224,6 +1259,7 @@ async function renderCommentatorCard(
               <div style={{ display: "flex", flexDirection: "column" }}>
                 <div
                   style={{
+                    display: "flex",
                     fontSize: isPortrait ? 20 : 14,
                     color: "#94a3b8",
                     letterSpacing: "0.1em",
@@ -1233,6 +1269,7 @@ async function renderCommentatorCard(
                 </div>
                 <div
                   style={{
+                    display: "flex",
                     fontSize: isPortrait ? 72 : 56,
                     fontWeight: 800,
                     color: "#e2e8f0",
@@ -1318,6 +1355,7 @@ async function renderDefaultCard(
         </div>
         <div
           style={{
+            display: "flex",
             fontSize: isPortrait ? 52 : 36,
             fontWeight: 800,
           }}
@@ -1326,6 +1364,7 @@ async function renderDefaultCard(
         </div>
         <div
           style={{
+            display: "flex",
             fontSize: isPortrait ? 28 : 18,
             color: "#94a3b8",
             marginTop: "12px",
