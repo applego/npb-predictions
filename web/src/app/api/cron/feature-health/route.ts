@@ -18,9 +18,21 @@ export const runtime = "edge";
 
 import { NextResponse } from "next/server";
 import { getDb } from "@/db";
-import { users, seasons, predictions, rankingPicks } from "@/db/schema";
+import {
+  users,
+  seasons,
+  predictions,
+  rankingPicks,
+  actualTeamStandings,
+} from "@/db/schema";
 import { desc, eq, sql } from "drizzle-orm";
 import { generateNewsFeed } from "@/lib/news-feed";
+
+// If actual_team_standings hasn't been updated for this long, the daily-scores
+// cron is silently broken and LIVE SCOREBOARD will progressively drift from
+// reality. 36h covers a missed daily run plus a few hours of buffer for
+// timezone / GitHub Actions queue latency.
+const STANDINGS_STALE_THRESHOLD_MS = 36 * 60 * 60 * 1000;
 
 interface FeatureStatus {
   source: string; // feature id, used as issue label e.g. "feature:image-gen"
@@ -163,14 +175,70 @@ async function checkCommentatorRanking(): Promise<FeatureStatus> {
   }
 }
 
-export async function GET() {
-  const [imageGen, newsFeed, commentatorRanking] = await Promise.all([
-    checkImageGen(),
-    checkNewsFeed(),
-    checkCommentatorRanking(),
-  ]);
+async function checkStandingsFreshness(): Promise<FeatureStatus> {
+  const base: FeatureStatus = {
+    source: "standings-freshness",
+    healthy: false,
+    unresolvedCount: 1,
+    latestError: null,
+    latestAt: new Date().toISOString(),
+    latestHtmlSnippet: null,
+    latestHttpStatus: null,
+  };
+  try {
+    const db = getDb();
+    const [activeSeason] = await db
+      .select()
+      .from(seasons)
+      .where(eq(seasons.isActive, true))
+      .limit(1);
+    if (!activeSeason) {
+      return { ...base, latestError: "no active season" };
+    }
+    const [latest] = await db
+      .select({ snapshotDate: actualTeamStandings.snapshotDate })
+      .from(actualTeamStandings)
+      .where(eq(actualTeamStandings.seasonId, activeSeason.id))
+      .orderBy(desc(actualTeamStandings.snapshotDate))
+      .limit(1);
+    if (!latest) {
+      return { ...base, latestError: `no actual_team_standings rows for season ${activeSeason.year}` };
+    }
+    const latestMs =
+      latest.snapshotDate instanceof Date
+        ? latest.snapshotDate.getTime()
+        : Number(latest.snapshotDate) * 1000;
+    const ageMs = Date.now() - latestMs;
+    const healthy = ageMs < STANDINGS_STALE_THRESHOLD_MS;
+    return {
+      ...base,
+      healthy,
+      unresolvedCount: healthy ? 0 : 1,
+      latestError: healthy
+        ? null
+        : `standings stale: latest snapshot ${Math.floor(ageMs / 3_600_000)}h old (threshold ${Math.floor(STANDINGS_STALE_THRESHOLD_MS / 3_600_000)}h). daily-scores workflow may be down.`,
+      latestAt: new Date(latestMs).toISOString(),
+      detail: {
+        seasonYear: activeSeason.year,
+        ageHours: Math.floor(ageMs / 3_600_000),
+        thresholdHours: Math.floor(STANDINGS_STALE_THRESHOLD_MS / 3_600_000),
+      },
+    };
+  } catch (e) {
+    return { ...base, latestError: e instanceof Error ? e.message : String(e) };
+  }
+}
 
-  const all = [imageGen, newsFeed, commentatorRanking];
+export async function GET() {
+  const [imageGen, newsFeed, commentatorRanking, standingsFreshness] =
+    await Promise.all([
+      checkImageGen(),
+      checkNewsFeed(),
+      checkCommentatorRanking(),
+      checkStandingsFreshness(),
+    ]);
+
+  const all = [imageGen, newsFeed, commentatorRanking, standingsFreshness];
   const needsAttention = all.filter((s) => !s.healthy);
 
   return NextResponse.json({

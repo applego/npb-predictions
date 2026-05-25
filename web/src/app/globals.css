@@ -37,6 +37,22 @@ html {
   color: var(--text-primary);
 }
 
+/* 2026-05-25: Tailwind v4 の Preflight には button { cursor: pointer } が
+   含まれていないため、明示的に追加。これが無いとログインボタン等で hover
+   時にカーソルが矢印のままになる (ユーザー指摘の bug)。 */
+button:not(:disabled),
+[role="button"]:not(:disabled),
+input[type="submit"]:not(:disabled),
+input[type="button"]:not(:disabled),
+input[type="reset"]:not(:disabled),
+summary {
+  cursor: pointer;
+}
+button:disabled,
+[role="button"][aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
 /* ── Baseball Motif Utilities ── */
 
 @layer utilities {

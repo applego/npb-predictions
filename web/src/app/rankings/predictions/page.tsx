@@ -184,13 +184,15 @@ export default async function PredictionsPage({
             <thead>
               <tr>
                 <th
-                  className="sticky left-0 z-10 px-3 py-1.5 text-left text-xs"
+                  className="sticky left-0 z-20 px-3 py-1.5 text-left text-xs"
                   rowSpan={2}
                   style={{
                     fontFamily: "var(--font-display)",
                     color: "var(--text-muted)",
                     background: "var(--bg-inset)",
                     borderBottom: "2px solid var(--border-primary)",
+                    borderRight: "2px solid var(--border-strong)",
+                    boxShadow: "2px 0 4px -2px rgba(0,0,0,0.1)",
                     letterSpacing: "0.08em",
                     minWidth: "8rem",
                     verticalAlign: "bottom",
@@ -290,12 +292,16 @@ export default async function PredictionsPage({
                       background: idx % 2 === 0 ? "var(--bg-surface)" : "var(--bg-elevated)",
                     }}
                   >
-                    {/* Predictor name (sticky) */}
+                    {/* Predictor name (sticky) — z-20 と opaque な background で
+                        横スクロール中に右側のテーブルセルに隠されないよう強化。
+                        2026-05-25 bug: z-10 だと scroll 時に名前カラムが見えなく
+                        なる報告あり。 */}
                     <td
-                      className="sticky left-0 z-10 px-3 py-1.5"
+                      className="sticky left-0 z-20 px-3 py-1.5"
                       style={{
                         background: idx % 2 === 0 ? "var(--bg-surface)" : "var(--bg-elevated)",
-                        borderRight: "1px solid var(--border-primary)",
+                        borderRight: "2px solid var(--border-strong)",
+                        boxShadow: "2px 0 4px -2px rgba(0,0,0,0.1)",
                       }}
                     >
                       <div className="text-xs font-medium" style={{ color: "var(--text-primary)" }}>
