@@ -171,6 +171,11 @@ export async function GET(
     return {
       userId: user.id,
       userName: user.name,
+      userRole: user.role,
+      // Same commentator often appears multiple times under different media
+      // (YouTube / デイリー / 週刊ベースボール ...); expose `source` so the UI
+      // can disambiguate duplicate names instead of showing identical rows.
+      userSource: user.source ?? null,
       rankingScore,
       titleScore: 0,
       totalScore: rankingScore,

@@ -71,6 +71,12 @@ jobs:
       - name: Seed local D1 (commentators + predictions)
         run: npx wrangler d1 execute npb-predictions --local --file=src/db/seed-commentators.sql
 
+      # E2E-only fixture: minimal actual_team_standings rows so the LIVE
+      # SCOREBOARD regression guard can assert non-zero scores in CI.
+      # Production data is unaffected.
+      - name: Seed local D1 (e2e standings fixture)
+        run: npx wrangler d1 execute npb-predictions --local --file=src/db/fixtures/e2e-standings.sql
+
       - name: E2E smoke (against built CF Pages output)
         run: npm run test:e2e
 

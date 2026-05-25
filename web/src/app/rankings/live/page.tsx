@@ -39,6 +39,8 @@ const CURRENT_YEAR = 2026;
 interface ScoreEntry {
   userId: number;
   userName: string;
+  userRole?: string;
+  userSource?: string | null;
   rankingScore: number;
   titleScore: number;
   totalScore: number;
@@ -374,6 +376,14 @@ export default async function LivePage() {
                         >
                           {entry.userName}
                         </span>
+                        {entry.userSource && (
+                          <span
+                            className="ml-2 text-xs"
+                            style={{ color: "var(--text-secondary)" }}
+                          >
+                            （{entry.userSource}）
+                          </span>
+                        )}
                       </td>
                       <td
                         className="px-3 py-2.5 text-right"

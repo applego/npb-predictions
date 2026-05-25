@@ -4,26 +4,15 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { Season } from "@/lib/types";
 import { LEAGUE_LABELS, TITLE_CATEGORY_LABELS } from "@/lib/types";
+import { getTeamsByLeague } from "@/lib/teams";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 
-const CENTRAL_TEAMS = [
-  "読売ジャイアンツ",
-  "阪神タイガース",
-  "横浜DeNAベイスターズ",
-  "中日ドラゴンズ",
-  "広島東洋カープ",
-  "ヤクルトスワローズ",
-];
-
-const PACIFIC_TEAMS = [
-  "福岡ソフトバンクホークス",
-  "オリックス・バファローズ",
-  "千葉ロッテマリーンズ",
-  "東北楽天ゴールデンイーグルス",
-  "埼玉西武ライオンズ",
-  "北海道日本ハムファイターズ",
-];
+// Source of truth: lib/teams.ts. Using canonical full names guarantees that
+// stored ranking_picks.team_name matches actual_team_standings.team_name from
+// the npb.jp scraper, so scoring lookups stay 1:1.
+const CENTRAL_TEAMS = getTeamsByLeague("central").map((t) => t.name);
+const PACIFIC_TEAMS = getTeamsByLeague("pacific").map((t) => t.name);
 
 const TITLE_CATEGORIES = Object.keys(TITLE_CATEGORY_LABELS) as Array<
   keyof typeof TITLE_CATEGORY_LABELS
