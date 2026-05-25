@@ -151,7 +151,7 @@ export default async function TitlesPage() {
             color: "var(--text-secondary)",
           }}
         >
-          実績データを取得中です。cron が次回スクレイプ実行時に反映されます。
+          タイトル実績はシーズン進行に合わせて更新されます。もうしばらくお待ちください。
         </div>
       )}
 

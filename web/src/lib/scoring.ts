@@ -6,6 +6,15 @@
  * Monthly champion: user with highest total score gain in a given month
  */
 
+import { getTeamByName } from "./teams";
+
+// Normalize a team identifier (full name, short name, or abbr) to its
+// canonical full name. Falls back to the input string if the team isn't
+// recognized so unknown names still bucket consistently.
+function normalizeTeamName(name: string): string {
+  return getTeamByName(name)?.name ?? name;
+}
+
 // --- Constants ---
 
 const RANKING_SCORE_TABLE: Record<number, number> = {
@@ -102,7 +111,7 @@ function buildActualRankMap(
   const map = new Map<string, number>();
   for (const a of actuals) {
     if (a.league === league) {
-      map.set(a.teamName, a.rank);
+      map.set(normalizeTeamName(a.teamName), a.rank);
     }
   }
   return map;
@@ -123,7 +132,7 @@ export function calcRankingScore(
   for (const pick of picks) {
     const rankMap =
       pick.league === "central" ? centralMap : pacificMap;
-    const actualRank = rankMap.get(pick.teamName);
+    const actualRank = rankMap.get(normalizeTeamName(pick.teamName));
     if (actualRank === undefined) continue; // team not in actuals yet
 
     const diff = Math.abs(pick.rank - actualRank);

@@ -5,7 +5,15 @@ import { getDb } from "@/db";
 import { users, seasons, predictions, rankingPicks, actualTeamStandings } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { calcRankingPointForTeam } from "@/lib/scoring";
+import { getTeamByName } from "@/lib/teams";
 import type { League } from "@/db/schema";
+
+// Map any team identifier (shortName / abbr / full name) to canonical full
+// name so predictions saved historically as "DeNA" still match actuals
+// stored as "横浜DeNAベイスターズ".
+function normalizeTeamName(name: string): string {
+  return getTeamByName(name)?.name ?? name;
+}
 
 interface StandingEntry {
   league: League;
@@ -57,8 +65,9 @@ export async function GET(
 
     if (!rankMap.has(row.league)) rankMap.set(row.league, new Map());
     const m = rankMap.get(row.league)!;
-    if (!m.has(row.teamName)) {
-      m.set(row.teamName, row.rank);
+    const canonical = normalizeTeamName(row.teamName);
+    if (!m.has(canonical)) {
+      m.set(canonical, row.rank);
     }
 
     const key = `${row.league}:${row.teamName}`;
@@ -154,7 +163,7 @@ export async function GET(
     for (const pick of picks) {
       const leagueMap = rankMap.get(pick.league);
       if (!leagueMap) continue;
-      const actualRank = leagueMap.get(pick.teamName);
+      const actualRank = leagueMap.get(normalizeTeamName(pick.teamName));
       if (actualRank === undefined) continue;
       rankingScore += calcRankingPointForTeam(pick.rank, actualRank);
     }
