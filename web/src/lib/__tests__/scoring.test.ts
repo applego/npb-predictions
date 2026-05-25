@@ -294,3 +294,45 @@ describe("calcMonthlyChampions", () => {
     expect(results[0].scoreGain).toBe(15);
   });
 });
+
+// --- Regression: shortName vs fullName cross-matching ---
+
+describe("calcRankingScore — name normalization", () => {
+  const actuals: ActualStanding[] = [
+    { league: "central", rank: 1, teamName: "東京ヤクルトスワローズ" },
+    { league: "central", rank: 2, teamName: "横浜DeNAベイスターズ" },
+    { league: "pacific", rank: 1, teamName: "福岡ソフトバンクホークス" },
+    { league: "pacific", rank: 2, teamName: "オリックス・バファローズ" },
+  ];
+
+  it("matches when prediction uses shortName ('DeNA') against actual full name", () => {
+    const picks: RankingPick[] = [{ league: "central", rank: 2, teamName: "DeNA" }];
+    const { score, details } = calcRankingScore(picks, actuals);
+    expect(score).toBe(5);
+    expect(details[0].actualRank).toBe(2);
+  });
+
+  it("matches mixed shortName/fullName picks", () => {
+    const picks: RankingPick[] = [
+      { league: "central", rank: 1, teamName: "ヤクルト" },
+      { league: "pacific", rank: 1, teamName: "ソフトバンク" },
+      { league: "pacific", rank: 2, teamName: "オリックス・バファローズ" },
+    ];
+    expect(calcRankingScore(picks, actuals).score).toBe(15);
+  });
+
+  it("matches actuals stored under shortName (defensive)", () => {
+    const legacyActuals: ActualStanding[] = [
+      { league: "central", rank: 1, teamName: "巨人" },
+    ];
+    const picks: RankingPick[] = [{ league: "central", rank: 1, teamName: "読売ジャイアンツ" }];
+    expect(calcRankingScore(picks, legacyActuals).score).toBe(5);
+  });
+
+  it("ignores unknown teams without crashing", () => {
+    const picks: RankingPick[] = [{ league: "central", rank: 1, teamName: "未知の球団" }];
+    const { score, details } = calcRankingScore(picks, actuals);
+    expect(score).toBe(0);
+    expect(details).toHaveLength(0);
+  });
+});
