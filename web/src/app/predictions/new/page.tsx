@@ -2,9 +2,27 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import type { Season } from "@/lib/types";
 import { LEAGUE_LABELS, TITLE_CATEGORY_LABELS } from "@/lib/types";
-import { getTeamsByLeague } from "@/lib/teams";
+import { getTeamsByLeague, getTeamByName } from "@/lib/teams";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 
@@ -30,9 +48,10 @@ interface TitleState {
 }
 
 function initRankings(): RankingState {
+  // DnD 版では空ではなく全チームを初期表示してドラッグで並び替える
   return {
-    central: Array.from({ length: 6 }, () => ""),
-    pacific: Array.from({ length: 6 }, () => ""),
+    central: [...CENTRAL_TEAMS],
+    pacific: [...PACIFIC_TEAMS],
   };
 }
 
@@ -55,38 +74,123 @@ function RankingPicker({
   rankings: string[];
   onChange: (league: "central" | "pacific", rank: number, team: string) => void;
 }) {
-  const usedTeams = new Set(rankings.filter(Boolean));
+  // 2026-05-25: 仕様書 (UX_DESIGN.md:441, PRODUCT_AUDIT.md:43) 通りの DnD
+  // 並び替え UI。dropdown 6 個ポチポチ UX を廃止、チームカードを縦に
+  // ドラッグして順位を決める。1位=上、6位=下。
+  // teams prop は使わず、rankings 配列 (全 6 チーム入り) を SortableContext
+  // に渡す。並び替え後、各 rank に対応するチーム名を onChange で親に通知。
+  void teams;
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIdx = rankings.indexOf(String(active.id));
+    const newIdx = rankings.indexOf(String(over.id));
+    if (oldIdx < 0 || newIdx < 0) return;
+    const reordered = arrayMove(rankings, oldIdx, newIdx);
+    // Re-emit each rank position to parent
+    reordered.forEach((team, i) => {
+      if (rankings[i] !== team) onChange(league, i + 1, team);
+    });
+  }
 
   return (
-    <div className="space-y-2">
-      {[1, 2, 3, 4, 5, 6].map((rank) => {
-        const selectedTeam = rankings[rank - 1] ?? "";
-        return (
-          <div key={rank} className="flex items-center gap-3">
-            <span className="w-8 shrink-0 text-right text-sm font-bold text-gray-500">
-              {rank}位
-            </span>
-            <select
-              value={selectedTeam}
-              onChange={(e) => onChange(league, rank, e.target.value)}
-              className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            >
-              <option value="">— チームを選択 —</option>
-              {teams.map((team) => (
-                <option
-                  key={team}
-                  value={team}
-                  disabled={usedTeams.has(team) && team !== selectedTeam}
-                >
-                  {team}
-                  {usedTeams.has(team) && team !== selectedTeam ? " (選択済)" : ""}
-                </option>
-              ))}
-            </select>
-          </div>
-        );
-      })}
+    <div>
+      <p className="mb-3 text-xs" style={{ color: "var(--text-muted)" }}>
+        🖐 ドラッグして並び替え (上から 1 位 → 6 位)
+      </p>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext items={rankings} strategy={verticalListSortingStrategy}>
+          <ul className="space-y-2">
+            {rankings.map((team, idx) => (
+              <SortableTeamCard
+                key={team}
+                team={team}
+                rank={idx + 1}
+              />
+            ))}
+          </ul>
+        </SortableContext>
+      </DndContext>
     </div>
+  );
+}
+
+function SortableTeamCard({ team, rank }: { team: string; rank: number }) {
+  const meta = getTeamByName(team);
+  const bgColor = meta?.color ?? "#6b7280";
+  const textColor = meta?.textColor ?? "#fff";
+  const isTop3 = rank <= 3;
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: team });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+    zIndex: isDragging ? 10 : 0,
+  };
+
+  return (
+    <li
+      ref={setNodeRef}
+      style={style}
+      className={`flex touch-none select-none items-center gap-3 rounded-md border bg-white p-3 shadow-sm ${
+        isDragging ? "ring-2 ring-offset-1" : ""
+      }`}
+    >
+      {/* Drag handle */}
+      <button
+        type="button"
+        aria-label={`${team} を並び替え`}
+        {...attributes}
+        {...listeners}
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded text-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+        style={{ cursor: isDragging ? "grabbing" : "grab" }}
+      >
+        ⋮⋮
+      </button>
+
+      {/* Rank badge */}
+      <div
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-black"
+        style={{
+          background: isTop3 ? "#DC2626" : "#E5E5E5",
+          color: isTop3 ? "#fff" : "#737373",
+        }}
+      >
+        {rank}
+      </div>
+
+      {/* Team badge */}
+      <div
+        className="flex flex-1 items-center rounded px-3 py-1.5 text-sm font-bold"
+        style={{
+          background: bgColor,
+          color: textColor,
+          textShadow: textColor === "#fff" ? "0 1px 2px rgba(0,0,0,0.3)" : "none",
+        }}
+      >
+        {team}
+      </div>
+    </li>
   );
 }
 
