@@ -25,6 +25,7 @@ import { LEAGUE_LABELS, TITLE_CATEGORY_LABELS } from "@/lib/types";
 import { getTeamsByLeague, getTeamByName } from "@/lib/teams";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
+import { PlayerCombobox } from "@/components/PlayerCombobox";
 
 // Source of truth: lib/teams.ts. Using canonical full names guarantees that
 // stored ranking_picks.team_name matches actual_team_standings.team_name from
@@ -220,20 +221,7 @@ function TitlePicker({
               {TITLE_CATEGORY_LABELS[cat]}
             </p>
             <div className="grid gap-2 sm:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-xs text-gray-500">
-                  選手名
-                </label>
-                <input
-                  type="text"
-                  value={pick.playerName}
-                  onChange={(e) =>
-                    onChange(league, cat, "playerName", e.target.value)
-                  }
-                  placeholder="例: 大谷翔平"
-                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
+              {/* チーム select を先に: 選手 combobox の絞り込み source */}
               <div>
                 <label className="mb-1 block text-xs text-gray-500">
                   所属チーム
@@ -252,6 +240,19 @@ function TitlePicker({
                     </option>
                   ))}
                 </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-gray-500">
+                  選手名 (DB から候補表示)
+                </label>
+                <PlayerCombobox
+                  value={pick.playerName}
+                  team={pick.teamName || undefined}
+                  onChange={(v) =>
+                    onChange(league, cat, "playerName", v)
+                  }
+                  placeholder="例: 大谷翔平"
+                />
               </div>
             </div>
           </div>
