@@ -70,6 +70,25 @@ async function scrapeWithFallback(db: DbClient): Promise<{
 }
 
 export async function POST(req: Request) {
+  try {
+    return await handlePOST(req);
+  } catch (err) {
+    // Without this catch the edge runtime returns a generic "Internal Server
+    // Error" plain text with no actionable info to the cron caller. Surface
+    // the error class + message (no stack) so workflow logs are diagnosable.
+    const e = err as Error;
+    return NextResponse.json(
+      {
+        error: "Unhandled exception in /api/cron/update-standings",
+        kind: e?.name ?? typeof err,
+        message: e?.message ?? String(err),
+      },
+      { status: 500 }
+    );
+  }
+}
+
+async function handlePOST(req: Request) {
   const { authorized } = checkCronAuth(req);
   if (!authorized) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
