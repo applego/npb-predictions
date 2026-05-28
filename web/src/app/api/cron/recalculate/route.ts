@@ -19,6 +19,7 @@ import {
   type ActualStanding,
   type ActualTitle,
 } from "@/lib/scoring";
+import { checkCronAuth } from "@/lib/cron-auth";
 
 /**
  * POST /api/cron/recalculate
@@ -33,13 +34,14 @@ import {
  *       If omitted, recalculates all active seasons.
  */
 export async function POST(req: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) {
-    return NextResponse.json({ error: "Cron endpoint is disabled (CRON_SECRET not set)" }, { status: 503 });
-  }
-
-  const incoming = req.headers.get("x-cron-secret");
-  if (incoming !== secret) {
+  const { authorized, reason } = checkCronAuth(req);
+  if (!authorized) {
+    if (reason === "no-secret-configured") {
+      return NextResponse.json(
+        { error: "Cron endpoint is disabled (CRON_SECRET not set)" },
+        { status: 503 }
+      );
+    }
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
