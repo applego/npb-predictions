@@ -149,25 +149,31 @@ function SortableTeamCard({ team, rank }: { team: string; rank: number }) {
     zIndex: isDragging ? 10 : 0,
   };
 
+  // 2026-05-28: ドラッグ受け付けをカード全体に。
+  // 旧: drag handle (⋮⋮) のみ {...listeners} → 左端の小さい領域でしか動かせなかった
+  // 新: <li> 全体に attach → どこを掴んでもドラッグ開始 (UX 改善)
+  // role/tabIndex/aria-label を <li> に付与してアクセシビリティ維持
   return (
     <li
       ref={setNodeRef}
-      style={style}
-      className={`flex touch-none select-none items-center gap-3 rounded-md border bg-white p-3 shadow-sm ${
+      style={{
+        ...style,
+        cursor: isDragging ? "grabbing" : "grab",
+      }}
+      aria-label={`${team} (${rank}位) — ドラッグして並び替え`}
+      {...attributes}
+      {...listeners}
+      className={`flex touch-none select-none items-center gap-3 rounded-md border bg-white p-3 shadow-sm hover:shadow-md ${
         isDragging ? "ring-2 ring-offset-1" : ""
       }`}
     >
-      {/* Drag handle */}
-      <button
-        type="button"
-        aria-label={`${team} を並び替え`}
-        {...attributes}
-        {...listeners}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded text-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700"
-        style={{ cursor: isDragging ? "grabbing" : "grab" }}
+      {/* Drag handle (視覚的ヒント。実 listeners は <li> 側) */}
+      <div
+        aria-hidden="true"
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded text-lg text-gray-400"
       >
         ⋮⋮
-      </button>
+      </div>
 
       {/* Rank badge */}
       <div
