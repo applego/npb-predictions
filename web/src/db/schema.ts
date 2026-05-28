@@ -4,6 +4,7 @@ import {
   integer,
   real,
   uniqueIndex,
+  index,
 } from "drizzle-orm/sqlite-core";
 import { relations, sql } from "drizzle-orm";
 
@@ -189,3 +190,29 @@ export const likes = sqliteTable("likes", {
 }, (table) => [uniqueIndex("likes_user_fp_idx").on(table.targetUserId, table.fingerprint)]);
 
 export const likesRelations = relations(likes, ({ one }) => ({ user: one(users, { fields: [likes.targetUserId], references: [users.id] }) }));
+
+// ─────────────────────────────────────────────────────────────────
+// NPB players (Phase 0: static seed 60名 / Phase 2: daily scraper で 840名)
+// タイトル予想 combobox 用。team_name は lib/teams.ts canonical 名と一致。
+// ─────────────────────────────────────────────────────────────────
+export const players = sqliteTable("players", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  npbId: text("npb_id"),
+  name: text("name").notNull(),
+  nameKana: text("name_kana"),
+  teamName: text("team_name").notNull(),
+  position: text("position"),
+  uniformNumber: text("uniform_number"),
+  bats: text("bats"),
+  throws: text("throws"),
+  isActive: integer("is_active").notNull().default(1),
+  sourceUrl: text("source_url"),
+  lastSeenAt: text("last_seen_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  uniqueIndex("players_npb_id_uniq").on(table.npbId),
+  index("players_team_active_idx").on(table.teamName, table.isActive),
+  index("players_name_idx").on(table.name),
+  index("players_name_kana_idx").on(table.nameKana),
+]);
