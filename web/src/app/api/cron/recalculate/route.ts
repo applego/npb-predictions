@@ -34,6 +34,22 @@ import { checkCronAuth } from "@/lib/cron-auth";
  *       If omitted, recalculates all active seasons.
  */
 export async function POST(req: Request) {
+  try {
+    return await handlePOST(req);
+  } catch (err) {
+    const e = err as Error;
+    return NextResponse.json(
+      {
+        error: "Unhandled exception in /api/cron/recalculate",
+        kind: e?.name ?? typeof err,
+        message: e?.message ?? String(err),
+      },
+      { status: 500 }
+    );
+  }
+}
+
+async function handlePOST(req: Request) {
   const { authorized, reason } = checkCronAuth(req);
   if (!authorized) {
     if (reason === "no-secret-configured") {
