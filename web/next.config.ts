@@ -14,6 +14,7 @@ if (process.env.NODE_ENV === "development") {
 // ── Build-time deploy provenance ─────────────────────────────────────────
 // Surfaced via /api/build-info so npb-cf-deploy-watch.yml can detect when
 // the deploy serving production lags behind origin/main (deploy-freshness).
+// (rebuild trigger: CRON_SECRET rotation 2026-05-28)
 function readGitSha(): string {
   if (process.env.NEXT_PUBLIC_COMMIT_SHA) return process.env.NEXT_PUBLIC_COMMIT_SHA;
   if (process.env.GITHUB_SHA) return process.env.GITHUB_SHA;
