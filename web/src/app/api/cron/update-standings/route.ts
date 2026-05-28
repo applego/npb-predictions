@@ -152,22 +152,27 @@ async function handlePOST(req: Request) {
     const shouldInsert = prev.length === 0 || diff.changed.length > 0;
 
     if (shouldInsert) {
-      await db
-        .insert(actualTeamStandings)
-        .values(
-          scrape.standings.map((s) => ({
-            seasonId: season.id,
-            league: s.league,
-            rank: s.rank,
-            teamName: s.teamName,
-            wins: s.wins,
-            losses: s.losses,
-            draws: s.draws,
-            isFinal: false,
-            snapshotDate: now,
-          })),
-        )
-        .onConflictDoNothing();
+      // D1 / SQLite has a 99-bind limit per statement. With 9 columns per row,
+      // a single 12-team batch would hit 108 binds and fail with
+      // "too many SQL variables". Insert in small chunks instead.
+      const CHUNK = 8;
+      const rows = scrape.standings.map((s) => ({
+        seasonId: season.id,
+        league: s.league,
+        rank: s.rank,
+        teamName: s.teamName,
+        wins: s.wins,
+        losses: s.losses,
+        draws: s.draws,
+        isFinal: false,
+        snapshotDate: now,
+      }));
+      for (let i = 0; i < rows.length; i += CHUNK) {
+        await db
+          .insert(actualTeamStandings)
+          .values(rows.slice(i, i + CHUNK))
+          .onConflictDoNothing();
+      }
     }
 
     results.push({
