@@ -19,6 +19,7 @@ import { scrapeNpbStandings, type ScrapedStanding } from "@/lib/scrape-npb";
 import { scrapeYahooStandings } from "@/lib/scrape-yahoo";
 import { diffStandings } from "@/lib/rank-diff";
 import { withRetry, markSourceResolved, logScrapeFailure } from "@/lib/scrape-retry";
+import { checkCronAuth } from "@/lib/cron-auth";
 import type { DbClient } from "@/db";
 
 async function scrapeWithFallback(db: DbClient): Promise<{
@@ -69,17 +70,7 @@ async function scrapeWithFallback(db: DbClient): Promise<{
 }
 
 export async function POST(req: Request) {
-  const cronSecret = process.env.CRON_SECRET;
-  const adminSecret = process.env.ADMIN_SECRET;
-
-  const incomingCron = req.headers.get("x-cron-secret");
-  const incomingAdmin = req.headers.get("x-admin-secret");
-
-  const authorized =
-    (cronSecret && incomingCron === cronSecret) ||
-    (adminSecret && incomingAdmin === adminSecret) ||
-    (!cronSecret && !adminSecret);
-
+  const { authorized } = checkCronAuth(req);
   if (!authorized) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

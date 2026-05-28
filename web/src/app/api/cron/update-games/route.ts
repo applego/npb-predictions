@@ -15,6 +15,7 @@ import { seasons, gameResults } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { scrapeYahooGames } from "@/lib/scrape-games";
 import { withRetry, markSourceResolved } from "@/lib/scrape-retry";
+import { checkCronAuth } from "@/lib/cron-auth";
 
 function todayInJst(): string {
   const now = new Date();
@@ -23,15 +24,7 @@ function todayInJst(): string {
 }
 
 export async function POST(req: Request) {
-  const cronSecret = process.env.CRON_SECRET;
-  const adminSecret = process.env.ADMIN_SECRET;
-  const incomingCron = req.headers.get("x-cron-secret");
-  const incomingAdmin = req.headers.get("x-admin-secret");
-
-  const authorized =
-    (cronSecret && incomingCron === cronSecret) ||
-    (adminSecret && incomingAdmin === adminSecret) ||
-    (!cronSecret && !adminSecret);
+  const { authorized } = checkCronAuth(req);
   if (!authorized) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
