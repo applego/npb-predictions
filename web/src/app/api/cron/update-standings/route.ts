@@ -19,6 +19,7 @@ import { scrapeNpbStandings, type ScrapedStanding } from "@/lib/scrape-npb";
 import { scrapeYahooStandings } from "@/lib/scrape-yahoo";
 import { diffStandings } from "@/lib/rank-diff";
 import { withRetry, markSourceResolved, logScrapeFailure } from "@/lib/scrape-retry";
+import { checkCronAuth } from "@/lib/cron-auth";
 import type { DbClient } from "@/db";
 
 async function scrapeWithFallback(db: DbClient): Promise<{
@@ -69,17 +70,26 @@ async function scrapeWithFallback(db: DbClient): Promise<{
 }
 
 export async function POST(req: Request) {
-  const cronSecret = process.env.CRON_SECRET;
-  const adminSecret = process.env.ADMIN_SECRET;
+  try {
+    return await handlePOST(req);
+  } catch (err) {
+    // Without this catch the edge runtime returns a generic "Internal Server
+    // Error" plain text with no actionable info to the cron caller. Surface
+    // the error class + message (no stack) so workflow logs are diagnosable.
+    const e = err as Error;
+    return NextResponse.json(
+      {
+        error: "Unhandled exception in /api/cron/update-standings",
+        kind: e?.name ?? typeof err,
+        message: e?.message ?? String(err),
+      },
+      { status: 500 }
+    );
+  }
+}
 
-  const incomingCron = req.headers.get("x-cron-secret");
-  const incomingAdmin = req.headers.get("x-admin-secret");
-
-  const authorized =
-    (cronSecret && incomingCron === cronSecret) ||
-    (adminSecret && incomingAdmin === adminSecret) ||
-    (!cronSecret && !adminSecret);
-
+async function handlePOST(req: Request) {
+  const { authorized } = checkCronAuth(req);
   if (!authorized) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -142,22 +152,27 @@ export async function POST(req: Request) {
     const shouldInsert = prev.length === 0 || diff.changed.length > 0;
 
     if (shouldInsert) {
-      await db
-        .insert(actualTeamStandings)
-        .values(
-          scrape.standings.map((s) => ({
-            seasonId: season.id,
-            league: s.league,
-            rank: s.rank,
-            teamName: s.teamName,
-            wins: s.wins,
-            losses: s.losses,
-            draws: s.draws,
-            isFinal: false,
-            snapshotDate: now,
-          })),
-        )
-        .onConflictDoNothing();
+      // D1 / SQLite has a 99-bind limit per statement. With 9 columns per row,
+      // a single 12-team batch would hit 108 binds and fail with
+      // "too many SQL variables". Insert in small chunks instead.
+      const CHUNK = 8;
+      const rows = scrape.standings.map((s) => ({
+        seasonId: season.id,
+        league: s.league,
+        rank: s.rank,
+        teamName: s.teamName,
+        wins: s.wins,
+        losses: s.losses,
+        draws: s.draws,
+        isFinal: false,
+        snapshotDate: now,
+      }));
+      for (let i = 0; i < rows.length; i += CHUNK) {
+        await db
+          .insert(actualTeamStandings)
+          .values(rows.slice(i, i + CHUNK))
+          .onConflictDoNothing();
+      }
     }
 
     results.push({

@@ -16,17 +16,10 @@ import { seasons, actualTitleSnapshots } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { scrapeNpbTitles } from "@/lib/scrape-titles";
 import { withRetry, markSourceResolved } from "@/lib/scrape-retry";
+import { checkCronAuth } from "@/lib/cron-auth";
 
 export async function POST(req: Request) {
-  const cronSecret = process.env.CRON_SECRET;
-  const adminSecret = process.env.ADMIN_SECRET;
-  const incomingCron = req.headers.get("x-cron-secret");
-  const incomingAdmin = req.headers.get("x-admin-secret");
-
-  const authorized =
-    (cronSecret && incomingCron === cronSecret) ||
-    (adminSecret && incomingAdmin === adminSecret) ||
-    (!cronSecret && !adminSecret);
+  const { authorized } = checkCronAuth(req);
   if (!authorized) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
