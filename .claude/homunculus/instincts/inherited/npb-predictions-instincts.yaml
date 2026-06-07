@@ -1,0 +1,391 @@
+# Instincts generated from https://github.com/applego/npb-predictions
+# Generated: 2026-06-07T09:42:00.424Z
+# Version: 2.0
+# NOTE: This file supplements (does not replace) any existing curated instincts.
+# High-confidence manually curated instincts should be preserved alongside these.
+
+---
+id: npb-predictions-commit-conventional
+trigger: "when writing a commit message"
+confidence: 0.85
+domain: git
+source: repo-analysis
+source_repo: https://github.com/applego/npb-predictions
+---
+
+# Npb Predictions Commit Conventional
+
+## Action
+
+Use conventional commit format with prefixes: fix, docs, chore
+
+## Evidence
+
+- 10 commits analyzed
+- Detected conventional commit pattern
+- Examples: docs: ARCHITECTURE.md 統合俯瞰図 (D1/API/CI/Auth/OG/構成/URL一覧) (#18), fix(dnd): カード全体をドラッグ可能に (左端ハンドル限定を解消)
+
+---
+id: npb-predictions-commit-length
+trigger: "when writing a commit message"
+confidence: 0.6
+domain: git
+source: repo-analysis
+source_repo: https://github.com/applego/npb-predictions
+---
+
+# Npb Predictions Commit Length
+
+## Action
+
+Write moderate-length commit messages (~64 characters)
+
+## Evidence
+
+- Average commit message length: 64 chars
+- Based on 10 commits
+
+---
+id: npb-predictions-naming-files
+trigger: "when creating a new file"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/applego/npb-predictions
+---
+
+# Npb Predictions Naming Files
+
+## Action
+
+Use camelCase naming convention
+
+## Evidence
+
+- Analyzed file naming patterns in repository
+- Dominant pattern: camelCase
+
+---
+id: npb-predictions-import-alias
+trigger: "when importing modules"
+confidence: 0.85
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/applego/npb-predictions
+---
+
+# Npb Predictions Import Alias
+
+## Action
+
+Use path aliases (@/, ~/) instead of relative imports
+
+## Evidence
+
+- Import analysis shows alias pattern
+- Example: import { x } from '@/lib/x'
+
+---
+id: npb-predictions-export-style
+trigger: "when exporting from a module"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/applego/npb-predictions
+---
+
+# Npb Predictions Export Style
+
+## Action
+
+Prefer named exports
+
+## Evidence
+
+- Export pattern analysis
+- Dominant style: named
+
+---
+id: npb-predictions-arch-type-based
+trigger: "when adding new code"
+confidence: 0.8
+domain: architecture
+source: repo-analysis
+source_repo: https://github.com/applego/npb-predictions
+---
+
+# Npb Predictions Arch Type Based
+
+## Action
+
+Place code in the appropriate type folder (components/, services/, utils/, etc.)
+
+## Evidence
+
+- Type-based module organization detected
+- Folders: 
+
+---
+id: npb-predictions-workflow-api-cron-route-hardening
+trigger: "when doing api cron route hardening"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/applego/npb-predictions
+---
+
+# Npb Predictions Workflow Api Cron Route Hardening
+
+## Action
+
+Follow the api-cron-route-hardening workflow:
+1. Identify issue in one or more cron API routes (e.g., env access, error handling, DB limits).
+2. Edit one or more files under web/src/app/api/cron/*/route.ts to address the problem.
+3. Optionally, add or update a shared helper in web/src/lib/ (e.g., cron-auth.ts).
+4. Commit changes, often with detailed commit messages referencing the specific cron route(s) affected.
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: web/src/app/api/cron/recalculate/route.ts, web/src/app/api/cron/update-games/route.ts, web/src/app/api/cron/update-standings/route.ts
+
+---
+id: npb-predictions-workflow-drag-and-drop-ui-enhancement
+trigger: "when doing drag and drop ui enhancement"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/applego/npb-predictions
+---
+
+# Npb Predictions Workflow Drag And Drop Ui Enhancement
+
+## Action
+
+Follow the drag-and-drop-ui-enhancement workflow:
+1. Receive user feedback or identify a usability issue with drag-and-drop.
+2. Edit web/src/app/predictions/new/page.tsx to update drag handle logic, accessibility labels, or visual feedback.
+3. Commit changes, sometimes referencing co-authors or user reports.
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: web/src/app/predictions/new/page.tsx
+
+---
+id: npb-predictions-instinct-file-naming
+trigger: "When creating or renaming a file in the codebase"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: applego/npb-predictions
+---
+
+# Npb Predictions Instinct File Naming
+
+## Action
+
+Use camelCase for file names
+
+## Evidence
+
+- Pattern in namingConventions.files: camelCase
+
+---
+id: npb-predictions-instinct-function-naming
+trigger: "When defining a new function"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: applego/npb-predictions
+---
+
+# Npb Predictions Instinct Function Naming
+
+## Action
+
+Use camelCase for function names
+
+## Evidence
+
+- Pattern in namingConventions.functions: camelCase
+
+---
+id: npb-predictions-instinct-class-naming
+trigger: "When defining a new class"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: applego/npb-predictions
+---
+
+# Npb Predictions Instinct Class Naming
+
+## Action
+
+Use PascalCase for class names
+
+## Evidence
+
+- Pattern in namingConventions.classes: PascalCase
+
+---
+id: npb-predictions-instinct-constant-naming
+trigger: "When defining a constant"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: applego/npb-predictions
+---
+
+# Npb Predictions Instinct Constant Naming
+
+## Action
+
+Use SCREAMING_SNAKE_CASE for constant names
+
+## Evidence
+
+- Pattern in namingConventions.constants: SCREAMING_SNAKE_CASE
+
+---
+id: npb-predictions-instinct-import-style
+trigger: "When importing modules"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: applego/npb-predictions
+---
+
+# Npb Predictions Instinct Import Style
+
+## Action
+
+Use alias import style
+
+## Evidence
+
+- Pattern in importStyle: alias
+
+---
+id: npb-predictions-instinct-export-style
+trigger: "When exporting modules or functions"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: applego/npb-predictions
+---
+
+# Npb Predictions Instinct Export Style
+
+## Action
+
+Use named exports
+
+## Evidence
+
+- Pattern in exportStyle: named
+
+---
+id: npb-predictions-instinct-try-catch-errors
+trigger: "When handling errors in code"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: applego/npb-predictions
+---
+
+# Npb Predictions Instinct Try Catch Errors
+
+## Action
+
+Use try-catch blocks for error handling
+
+## Evidence
+
+- Pattern in errorHandling.style: try-catch
+- Seen in commit fix(cron): surface unhandled exceptions in update-standings instead of generic 500
+
+---
+id: npb-predictions-instinct-git-commit-format
+trigger: "When writing a commit message"
+confidence: 0.9
+domain: git
+source: repo-analysis
+source_repo: applego/npb-predictions
+---
+
+# Npb Predictions Instinct Git Commit Format
+
+## Action
+
+Use conventional commit prefixes (fix, docs, chore) and a concise description
+
+## Evidence
+
+- Pattern in commits.prefixes: fix, docs, chore
+- Seen in commit fix(dnd): カード全体をドラッグ可能に (左端ハンドル限定を解消)
+
+---
+id: npb-predictions-instinct-git-commit-length
+trigger: "When writing a commit message"
+confidence: 0.7
+domain: git
+source: repo-analysis
+source_repo: applego/npb-predictions
+---
+
+# Npb Predictions Instinct Git Commit Length
+
+## Action
+
+Keep commit messages around 64 characters on average
+
+## Evidence
+
+- Pattern in commits.averageLength: 64
+
+---
+id: npb-predictions-instinct-api-cron-route-hardening
+trigger: "When a bug or robustness issue is found in a cron-related API route"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: applego/npb-predictions
+---
+
+# Npb Predictions Instinct Api Cron Route Hardening
+
+## Action
+
+Edit the relevant web/src/app/api/cron/*/route.ts file(s) and optionally update web/src/lib/cron-auth.ts to address the issue, then commit with a descriptive message
+
+## Evidence
+
+- Workflow: api-cron-route-hardening
+- Seen in commit fix(cron): edge runtime で env が読めない問題 — getRequestContext().env 経由に統一
+- Pattern of edits in web/src/app/api/cron/*/route.ts
+
+---
+id: npb-predictions-instinct-drag-and-drop-ui-enhancement
+trigger: "When usability or accessibility feedback is received about the drag-and-drop UI in predictions"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: applego/npb-predictions
+---
+
+# Npb Predictions Instinct Drag And Drop Ui Enhancement
+
+## Action
+
+Edit web/src/app/predictions/new/page.tsx to improve drag handle logic, accessibility, or visual feedback, then commit changes
+
+## Evidence
+
+- Workflow: drag-and-drop-ui-enhancement
+- Seen in commit fix(dnd): カード全体をドラッグ可能に (左端ハンドル限定を解消)
+- Pattern of edits in web/src/app/predictions/new/page.tsx
+
