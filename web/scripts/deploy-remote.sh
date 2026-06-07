@@ -74,7 +74,10 @@ CREATE TABLE IF NOT EXISTS site_settings (
   value TEXT NOT NULL,
   updated_at INTEGER NOT NULL DEFAULT (unixepoch())
 );
-INSERT OR IGNORE INTO site_settings (key, value) VALUES ('font_preset', 'A');
+INSERT OR IGNORE INTO site_settings (key, value) VALUES
+  ('color_theme', 'editorial-navy-ivory'),
+  ('font_number', 'bebas'),
+  ('font_body', 'noto');
 "
 
 echo "  ✅ Schema migrations complete"

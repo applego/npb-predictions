@@ -7,6 +7,7 @@ import {
   getNumberFont, getBodyFont, getColorTheme,
   type NumberFont, type BodyFont, type ColorTheme,
 } from "@/lib/theme-presets";
+import { fetchWithAuth } from "@/lib/fetch-with-auth";
 
 // ── Load Google Fonts dynamically ──
 
@@ -108,13 +109,13 @@ export default function SettingsPage() {
   const save = useCallback(async (key: string, value: string) => {
     setSaving(true);
     setMessage("");
-    await fetch("/api/settings", {
+    const res = await fetchWithAuth("/api/settings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ key, value }),
     });
     setSaving(false);
-    setMessage("保存しました — リロードで反映");
+    setMessage(res.ok ? "保存しました — リロードで反映" : "保存できませんでした — 管理者ログインが必要です");
   }, []);
 
   const currentThemeVars = getColorTheme(colorTheme).vars;
@@ -263,7 +264,7 @@ export default function SettingsPage() {
           テーマを適用（リロード）
         </button>
         <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-          選択は自動保存されます
+          管理者のみ保存できます
         </span>
       </div>
     </div>

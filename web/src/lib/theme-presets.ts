@@ -421,6 +421,8 @@ export const COLOR_THEMES: ColorTheme[] = [
 // ── Helpers ──
 
 export const DEFAULT_COLOR_THEME_ID = "editorial-navy-ivory";
+export const DEFAULT_NUMBER_FONT_ID = "bebas";
+export const DEFAULT_BODY_FONT_ID = "noto";
 
 export function getNumberFont(id: string): NumberFont {
   return NUMBER_FONTS.find((f) => f.id === id) ?? NUMBER_FONTS[0];
@@ -431,7 +433,7 @@ export function getBodyFont(id: string): BodyFont {
 }
 
 export function getColorTheme(id: string): ColorTheme {
-  return COLOR_THEMES.find((t) => t.id === id) ?? COLOR_THEMES[0];
+  return COLOR_THEMES.find((t) => t.id === id) ?? COLOR_THEMES.find((t) => t.id === DEFAULT_COLOR_THEME_ID) ?? COLOR_THEMES[0];
 }
 
 export function buildGoogleFontsUrl(numFontId: string, bodyFontId: string): string {

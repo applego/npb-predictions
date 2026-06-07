@@ -2,7 +2,9 @@
 
 import { useEffect } from "react";
 import {
+  DEFAULT_BODY_FONT_ID,
   DEFAULT_COLOR_THEME_ID,
+  DEFAULT_NUMBER_FONT_ID,
   getNumberFont,
   getBodyFont,
   getColorTheme,
@@ -22,8 +24,8 @@ export function ThemeLoader() {
       .then((r) => r.json())
       .then((data) => {
         const s = data as Record<string, string>;
-        const numFontId = s.font_number ?? "bebas";
-        const bodyFontId = s.font_body ?? "noto";
+        const numFontId = s.font_number ?? DEFAULT_NUMBER_FONT_ID;
+        const bodyFontId = s.font_body ?? DEFAULT_BODY_FONT_ID;
         const themeId = s.color_theme ?? DEFAULT_COLOR_THEME_ID;
 
         const numFont = getNumberFont(numFontId);

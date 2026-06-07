@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
+  DEFAULT_BODY_FONT_ID,
   DEFAULT_COLOR_THEME_ID,
+  DEFAULT_NUMBER_FONT_ID,
   NUMBER_FONTS, BODY_FONTS, COLOR_THEMES,
   getNumberFont, getBodyFont, getColorTheme,
   buildGoogleFontsUrl,
@@ -83,6 +85,13 @@ describe("COLOR_THEMES", () => {
     expect(theme!.description).toContain("日本野球伝統色");
   });
 
+  it("release default fonts are explicit", () => {
+    expect(DEFAULT_NUMBER_FONT_ID).toBe("bebas");
+    expect(DEFAULT_BODY_FONT_ID).toBe("noto");
+    expect(getNumberFont(DEFAULT_NUMBER_FONT_ID).name).toBe("Bebas Neue");
+    expect(getBodyFont(DEFAULT_BODY_FONT_ID).name).toBe("Noto Sans JP");
+  });
+
   it("stadium theme is the dark theme", () => {
     const st = COLOR_THEMES.find((t) => t.id === "stadium");
     expect(st).toBeTruthy();
@@ -111,8 +120,8 @@ describe("getters", () => {
     expect(getColorTheme("night").name).toBe("Night Game");
   });
 
-  it("getColorTheme falls back to first for unknown id", () => {
-    expect(getColorTheme("nonexistent").id).toBe(COLOR_THEMES[0].id);
+  it("getColorTheme falls back to the release default for unknown id", () => {
+    expect(getColorTheme("nonexistent").id).toBe(DEFAULT_COLOR_THEME_ID);
   });
 });
 
