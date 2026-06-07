@@ -1,44 +1,50 @@
 # NPB Predictions — Design System
 
-> Last updated: 2026-04-14 — Light theme: Baseball + Expo/HashiCorp clean
+> Last updated: 2026-06-07 — Release theme: Editorial Navy Ivory
 
 ## 1. Design Philosophy
 
-**Expo/HashiCorp の白ベースクリーン構造** + **野球ボールそのもの**
+**雑誌エディトリアルの紙面感** + **日本野球の伝統色**
 
-- 白い革 + 赤い縫い目 = 野球ボールの配色をそのままUIに
-- Expo: 白背景、大きな余白、鮮明なコントラスト、モダンで軽快
-- 方針: 「データを見るための道具」— 機能美重視、装飾は野球モチーフに限定
+- Release default: `editorial-navy-ivory`
+- 紺 + アイボリー + 深紅 = 日本野球の伝統色を UI の基調にする
+- 方針: 「読み物として入り、データで納得する」— 予想・順位・解説者比較をスポーツ誌の編集面として見せる
+- 装飾は紙面・縫い目・順位表のモチーフに限定し、操作面は引き続き軽く保つ
 
 ---
 
 ## 2. Color Palette
 
-### Base (Light / Expo-inspired)
+### Release Default: Editorial Navy Ivory
 | Token | Value | Usage |
 |-------|-------|-------|
-| `--bg-base` | `#FAFAFA` | Page background (off-white) |
-| `--bg-surface` | `#FFFFFF` | Card / section (pure white) |
-| `--bg-elevated` | `#F5F5F5` | Hover / active |
-| `--bg-inset` | `#F0F0F0` | Table header, rank column |
-| `--border-primary` | `#E5E5E5` | Card borders |
-| `--border-strong` | `#D4D4D4` | Active, dividers |
+| `--bg-base` | `#FAF7F2` | Page background (warm ivory) |
+| `--bg-surface` | `#FEFBF6` | Card / section |
+| `--bg-elevated` | `#F2EDE5` | Hover / active |
+| `--bg-inset` | `#EAE3D6` | Table header, rank column |
+| `--border-primary` | `#D4CCB8` | Card borders |
+| `--border-strong` | `#0C1B33` | Active, strong dividers |
 
 ### Text
 | Token | Value | Usage |
 |-------|-------|-------|
-| `--text-primary` | `#1A1A1A` | Headings (near black) |
-| `--text-secondary` | `#525252` | Body text |
-| `--text-muted` | `#A3A3A3` | Captions, timestamps |
+| `--text-primary` | `#0C1B33` | Headings, masthead |
+| `--text-secondary` | `#1E3A5F` | Body text |
+| `--text-muted` | `#647184` | Captions, timestamps |
 
-### Baseball Accents
+### Editorial Baseball Accents
 | Token | Value | Motif | Usage |
 |-------|-------|-------|-------|
-| `--stitch` | `#E53935` | ボール縫い目 | Primary accent, CTA, active nav |
-| `--stitch-light` | `#EF5350` | 縫い目 hover | Hover states |
-| `--field` | `#2E7D32` | 外野の芝 | Positive scores, success |
-| `--dirt` | `#D4A017` | 内野の土 | Gold highlight, 1位 |
-| `--plate` | `#F5F5F7` | ホームベース | Clean white accent |
+| `--stitch` | `#B91C1C` | ボール縫い目 / 見出し赤 | Primary accent, CTA, active nav |
+| `--stitch-light` | `#DC2626` | 縫い目 hover | Hover states |
+| `--field` | `#15803D` | 外野の芝 | Positive scores, success |
+| `--dirt` | `#B45309` | 内野の土 | Gold highlight, 1位 |
+| `--plate` | `#FEFBF6` | ホームベース | Ivory accent |
+
+### Alternative Themes
+`web/src/lib/theme-presets.ts` keeps comparison candidates available for settings:
+`baseball`, `stadium`, `newspaper`, `night`, `sports-red`, `sports-blue`, and 12 editorial variants.
+The release default remains `editorial-navy-ivory`.
 
 ### League
 | Token | Value |

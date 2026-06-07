@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
+  DEFAULT_COLOR_THEME_ID,
   NUMBER_FONTS, BODY_FONTS, COLOR_THEMES,
   getNumberFont, getBodyFont, getColorTheme,
   type NumberFont, type BodyFont, type ColorTheme,
@@ -77,7 +78,7 @@ function ScorePreview({
 export default function SettingsPage() {
   const [numFont, setNumFont] = useState("bebas");
   const [bodyFont, setBodyFont] = useState("noto");
-  const [colorTheme, setColorTheme] = useState("editorial-navy-ivory");
+  const [colorTheme, setColorTheme] = useState(DEFAULT_COLOR_THEME_ID);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 

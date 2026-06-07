@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect } from "react";
-import { getNumberFont, getBodyFont, getColorTheme, buildGoogleFontsUrl } from "@/lib/theme-presets";
+import {
+  DEFAULT_COLOR_THEME_ID,
+  getNumberFont,
+  getBodyFont,
+  getColorTheme,
+  buildGoogleFontsUrl,
+} from "@/lib/theme-presets";
 
 /**
  * Client component that loads theme settings from /api/settings
@@ -18,7 +24,7 @@ export function ThemeLoader() {
         const s = data as Record<string, string>;
         const numFontId = s.font_number ?? "bebas";
         const bodyFontId = s.font_body ?? "noto";
-        const themeId = s.color_theme ?? "editorial-navy-ivory";
+        const themeId = s.color_theme ?? DEFAULT_COLOR_THEME_ID;
 
         const numFont = getNumberFont(numFontId);
         const bodyFont = getBodyFont(bodyFontId);

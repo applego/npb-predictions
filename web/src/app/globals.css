@@ -2,12 +2,13 @@
 
 /* ══════════════════════════════════════════
    NPB Predictions — Design System CSS
-   Theme: Light (Expo/Baseball) + Baseball Motif
-   Source of truth: /design.md
+   Release theme is loaded by ThemeLoader.
+   These values are the baseball-light fallback.
+   Source of truth: /DESIGN.md and src/lib/theme-presets.ts
    ══════════════════════════════════════════ */
 
 :root {
-  /* Base — light / Expo-inspired */
+  /* Fallback base — light / baseball-inspired */
   --bg-base: #FAFAFA;
   --bg-surface: #FFFFFF;
   --bg-elevated: #F5F5F5;

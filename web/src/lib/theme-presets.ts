@@ -420,6 +420,8 @@ export const COLOR_THEMES: ColorTheme[] = [
 
 // ── Helpers ──
 
+export const DEFAULT_COLOR_THEME_ID = "editorial-navy-ivory";
+
 export function getNumberFont(id: string): NumberFont {
   return NUMBER_FONTS.find((f) => f.id === id) ?? NUMBER_FONTS[0];
 }
