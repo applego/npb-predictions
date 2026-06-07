@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  DEFAULT_COLOR_THEME_ID,
   NUMBER_FONTS, BODY_FONTS, COLOR_THEMES,
   getNumberFont, getBodyFont, getColorTheme,
   buildGoogleFontsUrl,
@@ -69,10 +70,17 @@ describe("COLOR_THEMES", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it("baseball theme is the default light theme", () => {
+  it("baseball theme remains available as the clean light theme", () => {
     const bb = COLOR_THEMES.find((t) => t.id === "baseball");
     expect(bb).toBeTruthy();
     expect(bb!.vars["--bg-base"]).toBe("#FAFAFA");
+  });
+
+  it("release default theme is the finalized editorial direction", () => {
+    const theme = COLOR_THEMES.find((t) => t.id === DEFAULT_COLOR_THEME_ID);
+    expect(theme).toBeTruthy();
+    expect(theme!.id).toBe("editorial-navy-ivory");
+    expect(theme!.description).toContain("日本野球伝統色");
   });
 
   it("stadium theme is the dark theme", () => {
