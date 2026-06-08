@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { getFirebaseAuth, onAuthStateChanged, type FirebaseUser } from "@/lib/firebase";
 import {
   DEFAULT_BODY_FONT_ID,
   DEFAULT_COLOR_THEME_ID,
@@ -20,9 +21,22 @@ import {
  */
 export function ThemeLoader() {
   useEffect(() => {
-    fetch("/api/settings")
-      .then((r) => r.json())
-      .then((data) => {
+    let cancelled = false;
+
+    async function loadSettings(user: FirebaseUser | null) {
+      const headers = new Headers();
+      if (user) {
+        try {
+          headers.set("Authorization", `Bearer ${await user.getIdToken()}`);
+        } catch {
+          // Fall back to site defaults if Firebase cannot provide a token.
+        }
+      }
+
+      try {
+        const res = await fetch("/api/settings", { headers });
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
         const s = data as Record<string, string>;
         const numFontId = s.font_number ?? DEFAULT_NUMBER_FONT_ID;
         const bodyFontId = s.font_body ?? DEFAULT_BODY_FONT_ID;
@@ -52,10 +66,23 @@ export function ThemeLoader() {
 
         // 3. Apply body font-family directly
         document.body.style.fontFamily = bodyFont.family;
-      })
-      .catch(() => {
+      } catch {
         // Silently fall back to CSS defaults
-      });
+      }
+    }
+
+    const auth = getFirebaseAuth();
+    void loadSettings(auth?.currentUser ?? null);
+    const unsubscribe = auth
+      ? onAuthStateChanged(auth, (user) => {
+          void loadSettings(user);
+        })
+      : undefined;
+
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
   }, []);
 
   return null; // This component renders nothing

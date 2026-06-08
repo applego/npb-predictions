@@ -52,11 +52,73 @@ function gameLeague(homeTeam: string, awayTeam: string): GameLeague {
   return home.league === away.league ? home.league : "interleague";
 }
 
+function statusFrom(rawStatus: string): GameStatus {
+  if (rawStatus.includes("試合終了") || rawStatus === "結果") return "final";
+  if (rawStatus.includes("中止")) return "postponed";
+  if (rawStatus.includes("中断") || rawStatus.match(/\d+回|試合中/)) return "in_progress";
+  return "scheduled";
+}
+
+function winnerFrom(
+  homeScore: number | null,
+  awayScore: number | null,
+): ScrapedGame["winner"] {
+  if (homeScore === null || awayScore === null) return null;
+  if (homeScore > awayScore) return "home";
+  if (awayScore > homeScore) return "away";
+  return "tie";
+}
+
+function parseScore(raw: string | undefined): number | null {
+  if (!raw || raw.trim() === "-") return null;
+  const parsed = parseInt(raw.trim(), 10);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function parseCurrentYahooSchedule(html: string, date: string): ScrapedGame[] {
+  const games: ScrapedGame[] = [];
+  const liRegex = /<li[^>]*class="[^"]*bb-score__item[^"]*"[^>]*>([\s\S]*?)<\/li>/g;
+  let m: RegExpExecArray | null;
+
+  while ((m = liRegex.exec(html)) !== null) {
+    const block = m[1];
+    const homeTeam = mapTeam(block.match(/class="[^"]*bb-score__homeLogo[^"]*"[^>]*>([^<]+)</)?.[1] ?? "");
+    const awayTeam = mapTeam(block.match(/class="[^"]*bb-score__awayLogo[^"]*"[^>]*>([^<]+)</)?.[1] ?? "");
+    if (!homeTeam || !awayTeam) continue;
+
+    const homeScore = parseScore(block.match(/class="[^"]*bb-score__score--left[^"]*"[^>]*>\s*(-|\d+)\s*</)?.[1]);
+    const awayScore = parseScore(block.match(/class="[^"]*bb-score__score--right[^"]*"[^>]*>\s*(-|\d+)\s*</)?.[1]);
+    const rawStatus = [
+      block.match(/class="[^"]*bb-score__link[^"]*"[^>]*>([^<]+)</)?.[1],
+      block.match(/class="[^"]*bb-score__status[^"]*"[^>]*>([^<]+)</)?.[1],
+    ].filter(Boolean).join(" ").trim();
+    const status = statusFrom(rawStatus);
+    const stadium = block.match(/class="[^"]*bb-score__venue[^"]*"[^>]*>([^<]+)</)?.[1]?.trim() ?? null;
+
+    games.push({
+      gameDate: date,
+      league: gameLeague(homeTeam, awayTeam),
+      homeTeam,
+      awayTeam,
+      homeScore,
+      awayScore,
+      status,
+      winner: status === "final" ? winnerFrom(homeScore, awayScore) : null,
+      stadium,
+    });
+  }
+
+  return games;
+}
+
 /**
  * Parse Yahoo schedule HTML for a given date.
  * The page lists each game as a block with team names, scores, and status.
  */
 export function parseYahooSchedule(html: string, date: string): ScrapedGame[] {
+  const current = parseCurrentYahooSchedule(html, date);
+  if (current.length > 0) return current;
+
   const games: ScrapedGame[] = [];
 
   // Match each <li class="bb-score ..."> ... </li> block
@@ -93,20 +155,8 @@ export function parseYahooSchedule(html: string, date: string): ScrapedGame[] {
       /class="[^"]*bb-score__status[^"]*"[^>]*>([^<]+)</,
     );
     const rawStatus = statusMatch?.[1].trim() ?? "";
-    let status: GameStatus = "scheduled";
-    let winner: ScrapedGame["winner"] = null;
-    if (rawStatus.includes("試合終了") || rawStatus === "結果") {
-      status = "final";
-      if (homeScore !== null && awayScore !== null) {
-        if (homeScore > awayScore) winner = "home";
-        else if (awayScore > homeScore) winner = "away";
-        else winner = "tie";
-      }
-    } else if (rawStatus.includes("中止") || rawStatus.includes("中断")) {
-      status = rawStatus.includes("中止") ? "postponed" : "in_progress";
-    } else if (rawStatus.match(/\d+回|試合中/)) {
-      status = "in_progress";
-    }
+    const status = statusFrom(rawStatus);
+    const winner = status === "final" ? winnerFrom(homeScore, awayScore) : null;
 
     // Stadium
     const stadiumMatch = block.match(/class="[^"]*bb-score__stadium[^"]*"[^>]*>([^<]+)</);
@@ -129,7 +179,7 @@ export function parseYahooSchedule(html: string, date: string): ScrapedGame[] {
 }
 
 export async function scrapeYahooGames(date: string): Promise<ScrapedGame[]> {
-  const url = `https://baseball.yahoo.co.jp/npb/schedule/?date=${date.replace(/-/g, "")}`;
+  const url = `https://baseball.yahoo.co.jp/npb/schedule/?date=${date}`;
   const res = await fetch(url, { headers: headers() });
   if (!res.ok) throw new Error(`Yahoo schedule fetch failed: ${res.status}`);
   const html = await res.text();

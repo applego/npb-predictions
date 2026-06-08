@@ -2,12 +2,15 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
+  DEFAULT_BODY_FONT_ID,
   DEFAULT_COLOR_THEME_ID,
+  DEFAULT_NUMBER_FONT_ID,
   NUMBER_FONTS, BODY_FONTS, COLOR_THEMES,
   getNumberFont, getBodyFont, getColorTheme,
   type NumberFont, type BodyFont, type ColorTheme,
 } from "@/lib/theme-presets";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
+import { useAuth } from "@/contexts/AuthContext";
 
 // ── Load Google Fonts dynamically ──
 
@@ -77,8 +80,9 @@ function ScorePreview({
 // ── Settings Page ──
 
 export default function SettingsPage() {
-  const [numFont, setNumFont] = useState("bebas");
-  const [bodyFont, setBodyFont] = useState("noto");
+  const { firebaseUser, isAdmin, loading: authLoading } = useAuth();
+  const [numFont, setNumFont] = useState(DEFAULT_NUMBER_FONT_ID);
+  const [bodyFont, setBodyFont] = useState(DEFAULT_BODY_FONT_ID);
   const [colorTheme, setColorTheme] = useState(DEFAULT_COLOR_THEME_ID);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -95,7 +99,8 @@ export default function SettingsPage() {
 
   // Load current settings
   useEffect(() => {
-    fetch("/api/settings")
+    if (authLoading) return;
+    fetchWithAuth("/api/settings")
       .then((r) => r.json())
       .then((d) => {
         const s = d as Record<string, string>;
@@ -104,9 +109,18 @@ export default function SettingsPage() {
         if (s.color_theme) setColorTheme(s.color_theme);
       })
       .catch(() => {});
-  }, []);
+  }, [authLoading, firebaseUser?.uid]);
 
   const save = useCallback(async (key: string, value: string) => {
+    if ((key === "font_number" || key === "font_body") && !firebaseUser) {
+      setMessage("ログインすると自分のフォントを保存できます");
+      return;
+    }
+    if (key === "color_theme" && !isAdmin) {
+      setMessage("カラーテーマの保存は管理者のみです");
+      return;
+    }
+
     setSaving(true);
     setMessage("");
     const res = await fetchWithAuth("/api/settings", {
@@ -115,8 +129,13 @@ export default function SettingsPage() {
       body: JSON.stringify({ key, value }),
     });
     setSaving(false);
-    setMessage(res.ok ? "保存しました — リロードで反映" : "保存できませんでした — 管理者ログインが必要です");
-  }, []);
+    if (!res.ok) {
+      setMessage("保存できませんでした — ログイン権限を確認してください");
+      return;
+    }
+    const result = (await res.json()) as { scope?: string };
+    setMessage(result.scope === "user" ? "自分のフォントを保存しました — リロードで反映" : "サイト設定を保存しました — リロードで反映");
+  }, [firebaseUser, isAdmin]);
 
   const currentThemeVars = getColorTheme(colorTheme).vars;
 
@@ -127,7 +146,7 @@ export default function SettingsPage() {
           THEME <span style={{ color: "var(--stitch)" }}>SETTINGS</span>
         </h1>
         <p className="mt-0.5 text-sm" style={{ color: "var(--text-muted)" }}>
-          数字フォント・日本語フォント・カラーテーマを個別に選択
+          数字フォント・日本語フォントをログインユーザーごとに保存
         </p>
         {message && (
           <p className="mt-2 text-sm" style={{ color: "var(--field)" }}>{message}</p>
@@ -264,7 +283,7 @@ export default function SettingsPage() {
           テーマを適用（リロード）
         </button>
         <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-          管理者のみ保存できます
+          {firebaseUser ? "フォントは自分の設定として保存されます" : "ログインするとフォントを保存できます"}
         </span>
       </div>
     </div>

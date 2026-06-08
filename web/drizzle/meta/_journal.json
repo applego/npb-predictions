@@ -57,6 +57,13 @@
       "when": 1779934407112,
       "tag": "0007_add_rank_to_score_snapshots",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1780875300000,
+      "tag": "0008_user_settings",
+      "breakpoints": true
     }
   ]
 }

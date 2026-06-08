@@ -80,6 +80,18 @@ INSERT OR IGNORE INTO site_settings (key, value) VALUES
   ('font_body', 'noto');
 "
 
+echo "  Creating user_settings table..."
+npx wrangler d1 execute "$DB_NAME" --remote --command "
+CREATE TABLE IF NOT EXISTS user_settings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  key TEXT NOT NULL,
+  value TEXT NOT NULL,
+  updated_at INTEGER NOT NULL DEFAULT (unixepoch())
+);
+CREATE UNIQUE INDEX IF NOT EXISTS user_settings_user_key_idx ON user_settings(user_id, key);
+"
+
 echo "  ✅ Schema migrations complete"
 
 # 2. Export local data and import to remote
