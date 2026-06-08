@@ -11,16 +11,8 @@ export const runtime = "edge";
 import { NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { scrapeFailureEvents } from "@/db/schema";
-import { and, desc, eq, isNull } from "drizzle-orm";
-
-interface SourceStatus {
-  source: string;
-  unresolvedCount: number;
-  latestError: string | null;
-  latestAt: string | null;
-  latestHtmlSnippet: string | null;
-  latestHttpStatus: number | null;
-}
+import { desc, isNull } from "drizzle-orm";
+import { needsScrapeAttention, type ScrapeSourceStatus } from "@/lib/scrape-health";
 
 export async function GET() {
   const db = getDb();
@@ -32,7 +24,7 @@ export async function GET() {
     .orderBy(desc(scrapeFailureEvents.createdAt));
 
   // Group by source, keep the latest row per source
-  const bySource = new Map<string, SourceStatus>();
+  const bySource = new Map<string, ScrapeSourceStatus>();
   for (const r of rows) {
     const key = r.source;
     const existing = bySource.get(key);
@@ -53,7 +45,7 @@ export async function GET() {
   const summary = [...bySource.values()].sort(
     (a, b) => b.unresolvedCount - a.unresolvedCount,
   );
-  const needsAttention = summary.filter((s) => s.unresolvedCount >= 3);
+  const needsAttention = summary.filter((s) => needsScrapeAttention(s));
 
   return NextResponse.json({
     checkedAt: new Date().toISOString(),

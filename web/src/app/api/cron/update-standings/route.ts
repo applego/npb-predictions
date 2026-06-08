@@ -60,6 +60,9 @@ async function scrapeWithFallback(db: DbClient): Promise<{
     await logScrapeFailure(db, "npb-standings-fallback-exhausted", npbRetry.error);
     throw new Error(errors.join("; "));
   }
+  // npb.jp is the canonical fallback for standings. When it succeeds, users
+  // have fresh standings, so clear Yahoo primary-source failures from alerts.
+  await markSourceResolved(db, "yahoo-standings");
   await markSourceResolved(db, "npb-standings");
   return {
     source: "npb",
