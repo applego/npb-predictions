@@ -136,8 +136,16 @@ export const battleGroupMembers = sqliteTable("battle_group_members", {
   joinedAt: integer("joined_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
 }, (table) => [uniqueIndex("bgm_group_user_idx").on(table.groupId, table.userId)]);
 
+export const userSettings = sqliteTable("user_settings", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  key: text("key").notNull(),
+  value: text("value").notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
+}, (table) => [uniqueIndex("user_settings_user_key_idx").on(table.userId, table.key)]);
+
 // Relations
-export const usersRelations = relations(users, ({ many }) => ({ predictions: many(predictions), scoreSnapshots: many(scoreSnapshots), awards: many(awards), battleGroupMembers: many(battleGroupMembers) }));
+export const usersRelations = relations(users, ({ many }) => ({ predictions: many(predictions), scoreSnapshots: many(scoreSnapshots), awards: many(awards), battleGroupMembers: many(battleGroupMembers), userSettings: many(userSettings) }));
 export const seasonsRelations = relations(seasons, ({ many }) => ({ predictions: many(predictions), actualTeamStandings: many(actualTeamStandings), actualTitleSnapshots: many(actualTitleSnapshots), scoreSnapshots: many(scoreSnapshots), awards: many(awards) }));
 export const predictionsRelations = relations(predictions, ({ one, many }) => ({ user: one(users, { fields: [predictions.userId], references: [users.id] }), season: one(seasons, { fields: [predictions.seasonId], references: [seasons.id] }), rankingPicks: many(rankingPicks), titlePicks: many(titlePicks) }));
 export const rankingPicksRelations = relations(rankingPicks, ({ one }) => ({ prediction: one(predictions, { fields: [rankingPicks.predictionId], references: [predictions.id] }) }));
@@ -148,6 +156,7 @@ export const scoreSnapshotsRelations = relations(scoreSnapshots, ({ one }) => ({
 export const awardsRelations = relations(awards, ({ one }) => ({ user: one(users, { fields: [awards.userId], references: [users.id] }), season: one(seasons, { fields: [awards.seasonId], references: [seasons.id] }) }));
 export const battleGroupsRelations = relations(battleGroups, ({ one, many }) => ({ creator: one(users, { fields: [battleGroups.createdBy], references: [users.id] }), members: many(battleGroupMembers) }));
 export const battleGroupMembersRelations = relations(battleGroupMembers, ({ one }) => ({ group: one(battleGroups, { fields: [battleGroupMembers.groupId], references: [battleGroups.id] }), user: one(users, { fields: [battleGroupMembers.userId], references: [users.id] }) }));
+export const userSettingsRelations = relations(userSettings, ({ one }) => ({ user: one(users, { fields: [userSettings.userId], references: [users.id] }) }));
 
 export type GameStatus = "scheduled" | "in_progress" | "final" | "postponed" | "cancelled";
 export type GameLeague = "central" | "pacific" | "interleague";

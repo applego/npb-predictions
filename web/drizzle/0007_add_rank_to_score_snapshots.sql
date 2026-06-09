@@ -1,8 +1,7 @@
--- Add `rank` column to score_snapshots so /api/cron/recalculate can persist
--- per-snapshot ranking (1-based). The schema.ts already declares it; this
--- migration brings production D1 in line with the schema.
+-- Superseded by drizzle/0003_add_rank_to_score_snapshots.sql.
 --
--- Background: drizzle/0003_add_rank_to_score_snapshots.sql was overwritten at
--- some point with a `likes` table CREATE, leaving prod without the column.
+-- This file existed on main as a production repair migration after a historical
+-- branch drift. Fresh databases now get score_snapshots.rank from 0003, so this
+-- migration must remain a no-op to keep dev->main CI reproducible.
 
-ALTER TABLE `score_snapshots` ADD COLUMN `rank` integer;
+SELECT 1;

@@ -40,13 +40,39 @@ describe("diffStandings", () => {
 
   it("marks unchanged teams as 'same' and excludes them from changed", () => {
     const prev = [
-      { league: "central" as const, rank: 3, teamName: "中日ドラゴンズ" },
+      {
+        league: "central" as const,
+        rank: 3,
+        teamName: "中日ドラゴンズ",
+        wins: 70,
+        losses: 50,
+        draws: 3,
+      },
     ];
     const next = [cl(3, "中日ドラゴンズ")];
     const r = diffStandings(prev, next);
     expect(r.changed.length).toBe(0);
     expect(r.changes[0].direction).toBe("same");
     expect(r.changes[0].delta).toBe(0);
+  });
+
+  it("detects win/loss/draw changes even when rank is unchanged", () => {
+    const prev = [
+      {
+        league: "central" as const,
+        rank: 3,
+        teamName: "中日ドラゴンズ",
+        wins: 69,
+        losses: 50,
+        draws: 3,
+      },
+    ];
+    const next = [cl(3, "中日ドラゴンズ")];
+    const r = diffStandings(prev, next);
+    expect(r.changed.length).toBe(1);
+    expect(r.changes[0].direction).toBe("same");
+    expect(r.changes[0].standingsChanged).toBe(true);
+    expect(r.topMoves.length).toBe(0);
   });
 
   it("topMoves orders by |delta| descending, max 3 entries", () => {

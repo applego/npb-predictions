@@ -42,6 +42,42 @@ const postponedGame = `
 </li>
 `;
 
+const currentYahooFinalGame = `
+<li class="bb-score__item">
+  <a class="bb-score__content" href="/npb/game/2021038978/index">
+    <p class="bb-score__description"><span class="bb-score__venue">バンテリンドーム</span></p>
+    <div class="bb-score__team">
+      <p class="bb-score__homeLogo bb-score__homeLogo--npbTeam4">中日</p>
+      <p class="bb-score__awayLogo bb-score__awayLogo--npbTeam7">西武</p>
+    </div>
+    <div class="bb-score__detail">
+      <p class="bb-score__status">
+        <span class="bb-score__score bb-score__score--left">1</span>
+        <span class="bb-score__score bb-score__score--center">-</span>
+        <span class="bb-score__score bb-score__score--right">4</span>
+      </p>
+      <p class="bb-score__link">試合終了</p>
+    </div>
+  </a>
+</li>
+`;
+
+const currentYahooScheduledGame = `
+<li class="bb-score__item">
+  <a class="bb-score__content" href="/npb/game/2021044693/index">
+    <p class="bb-score__description"><span class="bb-score__venue">甲子園</span></p>
+    <div class="bb-score__team">
+      <p class="bb-score__homeLogo bb-score__homeLogo--npbTeam5">阪神</p>
+      <p class="bb-score__awayLogo bb-score__awayLogo--npbTeam376">楽天</p>
+    </div>
+    <div class="bb-score__detail">
+      <time class="bb-score__status">18:00</time>
+      <p class="bb-score__link">見どころ</p>
+    </div>
+  </a>
+</li>
+`;
+
 describe("parseYahooSchedule", () => {
   it("parses a final game with winner", () => {
     const games = parseYahooSchedule(fixture(finalGame), "2026-04-19");
@@ -87,6 +123,36 @@ describe("parseYahooSchedule", () => {
     const games = parseYahooSchedule(html, "2026-06-01");
     expect(games[0].league).toBe("interleague");
     expect(games[0].winner).toBe("tie");
+  });
+
+  it("parses current Yahoo final-game markup", () => {
+    const games = parseYahooSchedule(fixture(currentYahooFinalGame), "2026-06-07");
+    expect(games[0]).toMatchObject({
+      gameDate: "2026-06-07",
+      league: "interleague",
+      homeTeam: "中日ドラゴンズ",
+      awayTeam: "埼玉西武ライオンズ",
+      homeScore: 1,
+      awayScore: 4,
+      status: "final",
+      winner: "away",
+      stadium: "バンテリンドーム",
+    });
+  });
+
+  it("parses current Yahoo scheduled-game markup", () => {
+    const games = parseYahooSchedule(fixture(currentYahooScheduledGame), "2026-06-08");
+    expect(games[0]).toMatchObject({
+      gameDate: "2026-06-08",
+      league: "interleague",
+      homeTeam: "阪神タイガース",
+      awayTeam: "東北楽天ゴールデンイーグルス",
+      homeScore: null,
+      awayScore: null,
+      status: "scheduled",
+      winner: null,
+      stadium: "甲子園",
+    });
   });
 
   it("returns empty when no matching blocks", () => {

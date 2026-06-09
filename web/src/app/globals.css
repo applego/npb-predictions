@@ -2,30 +2,30 @@
 
 /* ══════════════════════════════════════════
    NPB Predictions — Design System CSS
-   Theme: Light (Expo/Baseball) + Baseball Motif
-   Source of truth: /design.md
+   Release theme fallback: Editorial Navy Ivory.
+   Source of truth: /DESIGN.md and src/lib/theme-presets.ts
    ══════════════════════════════════════════ */
 
 :root {
-  /* Base — light / Expo-inspired */
-  --bg-base: #FAFAFA;
-  --bg-surface: #FFFFFF;
-  --bg-elevated: #F5F5F5;
-  --bg-inset: #F0F0F0;
-  --border-primary: #E5E5E5;
-  --border-strong: #D4D4D4;
+  /* Release fallback — Editorial Navy Ivory */
+  --bg-base: #FAF7F2;
+  --bg-surface: #FEFBF6;
+  --bg-elevated: #F2EDE5;
+  --bg-inset: #EAE3D6;
+  --border-primary: #D4CCB8;
+  --border-strong: #0C1B33;
 
-  /* Text — dark on light */
-  --text-primary: #1A1A1A;
-  --text-secondary: #525252;
-  --text-muted: #A3A3A3;
+  /* Text — editorial navy */
+  --text-primary: #0C1B33;
+  --text-secondary: #1E3A5F;
+  --text-muted: #647184;
 
-  /* Baseball Accents */
-  --stitch: #E53935;
-  --stitch-light: #EF5350;
-  --field: #2E7D32;
-  --dirt: #D4A017;
-  --plate: #FFFFFF;
+  /* Editorial Baseball Accents */
+  --stitch: #B91C1C;
+  --stitch-light: #DC2626;
+  --field: #15803D;
+  --dirt: #B45309;
+  --plate: #FEFBF6;
 
   /* League */
   --central: #1565C0;
