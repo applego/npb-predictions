@@ -144,6 +144,9 @@ async function handlePOST(req: Request) {
       league: r.league as "central" | "pacific",
       rank: r.rank,
       teamName: r.teamName,
+      wins: r.wins,
+      losses: r.losses,
+      draws: r.draws,
     }));
 
     const diff = diffStandings(prev, scrape.standings);
