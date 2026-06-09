@@ -11,6 +11,8 @@ name: NPB CF Deploy Watch
 # Closes auto-generated issues automatically when health is restored.
 
 on:
+  push:
+    branches: [main, dev]
   schedule:
     # Same cadence as feature-health (offset by 5 min to avoid herd)
     - cron: "20 4-14 * * *"
@@ -25,7 +27,14 @@ permissions:
   contents: read
 
 jobs:
+  push-noop:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Scheduled CF deploy watch workflow; push event is a no-op."
+
   check-and-alert:
+    if: github.event_name != 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -87,29 +96,29 @@ jobs:
           fi
 
           cat > /tmp/issue_body.md <<EOF
-## Cloudflare Pages 本番が main から遅れています
+          ## Cloudflare Pages 本番が main から遅れています
 
-- **served**: \`$SERVED_SHORT\` (built at $BUILT_AT)
-- **main HEAD**: \`$MAIN_SHORT\` (age ${AGE_MIN}m)
+          - **served**: \`$SERVED_SHORT\` (built at $BUILT_AT)
+          - **main HEAD**: \`$MAIN_SHORT\` (age ${AGE_MIN}m)
 
-mainに新しいコミットがあるのに本番が更新されていません。CF Pages git連携の build失敗、またはbillingで GitHub Actions の deploy job が動いていない可能性。
+          mainに新しいコミットがあるのに本番が更新されていません。CF Pages git連携の build失敗、またはbillingで GitHub Actions の deploy job が動いていない可能性。
 
-### 確認手順
-1. \`npx wrangler pages deployment list --project-name=npb-predictions\` で最新deploy status確認
-2. Status=Failure ならビルドログ確認
-3. 緊急なら手動で:
-   \`\`\`bash
-   cd web && ./scripts/deploy.sh
-   \`\`\`
+          ### 確認手順
+          1. \`npx wrangler pages deployment list --project-name=npb-predictions\` で最新deploy status確認
+          2. Status=Failure ならビルドログ確認
+          3. 緊急なら手動で:
+             \`\`\`bash
+             cd web && ./scripts/deploy.sh
+             \`\`\`
 
-### br 登録
-\`\`\`bash
-br create --title "CF deploy stale: served=$SERVED_SHORT vs main=$MAIN_SHORT" --labels "needs-fix,deploy,auto" --priority 1
-\`\`\`
+          ### br 登録
+          \`\`\`bash
+          br create --title "CF deploy stale: served=$SERVED_SHORT vs main=$MAIN_SHORT" --labels "needs-fix,deploy,auto" --priority 1
+          \`\`\`
 
----
-🤖 自動生成 by \`npb-cf-deploy-watch.yml\`
-EOF
+          ---
+          🤖 自動生成 by \`npb-cf-deploy-watch.yml\`
+          EOF
           gh issue create \
             --title "[auto] CF Pages 本番が stale ($SERVED_SHORT < $MAIN_SHORT)" \
             --body-file /tmp/issue_body.md \
