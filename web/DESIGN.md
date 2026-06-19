@@ -1,15 +1,53 @@
 # NPB Predictions — Design System
 
-> Last updated: 2026-06-07 — Release theme: Editorial Navy Ivory
+> Last updated: 2026-06-19 — Release direction: Navy Editorial Scorebook
 
 ## 1. Design Philosophy
 
 **雑誌エディトリアルの紙面感** + **日本野球の伝統色**
 
 - Release default: `editorial-navy-ivory`
+- Release direction: **Navy Editorial Scorebook** — C「紙面」/ D「新聞」の情報密度を、現行の紺・アイボリー・深紅テーマへ統合する
 - 紺 + アイボリー + 深紅 = 日本野球の伝統色を UI の基調にする
 - 方針: 「読み物として入り、データで納得する」— 予想・順位・解説者比較をスポーツ誌の編集面として見せる
 - 装飾は紙面・縫い目・順位表のモチーフに限定し、操作面は引き続き軽く保つ
+
+---
+
+## 1a. Design Decision Status
+
+### Selected for release
+- **Navy Editorial Scorebook**: current `editorial-navy-ivory` theme plus the paper/newspaper comparison patterns from `../デザイン案を決定/NPB デザイン案比較.dc.html`.
+- Keep the app light by default. Dense tables, scorecards, team chips, compact tabs, and rank-trend summaries should feel like a sports paper score sheet.
+- Use the Claude Design comparison artifact as a reference for composition and information hierarchy, not as a second runtime source of truth.
+
+### Accepted from the comparison artifact
+- C「紙面」: print-like tables, thin rules, compact scoring, restrained red/green accents.
+- D「新聞」: editorial masthead tone, high-density prediction summaries, strong section hierarchy.
+- Shared patterns: sticky compact page controls, prediction matrix, title-score cards, current-standings scoreboard, drag/drop prediction entry, fixed/unfixed status labels.
+
+### Deprioritized for release
+- A「放送席」: useful for spacing and broadcast-like clarity, but too generic as the product identity.
+- B「ナイター」: useful as an alternative theme, but not the default because the release UI should remain readable in daylight/light contexts.
+
+### Source of truth
+- Product design rules: this file.
+- Implemented theme tokens: `web/src/lib/theme-presets.ts`.
+- Exploratory/reference artifacts: `web/design/` and `../デザイン案を決定/`.
+- User-facing verification: Playwright/browser screenshots after any component, CSS, or layout change.
+
+---
+
+## 1b. Claude Design Management Workflow
+
+Claude Design should be used as a design-system collaborator and prototype surface, then reconciled back into this repo:
+
+1. **Sync context first**: import or attach the current design system/codebase before generating alternatives. Use the current components, screenshots, and this file as context.
+2. **Compare directions explicitly**: request 2-4 alternatives only when the direction is undecided. Save the comparison artifact under a dated reference path and record which parts are accepted/rejected.
+3. **Promote one direction**: update this file with the selected direction, accepted patterns, rejected patterns, and the code files that own implementation.
+4. **Implement in code**: runtime truth lives in tokens/components, primarily `web/src/lib/theme-presets.ts` and the React components using those tokens.
+5. **Verify visibly**: for `.tsx`/`.css`/layout changes, run the app and capture screenshots for desktop and mobile before committing.
+6. **Archive, don't fork truth**: Claude Design exports are references. Do not maintain competing design specs in exported HTML, screenshots, and markdown at the same time.
 
 ---
 
@@ -255,22 +293,22 @@ TV中継/新聞スポーツ欄風のメインコンポーネント。
 - 丸角を大きくしない (max 0.5rem)
 - `--stitch` 以外のアクセントカラーをUI装飾に追加しない
 - 過度なアニメーション
-- 影を濃くしすぎない（Expo風の軽い影のみ）
+- 影を濃くしすぎない（紙面を邪魔しない薄い影のみ）
 
 ---
 
 ## 9. Agent Quick Reference
 
 ```
-Theme: Light (Expo/baseball ball) + baseball motif
-BG: base=#FAFAFA, surface=#FFFFFF, elevated=#F5F5F5, inset=#F0F0F0
-Text: primary=#1A1A1A, secondary=#525252, muted=#A3A3A3
-Border: primary=#E5E5E5, strong=#D4D4D4
-Accent: --stitch=#E53935 (red stitching on white = baseball)
-Gold: --dirt=#D4A017 (1位 highlight)
+Theme: Navy Editorial Scorebook / editorial-navy-ivory
+BG: base=#FAF7F2, surface=#FEFBF6, elevated=#F2EDE5, inset=#EAE3D6
+Text: primary=#0C1B33, secondary=#1E3A5F, muted=#647184
+Border: primary=#D4CCB8, strong=#0C1B33
+Accent: --stitch=#B91C1C (editorial red / baseball stitch)
+Gold: --dirt=#B45309 (1位 highlight / infield dirt)
 Fonts: display=Bebas Neue, body=Noto Sans JP
-Motifs: stitch-border (red dots), home-plate (pentagon), bat-divider
-Matrix: team colors fill cells, 3px gap, league color band header
-Card: white + light border + subtle shadow, radius 0.5rem
+Motifs: stitch-border (red dots), home-plate (pentagon), bat-divider, paper-score rules
+Matrix: team colors fill cells, 3px gap, league color band header, compact score-sheet density
+Card: ivory surface + restrained border + subtle shadow, radius 0.5rem
 No dark mode, no glow, no grain
 ```
