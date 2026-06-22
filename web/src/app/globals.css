@@ -30,6 +30,18 @@
   /* League */
   --central: #1565C0;
   --pacific: #00695C;
+
+  /* Sticky offset = global header height (mobile default). Used by long
+     data tables so their column headers stick just below the app header
+     while scrolling (score-sheet behaviour from the C/D design study). */
+  --app-header-h: 72px;
+}
+
+/* Desktop header is shorter (no hamburger row) — Tailwind md breakpoint. */
+@media (min-width: 768px) {
+  :root {
+    --app-header-h: 60px;
+  }
 }
 
 html {
@@ -79,6 +91,25 @@ button:disabled,
       var(--border-primary) 80%,
       transparent 100%
     );
+  }
+
+  /* Vertical Japanese typesetting (newspaper front page / 予想新聞).
+     vertical-rl = right-to-left columns, upright orientation keeps Latin
+     glyphs readable. .kenten adds 圏点 (sesame emphasis dots) used for
+     headline keywords like 独走 / 二冠的中. */
+  .vrl {
+    writing-mode: vertical-rl;
+    -webkit-writing-mode: vertical-rl;
+    /* mixed = CJK upright, Latin (romaji predictor names) rotated 90°,
+       which is the standard Japanese newspaper convention. upright would
+       stack each Latin letter and break romaji names. */
+    text-orientation: mixed;
+  }
+  .kenten {
+    text-emphasis: filled sesame;
+    -webkit-text-emphasis: filled sesame;
+    text-emphasis-position: right;
+    -webkit-text-emphasis-position: right;
   }
 
   /* Diamond pattern for table headers */
