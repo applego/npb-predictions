@@ -32,6 +32,15 @@ const ADMIN_UIDS = (process.env.NEXT_PUBLIC_ADMIN_UIDS ?? "")
   .map((s) => s.trim())
   .filter(Boolean);
 
+// Email-based admin allow-list — kept in sync with auth-server.ts.
+// applegorillappa@gmail.com is always an admin; NEXT_PUBLIC_ADMIN_EMAILS adds more.
+const ADMIN_EMAILS = [
+  "applegorillappa@gmail.com",
+  ...(process.env.NEXT_PUBLIC_ADMIN_EMAILS ?? "").split(","),
+]
+  .map((s) => s.trim().toLowerCase())
+  .filter(Boolean);
+
 interface AuthContextValue {
   /** Firebase user (null = not signed in) */
   firebaseUser: FirebaseUser | null;
@@ -125,7 +134,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAppUser(null);
   }, []);
 
-  const isAdmin = !!firebaseUser && ADMIN_UIDS.includes(firebaseUser.uid);
+  const isAdmin =
+    !!firebaseUser &&
+    (ADMIN_UIDS.includes(firebaseUser.uid) ||
+      (!!firebaseUser.email &&
+        ADMIN_EMAILS.includes(firebaseUser.email.toLowerCase())));
 
   return (
     <AuthContext.Provider

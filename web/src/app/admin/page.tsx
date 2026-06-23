@@ -1,21 +1,24 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
+import {
+  NUMBER_FONTS,
+  BODY_FONTS,
+  COLOR_THEMES,
+  DEFAULT_NUMBER_FONT_ID,
+  DEFAULT_BODY_FONT_ID,
+  DEFAULT_COLOR_THEME_ID,
+} from "@/lib/theme-presets";
 
-// --- Admin UID check ---
-
-const ADMIN_UIDS = (process.env.NEXT_PUBLIC_ADMIN_UIDS ?? "")
-  .split(",")
-  .map((s) => s.trim())
-  .filter(Boolean);
+// --- Admin check ---
+// Delegates to AuthContext.isAdmin, which allows ADMIN_UIDS, role==="admin",
+// and the email allow-list (applegorillappa@gmail.com + NEXT_PUBLIC_ADMIN_EMAILS).
 
 function useIsAdmin(): { isAdmin: boolean; loading: boolean } {
-  const { firebaseUser, loading } = useAuth();
+  const { loading, isAdmin } = useAuth();
   if (loading) return { isAdmin: false, loading: true };
-  if (!firebaseUser) return { isAdmin: false, loading: false };
-  const isAdmin = ADMIN_UIDS.includes(firebaseUser.uid);
   return { isAdmin, loading: false };
 }
 
@@ -801,6 +804,175 @@ function ResultDisplay({ result }: { result: ApiResult | null }) {
   );
 }
 
+// --- Site theme / font (admin sets the released site-wide look) ---
+
+function SiteThemeAdmin() {
+  const [numFont, setNumFont] = useState(DEFAULT_NUMBER_FONT_ID);
+  const [bodyFont, setBodyFont] = useState(DEFAULT_BODY_FONT_ID);
+  const [colorTheme, setColorTheme] = useState(DEFAULT_COLOR_THEME_ID);
+  const [message, setMessage] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetchWithAuth("/api/settings")
+      .then((r) => r.json())
+      .then((d) => {
+        const s = d as Record<string, string>;
+        if (s.font_number) setNumFont(s.font_number);
+        if (s.font_body) setBodyFont(s.font_body);
+        if (s.color_theme) setColorTheme(s.color_theme);
+      })
+      .catch(() => {});
+  }, []);
+
+  const save = useCallback(async (key: string, value: string) => {
+    setSaving(true);
+    setMessage("");
+    const res = await fetchWithAuth("/api/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key, value, scope: "site" }),
+    });
+    setSaving(false);
+    setMessage(
+      res.ok
+        ? "サイト設定を保存しました — 「適用」で全体に反映"
+        : "保存できませんでした（管理者権限を確認してください）"
+    );
+  }, []);
+
+  return (
+    <section className="rounded-lg border bg-white p-6 shadow-sm">
+      <h2 className="mb-1 text-lg font-bold">サイトテーマ・フォント設定</h2>
+      <p className="mb-4 text-xs text-gray-500">
+        サイト全体の配色とフォント（リリースの見た目）を設定します。各ユーザーは
+        /settings で自分のフォントだけ上書きできます。
+      </p>
+      {message && (
+        <p className="mb-3 text-sm" style={{ color: "var(--field)" }}>
+          {message}
+        </p>
+      )}
+
+      <h3 className="mb-2 text-sm font-semibold text-gray-600">カラーテーマ</h3>
+      <div className="mb-5 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        {COLOR_THEMES.map((t) => {
+          const active = colorTheme === t.id;
+          const v = t.vars;
+          return (
+            <button
+              key={t.id}
+              type="button"
+              disabled={saving}
+              onClick={() => {
+                setColorTheme(t.id);
+                void save("color_theme", t.id);
+              }}
+              className="rounded-md p-2 text-left"
+              style={{
+                background: v["--bg-base"],
+                border: active
+                  ? `2px solid ${v["--stitch"]}`
+                  : `1px solid ${v["--border-primary"]}`,
+              }}
+            >
+              <div className="mb-1 flex items-center justify-between">
+                <span style={{ fontSize: "0.8rem", fontWeight: 700, color: v["--text-primary"] }}>
+                  {t.name}
+                </span>
+                {active && (
+                  <span
+                    className="rounded px-1 text-[9px] font-bold"
+                    style={{ background: v["--stitch"], color: "#fff" }}
+                  >
+                    ON
+                  </span>
+                )}
+              </div>
+              <div className="flex gap-1">
+                {[v["--bg-base"], v["--bg-surface"], v["--stitch"], v["--field"], v["--dirt"], v["--text-primary"]].map(
+                  (c, i) => (
+                    <span
+                      key={i}
+                      style={{
+                        width: "1.1rem",
+                        height: "1.1rem",
+                        borderRadius: "3px",
+                        background: c,
+                        border: `1px solid ${v["--border-primary"]}`,
+                      }}
+                    />
+                  )
+                )}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      <h3 className="mb-2 text-sm font-semibold text-gray-600">数字フォント</h3>
+      <div className="mb-5 flex flex-wrap gap-2">
+        {NUMBER_FONTS.map((f) => {
+          const active = numFont === f.id;
+          return (
+            <button
+              key={f.id}
+              type="button"
+              disabled={saving}
+              onClick={() => {
+                setNumFont(f.id);
+                void save("font_number", f.id);
+              }}
+              className="rounded-md px-3 py-2 text-sm"
+              style={{
+                border: active ? "2px solid var(--stitch)" : "1px solid var(--border-primary)",
+                background: active ? "rgba(0,0,0,0.03)" : "#fff",
+              }}
+            >
+              <span style={{ fontWeight: 700 }}>+48</span>{" "}
+              <span className="text-xs text-gray-600">{f.name}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <h3 className="mb-2 text-sm font-semibold text-gray-600">日本語フォント</h3>
+      <div className="mb-4 flex flex-wrap gap-2">
+        {BODY_FONTS.map((f) => {
+          const active = bodyFont === f.id;
+          return (
+            <button
+              key={f.id}
+              type="button"
+              disabled={saving}
+              onClick={() => {
+                setBodyFont(f.id);
+                void save("font_body", f.id);
+              }}
+              className="rounded-md px-3 py-2"
+              style={{
+                border: active ? "2px solid var(--stitch)" : "1px solid var(--border-primary)",
+                background: active ? "rgba(0,0,0,0.03)" : "#fff",
+              }}
+            >
+              <span style={{ fontSize: "0.85rem" }}>{f.name}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <button
+        type="button"
+        onClick={() => window.location.reload()}
+        className="rounded px-4 py-2 text-sm font-bold text-white"
+        style={{ background: "var(--stitch)" }}
+      >
+        サイトに適用（リロード）
+      </button>
+    </section>
+  );
+}
+
 // --- Page ---
 
 export default function AdminPage() {
@@ -901,6 +1073,7 @@ export default function AdminPage() {
           {firebaseUser.email}
         </span>
       </div>
+      <SiteThemeAdmin />
       <SeasonManager />
       <UserManager />
       <SeedImporter />
