@@ -416,6 +416,26 @@ export const COLOR_THEMES: ColorTheme[] = [
       "--dirt": "#525252",
     },
   },
+  {
+    id: "broadcast",
+    name: "Broadcast 放送席",
+    description: "白基調 × 濃緑 — 実況中継の情報密度（案A）",
+    vars: {
+      "--bg-base": "#F7F9F7",
+      "--bg-surface": "#FFFFFF",
+      "--bg-elevated": "#EEF3EF",
+      "--bg-inset": "#E6EDE7",
+      "--border-primary": "#D5DDD7",
+      "--border-strong": "#14401F",
+      "--text-primary": "#17241C",
+      "--text-secondary": "#33493B",
+      "--text-muted": "#6A7770",
+      "--stitch": "#2E7D32",
+      "--stitch-light": "#3B9A40",
+      "--field": "#15803D",
+      "--dirt": "#B45309",
+    },
+  },
 ];
 
 // ── Helpers ──

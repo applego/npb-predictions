@@ -13,15 +13,20 @@ import {
 } from "@/lib/theme-presets";
 import { requireAdmin, requireAuth } from "@/lib/auth-server";
 
-// Site-level theme settings live in site_settings.
-// Logged-in users can override fonts only via user_settings.
+// Site-level theme settings live in site_settings (admin-controlled).
+// Logged-in users can override fonts via user_settings (overlays site default).
 const DEFAULT_SETTINGS = {
   font_number: DEFAULT_NUMBER_FONT_ID,
   font_body: DEFAULT_BODY_FONT_ID,
   color_theme: DEFAULT_COLOR_THEME_ID,
 };
+// Keys a logged-in user may override for themselves.
 const USER_SETTING_KEYS = new Set(["font_number", "font_body"]);
-const SITE_SETTING_KEYS = new Set(["color_theme"]);
+// Keys an admin may set as the site-wide default. Fonts are site-settable too
+// (the released look); color_theme is site-only.
+const SITE_ALLOWED_KEYS = new Set(["color_theme", "font_number", "font_body"]);
+// Keys that are ALWAYS site-scoped regardless of requested scope.
+const SITE_ONLY_KEYS = new Set(["color_theme"]);
 
 function hasBearerToken(req: Request): boolean {
   const header = req.headers.get("authorization") ?? req.headers.get("Authorization");
@@ -68,20 +73,33 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const body = (await req.json()) as { key: string; value: string };
+  const body = (await req.json()) as {
+    key: string;
+    value: string;
+    scope?: "site" | "user";
+  };
   if (!body.key || !body.value) {
     return NextResponse.json({ error: "key and value required" }, { status: 400 });
-  }
-  if (!USER_SETTING_KEYS.has(body.key) && !SITE_SETTING_KEYS.has(body.key)) {
-    return NextResponse.json({ error: `unsupported setting key: ${body.key}` }, { status: 400 });
   }
   if (!isAllowedValue(body.key, body.value)) {
     return NextResponse.json({ error: `unsupported setting value for ${body.key}` }, { status: 400 });
   }
 
+  // color_theme is always site-scoped; fonts default to per-user unless the
+  // caller explicitly asks for the site-wide default (admin only).
+  const scope: "site" | "user" =
+    SITE_ONLY_KEYS.has(body.key) || body.scope === "site" ? "site" : "user";
+
+  if (scope === "site" && !SITE_ALLOWED_KEYS.has(body.key)) {
+    return NextResponse.json({ error: `unsupported site setting key: ${body.key}` }, { status: 400 });
+  }
+  if (scope === "user" && !USER_SETTING_KEYS.has(body.key)) {
+    return NextResponse.json({ error: `unsupported user setting key: ${body.key}` }, { status: 400 });
+  }
+
   const db = getDb();
   try {
-    if (SITE_SETTING_KEYS.has(body.key)) {
+    if (scope === "site") {
       const auth = await requireAdmin(req);
       if (auth instanceof Response) return auth;
       await db.run(
