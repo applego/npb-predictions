@@ -80,7 +80,7 @@ function ScorePreview({
 // ── Settings Page ──
 
 export default function SettingsPage() {
-  const { firebaseUser, isAdmin, loading: authLoading } = useAuth();
+  const { firebaseUser, loading: authLoading } = useAuth();
   const [numFont, setNumFont] = useState(DEFAULT_NUMBER_FONT_ID);
   const [bodyFont, setBodyFont] = useState(DEFAULT_BODY_FONT_ID);
   const [colorTheme, setColorTheme] = useState(DEFAULT_COLOR_THEME_ID);
@@ -112,12 +112,8 @@ export default function SettingsPage() {
   }, [authLoading, firebaseUser?.uid]);
 
   const save = useCallback(async (key: string, value: string) => {
-    if ((key === "font_number" || key === "font_body") && !firebaseUser) {
-      setMessage("ログインすると自分のフォントを保存できます");
-      return;
-    }
-    if (key === "color_theme" && !isAdmin) {
-      setMessage("カラーテーマの保存は管理者のみです");
+    if (!firebaseUser) {
+      setMessage("ログインすると自分のテーマ・フォントを保存できます");
       return;
     }
 
@@ -130,12 +126,12 @@ export default function SettingsPage() {
     });
     setSaving(false);
     if (!res.ok) {
-      setMessage("保存できませんでした — ログイン権限を確認してください");
+      setMessage("保存できませんでした — ログイン状態を確認してください");
       return;
     }
     const result = (await res.json()) as { scope?: string };
-    setMessage(result.scope === "user" ? "自分のフォントを保存しました — リロードで反映" : "サイト設定を保存しました — リロードで反映");
-  }, [firebaseUser, isAdmin]);
+    setMessage(result.scope === "user" ? "自分の設定として保存しました — リロードで反映" : "サイト設定を保存しました — リロードで反映");
+  }, [firebaseUser]);
 
   const currentThemeVars = getColorTheme(colorTheme).vars;
 
@@ -146,7 +142,7 @@ export default function SettingsPage() {
           THEME <span style={{ color: "var(--stitch)" }}>SETTINGS</span>
         </h1>
         <p className="mt-0.5 text-sm" style={{ color: "var(--text-muted)" }}>
-          数字フォント・日本語フォントをログインユーザーごとに保存
+          カラーテーマ・数字フォント・日本語フォントをログインユーザーごとに保存（サイト既定は管理者設定）
         </p>
         {message && (
           <p className="mt-2 text-sm" style={{ color: "var(--field)" }}>{message}</p>
@@ -283,7 +279,7 @@ export default function SettingsPage() {
           テーマを適用（リロード）
         </button>
         <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-          {firebaseUser ? "フォントは自分の設定として保存されます" : "ログインするとフォントを保存できます"}
+          {firebaseUser ? "テーマ・フォントは自分の設定として保存されます" : "ログインするとテーマ・フォントを保存できます"}
         </span>
       </div>
     </div>
