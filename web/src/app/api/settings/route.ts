@@ -13,20 +13,20 @@ import {
 } from "@/lib/theme-presets";
 import { requireAdmin, requireAuth } from "@/lib/auth-server";
 
-// Site-level theme settings live in site_settings (admin-controlled).
-// Logged-in users can override fonts via user_settings (overlays site default).
+// Site-level theme settings live in site_settings (admin-controlled site default).
+// Logged-in users can override theme + fonts via user_settings (overlays site default).
 const DEFAULT_SETTINGS = {
   font_number: DEFAULT_NUMBER_FONT_ID,
   font_body: DEFAULT_BODY_FONT_ID,
   color_theme: DEFAULT_COLOR_THEME_ID,
 };
-// Keys a logged-in user may override for themselves.
-const USER_SETTING_KEYS = new Set(["font_number", "font_body"]);
-// Keys an admin may set as the site-wide default. Fonts are site-settable too
-// (the released look); color_theme is site-only.
+// Keys a logged-in user may override for themselves (overlays the site default).
+const USER_SETTING_KEYS = new Set(["font_number", "font_body", "color_theme"]);
+// Keys an admin may set as the site-wide default (the released look).
 const SITE_ALLOWED_KEYS = new Set(["color_theme", "font_number", "font_body"]);
-// Keys that are ALWAYS site-scoped regardless of requested scope.
-const SITE_ONLY_KEYS = new Set(["color_theme"]);
+// Keys that are ALWAYS site-scoped regardless of requested scope. None today:
+// admin sets the default with an explicit scope:"site", users override per-account.
+const SITE_ONLY_KEYS = new Set<string>([]);
 
 function hasBearerToken(req: Request): boolean {
   const header = req.headers.get("authorization") ?? req.headers.get("Authorization");
@@ -85,8 +85,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: `unsupported setting value for ${body.key}` }, { status: 400 });
   }
 
-  // color_theme is always site-scoped; fonts default to per-user unless the
-  // caller explicitly asks for the site-wide default (admin only).
+  // Everything defaults to per-user (theme + fonts) unless the caller explicitly
+  // asks for the site-wide default with scope:"site" (admin only).
   const scope: "site" | "user" =
     SITE_ONLY_KEYS.has(body.key) || body.scope === "site" ? "site" : "user";
 
