@@ -78,17 +78,21 @@ describe("COLOR_THEMES", () => {
     expect(bb!.vars["--bg-base"]).toBe("#FAFAFA");
   });
 
-  it("release default theme is the finalized editorial direction", () => {
+  it("release default theme is the finalized broadcast-seat direction", () => {
     const theme = COLOR_THEMES.find((t) => t.id === DEFAULT_COLOR_THEME_ID);
     expect(theme).toBeTruthy();
-    expect(theme!.id).toBe("editorial-navy-ivory");
-    expect(theme!.description).toContain("日本野球伝統色");
+    expect(theme!.id).toBe("broadcast");
+    expect(theme!.name).toContain("放送席");
+    expect(theme!.description).toContain("実況中継");
+    expect(theme!.vars["--border-strong"]).toBe("#1D6E3A");
+    expect(theme!.vars["--stitch"]).toBe("#CF3A32");
+    expect(theme!.vars["--dirt"]).toBe("#8A5A00");
   });
 
   it("release default fonts are explicit", () => {
-    expect(DEFAULT_NUMBER_FONT_ID).toBe("bebas");
+    expect(DEFAULT_NUMBER_FONT_ID).toBe("saira");
     expect(DEFAULT_BODY_FONT_ID).toBe("noto");
-    expect(getNumberFont(DEFAULT_NUMBER_FONT_ID).name).toBe("Bebas Neue");
+    expect(getNumberFont(DEFAULT_NUMBER_FONT_ID).name).toBe("Saira Condensed");
     expect(getBodyFont(DEFAULT_BODY_FONT_ID).name).toBe("Noto Sans JP");
   });
 

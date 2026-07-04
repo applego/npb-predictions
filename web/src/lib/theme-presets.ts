@@ -421,19 +421,19 @@ export const COLOR_THEMES: ColorTheme[] = [
     name: "Broadcast 放送席",
     description: "白基調 × 濃緑 — 実況中継の情報密度（案A）",
     vars: {
-      "--bg-base": "#F7F9F7",
+      "--bg-base": "#FAF9F5",
       "--bg-surface": "#FFFFFF",
-      "--bg-elevated": "#EEF3EF",
-      "--bg-inset": "#E6EDE7",
-      "--border-primary": "#D5DDD7",
-      "--border-strong": "#14401F",
-      "--text-primary": "#17241C",
+      "--bg-elevated": "#F5F4EF",
+      "--bg-inset": "#EDECE6",
+      "--border-primary": "#E6E4DD",
+      "--border-strong": "#1D6E3A",
+      "--text-primary": "#1B1B18",
       "--text-secondary": "#33493B",
-      "--text-muted": "#6A7770",
-      "--stitch": "#2E7D32",
-      "--stitch-light": "#3B9A40",
-      "--field": "#15803D",
-      "--dirt": "#B45309",
+      "--text-muted": "#76746C",
+      "--stitch": "#CF3A32",
+      "--stitch-light": "#E04A42",
+      "--field": "#1F7A3F",
+      "--dirt": "#8A5A00",
     },
   },
   // ── Claude Design 決定デザインの4案（npb-design-options）──
@@ -502,8 +502,8 @@ export const COLOR_THEMES: ColorTheme[] = [
 
 // ── Helpers ──
 
-export const DEFAULT_COLOR_THEME_ID = "editorial-navy-ivory";
-export const DEFAULT_NUMBER_FONT_ID = "bebas";
+export const DEFAULT_COLOR_THEME_ID = "broadcast";
+export const DEFAULT_NUMBER_FONT_ID = "saira";
 export const DEFAULT_BODY_FONT_ID = "noto";
 
 export function getNumberFont(id: string): NumberFont {

@@ -1,34 +1,34 @@
 # NPB Predictions — Design System
 
-> Last updated: 2026-06-19 — Release direction: Navy Editorial Scorebook
+> Last updated: 2026-07-05 — Release direction: Broadcast Booth
 
 ## 1. Design Philosophy
 
-**雑誌エディトリアルの紙面感** + **日本野球の伝統色**
+**実況中継の明快さ** + **白基調の情報密度**
 
-- Release default: `editorial-navy-ivory`
-- Release direction: **Navy Editorial Scorebook** — C「紙面」/ D「新聞」の情報密度を、現行の紺・アイボリー・深紅テーマへ統合する
-- 紺 + アイボリー + 深紅 = 日本野球の伝統色を UI の基調にする
-- 方針: 「読み物として入り、データで納得する」— 予想・順位・解説者比較をスポーツ誌の編集面として見せる
-- 装飾は紙面・縫い目・順位表のモチーフに限定し、操作面は引き続き軽く保つ
+- Release default: `broadcast`
+- Release direction: **Broadcast Booth / 放送席** — A「放送席」の白基調、濃緑ヘッダー、実況席の情報整理をプロダクトの標準にする
+- 白 + 濃緑 + 赤ステッチ + 濃い金ハイライト = 中継画面の明快さと野球らしさを UI の基調にする
+- 方針: 「ひと目で状況がわかり、細部も追える」— 予想・順位・解説者比較を放送席の進行表として見せる
+- 装飾は中継パネル・スコアボード・縫い目・順位表のモチーフに限定し、操作面は引き続き軽く保つ
 
 ---
 
 ## 1a. Design Decision Status
 
 ### Selected for release
-- **Navy Editorial Scorebook**: current `editorial-navy-ivory` theme plus the paper/newspaper comparison patterns from `../デザイン案を決定/NPB デザイン案比較.dc.html`.
-- Keep the app light by default. Dense tables, scorecards, team chips, compact tabs, and rank-trend summaries should feel like a sports paper score sheet.
+- **Broadcast Booth / 放送席**: current `broadcast` theme plus the spacing, information density, and hierarchy from `../デザイン案を決定/NPB デザイン案比較.dc.html`.
+- Keep the app light by default. Dense tables, scorecards, team chips, compact tabs, and rank-trend summaries should feel like a live broadcast rundown sheet.
 - Use the Claude Design comparison artifact as a reference for composition and information hierarchy, not as a second runtime source of truth.
 
 ### Accepted from the comparison artifact
-- C「紙面」: print-like tables, thin rules, compact scoring, restrained red/green accents.
-- D「新聞」: editorial masthead tone, high-density prediction summaries, strong section hierarchy.
+- A「放送席」: white base, dark-green headers, broadcast-like clarity, compact but readable information density.
+- C「紙面」/ D「新聞」: thin rules, compact scoring, restrained red/green accents, and strong section hierarchy as supporting patterns.
 - Shared patterns: sticky compact page controls, prediction matrix, title-score cards, current-standings scoreboard, drag/drop prediction entry, fixed/unfixed status labels.
 
 ### Deprioritized for release
-- A「放送席」: useful for spacing and broadcast-like clarity, but too generic as the product identity.
 - B「ナイター」: useful as an alternative theme, but not the default because the release UI should remain readable in daylight/light contexts.
+- Navy Editorial Scorebook / newspaper variants: useful as selectable alternatives, but no longer the release default after the 2026-07-05 user decision to ship A「放送席」.
 
 ### Source of truth
 - Product design rules: this file.
@@ -53,36 +53,36 @@ Claude Design should be used as a design-system collaborator and prototype surfa
 
 ## 2. Color Palette
 
-### Release Default: Editorial Navy Ivory
+### Release Default: Broadcast Booth
 | Token | Value | Usage |
 |-------|-------|-------|
-| `--bg-base` | `#FAF7F2` | Page background (warm ivory) |
-| `--bg-surface` | `#FEFBF6` | Card / section |
-| `--bg-elevated` | `#F2EDE5` | Hover / active |
-| `--bg-inset` | `#EAE3D6` | Table header, rank column |
-| `--border-primary` | `#D4CCB8` | Card borders |
-| `--border-strong` | `#0C1B33` | Active, strong dividers |
+| `--bg-base` | `#FAF9F5` | Page background (warm broadcast white) |
+| `--bg-surface` | `#FFFFFF` | Card / section |
+| `--bg-elevated` | `#F5F4EF` | Hover / active |
+| `--bg-inset` | `#EDECE6` | Table header, rank column |
+| `--border-primary` | `#E6E4DD` | Card borders |
+| `--border-strong` | `#1D6E3A` | Active, strong dividers, broadcast header |
 
 ### Text
 | Token | Value | Usage |
 |-------|-------|-------|
-| `--text-primary` | `#0C1B33` | Headings, masthead |
-| `--text-secondary` | `#1E3A5F` | Body text |
-| `--text-muted` | `#647184` | Captions, timestamps |
+| `--text-primary` | `#1B1B18` | Headings, masthead |
+| `--text-secondary` | `#33493B` | Body text |
+| `--text-muted` | `#76746C` | Captions, timestamps |
 
-### Editorial Baseball Accents
+### Broadcast Baseball Accents
 | Token | Value | Motif | Usage |
 |-------|-------|-------|-------|
-| `--stitch` | `#B91C1C` | ボール縫い目 / 見出し赤 | Primary accent, CTA, active nav |
-| `--stitch-light` | `#DC2626` | 縫い目 hover | Hover states |
-| `--field` | `#15803D` | 外野の芝 | Positive scores, success |
-| `--dirt` | `#B45309` | 内野の土 | Gold highlight, 1位 |
-| `--plate` | `#FEFBF6` | ホームベース | Ivory accent |
+| `--stitch` | `#CF3A32` | ボール縫い目 / 警告赤 | Primary accent, CTA, active nav |
+| `--stitch-light` | `#E04A42` | 縫い目 hover | Hover states |
+| `--field` | `#1F7A3F` | 中継パネルの濃緑 | Positive scores, success |
+| `--dirt` | `#8A5A00` | 内野の土 / 放送テロップ金 | Gold highlight, 1位, small text |
+| `--plate` | `#FFFFFF` | ホームベース | White surface accent |
 
 ### Alternative Themes
 `web/src/lib/theme-presets.ts` keeps comparison candidates available for settings:
 `baseball`, `stadium`, `newspaper`, `night`, `sports-red`, `sports-blue`, and 12 editorial variants.
-The release default remains `editorial-navy-ivory`.
+The release default is `broadcast`.
 
 ### League
 | Token | Value |
@@ -300,15 +300,15 @@ TV中継/新聞スポーツ欄風のメインコンポーネント。
 ## 9. Agent Quick Reference
 
 ```
-Theme: Navy Editorial Scorebook / editorial-navy-ivory
-BG: base=#FAF7F2, surface=#FEFBF6, elevated=#F2EDE5, inset=#EAE3D6
-Text: primary=#0C1B33, secondary=#1E3A5F, muted=#647184
-Border: primary=#D4CCB8, strong=#0C1B33
-Accent: --stitch=#B91C1C (editorial red / baseball stitch)
-Gold: --dirt=#B45309 (1位 highlight / infield dirt)
-Fonts: display=Bebas Neue, body=Noto Sans JP
-Motifs: stitch-border (red dots), home-plate (pentagon), bat-divider, paper-score rules
+Theme: Broadcast Booth / broadcast
+BG: base=#FAF9F5, surface=#FFFFFF, elevated=#F5F4EF, inset=#EDECE6
+Text: primary=#1B1B18, secondary=#33493B, muted=#76746C
+Border: primary=#E6E4DD, strong=#1D6E3A
+Accent: --stitch=#CF3A32 (baseball stitch / broadcast alert red)
+Gold: --dirt=#8A5A00 (1位 highlight / readable telop gold)
+Fonts: display=Saira Condensed, body=Noto Sans JP
+Motifs: broadcast header, scorebug panels, stitch-border, home-plate, compact rundown rules
 Matrix: team colors fill cells, 3px gap, league color band header, compact score-sheet density
-Card: ivory surface + restrained border + subtle shadow, radius 0.5rem
+Card: white surface + restrained border + subtle shadow, radius 0.5rem
 No dark mode, no glow, no grain
 ```
