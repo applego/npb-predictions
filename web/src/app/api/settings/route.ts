@@ -43,6 +43,7 @@ function isAllowedValue(key: string, value: string): boolean {
 export async function GET(req: Request) {
   const db = getDb();
   try {
+    const scope = new URL(req.url).searchParams.get("scope");
     const rows = await db.all<{ key: string; value: string }>(
       sql`SELECT key, value FROM site_settings`
     );
@@ -52,7 +53,7 @@ export async function GET(req: Request) {
     }
     const response = { ...DEFAULT_SETTINGS, ...settings };
 
-    if (hasBearerToken(req)) {
+    if (scope !== "site" && hasBearerToken(req)) {
       const auth = await requireAuth(req);
       if (auth instanceof Response) return auth;
       const userRows = await db.all<{ key: string; value: string }>(

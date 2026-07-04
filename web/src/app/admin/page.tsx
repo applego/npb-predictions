@@ -814,7 +814,7 @@ function SiteThemeAdmin() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    fetchWithAuth("/api/settings")
+    fetch("/api/settings?scope=site")
       .then((r) => r.json())
       .then((d) => {
         const s = d as Record<string, string>;
@@ -846,7 +846,7 @@ function SiteThemeAdmin() {
       <h2 className="mb-1 text-lg font-bold">サイトテーマ・フォント設定</h2>
       <p className="mb-4 text-xs text-gray-500">
         サイト全体の配色とフォント（リリースの見た目）を設定します。各ユーザーは
-        /settings で自分のフォントだけ上書きできます。
+        /settings で自分の配色とフォントを上書きできます。
       </p>
       {message && (
         <p className="mb-3 text-sm" style={{ color: "var(--field)" }}>
