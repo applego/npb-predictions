@@ -97,6 +97,18 @@ describe("COLOR_THEMES", () => {
     expect(st).toBeTruthy();
     expect(st!.vars["--bg-base"]).toBe("#040912");
   });
+
+  // The 4 finalized Claude Design options (npb-design-options): A放送席 / B
+  // ナイター / C紙面 / D新聞. Users pick one; admin sets the site default.
+  it("exposes the 4 finalized Claude Design themes as a selectable set", () => {
+    const designIds = ["broadcast", "stadium-night", "newsprint", "newspaper-mincho"];
+    for (const id of designIds) {
+      const theme = COLOR_THEMES.find((t) => t.id === id);
+      expect(theme, `design theme ${id} must be selectable`).toBeTruthy();
+      expect(theme!.name).toBeTruthy();
+      expect(theme!.description).toBeTruthy();
+    }
+  });
 });
 
 describe("getters", () => {

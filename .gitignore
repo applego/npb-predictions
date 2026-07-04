@@ -23,6 +23,9 @@ test-results/
 .idea/
 .vscode/
 *.swp
+.ntm/
+.playwright-mcp/
+.serena/
 
 # Drizzle
 .drizzle/

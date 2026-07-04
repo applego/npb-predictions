@@ -16,6 +16,13 @@ type HeadlineChar = {
   color?: string; // for solid
 };
 
+type OgFont = {
+  name: string;
+  data: ArrayBuffer;
+  weight: 400 | 700 | 900;
+  style: "normal";
+};
+
 // Tiled textShadow creates a faux stroke since Satori does not support -webkit-text-stroke.
 function stroke(color: string, width: number): string {
   const offs: [number, number][] = [];
@@ -40,6 +47,43 @@ async function loadJPFont(
   const res = await fetch(`${base}-${weight}-normal.ttf`);
   if (!res.ok) throw new Error(`Font ${family}/${weight} ${res.status}`);
   return res.arrayBuffer();
+}
+
+let fontPromise: Promise<OgFont[]> | null = null;
+
+function loadFonts(): Promise<OgFont[]> {
+  fontPromise ??= (async () => {
+    const meta: Array<{
+      family: "serif" | "sans";
+      name: string;
+      weight: 400 | 700 | 900;
+    }> = [
+      { family: "serif", name: "Serif JP", weight: 900 },
+      { family: "serif", name: "Serif JP", weight: 400 },
+      { family: "sans", name: "Sans JP", weight: 900 },
+      { family: "sans", name: "Sans JP", weight: 700 },
+      { family: "sans", name: "Sans JP", weight: 400 },
+    ];
+
+    const results = await Promise.allSettled(
+      meta.map((font) => loadJPFont(font.family, font.weight)),
+    );
+
+    return results
+      .map((result, i) =>
+        result.status === "fulfilled"
+          ? {
+              name: meta[i].name,
+              data: result.value,
+              weight: meta[i].weight,
+              style: "normal" as const,
+            }
+          : null,
+      )
+      .filter((font): font is OgFont => font !== null);
+  })();
+
+  return fontPromise;
 }
 
 interface MockArticle {
@@ -132,32 +176,7 @@ export async function GET(
   const yellow = "#facc15";
   const redDeep = "#991b1b";
 
-  const fontResults = await Promise.allSettled([
-    loadJPFont("serif", 900),
-    loadJPFont("serif", 400),
-    loadJPFont("sans", 900),
-    loadJPFont("sans", 700),
-    loadJPFont("sans", 400),
-  ]);
-  const meta: Array<{ name: string; weight: 400 | 700 | 900 }> = [
-    { name: "Serif JP", weight: 900 },
-    { name: "Serif JP", weight: 400 },
-    { name: "Sans JP", weight: 900 },
-    { name: "Sans JP", weight: 700 },
-    { name: "Sans JP", weight: 400 },
-  ];
-  const fonts = fontResults
-    .map((r, i) =>
-      r.status === "fulfilled"
-        ? {
-            name: meta[i].name,
-            data: r.value,
-            weight: meta[i].weight,
-            style: "normal" as const,
-          }
-        : null,
-    )
-    .filter((f): f is NonNullable<typeof f> => f !== null);
+  const fonts = await loadFonts();
 
   const renderHeadlineLine = (chars: HeadlineChar[]) => (
     <div style={{ display: "flex", alignItems: "flex-end", lineHeight: 1 }}>
@@ -372,7 +391,7 @@ export async function GET(
                 letterSpacing: "0.03em",
               }}
             >
-              ▼ {article.heroName}・{article.heroStat}
+              &gt; {article.heroName}・{article.heroStat}
             </div>
           </div>
         </div>
@@ -479,7 +498,7 @@ export async function GET(
               }}
             >
               <div style={{ display: "flex", fontSize: 13, fontWeight: 900, color: red, letterSpacing: "0.1em", fontFamily: "Sans JP" }}>
-                ▼ 指揮官コメント
+                &gt; 指揮官コメント
               </div>
               <div style={{ display: "flex", fontSize: 17, fontWeight: 700, color: ink, lineHeight: 1.45, marginTop: 4 }}>
                 「{article.quote}」

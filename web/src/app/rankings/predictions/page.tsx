@@ -181,10 +181,13 @@ export default async function PredictionsPage({
           style={{ background: "var(--bg-surface)", border: "1px solid var(--border-primary)" }}
         >
           <table className="w-full" style={{ borderCollapse: "separate", borderSpacing: 0 }}>
-            <thead>
+            <thead
+              className="z-30"
+              style={{ position: "sticky", top: "var(--app-header-h)" }}
+            >
               <tr>
                 <th
-                  className="sticky left-0 z-20 px-3 py-1.5 text-left text-xs"
+                  className="sticky left-0 z-40 px-3 py-1.5 text-left text-xs"
                   rowSpan={2}
                   style={{
                     fontFamily: "var(--font-display)",

@@ -43,6 +43,22 @@ function adminUids(): Set<string> {
   );
 }
 
+// Email-based admin allow-list. applegorillappa@gmail.com is always an admin;
+// NEXT_PUBLIC_ADMIN_EMAILS can add more (comma-separated). Kept in sync with
+// the client-side check in AuthContext.tsx.
+const DEFAULT_ADMIN_EMAILS = ["applegorillappa@gmail.com"];
+
+function adminEmails(): Set<string> {
+  return new Set(
+    [
+      ...DEFAULT_ADMIN_EMAILS,
+      ...(process.env.NEXT_PUBLIC_ADMIN_EMAILS ?? "").split(","),
+    ]
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean)
+  );
+}
+
 function extractBearerToken(req: Request): string | null {
   const header =
     req.headers.get("authorization") ?? req.headers.get("Authorization");
@@ -157,8 +173,14 @@ export async function requireAdmin(
 ): Promise<{ user: AppUser; token: VerifiedToken } | Response> {
   const result = await requireAuth(req);
   if (result instanceof Response) return result;
+  const tokenEmail =
+    typeof result.token.email === "string" ? result.token.email.toLowerCase() : null;
   const isAdmin =
-    adminUids().has(result.token.uid) || result.user.role === "admin";
+    adminUids().has(result.token.uid) ||
+    result.user.role === "admin" ||
+    (result.token.emailVerified &&
+      tokenEmail !== null &&
+      adminEmails().has(tokenEmail));
   if (!isAdmin) return forbidden("Admin only");
   return result;
 }

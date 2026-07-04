@@ -1,6 +1,8 @@
 name: NPB Scraper Failure Alert
 
 on:
+  push:
+    branches: [main, dev]
   schedule:
     # Check every 30 minutes during scrape hours (JST 13:30-23:59 = UTC 04:30-14:59)
     - cron: "30 4-14 * * *"
@@ -15,7 +17,14 @@ permissions:
   contents: read
 
 jobs:
+  push-noop:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Scheduled scraper alert workflow; push event is a no-op."
+
   check-and-alert:
+    if: github.event_name != 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -66,37 +75,37 @@ jobs:
 
             # Build body
             cat > /tmp/issue_body.md <<EOF
-## スクレイプ失敗を検知しました
+          ## スクレイプ失敗を検知しました
 
-- **source**: \`$SOURCE\`
-- **連続未解決数**: $COUNT
-- **最終失敗**: $AT
-- **HTTP status**: $STATUS
+          - **source**: \`$SOURCE\`
+          - **連続未解決数**: $COUNT
+          - **最終失敗**: $AT
+          - **HTTP status**: $STATUS
 
-### エラーメッセージ
-\`\`\`
-$ERROR
-\`\`\`
+          ### エラーメッセージ
+          \`\`\`
+          $ERROR
+          \`\`\`
 
-### HTML スニペット（先頭2KB）
-\`\`\`html
-$SNIPPET
-\`\`\`
+          ### HTML スニペット（先頭2KB）
+          \`\`\`html
+          $SNIPPET
+          \`\`\`
 
-### 修復手順のヒント
-1. 上記 HTML を読んでパーサー側で想定しているセレクタ/正規表現との差分を確認
-2. \`src/lib/scrape-*.ts\` の該当パーサーを修正
-3. \`src/lib/__tests__/scrape-*.test.ts\` にフィクスチャを追加して再現テスト
-4. typecheck + vitest → PR → merge → 次回 cron で復旧確認
+          ### 修復手順のヒント
+          1. 上記 HTML を読んでパーサー側で想定しているセレクタ/正規表現との差分を確認
+          2. \`src/lib/scrape-*.ts\` の該当パーサーを修正
+          3. \`src/lib/__tests__/scrape-*.test.ts\` にフィクスチャを追加して再現テスト
+          4. typecheck + vitest → PR → merge → 次回 cron で復旧確認
 
-### br 登録（ローカルエージェント向け）
-\`\`\`bash
-br create --title "scraper修復: $SOURCE" --labels "needs-fix,scraper,auto" --priority 1
-\`\`\`
+          ### br 登録（ローカルエージェント向け）
+          \`\`\`bash
+          br create --title "scraper修復: $SOURCE" --labels "needs-fix,scraper,auto" --priority 1
+          \`\`\`
 
----
-🤖 自動生成 by \`npb-scrape-alert.yml\`
-EOF
+          ---
+          🤖 自動生成 by \`npb-scrape-alert.yml\`
+          EOF
 
             gh issue create \
               --title "[auto] スクレイプ失敗: $SOURCE ($COUNT 件連続)" \

@@ -13,15 +13,20 @@ import {
 } from "@/lib/theme-presets";
 import { requireAdmin, requireAuth } from "@/lib/auth-server";
 
-// Site-level theme settings live in site_settings.
-// Logged-in users can override fonts only via user_settings.
+// Site-level theme settings live in site_settings (admin-controlled site default).
+// Logged-in users can override theme + fonts via user_settings (overlays site default).
 const DEFAULT_SETTINGS = {
   font_number: DEFAULT_NUMBER_FONT_ID,
   font_body: DEFAULT_BODY_FONT_ID,
   color_theme: DEFAULT_COLOR_THEME_ID,
 };
-const USER_SETTING_KEYS = new Set(["font_number", "font_body"]);
-const SITE_SETTING_KEYS = new Set(["color_theme"]);
+// Keys a logged-in user may override for themselves (overlays the site default).
+const USER_SETTING_KEYS = new Set(["font_number", "font_body", "color_theme"]);
+// Keys an admin may set as the site-wide default (the released look).
+const SITE_ALLOWED_KEYS = new Set(["color_theme", "font_number", "font_body"]);
+// Keys that are ALWAYS site-scoped regardless of requested scope. None today:
+// admin sets the default with an explicit scope:"site", users override per-account.
+const SITE_ONLY_KEYS = new Set<string>([]);
 
 function hasBearerToken(req: Request): boolean {
   const header = req.headers.get("authorization") ?? req.headers.get("Authorization");
@@ -38,6 +43,7 @@ function isAllowedValue(key: string, value: string): boolean {
 export async function GET(req: Request) {
   const db = getDb();
   try {
+    const scope = new URL(req.url).searchParams.get("scope");
     const rows = await db.all<{ key: string; value: string }>(
       sql`SELECT key, value FROM site_settings`
     );
@@ -47,7 +53,7 @@ export async function GET(req: Request) {
     }
     const response = { ...DEFAULT_SETTINGS, ...settings };
 
-    if (hasBearerToken(req)) {
+    if (scope !== "site" && hasBearerToken(req)) {
       const auth = await requireAuth(req);
       if (auth instanceof Response) return auth;
       const userRows = await db.all<{ key: string; value: string }>(
@@ -68,20 +74,33 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const body = (await req.json()) as { key: string; value: string };
+  const body = (await req.json()) as {
+    key: string;
+    value: string;
+    scope?: "site" | "user";
+  };
   if (!body.key || !body.value) {
     return NextResponse.json({ error: "key and value required" }, { status: 400 });
-  }
-  if (!USER_SETTING_KEYS.has(body.key) && !SITE_SETTING_KEYS.has(body.key)) {
-    return NextResponse.json({ error: `unsupported setting key: ${body.key}` }, { status: 400 });
   }
   if (!isAllowedValue(body.key, body.value)) {
     return NextResponse.json({ error: `unsupported setting value for ${body.key}` }, { status: 400 });
   }
 
+  // Everything defaults to per-user (theme + fonts) unless the caller explicitly
+  // asks for the site-wide default with scope:"site" (admin only).
+  const scope: "site" | "user" =
+    SITE_ONLY_KEYS.has(body.key) || body.scope === "site" ? "site" : "user";
+
+  if (scope === "site" && !SITE_ALLOWED_KEYS.has(body.key)) {
+    return NextResponse.json({ error: `unsupported site setting key: ${body.key}` }, { status: 400 });
+  }
+  if (scope === "user" && !USER_SETTING_KEYS.has(body.key)) {
+    return NextResponse.json({ error: `unsupported user setting key: ${body.key}` }, { status: 400 });
+  }
+
   const db = getDb();
   try {
-    if (SITE_SETTING_KEYS.has(body.key)) {
+    if (scope === "site") {
       const auth = await requireAdmin(req);
       if (auth instanceof Response) return auth;
       await db.run(
