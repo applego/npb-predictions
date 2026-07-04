@@ -178,7 +178,9 @@ export async function requireAdmin(
   const isAdmin =
     adminUids().has(result.token.uid) ||
     result.user.role === "admin" ||
-    (tokenEmail !== null && adminEmails().has(tokenEmail));
+    (result.token.emailVerified &&
+      tokenEmail !== null &&
+      adminEmails().has(tokenEmail));
   if (!isAdmin) return forbidden("Admin only");
   return result;
 }

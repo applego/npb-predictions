@@ -5,6 +5,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 // success/failure branches deterministically.
 
 const jwtVerifyMock = vi.fn();
+const dbLimitMock = vi.fn();
 
 vi.mock("jose", () => ({
   jwtVerify: (...args: unknown[]) => jwtVerifyMock(...args),
@@ -12,16 +13,22 @@ vi.mock("jose", () => ({
 }));
 
 vi.mock("@/db", () => ({
-  getDb: () => {
-    throw new Error("db should not be touched in verifyIdToken tests");
-  },
+  getDb: () => ({
+    select: () => ({
+      from: () => ({
+        where: () => ({
+          limit: dbLimitMock,
+        }),
+      }),
+    }),
+  }),
 }));
 
 // Set the project id env var BEFORE importing the module.
 process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID = "test-project";
 
 // Dynamic import after env is set so module-level reads pick it up.
-const { verifyIdToken } = await import("../auth-server");
+const { verifyIdToken, requireAdmin } = await import("../auth-server");
 
 function makeReq(authHeader: string | null): Request {
   const headers = new Headers();
@@ -32,6 +39,7 @@ function makeReq(authHeader: string | null): Request {
 describe("verifyIdToken", () => {
   beforeEach(() => {
     jwtVerifyMock.mockReset();
+    dbLimitMock.mockReset();
   });
 
   afterEach(() => {
@@ -100,5 +108,72 @@ describe("verifyIdToken", () => {
       audience: "test-project",
       algorithms: ["RS256"],
     });
+  });
+});
+
+describe("requireAdmin", () => {
+  beforeEach(() => {
+    jwtVerifyMock.mockReset();
+    dbLimitMock.mockReset();
+    process.env.NEXT_PUBLIC_ADMIN_EMAILS = "owner@example.com";
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    delete process.env.NEXT_PUBLIC_ADMIN_EMAILS;
+  });
+
+  it("rejects admin email allow-list matches when the Firebase email is unverified", async () => {
+    jwtVerifyMock.mockResolvedValueOnce({
+      payload: {
+        sub: "uid-123",
+        email: "owner@example.com",
+        email_verified: false,
+        auth_time: 1700000000,
+      },
+    });
+    dbLimitMock.mockResolvedValueOnce([
+      {
+        id: 1,
+        name: "Owner",
+        slug: "owner",
+        avatarUrl: null,
+        role: "friend",
+        firebaseUid: "uid-123",
+        email: "owner@example.com",
+      },
+    ]);
+
+    const result = await requireAdmin(makeReq("Bearer eyJhbGc.payload.sig"));
+
+    expect(result).toBeInstanceOf(Response);
+    expect((result as Response).status).toBe(403);
+  });
+
+  it("accepts admin email allow-list matches when the Firebase email is verified", async () => {
+    jwtVerifyMock.mockResolvedValueOnce({
+      payload: {
+        sub: "uid-123",
+        email: "owner@example.com",
+        email_verified: true,
+        auth_time: 1700000000,
+      },
+    });
+    dbLimitMock.mockResolvedValueOnce([
+      {
+        id: 1,
+        name: "Owner",
+        slug: "owner",
+        avatarUrl: null,
+        role: "friend",
+        firebaseUid: "uid-123",
+        email: "owner@example.com",
+      },
+    ]);
+
+    const result = await requireAdmin(makeReq("Bearer eyJhbGc.payload.sig"));
+
+    expect(result).not.toBeInstanceOf(Response);
+    expect((result as { user: { id: number } }).user.id).toBe(1);
   });
 });
