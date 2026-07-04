@@ -756,17 +756,57 @@ function TeamRow({
             <div
               style={{
                 aspectRatio: "1080 / 1920",
-                background: "#faf7f0",
+                background:
+                  "linear-gradient(rgba(255,255,255,0.82), rgba(255,255,255,0.82)), repeating-linear-gradient(0deg, #f7f1df 0 3px, #efe6cf 3px 4px)",
                 overflow: "hidden",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 10,
+                padding: 16,
               }}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={`/api/newspaper/${team.slug}`}
-                alt={`${team.name} 新聞一面`}
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                loading="lazy"
-              />
+              <div
+                style={{
+                  width: 72,
+                  height: 72,
+                  borderRadius: "50%",
+                  background: team.color,
+                  color: team.textColor,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontFamily: "var(--font-display)",
+                  fontSize: 32,
+                  fontWeight: 700,
+                  letterSpacing: "0.04em",
+                }}
+              >
+                {team.abbr}
+              </div>
+              <div
+                style={{
+                  color: "var(--text-primary)",
+                  fontSize: 15,
+                  fontWeight: 700,
+                  letterSpacing: "0.08em",
+                }}
+              >
+                生成画像を開く
+              </div>
+              <div
+                style={{
+                  color: "var(--text-muted)",
+                  fontSize: 11,
+                  lineHeight: 1.6,
+                  textAlign: "center",
+                }}
+              >
+                クリックで{team.name}版の
+                <br />
+                モック新聞一面を生成
+              </div>
             </div>
             <div
               style={{
