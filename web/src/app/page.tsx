@@ -444,7 +444,7 @@ export default async function HomePage() {
             </div>
             <Link
               href="/predictions"
-              className="text-xs font-medium transition-colors"
+              className="inline-flex min-h-9 items-center text-xs font-medium transition-colors"
               style={{
                 color: "var(--stitch)",
                 letterSpacing: "0.08em",
@@ -553,7 +553,7 @@ export default async function HomePage() {
             </div>
             <Link
               href="/news"
-              className="text-xs font-medium transition-colors"
+              className="inline-flex min-h-9 items-center text-xs font-medium transition-colors"
               style={{
                 color: "var(--stitch)",
                 letterSpacing: "0.08em",
@@ -603,7 +603,7 @@ export default async function HomePage() {
             </div>
             <Link
               href="/news"
-              className="text-xs font-medium transition-colors"
+              className="inline-flex min-h-9 items-center text-xs font-medium transition-colors"
               style={{
                 color: "var(--stitch)",
                 letterSpacing: "0.08em",

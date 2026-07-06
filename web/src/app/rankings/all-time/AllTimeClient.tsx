@@ -149,10 +149,10 @@ export function AllTimeTable({ commentators }: { commentators: Commentator[] }) 
 
       {/* Sortable table */}
       <div
-        className="overflow-x-auto rounded-xl"
+        className="max-w-full overflow-x-auto rounded-xl"
         style={{ background: "var(--bg-surface)", border: "1px solid var(--border-primary)" }}
       >
-        <table className="w-full text-sm">
+        <table className="w-full min-w-[31rem] text-sm">
           <thead>
             <tr style={{ borderBottom: "2px solid var(--border-primary)" }}>
               <SortHeader label="#" sortKey="rank" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} align="left" />
@@ -187,7 +187,7 @@ export function AllTimeTable({ commentators }: { commentators: Commentator[] }) 
                   <td className="px-3 py-2.5">
                     <Link
                       href={`/commentators/${c.slug}`}
-                      className="font-medium transition-colors hover:underline"
+                      className="inline-flex min-h-9 items-center font-medium transition-colors hover:underline"
                       style={{ color: "var(--text-primary)" }}
                     >
                       {c.name}

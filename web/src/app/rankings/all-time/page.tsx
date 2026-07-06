@@ -118,7 +118,7 @@ export default async function AllTimeRankingsPage() {
         </div>
         <Link
           href="/rankings/commentators"
-          className="rounded-sm px-3 py-1.5 text-xs font-medium"
+          className="inline-flex min-h-9 items-center rounded-sm px-3 py-1.5 text-xs font-medium"
           style={{
             fontFamily: "var(--font-display)",
             border: "1px solid var(--border-primary)",
