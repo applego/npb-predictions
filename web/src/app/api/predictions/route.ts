@@ -1,9 +1,5 @@
 export const runtime = "edge";
 
-// Per-IP rate limiting is not implemented in this layer — Cloudflare Pages
-// Functions can be wired up to the Workers Rate Limiting API (or a turnstile
-// challenge) if abuse becomes a concern. See ops runbook for the upgrade path.
-
 import { NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { predictions, rankingPicks, titlePicks, seasons } from "@/db/schema";
@@ -47,8 +43,49 @@ const PayloadSchema = z.object({
 });
 
 const FRIEND_VARIANT = "default";
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX = 10;
+const rateLimitBuckets = new Map<string, { count: number; resetAt: number }>();
+
+function rateLimitKey(req: Request): string | null {
+  return (
+    req.headers.get("cf-connecting-ip") ??
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    null
+  );
+}
+
+function checkRateLimit(req: Request): Response | null {
+  const now = Date.now();
+  const key = rateLimitKey(req);
+  if (!key) return null;
+  for (const [bucketKey, bucket] of rateLimitBuckets) {
+    if (bucket.resetAt <= now) rateLimitBuckets.delete(bucketKey);
+  }
+
+  const bucket = rateLimitBuckets.get(key);
+  if (!bucket || bucket.resetAt <= now) {
+    rateLimitBuckets.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return null;
+  }
+  bucket.count += 1;
+  if (bucket.count <= RATE_LIMIT_MAX) return null;
+
+  return NextResponse.json(
+    { error: "Too many prediction submissions. Please retry shortly." },
+    {
+      status: 429,
+      headers: {
+        "Retry-After": String(Math.ceil((bucket.resetAt - now) / 1000)),
+      },
+    },
+  );
+}
 
 export async function POST(req: Request) {
+  const limited = checkRateLimit(req);
+  if (limited) return limited;
+
   const auth = await requireAuth(req);
   if (auth instanceof Response) return auth;
   const { user } = auth;
