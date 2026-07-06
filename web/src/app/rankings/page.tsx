@@ -1,5 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import {
+  BroadcastBand,
+  BroadcastHeading,
+  BroadcastPanel,
+} from "@/components/BroadcastShell";
 import { canonicalAlternates, clampDescription, SEO_TERMS } from "@/lib/seo-meta";
 
 export const metadata: Metadata = {
@@ -12,32 +17,44 @@ export const metadata: Metadata = {
 
 const RANKING_CARDS = [
   {
-    href: "/rankings/predictions",
-    icon: "\u{1F52E}",
-    label: "順位予想一覧",
-    caption: "セ・リーグとパ・リーグの予想を比較",
+    href: "/rankings/titles",
+    icon: "\u{1F451}",
+    kicker: "TITLE PREDICTIONS",
+    label: "タイトル予想 的中率",
+    caption: "確定タイトルと各予想者の的中状況を比較",
   },
   {
     href: "/rankings/live",
     icon: "\u{1F4C8}",
-    label: "ライブスコア",
-    caption: "シーズン中の変動を追跡",
+    kicker: "LEAGUE STANDINGS",
+    label: "リーグ順位",
+    caption: "順位推移と実績順位からスコア変動を追跡",
   },
   {
-    href: "/rankings/titles",
-    icon: "\u{1F451}",
-    label: "タイトル予想",
-    caption: "首位打者・本塁打王・打点王を確認",
+    href: "/rankings/predictions",
+    icon: "\u{1F52E}",
+    kicker: "PREDICTION MATRIX",
+    label: "順位予想マトリクス",
+    caption: "セ・パ両リーグの順位予想を横断比較",
+  },
+  {
+    href: "/predictions/new",
+    icon: "\u270D",
+    kicker: "NEW ENTRY",
+    label: "予想を登録する",
+    caption: "ドラッグ操作で順位を並べ、タイトル予想を入力",
   },
   {
     href: "/rankings/scoreboard",
     icon: "\u{1F3C6}",
+    kicker: "FINAL SCORE",
     label: "確定結果",
     caption: "年度別の結果とスコアボード",
   },
   {
     href: "/rankings/all-time",
     icon: "\u{1F4CA}",
+    kicker: "ALL TIME",
     label: "殿堂ランキング",
     caption: "通算スコアと長期成績",
   },
@@ -46,56 +63,50 @@ const RANKING_CARDS = [
 export default function RankingsIndexPage() {
   return (
     <div className="space-y-6">
-      <section
-        className="rounded-sm p-5 sm:p-6"
-        style={{ background: "var(--bg-surface)", border: "1px solid var(--border-primary)" }}
-      >
-        <p
-          className="text-xs font-semibold uppercase"
-          style={{
-            color: "var(--stitch)",
-            fontFamily: "var(--font-display)",
-            letterSpacing: "0.14em",
-          }}
-        >
-          Rankings
-        </p>
-        <h1
-          className="mt-1"
-          style={{
-            color: "var(--text-primary)",
-            fontFamily: "var(--font-display)",
-            fontSize: "clamp(1.8rem, 5vw, 2.6rem)",
-            letterSpacing: "0.04em",
-          }}
-        >
-          ランキング
-        </h1>
-        <p className="mt-2 max-w-2xl text-sm leading-7" style={{ color: "var(--text-muted)" }}>
-          順位予想・ライブスコア・タイトル予想・確定結果をここから開きます。
-        </p>
-      </section>
+      <BroadcastBand year={2026} />
+      <BroadcastHeading kicker="BROADCAST" title="放送席">
+        <p>白基調・実況の情報密度で、タイトル予想、リーグ順位、順位予想、予想登録をすばやく確認します。</p>
+      </BroadcastHeading>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2">
         {RANKING_CARDS.map((card) => (
           <Link
             key={card.href}
             href={card.href}
-            className="group min-h-28 rounded-sm p-4 transition-all"
-            style={{
-              background: "var(--bg-surface)",
-              border: "1px solid var(--border-primary)",
-            }}
+            className="group block transition-all hover:-translate-y-0.5"
           >
-            <span className="text-xl" aria-hidden="true">
-              {card.icon}
-            </span>
-            <h2 className="mt-3 text-base font-semibold" style={{ color: "var(--text-primary)" }}>
-              {card.label}
-            </h2>
-            <p className="mt-1 text-xs leading-5" style={{ color: "var(--text-muted)" }}>
-              {card.caption}
-            </p>
+            <BroadcastPanel className="min-h-32 p-4">
+              <div className="flex items-start gap-3">
+                <span
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm text-base"
+                  style={{
+                    background: "var(--bg-inset)",
+                    border: "1px solid var(--border-primary)",
+                  }}
+                  aria-hidden="true"
+                >
+                  {card.icon}
+                </span>
+                <div>
+                  <p
+                    className="text-[10px] font-black uppercase"
+                    style={{
+                      color: "var(--field)",
+                      fontFamily: "var(--font-display)",
+                      letterSpacing: "0.16em",
+                    }}
+                  >
+                    {card.kicker}
+                  </p>
+                  <h2 className="mt-1 text-base font-black" style={{ color: "var(--text-primary)" }}>
+                    {card.label}
+                  </h2>
+                  <p className="mt-2 text-xs leading-5" style={{ color: "var(--text-muted)" }}>
+                    {card.caption}
+                  </p>
+                </div>
+              </div>
+            </BroadcastPanel>
           </Link>
         ))}
       </div>
