@@ -108,9 +108,8 @@ export default function SettingsPage() {
   }, [authLoading, firebaseUser]);
 
   const save = useCallback(async (key: "color_theme" | "font_number", value: string) => {
-    saveLocalThemeSetting(key, value);
-
     if (!firebaseUser) {
+      saveLocalThemeSetting(key, value);
       setMessage("この端末に保存しました — ログインするとアカウントにも保存できます");
       return;
     }
