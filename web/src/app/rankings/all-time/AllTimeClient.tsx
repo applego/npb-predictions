@@ -187,7 +187,7 @@ export function AllTimeTable({ commentators }: { commentators: Commentator[] }) 
                   <td className="px-3 py-2.5">
                     <Link
                       href={`/commentators/${c.slug}`}
-                      className="inline-flex min-h-9 items-center font-medium transition-colors hover:underline"
+                      className="inline-flex min-h-9 min-w-10 items-center font-medium transition-colors hover:underline"
                       style={{ color: "var(--text-primary)" }}
                     >
                       {c.name}

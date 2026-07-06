@@ -37,8 +37,8 @@
   --app-header-h: 72px;
 }
 
-/* Desktop header is shorter (no hamburger row) — Tailwind md breakpoint. */
-@media (min-width: 768px) {
+/* Desktop header is shorter (no hamburger row) — Tailwind lg breakpoint. */
+@media (min-width: 1024px) {
   :root {
     --app-header-h: 68px;
   }
@@ -143,24 +143,6 @@ button:disabled,
     padding: 34px 32px 30px;
     transform-origin: top center;
     width: 912px;
-  }
-
-  .newspaper-scaled-label {
-    display: inline;
-  }
-
-  .newspaper-unscaled-link {
-    display: none;
-  }
-
-  @media (min-width: 944px) {
-    .newspaper-scaled-label {
-      display: none;
-    }
-
-    .newspaper-unscaled-link {
-      display: inline;
-    }
   }
 
   @media (max-width: 943px) {
