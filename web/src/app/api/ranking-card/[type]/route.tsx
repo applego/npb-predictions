@@ -7,52 +7,70 @@ import {
   type RankingCardData,
 } from "@/lib/public-image-data";
 
-const W = 720;
-const H = 880;
+const W = 560;
+const H = 700;
+const CACHE_CONTROL = "public, max-age=60, stale-while-revalidate=300";
 
 type OgFont = {
   name: string;
   data: ArrayBuffer;
-  weight: 400 | 700 | 900;
+  weight: 700;
   style: "normal";
 };
 
-async function loadJPFont(weight: 400 | 700 | 900): Promise<ArrayBuffer> {
-  const res = await fetch(
-    `https://cdn.jsdelivr.net/fontsource/fonts/noto-sans-jp@latest/japanese-${weight}-normal.ttf`,
-  );
-  if (!res.ok) throw new Error(`Font sans/${weight}`);
-  return res.arrayBuffer();
-}
+let fontPromise: Promise<ArrayBuffer> | null = null;
 
-let fontPromise: Promise<OgFont[]> | null = null;
-
-function loadFonts(): Promise<OgFont[]> {
+function loadFont(): Promise<ArrayBuffer> {
   fontPromise ??= (async () => {
-    const meta: Array<{ name: string; weight: 400 | 700 | 900 }> = [
-      { name: "Sans JP", weight: 900 },
-      { name: "Sans JP", weight: 700 },
-      { name: "Sans JP", weight: 400 },
-    ];
-    const results = await Promise.allSettled(
-      meta.map((font) => loadJPFont(font.weight)),
+    const fontUrl = new URL(
+      "./assets/noto-sans-jp-japanese-700-normal.woff",
+      import.meta.url,
     );
-
-    return results
-      .map((result, i) =>
-        result.status === "fulfilled"
-          ? {
-              name: meta[i].name,
-              data: result.value,
-              weight: meta[i].weight,
-              style: "normal" as const,
-            }
-          : null,
-      )
-      .filter((font): font is OgFont => font !== null);
+    const res = await fetch(fontUrl);
+    if (!res.ok) throw new Error(`Font fetch failed: ${res.status}`);
+    const buf = await res.arrayBuffer();
+    if (buf.byteLength < 1000) throw new Error("Font response too small");
+    return buf;
   })();
 
   return fontPromise;
+}
+
+async function renderFallbackCard(label: string): Promise<Response> {
+  const img = new ImageResponse(
+    (
+      <div
+        style={{
+          width: W,
+          height: H,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          background: "#fff",
+          color: "#111827",
+          fontFamily: "sans-serif",
+          border: "3px solid #111827",
+        }}
+      >
+        <div style={{ display: "flex", fontSize: 28, fontWeight: 700 }}>
+          NPB Rankings
+        </div>
+        <div style={{ display: "flex", marginTop: 12, fontSize: 14 }}>
+          {label}
+        </div>
+      </div>
+    ),
+    { width: W, height: H },
+  );
+  const buf = await img.arrayBuffer();
+  return new Response(buf, {
+    status: 200,
+    headers: {
+      "content-type": "image/png",
+      "cache-control": CACHE_CONTROL,
+    },
+  });
 }
 
 export async function GET(
@@ -71,10 +89,14 @@ export async function GET(
   const ink = "#111827";
   const paper = "#ffffff";
   const accent = "#dc2626";
-  const fonts = await loadFonts();
+  const fontData = await loadFont().catch((err) => {
+    console.error("Ranking card font load failed:", err);
+    return null;
+  });
+  if (!fontData) return await renderFallbackCard("Font unavailable");
 
-  return new ImageResponse(
-    (
+  try {
+    const img = new ImageResponse(
       <div
         style={{
           width: W,
@@ -83,8 +105,8 @@ export async function GET(
           flexDirection: "column",
           background: paper,
           color: ink,
-          fontFamily: "Sans JP",
-          padding: 22,
+          fontFamily: "NotoSansJP",
+          padding: 18,
           border: `3px solid ${ink}`,
         }}
       >
@@ -98,10 +120,10 @@ export async function GET(
           }}
         >
           <div style={{ display: "flex", flexDirection: "column" }}>
-            <div style={{ display: "flex", fontSize: 14, fontWeight: 900, color: accent }}>
+            <div style={{ display: "flex", fontSize: 12, fontWeight: 700, color: accent }}>
               NPB予想スポーツ
             </div>
-            <div style={{ display: "flex", fontSize: 26, fontWeight: 900 }}>
+            <div style={{ display: "flex", fontSize: 20, fontWeight: 700 }}>
               {data.title}
             </div>
           </div>
@@ -110,9 +132,9 @@ export async function GET(
               display: "flex",
               background: ink,
               color: "#fff",
-              padding: "8px 12px",
-              fontSize: 16,
-              fontWeight: 900,
+              padding: "6px 10px",
+              fontSize: 13,
+              fontWeight: 700,
             }}
           >
             上位5傑
@@ -136,9 +158,9 @@ export async function GET(
                   alignItems: "center",
                   background: si === 0 ? accent : ink,
                   color: "#fff",
-                  padding: "6px 10px",
-                  fontSize: 18,
-                  fontWeight: 900,
+                  padding: "5px 8px",
+                  fontSize: 15,
+                  fontWeight: 700,
                 }}
               >
                 {section.label}
@@ -150,32 +172,32 @@ export async function GET(
                     style={{
                       display: "flex",
                       alignItems: "center",
-                      minHeight: 34,
-                      padding: "4px 10px",
+                      minHeight: 28,
+                      padding: "3px 8px",
                       borderBottom:
                         ri < section.rows.length - 1 ? "1px solid #d1d5db" : "none",
-                      fontSize: 15,
+                      fontSize: 12,
                     }}
                   >
-                    <div style={{ display: "flex", width: 30, fontWeight: 900 }}>
+                    <div style={{ display: "flex", width: 24, fontWeight: 700 }}>
                       {ri + 1}
                     </div>
                     <div style={{ display: "flex", flex: 1, fontWeight: 700 }}>
                       {row.name}
                     </div>
-                    <div style={{ display: "flex", width: 130, color: "#4b5563" }}>
+                    <div style={{ display: "flex", width: 104, color: "#4b5563" }}>
                       {row.affiliation}
                     </div>
-                    <div style={{ display: "flex", width: 48, justifyContent: "center" }}>
+                    <div style={{ display: "flex", width: 38, justifyContent: "center" }}>
                       {row.role}
                     </div>
                     <div
                       style={{
                         display: "flex",
-                        width: 70,
+                        width: 56,
                         justifyContent: "flex-end",
-                        fontSize: 19,
-                        fontWeight: 900,
+                        fontSize: 15,
+                        fontWeight: 700,
                       }}
                     >
                       {row.value}
@@ -192,9 +214,9 @@ export async function GET(
             display: "flex",
             justifyContent: "space-between",
             borderTop: `2px solid ${ink}`,
-            marginTop: 10,
-            paddingTop: 8,
-            fontSize: 11,
+            marginTop: 8,
+            paddingTop: 6,
+            fontSize: 9,
             color: "#4b5563",
           }}
         >
@@ -202,11 +224,30 @@ export async function GET(
           <div style={{ display: "flex" }}>npb-predictions.pages.dev</div>
         </div>
       </div>
-    ),
-    {
-      width: W,
-      height: H,
-      ...(fonts.length > 0 ? { fonts } : {}),
-    },
-  );
+      ,
+      {
+        width: W,
+        height: H,
+        fonts: [
+          {
+            name: "NotoSansJP",
+            data: fontData,
+            weight: 700,
+            style: "normal",
+          } satisfies OgFont,
+        ],
+      },
+    );
+    const buf = await img.arrayBuffer();
+    return new Response(buf, {
+      status: 200,
+      headers: {
+        "content-type": "image/png",
+        "cache-control": CACHE_CONTROL,
+      },
+    });
+  } catch (err) {
+    console.error("Ranking card render failed:", err);
+    return await renderFallbackCard("Render fallback");
+  }
 }
