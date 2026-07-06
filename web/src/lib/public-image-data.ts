@@ -1,4 +1,4 @@
-import { and, desc, eq, or } from "drizzle-orm";
+import { and, desc, eq, or, sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import {
   actualTeamStandings,
@@ -13,6 +13,17 @@ type GameRow = typeof gameResults.$inferSelect;
 type StandingRow = typeof actualTeamStandings.$inferSelect;
 type ScoreRow = typeof scoreSnapshots.$inferSelect;
 type UserRow = typeof users.$inferSelect;
+
+type RawScoreRow = {
+  id: number;
+  userId: number;
+  seasonId: number;
+  rankingScore: number;
+  titleScore: number;
+  totalScore: number;
+  rank: number | null;
+  snapshotDate: number;
+};
 
 export type HeadlineChar = {
   char: string;
@@ -375,15 +386,36 @@ export async function getRankingCardData(): Promise<RankingCardData | null> {
 
   const [allUsers, allScores] = await Promise.all([
     db.select().from(users),
-    db
-      .select()
-      .from(scoreSnapshots)
-      .where(eq(scoreSnapshots.seasonId, activeSeason.id))
-      .orderBy(desc(scoreSnapshots.snapshotDate), desc(scoreSnapshots.totalScore)),
+    db.all<RawScoreRow>(sql`
+      SELECT
+        ss.id,
+        ss.user_id AS userId,
+        ss.season_id AS seasonId,
+        ss.ranking_score AS rankingScore,
+        ss.title_score AS titleScore,
+        ss.total_score AS totalScore,
+        ss.rank,
+        ss.snapshot_date AS snapshotDate
+      FROM score_snapshots ss
+      JOIN (
+        SELECT user_id, MAX(snapshot_date) AS snapshot_date
+        FROM score_snapshots
+        WHERE season_id = ${activeSeason.id}
+        GROUP BY user_id
+      ) latest
+        ON latest.user_id = ss.user_id
+       AND latest.snapshot_date = ss.snapshot_date
+      WHERE ss.season_id = ${activeSeason.id}
+      ORDER BY ss.total_score DESC
+    `),
   ]);
   if (allScores.length === 0) return null;
 
   const userMap = new Map(allUsers.map((user) => [user.id, user]));
+  const latestScores = allScores.map((row) => ({
+    ...row,
+    snapshotDate: new Date(row.snapshotDate * 1000),
+  }));
 
   return {
     title: `${activeSeason.year}シーズン 予想的中スコア 上位5傑`,
@@ -391,15 +423,15 @@ export async function getRankingCardData(): Promise<RankingCardData | null> {
     sections: [
       {
         label: "総合",
-        rows: toCardRows(allScores, userMap, (row) => row.totalScore, activeSeason.year),
+        rows: toCardRows(latestScores, userMap, (row) => row.totalScore, activeSeason.year),
       },
       {
         label: "順位予想",
-        rows: toCardRows(allScores, userMap, (row) => row.rankingScore, activeSeason.year),
+        rows: toCardRows(latestScores, userMap, (row) => row.rankingScore, activeSeason.year),
       },
       {
         label: "タイトル",
-        rows: toCardRows(allScores, userMap, (row) => row.titleScore, activeSeason.year),
+        rows: toCardRows(latestScores, userMap, (row) => row.titleScore, activeSeason.year),
       },
     ],
   };
