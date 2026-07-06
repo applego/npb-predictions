@@ -479,6 +479,16 @@ export const COLOR_THEMES: ColorTheme[] = [
 
 export const DEFAULT_COLOR_THEME_ID = "broadcast";
 export const DEFAULT_NUMBER_FONT_ID = "saira";
+export const DESIGN_COLOR_THEME_IDS = [
+  "broadcast",
+  "stadium-night",
+  "newsprint",
+  "newspaper-mincho",
+] as const;
+
+export const DESIGN_COLOR_THEMES = COLOR_THEMES.filter((theme) =>
+  DESIGN_COLOR_THEME_IDS.includes(theme.id as (typeof DESIGN_COLOR_THEME_IDS)[number]),
+);
 
 export function getNumberFont(id: string): NumberFont {
   return NUMBER_FONTS.find((f) => f.id === id) ?? NUMBER_FONTS[0];

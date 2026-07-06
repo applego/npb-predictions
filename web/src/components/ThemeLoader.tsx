@@ -5,10 +5,8 @@ import { getFirebaseAuth, onAuthStateChanged, type FirebaseUser } from "@/lib/fi
 import {
   DEFAULT_COLOR_THEME_ID,
   DEFAULT_NUMBER_FONT_ID,
-  getNumberFont,
-  getColorTheme,
-  buildGoogleFontsUrl,
 } from "@/lib/theme-presets";
+import { applyLocalThemeFallback, applyTheme, readLocalThemeSettings } from "@/lib/theme-apply";
 
 /**
  * Client component that loads theme settings from /api/settings
@@ -33,35 +31,17 @@ export function ThemeLoader() {
 
       try {
         const res = await fetch("/api/settings", { headers });
-        if (!res.ok || cancelled) return;
+        if (!res.ok) throw new Error("settings unavailable");
+        if (cancelled) return;
         const data = await res.json();
         const s = data as Record<string, string>;
-        const numFontId = s.font_number ?? DEFAULT_NUMBER_FONT_ID;
-        const themeId = s.color_theme ?? DEFAULT_COLOR_THEME_ID;
+        const local = !user ? readLocalThemeSettings() : { colorTheme: null, numberFont: null };
+        const numFontId = local.numberFont ?? s.font_number ?? DEFAULT_NUMBER_FONT_ID;
+        const themeId = local.colorTheme ?? s.color_theme ?? DEFAULT_COLOR_THEME_ID;
 
-        const numFont = getNumberFont(numFontId);
-        const theme = getColorTheme(themeId);
-
-        // 1. Inject Google Fonts <link>
-        const fontsUrl = buildGoogleFontsUrl(numFontId);
-        const existing = document.getElementById("theme-google-fonts");
-        if (existing) existing.remove();
-        const link = document.createElement("link");
-        link.id = "theme-google-fonts";
-        link.rel = "stylesheet";
-        link.href = fontsUrl;
-        document.head.appendChild(link);
-
-        // 2. Apply CSS variables to :root
-        const root = document.documentElement;
-        for (const [key, value] of Object.entries(theme.vars)) {
-          root.style.setProperty(key, value);
-        }
-        root.style.setProperty("--font-display", numFont.family);
-        root.style.setProperty("--font-body", "var(--font-body-default)");
-        document.body.style.fontFamily = "var(--font-body-default)";
+        applyTheme(themeId, numFontId);
       } catch {
-        // Silently fall back to CSS defaults
+        applyLocalThemeFallback();
       }
     }
 
