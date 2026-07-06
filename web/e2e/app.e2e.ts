@@ -105,6 +105,19 @@ test.describe("Predictions compare page", () => {
     const body = await page.textContent("body");
     expect(body).not.toContain("Application error");
   });
+
+  test("/rankings renders a useful rankings index directly", async ({ page }) => {
+    const res = await page.goto("/rankings");
+    expect(res, "/rankings navigation must return a response").not.toBeNull();
+    expect(res!.status(), "/rankings must not 5xx").toBeLessThan(500);
+    await page.waitForLoadState("networkidle");
+
+    const body = (await page.textContent("body")) ?? "";
+    expect(body).not.toContain("Application error");
+    expect(body).not.toContain("Internal Server Error");
+    expect(body).not.toContain("NEXT_REDIRECT");
+    expect(body).toMatch(/ランキング|順位予想一覧|ライブスコア|タイトル予想|確定結果/);
+  });
 });
 
 // ── Commentator rankings ───────────────────────────────────────────────────

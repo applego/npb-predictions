@@ -35,6 +35,8 @@
      data tables so their column headers stick just below the app header
      while scrolling (score-sheet behaviour from the C/D design study). */
   --app-header-h: 72px;
+
+  --font-body-default: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "YuGothic", system-ui, sans-serif;
 }
 
 /* Desktop header is shorter (no hamburger row) — Tailwind lg breakpoint. */

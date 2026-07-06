@@ -15,10 +15,13 @@ import {
 } from "@/lib/seo-meta";
 
 const API_BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://npb-predictions.pages.dev";
+const RANKINGS_REVALIDATE_SECONDS = 600;
 
 async function getActiveYear(): Promise<number> {
   try {
-    const res = await fetch(`${API_BASE}/api/seasons`, { cache: "no-store" });
+    const res = await fetch(`${API_BASE}/api/seasons`, {
+      next: { revalidate: RANKINGS_REVALIDATE_SECONDS },
+    });
     if (!res.ok) return new Date().getFullYear();
     const seasons = (await res.json()) as Season[];
     const active = seasons.find((s) => s.isActive) ?? seasons[0];
@@ -30,7 +33,9 @@ async function getActiveYear(): Promise<number> {
 
 async function getAllSeasons(): Promise<Season[]> {
   try {
-    const res = await fetch(`${API_BASE}/api/seasons`, { cache: "no-store" });
+    const res = await fetch(`${API_BASE}/api/seasons`, {
+      next: { revalidate: RANKINGS_REVALIDATE_SECONDS },
+    });
     if (!res.ok) return [];
     return res.json() as Promise<Season[]>;
   } catch {
@@ -40,7 +45,9 @@ async function getAllSeasons(): Promise<Season[]> {
 
 async function getPredictions(year: number): Promise<Prediction[]> {
   try {
-    const res = await fetch(`${API_BASE}/api/seasons/${year}/predictions`, { cache: "no-store" });
+    const res = await fetch(`${API_BASE}/api/seasons/${year}/predictions`, {
+      next: { revalidate: RANKINGS_REVALIDATE_SECONDS },
+    });
     if (!res.ok) return [];
     return res.json() as Promise<Prediction[]>;
   } catch {

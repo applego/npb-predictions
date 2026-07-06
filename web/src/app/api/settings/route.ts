@@ -4,9 +4,7 @@ import { NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { sql } from "drizzle-orm";
 import {
-  BODY_FONTS,
   COLOR_THEMES,
-  DEFAULT_BODY_FONT_ID,
   DEFAULT_COLOR_THEME_ID,
   DEFAULT_NUMBER_FONT_ID,
   NUMBER_FONTS,
@@ -17,13 +15,12 @@ import { requireAdmin, requireAuth } from "@/lib/auth-server";
 // Logged-in users can override theme + fonts via user_settings (overlays site default).
 const DEFAULT_SETTINGS = {
   font_number: DEFAULT_NUMBER_FONT_ID,
-  font_body: DEFAULT_BODY_FONT_ID,
   color_theme: DEFAULT_COLOR_THEME_ID,
 };
 // Keys a logged-in user may override for themselves (overlays the site default).
-const USER_SETTING_KEYS = new Set(["font_number", "font_body", "color_theme"]);
+const USER_SETTING_KEYS = new Set(["font_number", "color_theme"]);
 // Keys an admin may set as the site-wide default (the released look).
-const SITE_ALLOWED_KEYS = new Set(["color_theme", "font_number", "font_body"]);
+const SITE_ALLOWED_KEYS = new Set(["color_theme", "font_number"]);
 // Keys that are ALWAYS site-scoped regardless of requested scope. None today:
 // admin sets the default with an explicit scope:"site", users override per-account.
 const SITE_ONLY_KEYS = new Set<string>([]);
@@ -35,7 +32,6 @@ function hasBearerToken(req: Request): boolean {
 
 function isAllowedValue(key: string, value: string): boolean {
   if (key === "font_number") return NUMBER_FONTS.some((f) => f.id === value);
-  if (key === "font_body") return BODY_FONTS.some((f) => f.id === value);
   if (key === "color_theme") return COLOR_THEMES.some((t) => t.id === value);
   return false;
 }
@@ -49,7 +45,9 @@ export async function GET(req: Request) {
     );
     const settings: Record<string, string> = {};
     for (const row of rows) {
-      settings[row.key] = row.value;
+      if (SITE_ALLOWED_KEYS.has(row.key) && isAllowedValue(row.key, row.value)) {
+        settings[row.key] = row.value;
+      }
     }
     const response = { ...DEFAULT_SETTINGS, ...settings };
 

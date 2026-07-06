@@ -42,45 +42,46 @@ export default function RankingsLayout({ children }: { children: React.ReactNode
 
   return (
     <div className="space-y-5">
-      <div className="flex gap-0">
-        {TABS.map((tab) => {
-          const active = tab.matches.some((m) => pathname.startsWith(m));
-          return (
-            <Link
-              key={tab.href}
-              href={tab.href}
-              className="flex items-center gap-1.5 px-3 py-2.5 transition-all sm:px-4"
-              style={{
-                borderBottom: active
-                  ? "2px solid var(--stitch)"
-                  : "2px solid var(--border-primary)",
-                background: active ? "rgba(229,57,53,0.04)" : "transparent",
-              }}
-            >
-              <span
+      <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+        <div className="flex min-w-max gap-0">
+          {TABS.map((tab) => {
+            const active = tab.matches.some((m) => pathname === m || pathname.startsWith(`${m}/`));
+            return (
+              <Link
+                key={tab.href}
+                href={tab.href}
+                className="flex shrink-0 items-center gap-1.5 px-3 py-2.5 transition-all sm:px-4"
                 style={{
-                  fontSize: "14px",
-                  lineHeight: 1,
+                  borderBottom: active
+                    ? "2px solid var(--stitch)"
+                    : "2px solid var(--border-primary)",
+                  background: active ? "rgba(229,57,53,0.04)" : "transparent",
                 }}
               >
-                {tab.icon}
-              </span>
-              <span
-                style={{
-                  fontFamily: "var(--font-display)",
-                  letterSpacing: "0.06em",
-                  fontSize: "13px",
-                  fontWeight: 700,
-                  color: active ? "var(--stitch)" : "var(--text-secondary)",
-                  lineHeight: 1.2,
-                }}
-              >
-                {tab.label}
-              </span>
-            </Link>
-          );
-        })}
-        <div className="flex-1" style={{ borderBottom: "2px solid var(--border-primary)" }} />
+                <span
+                  style={{
+                    fontSize: "14px",
+                    lineHeight: 1,
+                  }}
+                >
+                  {tab.icon}
+                </span>
+                <span
+                  style={{
+                    fontFamily: "var(--font-display)",
+                    letterSpacing: "0.06em",
+                    fontSize: "13px",
+                    fontWeight: 700,
+                    color: active ? "var(--stitch)" : "var(--text-secondary)",
+                    lineHeight: 1.2,
+                  }}
+                >
+                  {tab.label}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
       </div>
       {children}
       <RankChangeNotifier />

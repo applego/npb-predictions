@@ -1,10 +1,9 @@
 import { describe, it, expect } from "vitest";
 import {
-  DEFAULT_BODY_FONT_ID,
   DEFAULT_COLOR_THEME_ID,
   DEFAULT_NUMBER_FONT_ID,
-  NUMBER_FONTS, BODY_FONTS, COLOR_THEMES,
-  getNumberFont, getBodyFont, getColorTheme,
+  NUMBER_FONTS, COLOR_THEMES,
+  getNumberFont, getColorTheme,
   buildGoogleFontsUrl,
 } from "../theme-presets";
 
@@ -24,26 +23,6 @@ describe("NUMBER_FONTS", () => {
 
   it("ids are unique", () => {
     const ids = NUMBER_FONTS.map((f) => f.id);
-    expect(new Set(ids).size).toBe(ids.length);
-  });
-});
-
-describe("BODY_FONTS", () => {
-  it("has at least 4 options", () => {
-    expect(BODY_FONTS.length).toBeGreaterThanOrEqual(4);
-  });
-
-  it("each font has required fields", () => {
-    for (const f of BODY_FONTS) {
-      expect(f.id).toBeTruthy();
-      expect(f.name).toBeTruthy();
-      expect(f.family).toBeTruthy();
-      expect(f.googleQuery).toContain("family=");
-    }
-  });
-
-  it("ids are unique", () => {
-    const ids = BODY_FONTS.map((f) => f.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
 });
@@ -91,9 +70,7 @@ describe("COLOR_THEMES", () => {
 
   it("release default fonts are explicit", () => {
     expect(DEFAULT_NUMBER_FONT_ID).toBe("saira");
-    expect(DEFAULT_BODY_FONT_ID).toBe("noto");
     expect(getNumberFont(DEFAULT_NUMBER_FONT_ID).name).toBe("Saira Condensed");
-    expect(getBodyFont(DEFAULT_BODY_FONT_ID).name).toBe("Noto Sans JP");
   });
 
   it("stadium theme is the dark theme", () => {
@@ -124,14 +101,6 @@ describe("getters", () => {
     expect(getNumberFont("nonexistent").id).toBe(NUMBER_FONTS[0].id);
   });
 
-  it("getBodyFont returns correct font", () => {
-    expect(getBodyFont("zen").name).toBe("Zen Kaku Gothic New");
-  });
-
-  it("getBodyFont falls back to first for unknown id", () => {
-    expect(getBodyFont("nonexistent").id).toBe(BODY_FONTS[0].id);
-  });
-
   it("getColorTheme returns correct theme", () => {
     expect(getColorTheme("night").name).toBe("Night Game");
   });
@@ -142,10 +111,10 @@ describe("getters", () => {
 });
 
 describe("buildGoogleFontsUrl", () => {
-  it("combines number and body font queries", () => {
-    const url = buildGoogleFontsUrl("bebas", "noto");
+  it("loads only the number/display font", () => {
+    const url = buildGoogleFontsUrl("bebas");
     expect(url).toContain("Bebas+Neue");
-    expect(url).toContain("Noto+Sans+JP");
+    expect(url).not.toContain("Noto+Sans+JP");
     expect(url).toContain("fonts.googleapis.com");
   });
 });

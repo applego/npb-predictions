@@ -2,12 +2,10 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
-  DEFAULT_BODY_FONT_ID,
   DEFAULT_COLOR_THEME_ID,
   DEFAULT_NUMBER_FONT_ID,
-  NUMBER_FONTS, BODY_FONTS, COLOR_THEMES,
-  getNumberFont, getBodyFont, getColorTheme,
-  type NumberFont, type BodyFont, type ColorTheme,
+  NUMBER_FONTS, COLOR_THEMES,
+  getNumberFont, getColorTheme,
 } from "@/lib/theme-presets";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import { useAuth } from "@/contexts/AuthContext";
@@ -82,7 +80,6 @@ function ScorePreview({
 export default function SettingsPage() {
   const { firebaseUser, loading: authLoading } = useAuth();
   const [numFont, setNumFont] = useState(DEFAULT_NUMBER_FONT_ID);
-  const [bodyFont, setBodyFont] = useState(DEFAULT_BODY_FONT_ID);
   const [colorTheme, setColorTheme] = useState(DEFAULT_COLOR_THEME_ID);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -92,11 +89,6 @@ export default function SettingsPage() {
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useGoogleFont(nf.googleQuery);
   }
-  for (const bf of BODY_FONTS) {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useGoogleFont(bf.googleQuery);
-  }
-
   // Load current settings
   useEffect(() => {
     if (authLoading) return;
@@ -105,7 +97,6 @@ export default function SettingsPage() {
       .then((d) => {
         const s = d as Record<string, string>;
         if (s.font_number) setNumFont(s.font_number);
-        if (s.font_body) setBodyFont(s.font_body);
         if (s.color_theme) setColorTheme(s.color_theme);
       })
       .catch(() => {});
@@ -113,7 +104,7 @@ export default function SettingsPage() {
 
   const save = useCallback(async (key: string, value: string) => {
     if (!firebaseUser) {
-      setMessage("ログインすると自分のテーマ・フォントを保存できます");
+      setMessage("ログインすると自分のテーマを保存できます");
       return;
     }
 
@@ -133,8 +124,6 @@ export default function SettingsPage() {
     setMessage(result.scope === "user" ? "自分の設定として保存しました — リロードで反映" : "サイト設定を保存しました — リロードで反映");
   }, [firebaseUser]);
 
-  const currentThemeVars = getColorTheme(colorTheme).vars;
-
   return (
     <div className="space-y-8">
       <div>
@@ -142,7 +131,7 @@ export default function SettingsPage() {
           THEME <span style={{ color: "var(--stitch)" }}>SETTINGS</span>
         </h1>
         <p className="mt-0.5 text-sm" style={{ color: "var(--text-muted)" }}>
-          カラーテーマ・数字フォント・日本語フォントをログインユーザーごとに保存（サイト既定は管理者設定）
+          カラーテーマ・数字フォントをログインユーザーごとに保存（サイト既定は管理者設定）
         </p>
         {message && (
           <p className="mt-2 text-sm" style={{ color: "var(--field)" }}>{message}</p>
@@ -184,44 +173,7 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      {/* ══════════ 2. BODY FONT ══════════ */}
-      <section>
-        <h2 className="mb-3 text-sm font-bold" style={{ color: "var(--text-primary)", letterSpacing: "0.08em" }}>
-          日本語フォント <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>— 本文・解説者名・UI</span>
-        </h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {BODY_FONTS.map((bf) => {
-            const active = bodyFont === bf.id;
-            return (
-              <button
-                key={bf.id}
-                type="button"
-                onClick={() => { setBodyFont(bf.id); void save("font_body", bf.id); }}
-                className="w-full rounded-lg p-3 text-left transition-all"
-                style={{
-                  background: active ? "rgba(229,57,53,0.04)" : "var(--bg-surface)",
-                  border: active ? "2px solid var(--stitch)" : "2px solid var(--border-primary)",
-                }}
-              >
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="text-xs font-bold" style={{ color: "var(--text-primary)" }}>{bf.name}</span>
-                  {active && <span className="rounded-sm px-1.5 py-0.5 text-[10px] font-bold" style={{ background: "var(--stitch)", color: "#fff" }}>ON</span>}
-                </div>
-                <div style={{ fontFamily: bf.family }}>
-                  <p style={{ fontSize: "1rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.2rem" }}>
-                    2025年 セ・リーグ 順位予想ランキング
-                  </p>
-                  <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
-                    213人の解説者・評論家の開幕前予想を比較
-                  </p>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* ══════════ 3. COLOR THEME ══════════ */}
+      {/* ══════════ 2. COLOR THEME ══════════ */}
       <section>
         <h2 className="mb-3 text-sm font-bold" style={{ color: "var(--text-primary)", letterSpacing: "0.08em" }}>
           カラーテーマ <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>— 全体の配色</span>
@@ -259,7 +211,7 @@ export default function SettingsPage() {
                 {/* Full preview with current number + body font */}
                 <ScorePreview
                   numFamily={getNumberFont(numFont).family}
-                  bodyFamily={getBodyFont(bodyFont).family}
+                  bodyFamily="var(--font-body-default)"
                   themeVars={v}
                 />
               </button>
@@ -279,7 +231,7 @@ export default function SettingsPage() {
           テーマを適用（リロード）
         </button>
         <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-          {firebaseUser ? "テーマ・フォントは自分の設定として保存されます" : "ログインするとテーマ・フォントを保存できます"}
+          {firebaseUser ? "テーマは自分の設定として保存されます" : "ログインするとテーマを保存できます"}
         </span>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
-import { Bebas_Neue, Noto_Sans_JP } from "next/font/google";
+import { Bebas_Neue } from "next/font/google";
 import { Providers } from "@/components/Providers";
 import { AuthHeader } from "@/components/AuthHeader";
 import { Nav } from "@/components/Nav";
@@ -26,14 +26,6 @@ const bebasNeue = Bebas_Neue({
   display: "swap",
   preload: false,
   fallback: ["Impact", "system-ui", "sans-serif"],
-});
-
-const notoSansJP = Noto_Sans_JP({
-  subsets: ["latin"],
-  variable: "--font-body-default",
-  display: "swap",
-  preload: false,
-  fallback: ["Hiragino Sans", "Hiragino Kaku Gothic ProN", "system-ui", "sans-serif"],
 });
 
 const ROOT_DESCRIPTION = clampDescription(
@@ -101,7 +93,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ja" className={`${bebasNeue.variable} ${notoSansJP.variable}`}>
+    <html lang="ja" className={bebasNeue.variable}>
       <body
         className="min-h-screen antialiased"
         style={{
