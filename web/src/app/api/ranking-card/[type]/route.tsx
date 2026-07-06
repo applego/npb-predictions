@@ -7,66 +7,52 @@ import {
   type RankingCardData,
 } from "@/lib/public-image-data";
 
-const W = 900;
-const H = 1100;
+const W = 720;
+const H = 880;
 
-async function loadJPFont(
-  family: "serif" | "sans",
-  weight: 400 | 700 | 900,
-): Promise<ArrayBuffer> {
-  const base =
-    family === "serif"
-      ? "https://cdn.jsdelivr.net/fontsource/fonts/noto-serif-jp@latest/japanese"
-      : "https://cdn.jsdelivr.net/fontsource/fonts/noto-sans-jp@latest/japanese";
-  const res = await fetch(`${base}-${weight}-normal.ttf`);
-  if (!res.ok) throw new Error(`Font ${family}/${weight}`);
+type OgFont = {
+  name: string;
+  data: ArrayBuffer;
+  weight: 400 | 700 | 900;
+  style: "normal";
+};
+
+async function loadJPFont(weight: 400 | 700 | 900): Promise<ArrayBuffer> {
+  const res = await fetch(
+    `https://cdn.jsdelivr.net/fontsource/fonts/noto-sans-jp@latest/japanese-${weight}-normal.ttf`,
+  );
+  if (!res.ok) throw new Error(`Font sans/${weight}`);
   return res.arrayBuffer();
 }
 
-// Black-circle rank badge (replaces ❶❷❸❹❺ which require emoji font).
-function RankBadge({ n, size = 30, ink = "#1a1a1a" }: { n: number; size?: number; ink?: string }) {
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        width: size,
-        height: size,
-        borderRadius: "50%",
-        background: ink,
-        color: "#fff",
-        fontSize: size * 0.6,
-        fontWeight: 900,
-        lineHeight: 1,
-      }}
-    >
-      {n}
-    </div>
-  );
-}
+let fontPromise: Promise<OgFont[]> | null = null;
 
-interface Row {
-  name: string;
-  affiliation: string;
-  year: string;
-  role: string;
-  value: string;
-}
+function loadFonts(): Promise<OgFont[]> {
+  fontPromise ??= (async () => {
+    const meta: Array<{ name: string; weight: 400 | 700 | 900 }> = [
+      { name: "Sans JP", weight: 900 },
+      { name: "Sans JP", weight: 700 },
+      { name: "Sans JP", weight: 400 },
+    ];
+    const results = await Promise.allSettled(
+      meta.map((font) => loadJPFont(font.weight)),
+    );
 
-interface Section {
-  label: string; // 縦書きラベル: "出塁率" → 縦にスタック
-  rows: Row[];
-}
+    return results
+      .map((result, i) =>
+        result.status === "fulfilled"
+          ? {
+              name: meta[i].name,
+              data: result.value,
+              weight: meta[i].weight,
+              style: "normal" as const,
+            }
+          : null,
+      )
+      .filter((font): font is OgFont => font !== null);
+  })();
 
-// Space out a name: "村上宗隆" → "村 上 宗 隆" (with extra gap)
-function spaceName(s: string, targetLen = 6): string {
-  const chars = [...s];
-  // Insert narrow spaces between every char
-  const spaced = chars.join(" ");
-  // Pad up to target visual length if shorter
-  const padding = Math.max(0, targetLen - chars.length);
-  return " ".repeat(padding * 2) + spaced;
+  return fontPromise;
 }
 
 export async function GET(
@@ -82,28 +68,10 @@ export async function GET(
     );
   }
 
-  const ink = "#1a1a1a";
+  const ink = "#111827";
   const paper = "#ffffff";
-
-  const fontResults = await Promise.allSettled([
-    loadJPFont("sans", 900),
-    loadJPFont("sans", 700),
-    loadJPFont("sans", 400),
-    loadJPFont("serif", 700),
-  ]);
-  const meta: Array<{ name: string; weight: 400 | 700 | 900 }> = [
-    { name: "Sans JP", weight: 900 },
-    { name: "Sans JP", weight: 700 },
-    { name: "Sans JP", weight: 400 },
-    { name: "Serif JP", weight: 700 },
-  ];
-  const fonts = fontResults
-    .map((r, i) =>
-      r.status === "fulfilled"
-        ? { name: meta[i].name, data: r.value, weight: meta[i].weight, style: "normal" as const }
-        : null,
-    )
-    .filter((f): f is NonNullable<typeof f> => f !== null);
+  const accent = "#dc2626";
+  const fonts = await loadFonts();
 
   return new ImageResponse(
     (
@@ -116,147 +84,97 @@ export async function GET(
           background: paper,
           color: ink,
           fontFamily: "Sans JP",
-          padding: 24,
+          padding: 22,
           border: `3px solid ${ink}`,
         }}
       >
-        {/* ── Title banner ── */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
-            justifyContent: "center",
-            padding: "14px 20px",
-            borderTop: `3px solid ${ink}`,
-            borderBottom: `3px solid ${ink}`,
-            fontSize: 28,
-            fontWeight: 900,
-            letterSpacing: "0.08em",
-            fontFamily: "Sans JP",
+            justifyContent: "space-between",
+            borderBottom: `4px solid ${ink}`,
+            paddingBottom: 12,
           }}
         >
-          {data.title}
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <div style={{ display: "flex", fontSize: 14, fontWeight: 900, color: accent }}>
+              NPB予想スポーツ
+            </div>
+            <div style={{ display: "flex", fontSize: 26, fontWeight: 900 }}>
+              {data.title}
+            </div>
+          </div>
+          <div
+            style={{
+              display: "flex",
+              background: ink,
+              color: "#fff",
+              padding: "8px 12px",
+              fontSize: 16,
+              fontWeight: 900,
+            }}
+          >
+            上位5傑
+          </div>
         </div>
 
-        {/* Column headers row */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            padding: "8px 0 8px 80px",
-            borderBottom: `2px solid ${ink}`,
-            fontSize: 18,
-            fontWeight: 700,
-            letterSpacing: "0.05em",
-          }}
-        >
-          <div style={{ display: "flex", width: 60 }}>順位</div>
-          <div style={{ display: "flex", flex: 1 }}>選　　　手</div>
-          <div style={{ display: "flex", width: 170 }}>（所属）</div>
-          <div style={{ display: "flex", width: 70, justifyContent: "center" }}>年度</div>
-          <div style={{ display: "flex", width: 70, justifyContent: "center" }}>種別</div>
-          <div style={{ display: "flex", width: 110, justifyContent: "flex-end", paddingRight: 60 }}>スコア</div>
-        </div>
-
-        {/* ── Body: 3 sections with vertical-stacked labels on left ── */}
-        <div style={{ display: "flex", flex: 1, flexDirection: "column" }}>
+        <div style={{ display: "flex", flexDirection: "column", flex: 1, paddingTop: 12, gap: 10 }}>
           {data.sections.map((section, si) => (
             <div
-              key={si}
+              key={section.label}
               style={{
                 display: "flex",
+                flexDirection: "column",
                 flex: 1,
-                borderBottom: si < data.sections.length - 1 ? `2px solid ${ink}` : "none",
-                position: "relative",
+                border: `2px solid ${ink}`,
               }}
             >
-              {/* Vertical label: stack characters top-to-bottom */}
               <div
                 style={{
                   display: "flex",
-                  flexDirection: "column",
                   alignItems: "center",
-                  justifyContent: "center",
-                  width: 60,
-                  borderRight: `2px solid ${ink}`,
-                  fontSize: 22,
+                  background: si === 0 ? accent : ink,
+                  color: "#fff",
+                  padding: "6px 10px",
+                  fontSize: 18,
                   fontWeight: 900,
-                  letterSpacing: "0.05em",
-                  lineHeight: 1.2,
                 }}
               >
-                {[...section.label].map((ch, ci) => (
-                  <div key={ci} style={{ display: "flex" }}>
-                    {ch}
-                  </div>
-                ))}
+                {section.label}
               </div>
-
-              {/* Rows */}
               <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
                 {section.rows.map((row, ri) => (
                   <div
-                    key={ri}
+                    key={`${section.label}-${row.name}-${ri}`}
                     style={{
                       display: "flex",
                       alignItems: "center",
-                      flex: 1,
-                      padding: "0 12px 0 20px",
+                      minHeight: 34,
+                      padding: "4px 10px",
                       borderBottom:
-                        ri < section.rows.length - 1 ? `1px solid #ccc` : "none",
-                      fontSize: 20,
-                      fontFamily: "Serif JP",
+                        ri < section.rows.length - 1 ? "1px solid #d1d5db" : "none",
+                      fontSize: 15,
                     }}
                   >
-                    <div style={{ display: "flex", width: 40 }}>
-                      <RankBadge n={ri + 1} size={30} ink={ink} />
+                    <div style={{ display: "flex", width: 30, fontWeight: 900 }}>
+                      {ri + 1}
                     </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        flex: 1,
-                        fontSize: 24,
-                        fontWeight: 700,
-                        letterSpacing: "0.3em",
-                      }}
-                    >
+                    <div style={{ display: "flex", flex: 1, fontWeight: 700 }}>
                       {row.name}
                     </div>
-                    <div style={{ display: "flex", width: 170, fontSize: 18, color: "#444" }}>
-                      （{row.affiliation}）
+                    <div style={{ display: "flex", width: 130, color: "#4b5563" }}>
+                      {row.affiliation}
                     </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        width: 70,
-                        justifyContent: "center",
-                        fontSize: 20,
-                        fontFamily: "Sans JP",
-                        fontWeight: 700,
-                      }}
-                    >
-                      {row.year}
-                    </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        width: 70,
-                        justifyContent: "center",
-                        fontSize: 20,
-                        fontFamily: "Sans JP",
-                        fontWeight: 700,
-                      }}
-                    >
+                    <div style={{ display: "flex", width: 48, justifyContent: "center" }}>
                       {row.role}
                     </div>
                     <div
                       style={{
                         display: "flex",
-                        width: 110,
+                        width: 70,
                         justifyContent: "flex-end",
-                        paddingRight: 10,
-                        fontSize: 26,
-                        fontFamily: "Sans JP",
+                        fontSize: 19,
                         fontWeight: 900,
                       }}
                     >
@@ -265,56 +183,22 @@ export async function GET(
                   </div>
                 ))}
               </div>
-
-              {/* Right side: vertical-stacked note on first section only */}
-              {si === 0 && (
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    width: 44,
-                    borderLeft: `2px solid ${ink}`,
-                    padding: "16px 0",
-                    fontSize: 14,
-                    lineHeight: 1.45,
-                    color: ink,
-                  }}
-                >
-                  {[...data.note].map((ch, ci) => (
-                    <div key={ci} style={{ display: "flex" }}>
-                      {ch}
-                    </div>
-                  ))}
-                </div>
-              )}
-              {si > 0 && (
-                <div
-                  style={{
-                    display: "flex",
-                    width: 44,
-                    borderLeft: `2px solid ${ink}`,
-                  }}
-                />
-              )}
             </div>
           ))}
         </div>
 
-        {/* Footer */}
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
-            alignItems: "center",
-            padding: "8px 0 0 0",
             borderTop: `2px solid ${ink}`,
-            marginTop: 6,
-            fontSize: 12,
-            color: "#666",
+            marginTop: 10,
+            paddingTop: 8,
+            fontSize: 11,
+            color: "#4b5563",
           }}
         >
-          <div style={{ display: "flex" }}>NPB予想スポーツ — 記録コーナー</div>
+          <div style={{ display: "flex" }}>{data.note}</div>
           <div style={{ display: "flex" }}>npb-predictions.pages.dev</div>
         </div>
       </div>
