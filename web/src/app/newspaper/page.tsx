@@ -631,16 +631,9 @@ export default async function NewspaperPage() {
                 ? "ライブスコア準備中です ／ "
                 : "見出し・本文はライブスコアから自動生成です ／ "}
               順位推移は
-              <span className="newspaper-scaled-label" style={{ color: "#6a6353" }}>
+              <span style={{ color: "#6a6353" }}>
                 順位表
               </span>
-              <Link
-                href="/rankings/scoreboard"
-                className="newspaper-unscaled-link"
-                style={{ color: "#6a6353", textDecoration: "underline" }}
-              >
-                順位表
-              </Link>
               で確認できます
             </span>
             <span>ＮＰＢ予想新聞社</span>
