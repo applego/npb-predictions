@@ -101,16 +101,6 @@ async function getStandings(year: number): Promise<StandRow[]> {
   }
 }
 
-// Sample edition used when no live data is available yet (pre-season /
-// no actual standings). Mirrors the Claude Design "新聞" mock.
-const SAMPLE: StandRow[] = [
-  { name: "Ａ氏", rankScore: 22, titleScore: 6, total: 28 },
-  { name: "Ｂ氏", rankScore: 18, titleScore: 4, total: 22 },
-  { name: "Ｃ氏", rankScore: 14, titleScore: 6, total: 20 },
-  { name: "Ｄ氏", rankScore: 12, titleScore: 3, total: 15 },
-  { name: "Ｅ氏", rankScore: 10, titleScore: 0, total: 10 },
-];
-
 // ── theme (cream newsprint, Mincho) ──────────────────────────────────────
 const INK = "#1a1712";
 const PAPER = "#f6f4ed";
@@ -121,8 +111,7 @@ const MONO = "#5b5443";
 export default async function NewspaperPage() {
   const year = await getActiveYear();
   const live = await getStandings(year);
-  const isSample = live.length === 0;
-  const rows = isSample ? SAMPLE : live;
+  const rows = live;
 
   const leader = rows[0];
   const second = rows[1];
@@ -661,9 +650,9 @@ export default async function NewspaperPage() {
           >
             <span>〔スポーツ・{digitsToFullwidth(year % 100)}〕</span>
             <span>
-              {isSample
-                ? "本紙の予想・スコアはサンプルです ／ "
-                : "見出し・本文は自動生成です ／ "}
+              {rows.length === 0
+                ? "ライブスコア準備中です ／ "
+                : "見出し・本文はライブスコアから自動生成です ／ "}
               順位推移は
               <Link
                 href="/rankings/scoreboard"

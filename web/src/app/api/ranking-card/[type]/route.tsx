@@ -2,6 +2,10 @@ export const runtime = "edge";
 
 import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
+import {
+  getRankingCardData,
+  type RankingCardData,
+} from "@/lib/public-image-data";
 
 const W = 900;
 const H = 1100;
@@ -46,58 +50,13 @@ interface Row {
   name: string;
   affiliation: string;
   year: string;
-  age: string;
+  role: string;
   value: string;
 }
 
 interface Section {
   label: string; // 縦書きラベル: "出塁率" → 縦にスタック
   rows: Row[];
-}
-
-interface CardData {
-  title: string; // ヘッダー
-  note: string; // 右端縦書きの注釈
-  sections: Section[];
-}
-
-// ── Mock data: 2026シーズン 予想成績 上位5傑 ──
-function buildMockCard(type: string): CardData {
-  const commonRows: Row[] = [
-    { name: "福本 豊", affiliation: "スポーツ報知", year: "26", age: "28", value: "+44" },
-    { name: "T-岡田", affiliation: "新聞", year: "26", age: "35", value: "+44" },
-    { name: "岡義朗", affiliation: "デイリー", year: "26", age: "42", value: "+44" },
-    { name: "福原 忍", affiliation: "デイリー", year: "26", age: "49", value: "+44" },
-    { name: "前田 幸長", affiliation: "東京スポーツ", year: "26", age: "52", value: "+40" },
-  ];
-
-  return {
-    title: "2026シーズン 予想的中スコア 上位5傑",
-    note: "注 ポイントは順位的中＋チーム的中＋タイトル的中の合算で算出",
-    sections: [
-      { label: "順位予想", rows: commonRows },
-      {
-        label: "タイトル予想",
-        rows: [
-          { name: "中西 太", affiliation: "西鉄", year: "26", age: "20", value: "+28" },
-          { name: "村上 宗隆", affiliation: "ヤクルト", year: "26", age: "20", value: "+25" },
-          { name: "清原 和博", affiliation: "西武", year: "26", age: "19", value: "+24" },
-          { name: "豊田 泰光", affiliation: "西鉄", year: "26", age: "18", value: "+23" },
-          { name: "清原 和博", affiliation: "西武", year: "26", age: "20", value: "+21" },
-        ],
-      },
-      {
-        label: "総合",
-        rows: [
-          { name: "村上 宗隆", affiliation: "ヤクルト", year: "26", age: "20", value: "+72" },
-          { name: "中西 太", affiliation: "西鉄", year: "26", age: "20", value: "+68" },
-          { name: "清原 和博", affiliation: "西武", year: "26", age: "19", value: "+66" },
-          { name: "清原 和博", affiliation: "西武", year: "26", age: "20", value: "+63" },
-          { name: "川上 哲治", affiliation: "巨人", year: "26", age: "19", value: "+59" },
-        ],
-      },
-    ],
-  };
 }
 
 // Space out a name: "村上宗隆" → "村 上 宗 隆" (with extra gap)
@@ -114,8 +73,14 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ type: string }> },
 ) {
-  const { type } = await params;
-  const data = buildMockCard(type);
+  await params;
+  const data: RankingCardData | null = await getRankingCardData();
+  if (!data) {
+    return Response.json(
+      { error: "No live ranking score data available" },
+      { status: 404 },
+    );
+  }
 
   const ink = "#1a1a1a";
   const paper = "#ffffff";
@@ -189,7 +154,7 @@ export async function GET(
           <div style={{ display: "flex", flex: 1 }}>選　　　手</div>
           <div style={{ display: "flex", width: 170 }}>（所属）</div>
           <div style={{ display: "flex", width: 70, justifyContent: "center" }}>年度</div>
-          <div style={{ display: "flex", width: 70, justifyContent: "center" }}>年齢</div>
+          <div style={{ display: "flex", width: 70, justifyContent: "center" }}>種別</div>
           <div style={{ display: "flex", width: 110, justifyContent: "flex-end", paddingRight: 60 }}>スコア</div>
         </div>
 
@@ -282,7 +247,7 @@ export async function GET(
                         fontWeight: 700,
                       }}
                     >
-                      {row.age}
+                      {row.role}
                     </div>
                     <div
                       style={{

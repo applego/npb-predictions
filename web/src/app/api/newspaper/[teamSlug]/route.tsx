@@ -2,19 +2,14 @@ export const runtime = "edge";
 
 import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
-import { getTeamBySlug, type NpbTeam } from "@/lib/teams";
+import { getTeamBySlug } from "@/lib/teams";
+import {
+  getTeamNewspaperArticle,
+  type HeadlineChar,
+} from "@/lib/public-image-data";
 
 const W = 1080;
 const H = 1920;
-
-// Per-character headline styling — for スポニチ-style mixed-size typography.
-// "solid" = fat colored fill (subject/emphasis), "outline" = white fill with black stroke via textShadow
-type HeadlineChar = {
-  char: string;
-  size: number;
-  style: "solid" | "outline";
-  color?: string; // for solid
-};
 
 type OgFont = {
   name: string;
@@ -86,79 +81,6 @@ function loadFonts(): Promise<OgFont[]> {
   return fontPromise;
 }
 
-interface MockArticle {
-  date: string;
-  edition: string;
-  kicker: string;
-  dramaticBanner: string; // 下部の派手な黄色バナー
-  headlineLine1: HeadlineChar[];
-  headlineLine2: HeadlineChar[];
-  subheadline: string;
-  opponent: string;
-  opponentAbbr: string;
-  ourScore: number;
-  oppScore: number;
-  venue: string;
-  heroName: string; // ヒーロー写真キャプション
-  heroStat: string; // "決勝ソロ / 3打数2安打"
-  photos: { label: string; stat: string; caption: string }[]; // 脇の小写真ブロック
-  body: string[];
-  seasonRecord: string;
-  leagueRank: string;
-  nextGame: string;
-  quote: string; // 監督コメント
-  quoteBy: string;
-}
-
-function buildMockArticle(team: NpbTeam): MockArticle {
-  const red = "#dc2626";
-  const subject = team.shortName[0];
-
-  return {
-    date: "2026年4月20日",
-    edition: "朝刊",
-    kicker: "首位攻防!!",
-    dramaticBanner: "WBC候補 木浪 爆誕!!", // second dramatic yellow banner
-    // Tabloid style: subject HUGE red solid, action chars outlined
-    headlineLine1: [
-      { char: subject, size: 260, style: "solid", color: red },
-      { char: "、", size: 100, style: "outline" },
-      { char: "延", size: 160, style: "outline" },
-      { char: "長", size: 160, style: "outline" },
-    ],
-    headlineLine2: [
-      { char: "サ", size: 180, style: "outline" },
-      { char: "ヨ", size: 180, style: "outline" },
-      { char: "ナ", size: 180, style: "outline" },
-      { char: "ラ", size: 180, style: "outline" },
-      { char: "！", size: 280, style: "solid", color: red },
-    ],
-    subheadline: "9回2死から奇跡の同点 11回木浪 劇的決勝ソロ",
-    opponent: "読売ジャイアンツ",
-    opponentAbbr: "巨",
-    ourScore: 5,
-    oppScore: 4,
-    venue: "甲子園",
-    heroName: "木浪 聖也",
-    heroStat: "延長11回 決勝本塁打",
-    photos: [
-      { label: "近本", stat: "2安打2打点", caption: "9回 反撃の口火" },
-      { label: "中野", stat: "同点適時打", caption: "2死からの一撃" },
-      { label: "才木", stat: "7回2失点", caption: "粘投で試合作る" },
-    ],
-    body: [
-      "19日の甲子園球場。満員の虎ファンが見守る中、阪神が劇的な幕切れで巨人を破り連勝とした。2点を追う9回裏、二死から近本の二塁打で反撃の狼煙をあげると、続く中野が右翼線に同点適時二塁打を運び、球場のボルテージは最高潮に達した。",
-      "延長11回、先頭打者の木浪がカウント2-2から甘く入った変化球を完璧に捉え、左中間スタンドへ叩き込む決勝ソロ。ベンチを飛び出した選手たちがホームベース付近で木浪を迎え、夜空に虎のチャンスマーチが響きわたった。",
-      "投手陣も光った。先発の才木は7回途中まで自責点2の好投で試合を作り、継投した石井、湯浅、岩崎の3投手が無失点リレー。この勝利で阪神は貯金6、首位巨人との差を0.5ゲームに詰めた。",
-    ],
-    seasonRecord: "11勝 5敗",
-    leagueRank: "セ・リーグ 2位",
-    nextGame: "4/21 vs DeNA @ 横浜",
-    quote: "9回の粘りが全て。選手が最後まで諦めなかった",
-    quoteBy: "岡田監督",
-  };
-}
-
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ teamSlug: string }> },
@@ -167,7 +89,13 @@ export async function GET(
   const team = getTeamBySlug(teamSlug);
   if (!team) return new Response(`Team not found: ${teamSlug}`, { status: 404 });
 
-  const article = buildMockArticle(team);
+  const article = await getTeamNewspaperArticle(team);
+  if (!article) {
+    return Response.json(
+      { error: "No live game or standings data for team", team: team.slug },
+      { status: 404 },
+    );
+  }
 
   // Sports tabloid palette
   const paper = "#fffbeb"; // cream yellow-tinted paper
@@ -369,7 +297,7 @@ export async function GET(
                 fontWeight: 900,
               }}
             >
-              {article.ourScore} - {article.oppScore}
+              {article.scoreLine}
             </div>
             {/* Big abbr */}
             <div style={{ display: "flex", fontSize: 300, fontWeight: 900, lineHeight: 0.9 }}>
@@ -391,7 +319,7 @@ export async function GET(
                 letterSpacing: "0.03em",
               }}
             >
-              &gt; {article.heroName}・{article.heroStat}
+              &gt; {article.focusName}・{article.focusStat}
             </div>
           </div>
         </div>
@@ -399,10 +327,10 @@ export async function GET(
         {/* ── Row of 4 framed photo thumbnails with red caption bars ── */}
         <div style={{ display: "flex", gap: 8, padding: "10px 40px 0 40px" }}>
           {[
-            { label: team.shortName, color: team.color, textColor: team.textColor, caption: "本拠地で連勝" },
-            { label: article.photos[0].label, color: "#fff", textColor: ink, caption: article.photos[0].caption },
-            { label: article.photos[1].label, color: "#fff", textColor: ink, caption: article.photos[1].caption },
-            { label: article.photos[2].label, color: "#fff", textColor: ink, caption: article.photos[2].caption },
+            { label: team.shortName, color: team.color, textColor: team.textColor, caption: article.kicker },
+            { label: article.facts[0].label, color: "#fff", textColor: ink, caption: article.facts[0].caption },
+            { label: article.facts[1].label, color: "#fff", textColor: ink, caption: article.facts[1].caption },
+            { label: article.facts[2].label, color: "#fff", textColor: ink, caption: article.facts[2].caption },
           ].map((t, i) => (
             <div
               key={i}
@@ -498,7 +426,7 @@ export async function GET(
               }}
             >
               <div style={{ display: "flex", fontSize: 13, fontWeight: 900, color: red, letterSpacing: "0.1em", fontFamily: "Sans JP" }}>
-                &gt; 指揮官コメント
+                &gt; データメモ
               </div>
               <div style={{ display: "flex", fontSize: 17, fontWeight: 700, color: ink, lineHeight: 1.45, marginTop: 4 }}>
                 「{article.quote}」
