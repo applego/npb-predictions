@@ -25,7 +25,7 @@ export function BroadcastBand({ year }: { year?: number | string }) {
           opacity: 0.82,
         }}
       >
-        {year ?? 2026} SEASON
+        {year ?? new Date().getFullYear()} SEASON
       </span>
     </div>
   );

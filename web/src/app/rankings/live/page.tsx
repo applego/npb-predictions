@@ -323,11 +323,7 @@ function RankTrendPanel({
             月次順位推移
           </h2>
         </div>
-        <div className="flex gap-1">
-          {[`${CURRENT_YEAR}年`, `${CURRENT_YEAR - 1}年`, `${CURRENT_YEAR - 2}年`].map((label, index) => (
-            <BroadcastChip key={label} active={index === 0}>{label}</BroadcastChip>
-          ))}
-        </div>
+        <BroadcastChip active>{CURRENT_YEAR}年</BroadcastChip>
       </div>
       <div className="grid gap-0 md:grid-cols-2">
         {[

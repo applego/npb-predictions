@@ -206,11 +206,7 @@ export default async function TitlesPage() {
         LEAGUES.map((lg) => (
           <BroadcastPanel key={lg.id} className="overflow-hidden">
             <div className="flex gap-2 border-b px-3 py-3" style={{ borderColor: "var(--border-primary)" }}>
-              {LEAGUES.map((tab) => (
-                <BroadcastChip key={tab.id} active={tab.id === lg.id}>
-                  {tab.label}
-                </BroadcastChip>
-              ))}
+              <BroadcastChip active>{lg.label}</BroadcastChip>
             </div>
             <div
               className="max-w-full overflow-x-auto"

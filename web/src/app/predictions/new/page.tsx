@@ -100,7 +100,7 @@ function TeamPreviewRow({ team, rank }: { team: string; rank: number }) {
 function EntryShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="mx-auto max-w-4xl space-y-5">
-      <BroadcastBand year={2026} />
+      <BroadcastBand year={new Date().getFullYear()} />
       <BroadcastHeading kicker="NEW ENTRY" title="予想を登録する">
         <p>順位予想とタイトル予想を、放送席のスコアシート形式で登録します。</p>
       </BroadcastHeading>

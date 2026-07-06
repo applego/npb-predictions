@@ -61,9 +61,11 @@ const RANKING_CARDS = [
 ];
 
 export default function RankingsIndexPage() {
+  const currentYear = new Date().getFullYear();
+
   return (
     <div className="space-y-6">
-      <BroadcastBand year={2026} />
+      <BroadcastBand year={currentYear} />
       <BroadcastHeading kicker="BROADCAST" title="放送席">
         <p>白基調・実況の情報密度で、タイトル予想、リーグ順位、順位予想、予想登録をすばやく確認します。</p>
       </BroadcastHeading>
