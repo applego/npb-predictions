@@ -30,27 +30,28 @@ export function TeamBadge({ teamName, variant = "cell", className = "" }: TeamBa
   return <TagBadge team={team} className={className} />;
 }
 
-/** Full block cell — fills the matrix cell like Image #6 reference */
+/** Full block cell for dense 12-column matrices. */
 function CellBadge({ team, className }: { team: NpbTeam; className: string }) {
-  // Long names (オリックス=5, ソフトバンク=6, 日本ハム=4) get a smaller font
-  // so they stay on a single line inside the narrow matrix cell.
-  const len = team.shortName.length;
-  const fontSize = len >= 6 ? "0.65rem" : len === 5 ? "0.72rem" : "0.85rem";
   return (
     <div
-      className={`flex items-center justify-center rounded font-bold ${className}`}
+      className={`flex items-center justify-center rounded-sm font-black ${className}`}
+      title={team.shortName}
+      aria-label={team.shortName}
       style={{
         background: team.color,
         color: team.textColor,
-        padding: "0.5rem 0.25rem",
-        fontSize,
-        lineHeight: 1.2,
-        minHeight: "2.25rem",
+        padding: "0.32rem 0.2rem",
+        fontSize: "0.78rem",
+        lineHeight: 1,
+        minHeight: "1.8rem",
+        width: "100%",
         whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "clip",
         textShadow: team.textColor === "#fff" ? "0 1px 2px rgba(0,0,0,0.3)" : "none",
       }}
     >
-      {team.shortName}
+      {team.abbr}
     </div>
   );
 }

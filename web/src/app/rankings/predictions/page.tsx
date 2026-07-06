@@ -1,9 +1,10 @@
 export const runtime = "edge";
 
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import Link from "next/link";
 import type { Prediction, Season } from "@/lib/types";
-import { getTeamByName } from "@/lib/teams";
+import { TeamBadge } from "@/components/TeamBadge";
 import ShareButton from "@/components/ShareButton";
 import {
   BroadcastBand,
@@ -20,12 +21,23 @@ import {
   SEO_TERMS,
 } from "@/lib/seo-meta";
 
-const API_BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://npb-predictions.pages.dev";
+const FALLBACK_API_BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://npb-predictions.pages.dev";
 const RANKINGS_REVALIDATE_SECONDS = 600;
 
-async function getActiveYear(): Promise<number> {
+async function getApiBase(): Promise<string> {
+  const headerList = await headers();
+  const host = headerList.get("x-forwarded-host") ?? headerList.get("host");
+  if (!host) return FALLBACK_API_BASE;
+
+  const proto =
+    headerList.get("x-forwarded-proto") ??
+    (host.startsWith("localhost") || host.startsWith("127.0.0.1") ? "http" : "https");
+  return `${proto}://${host}`;
+}
+
+async function getActiveYear(apiBase: string): Promise<number> {
   try {
-    const res = await fetch(`${API_BASE}/api/seasons`, {
+    const res = await fetch(`${apiBase}/api/seasons`, {
       next: { revalidate: RANKINGS_REVALIDATE_SECONDS },
     });
     if (!res.ok) return new Date().getFullYear();
@@ -37,9 +49,9 @@ async function getActiveYear(): Promise<number> {
   }
 }
 
-async function getAllSeasons(): Promise<Season[]> {
+async function getAllSeasons(apiBase: string): Promise<Season[]> {
   try {
-    const res = await fetch(`${API_BASE}/api/seasons`, {
+    const res = await fetch(`${apiBase}/api/seasons`, {
       next: { revalidate: RANKINGS_REVALIDATE_SECONDS },
     });
     if (!res.ok) return [];
@@ -49,9 +61,9 @@ async function getAllSeasons(): Promise<Season[]> {
   }
 }
 
-async function getPredictions(year: number): Promise<Prediction[]> {
+async function getPredictions(apiBase: string, year: number): Promise<Prediction[]> {
   try {
-    const res = await fetch(`${API_BASE}/api/seasons/${year}/predictions`, {
+    const res = await fetch(`${apiBase}/api/seasons/${year}/predictions`, {
       next: { revalidate: RANKINGS_REVALIDATE_SECONDS },
     });
     if (!res.ok) return [];
@@ -69,7 +81,8 @@ export async function generateMetadata({
   searchParams: Promise<{ year?: string }>;
 }): Promise<Metadata> {
   const { year: yearParam } = await searchParams;
-  const year = yearParam ? parseInt(yearParam, 10) : await getActiveYear();
+  const apiBase = await getApiBase();
+  const year = yearParam ? parseInt(yearParam, 10) : await getActiveYear(apiBase);
   const title = `${year}年 順位予想マトリクス`;
   const description = clampDescription(
     `${year}年${SEO_TERMS.npbFull}の${SEO_TERMS.bothLeagues}順位予想をまとめて比較。プロ野球解説者・評論家・一般参加者の開幕前予想を一覧で確認できます。`,
@@ -93,34 +106,18 @@ export async function generateMetadata({
   };
 }
 
-function TeamBadge({ teamName }: { teamName: string }) {
-  const team = getTeamByName(teamName);
-  if (!team) return <span className="text-xs" style={{ color: "var(--text-muted)" }}>—</span>;
-  return (
-    <div
-      className="flex items-center justify-center rounded-sm py-1 text-[11px] font-bold"
-      style={{
-        background: team.color,
-        color: team.textColor,
-        textShadow: team.textColor === "#fff" ? "0 1px 2px rgba(0,0,0,0.3)" : "none",
-      }}
-    >
-      {team.shortName}
-    </div>
-  );
-}
-
 export default async function PredictionsPage({
   searchParams,
 }: {
   searchParams: Promise<{ year?: string }>;
 }) {
   const { year: yearParam } = await searchParams;
-  const year = yearParam ? parseInt(yearParam, 10) : await getActiveYear();
+  const apiBase = await getApiBase();
+  const year = yearParam ? parseInt(yearParam, 10) : await getActiveYear(apiBase);
 
   const [predictions, allSeasons] = await Promise.all([
-    getPredictions(year),
-    getAllSeasons(),
+    getPredictions(apiBase, year),
+    getAllSeasons(apiBase),
   ]);
 
   // Only show predictions that have at least some picks
@@ -327,7 +324,7 @@ export default async function PredictionsPage({
                       const pick = centralPicks.find((p) => p.rank === rank);
                       return (
                         <td key={`c-${rank}`} className="p-0.5">
-                          {pick ? <TeamBadge teamName={pick.teamName} /> : (
+                          {pick ? <TeamBadge teamName={pick.teamName} variant="cell" /> : (
                             <div className="flex items-center justify-center py-1 text-xs" style={{ color: "var(--text-muted)" }}>—</div>
                           )}
                         </td>
@@ -346,7 +343,7 @@ export default async function PredictionsPage({
                       const pick = pacificPicks.find((p) => p.rank === rank);
                       return (
                         <td key={`p-${rank}`} className="p-0.5">
-                          {pick ? <TeamBadge teamName={pick.teamName} /> : (
+                          {pick ? <TeamBadge teamName={pick.teamName} variant="cell" /> : (
                             <div className="flex items-center justify-center py-1 text-xs" style={{ color: "var(--text-muted)" }}>—</div>
                           )}
                         </td>
