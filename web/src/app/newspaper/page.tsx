@@ -689,7 +689,7 @@ function TeamGallery() {
         球団別 一面（自動生成）
       </h2>
       <p style={{ color: "var(--text-muted)", margin: "4px 0 20px", fontSize: 13 }}>
-        各球団のモック新聞一面（画像生成・シェア用）
+        実際の予想・順位データから球団別の新聞一面を自動生成
       </p>
       <TeamRow title="セントラル・リーグ" teams={central} />
       <TeamRow title="パシフィック・リーグ" teams={pacific} />
@@ -794,7 +794,7 @@ function TeamRow({
               >
                 クリックで{team.name}版の
                 <br />
-                モック新聞一面を生成
+                新聞一面を生成
               </div>
             </div>
             <div
