@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   DEFAULT_COLOR_THEME_ID,
   DEFAULT_NUMBER_FONT_ID,
-  NUMBER_FONTS, COLOR_THEMES,
+  NUMBER_FONTS, COLOR_THEMES, DESIGN_COLOR_THEMES,
   getNumberFont, getColorTheme,
   buildGoogleFontsUrl,
 } from "../theme-presets";
@@ -83,6 +83,7 @@ describe("COLOR_THEMES", () => {
   // ナイター / C紙面 / D新聞. Users pick one; admin sets the site default.
   it("exposes the 4 finalized Claude Design themes as a selectable set", () => {
     const designIds = ["broadcast", "stadium-night", "newsprint", "newspaper-mincho"];
+    expect(DESIGN_COLOR_THEMES.map((t) => t.id)).toEqual(designIds);
     for (const id of designIds) {
       const theme = COLOR_THEMES.find((t) => t.id === id);
       expect(theme, `design theme ${id} must be selectable`).toBeTruthy();

@@ -4,11 +4,15 @@ import { useState, useEffect, useCallback } from "react";
 import {
   DEFAULT_COLOR_THEME_ID,
   DEFAULT_NUMBER_FONT_ID,
-  NUMBER_FONTS, COLOR_THEMES,
+  NUMBER_FONTS, DESIGN_COLOR_THEMES,
   getNumberFont, getColorTheme,
+  buildGoogleFontsUrl,
 } from "@/lib/theme-presets";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import { useAuth } from "@/contexts/AuthContext";
+
+const LOCAL_COLOR_THEME_KEY = "npb_color_theme";
+const LOCAL_NUMBER_FONT_KEY = "npb_number_font";
 
 // ── Load Google Fonts dynamically ──
 
@@ -22,6 +26,25 @@ function useGoogleFont(query: string) {
     link.href = `https://fonts.googleapis.com/css2?${query}&display=swap`;
     document.head.appendChild(link);
   }, [query]);
+}
+
+function applyTheme(themeId: string, numFontId: string) {
+  const numFont = getNumberFont(numFontId);
+  const theme = getColorTheme(themeId);
+  const fontsUrl = buildGoogleFontsUrl(numFontId);
+  const existing = document.getElementById("theme-google-fonts");
+  if (existing) existing.remove();
+  const link = document.createElement("link");
+  link.id = "theme-google-fonts";
+  link.rel = "stylesheet";
+  link.href = fontsUrl;
+  document.head.appendChild(link);
+
+  const root = document.documentElement;
+  for (const [key, value] of Object.entries(theme.vars)) {
+    root.style.setProperty(key, value);
+  }
+  root.style.setProperty("--font-display", numFont.family);
 }
 
 // ── Shared preview component ──
@@ -96,15 +119,25 @@ export default function SettingsPage() {
       .then((r) => r.json())
       .then((d) => {
         const s = d as Record<string, string>;
-        if (s.font_number) setNumFont(s.font_number);
-        if (s.color_theme) setColorTheme(s.color_theme);
+        const localThemeId = !firebaseUser ? window.localStorage.getItem(LOCAL_COLOR_THEME_KEY) : null;
+        const localNumFontId = !firebaseUser ? window.localStorage.getItem(LOCAL_NUMBER_FONT_KEY) : null;
+        const nextNumFont = localNumFontId ?? s.font_number ?? DEFAULT_NUMBER_FONT_ID;
+        const nextColorTheme = localThemeId ?? s.color_theme ?? DEFAULT_COLOR_THEME_ID;
+        setNumFont(nextNumFont);
+        setColorTheme(nextColorTheme);
+        applyTheme(nextColorTheme, nextNumFont);
       })
       .catch(() => {});
-  }, [authLoading, firebaseUser?.uid]);
+  }, [authLoading, firebaseUser]);
 
   const save = useCallback(async (key: string, value: string) => {
+    window.localStorage.setItem(
+      key === "color_theme" ? LOCAL_COLOR_THEME_KEY : LOCAL_NUMBER_FONT_KEY,
+      value,
+    );
+
     if (!firebaseUser) {
-      setMessage("ログインすると自分のテーマを保存できます");
+      setMessage("この端末に保存しました — ログインするとアカウントにも保存できます");
       return;
     }
 
@@ -121,7 +154,7 @@ export default function SettingsPage() {
       return;
     }
     const result = (await res.json()) as { scope?: string };
-    setMessage(result.scope === "user" ? "自分の設定として保存しました — リロードで反映" : "サイト設定を保存しました — リロードで反映");
+    setMessage(result.scope === "user" ? "自分の設定として保存しました" : "サイト設定を保存しました");
   }, [firebaseUser]);
 
   return (
@@ -150,7 +183,11 @@ export default function SettingsPage() {
               <button
                 key={nf.id}
                 type="button"
-                onClick={() => { setNumFont(nf.id); void save("font_number", nf.id); }}
+                onClick={() => {
+                  setNumFont(nf.id);
+                  applyTheme(colorTheme, nf.id);
+                  void save("font_number", nf.id);
+                }}
                 className="w-full rounded-lg p-3 text-left transition-all"
                 style={{
                   background: active ? "rgba(229,57,53,0.04)" : "var(--bg-surface)",
@@ -179,14 +216,18 @@ export default function SettingsPage() {
           カラーテーマ <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>— 全体の配色</span>
         </h2>
         <div className="grid gap-4 sm:grid-cols-2">
-          {COLOR_THEMES.map((theme) => {
+          {DESIGN_COLOR_THEMES.map((theme) => {
             const active = colorTheme === theme.id;
             const v = theme.vars;
             return (
               <button
                 key={theme.id}
                 type="button"
-                onClick={() => { setColorTheme(theme.id); void save("color_theme", theme.id); }}
+                onClick={() => {
+                  setColorTheme(theme.id);
+                  applyTheme(theme.id, numFont);
+                  void save("color_theme", theme.id);
+                }}
                 className="w-full rounded-lg p-4 text-left transition-all"
                 style={{
                   background: v["--bg-base"],
@@ -220,18 +261,9 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      {/* Apply button */}
       <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => window.location.reload()}
-          className="rounded-sm px-5 py-2.5 text-sm font-bold transition-all"
-          style={{ background: "var(--stitch)", color: "#fff" }}
-        >
-          テーマを適用（リロード）
-        </button>
         <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-          {firebaseUser ? "テーマは自分の設定として保存されます" : "ログインするとテーマを保存できます"}
+          {firebaseUser ? "テーマは自分の設定として保存され、即時反映されます" : "テーマはこの端末に保存され、即時反映されます"}
         </span>
       </div>
     </div>
