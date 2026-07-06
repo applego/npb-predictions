@@ -679,7 +679,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ══════════ GROUPS (Coming Soon) ══════════ */}
+      {/* ══════════ GROUPS ══════════ */}
       <section
         className="overflow-hidden rounded-xl"
         style={{

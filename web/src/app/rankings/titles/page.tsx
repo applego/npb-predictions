@@ -9,7 +9,7 @@ import {
   actualTitleSnapshots,
   users,
 } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { and, eq, desc } from "drizzle-orm";
 import { getTeamByName } from "@/lib/teams";
 import {
   canonicalAlternates,
@@ -112,28 +112,37 @@ export default async function TitlesPage() {
     if (!actualByKey.has(key)) actualByKey.set(key, s);
   }
 
-  // Friend predictors + their title picks
-  const allUsers = await db.select().from(users);
-  const userMap = new Map(allUsers.map((u) => [u.id, u]));
-  const preds = await db
-    .select()
+  // Friend predictors + their title picks. Keep the season/user-role filter in
+  // SQLite so edge rendering does not scan every historical title pick.
+  const friendRows = await db
+    .select({
+      predictionId: predictions.id,
+      userName: users.name,
+      userSource: users.source,
+      league: titlePicks.league,
+      category: titlePicks.category,
+      playerName: titlePicks.playerName,
+      teamName: titlePicks.teamName,
+    })
     .from(predictions)
-    .where(eq(predictions.seasonId, activeSeason.id));
-  const friendPreds = preds.filter(
-    (p) => userMap.get(p.userId)?.role === "friend",
-  );
-  const friendPredIds = new Set(friendPreds.map((p) => p.id));
+    .innerJoin(users, eq(predictions.userId, users.id))
+    .leftJoin(titlePicks, eq(titlePicks.predictionId, predictions.id))
+    .where(and(eq(predictions.seasonId, activeSeason.id), eq(users.role, "friend")));
 
-  const allPicks = await db.select().from(titlePicks);
   const picksByPred = new Map<number, Map<string, { playerName: string; teamName: string | null }>>();
-  for (const pick of allPicks) {
-    if (!friendPredIds.has(pick.predictionId)) continue;
-    const m = picksByPred.get(pick.predictionId) ?? new Map();
-    m.set(`${pick.league}:${pick.category}`, {
-      playerName: pick.playerName,
-      teamName: pick.teamName,
+  const predictorMeta = new Map<number, { name: string; source: string | null }>();
+  for (const row of friendRows) {
+    predictorMeta.set(row.predictionId, {
+      name: row.userName,
+      source: row.userSource,
     });
-    picksByPred.set(pick.predictionId, m);
+    if (!row.league || !row.category || !row.playerName) continue;
+    const picks = picksByPred.get(row.predictionId) ?? new Map();
+    picks.set(`${row.league}:${row.category}`, {
+      playerName: row.playerName,
+      teamName: row.teamName,
+    });
+    picksByPred.set(row.predictionId, picks);
   }
 
   // Confirmed (isFinal) title keys across both leagues
@@ -145,8 +154,8 @@ export default async function TitlesPage() {
     }
   }
 
-  const predictors: Predictor[] = friendPreds.map((p) => {
-    const picks = picksByPred.get(p.id) ?? new Map();
+  const predictors: Predictor[] = [...predictorMeta.entries()].map(([predictionId, meta]) => {
+    const picks = picksByPred.get(predictionId) ?? new Map();
     let hits = 0;
     for (const key of confirmedKeys) {
       const actual = actualByKey.get(key);
@@ -155,11 +164,10 @@ export default async function TitlesPage() {
         hits += 1;
       }
     }
-    const user = userMap.get(p.userId);
     return {
-      predictionId: p.id,
-      name: user?.name ?? "—",
-      source: user?.source ?? null,
+      predictionId,
+      name: meta.name,
+      source: meta.source,
       picks,
       hits,
       score: hits * TITLE_HIT_SCORE,

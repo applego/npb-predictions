@@ -25,7 +25,7 @@ set -euo pipefail
 # ── Paths ────────────────────────────────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WEB_DIR="$(dirname "$SCRIPT_DIR")"
-REPO_ROOT="$(cd "$WEB_DIR/../../.." && pwd)"
+REPO_ROOT="$(cd "$WEB_DIR/.." && pwd)"
 DEPLOY_LOG="$WEB_DIR/.deploy-log"
 PROJECT_NAME="npb-predictions"
 DEPLOY_BRANCH="main"
@@ -155,6 +155,28 @@ if [[ $SKIP_TESTS -eq 1 ]]; then
   stage "3 — Feature Guarantees  ${C_WARN}(SKIPPED)${C_RST}"
 else
   stage "3 — Feature Guarantees"
+  log "resetting local D1 state for repeatable E2E"
+  LOCAL_D1_DIR=".wrangler/state/v3/d1"
+  if [[ -e "$LOCAL_D1_DIR" ]]; then
+    STAMP="$(date '+%Y%m%d%H%M%S')"
+    STATE_TRASH="${TMPDIR:-/tmp}/npb-predictions-d1-${STAMP}-$$"
+    mkdir -p "$(dirname "$STATE_TRASH")"
+    mv "$LOCAL_D1_DIR" "$STATE_TRASH"
+  fi
+  ok "local D1 state reset"
+
+  log "migrating local D1 schema for E2E"
+  for f in drizzle/*.sql; do
+    echo "Applying $f"
+    npx wrangler d1 execute npb-predictions --local --file="$f"
+  done
+  ok "local D1 schema ready"
+
+  log "seeding local D1 fixtures for E2E"
+  npx wrangler d1 execute npb-predictions --local --file=src/db/seed-commentators.sql
+  npx wrangler d1 execute npb-predictions --local --file=src/db/fixtures/e2e-standings.sql
+  ok "local D1 seed ready"
+
   if [[ $FULL_E2E -eq 1 ]]; then
     log "running ALL playwright E2E (includes app.e2e.ts — may fail on missing local seed)"
     E2E_ARGS=()

@@ -137,7 +137,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAdmin =
     !!firebaseUser &&
     (ADMIN_UIDS.includes(firebaseUser.uid) ||
-      (!!firebaseUser.email &&
+      (firebaseUser.emailVerified &&
+        !!firebaseUser.email &&
         ADMIN_EMAILS.includes(firebaseUser.email.toLowerCase())));
 
   return (

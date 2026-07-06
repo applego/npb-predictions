@@ -23,5 +23,5 @@
 - なし。
 
 ### Working set
-- `/Users/ytsun/repos/npb-predictions`
+- Repo root: `.`
 - Files: `web/src/app/api/cron/scrape-health/route.ts`, `web/src/lib/scrape-health.ts`, `.github/workflows/npb-*.yml`

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
@@ -16,6 +16,8 @@ const NAV_LINKS = [
 
 export function Nav() {
   const [open, setOpen] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const { isAdmin } = useAuth();
 
@@ -27,6 +29,36 @@ export function Nav() {
     if (href === "/") return pathname === "/";
     return pathname.startsWith(href);
   }
+
+  useEffect(() => {
+    if (!open) return;
+    const menu = menuRef.current;
+    const focusable = menu?.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    );
+    const first = focusable?.[0];
+    const last = focusable?.[focusable.length - 1];
+    first?.focus();
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpen(false);
+        buttonRef.current?.focus();
+        return;
+      }
+      if (event.key !== "Tab" || !first || !last) return;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [open]);
 
   return (
     <>
@@ -56,6 +88,7 @@ export function Nav() {
 
       {/* Mobile hamburger */}
       <button
+        ref={buttonRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
         className="flex h-11 w-11 items-center justify-center rounded-sm md:hidden"
@@ -64,6 +97,8 @@ export function Nav() {
           border: "1px solid var(--border-primary)",
         }}
         aria-label="Menu"
+        aria-expanded={open}
+        aria-controls="mobile-navigation"
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
           style={{ color: open ? "var(--stitch)" : "var(--text-muted)" }}>
@@ -82,6 +117,11 @@ export function Nav() {
       {/* Mobile menu */}
       {open && (
         <div
+          ref={menuRef}
+          id="mobile-navigation"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Mobile navigation"
           className="absolute left-0 right-0 top-full z-50 md:hidden"
           style={{
             background: "var(--bg-surface)",
