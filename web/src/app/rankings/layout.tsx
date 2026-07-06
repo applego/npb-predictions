@@ -6,22 +6,28 @@ import { RankChangeNotifier } from "@/components/RankChangeNotifier";
 
 const TABS = [
   {
-    href: "/rankings/predictions",
-    icon: "\u{1F52E}",
-    label: "\u4E88\u60F3",
-    matches: ["/rankings/predictions"],
+    href: "/rankings/titles",
+    icon: "\u{1F451}",
+    label: "\u30BF\u30A4\u30C8\u30EB\u4E88\u60F3",
+    matches: ["/rankings/titles"],
   },
   {
     href: "/rankings/live",
     icon: "\u{1F4C8}",
-    label: "\u30E9\u30A4\u30D6",
+    label: "\u30EA\u30FC\u30B0\u9806\u4F4D",
     matches: ["/rankings/live"],
   },
   {
-    href: "/rankings/titles",
-    icon: "\u{1F451}",
-    label: "\u30BF\u30A4\u30C8\u30EB",
-    matches: ["/rankings/titles"],
+    href: "/rankings/predictions",
+    icon: "\u{1F52E}",
+    label: "\u9806\u4F4D\u4E88\u60F3",
+    matches: ["/rankings/predictions"],
+  },
+  {
+    href: "/predictions/new",
+    icon: "\u270D",
+    label: "\u4E88\u60F3\u767B\u9332",
+    matches: ["/predictions/new"],
   },
   {
     href: "/rankings/scoreboard",

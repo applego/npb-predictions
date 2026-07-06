@@ -25,6 +25,12 @@ import { LEAGUE_LABELS, TITLE_CATEGORY_LABELS } from "@/lib/types";
 import { getTeamsByLeague, getTeamByName } from "@/lib/teams";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
+import {
+  BroadcastBand,
+  BroadcastChip,
+  BroadcastHeading,
+  BroadcastPanel,
+} from "@/components/BroadcastShell";
 import { PlayerCombobox } from "@/components/PlayerCombobox";
 
 // Source of truth: lib/teams.ts. Using canonical full names guarantees that
@@ -62,6 +68,45 @@ function initTitles(): TitleState {
       TITLE_CATEGORIES.map((cat) => [cat, { playerName: "", teamName: "" }])
     );
   return { central: empty(), pacific: empty() };
+}
+
+function TeamPreviewRow({ team, rank }: { team: string; rank: number }) {
+  const meta = getTeamByName(team);
+  return (
+    <div
+      className="flex items-center gap-3 rounded-sm px-3 py-2"
+      style={{ background: "var(--bg-inset)", border: "1px solid var(--border-primary)" }}
+    >
+      <span
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-sm text-xs font-black"
+        style={{
+          background: rank <= 3 ? "var(--field)" : "var(--bg-elevated)",
+          color: rank <= 3 ? "#fff" : "var(--text-muted)",
+        }}
+      >
+        {rank}
+      </span>
+      <span
+        className="h-5 w-5 shrink-0 rounded-sm"
+        style={{ background: meta?.color ?? "var(--text-muted)" }}
+      />
+      <span className="truncate text-sm font-bold" style={{ color: "var(--text-primary)" }}>
+        {meta?.shortName ?? team}
+      </span>
+    </div>
+  );
+}
+
+function EntryShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mx-auto max-w-4xl space-y-5">
+      <BroadcastBand year={new Date().getFullYear()} />
+      <BroadcastHeading kicker="NEW ENTRY" title="予想を登録する">
+        <p>順位予想とタイトル予想を、放送席のスコアシート形式で登録します。</p>
+      </BroadcastHeading>
+      {children}
+    </div>
+  );
 }
 
 function RankingPicker({
@@ -420,7 +465,7 @@ export default function NewPredictionPage() {
   // Auth guard: redirect to login if not authenticated
   if (authLoading) {
     return (
-      <div className="mx-auto max-w-2xl animate-pulse space-y-4">
+      <div className="mx-auto max-w-4xl animate-pulse space-y-4">
         <div className="h-8 w-48 rounded" style={{ background: "var(--border-primary)" }} />
         <div className="h-4 w-64 rounded" style={{ background: "var(--border-primary)" }} />
       </div>
@@ -429,37 +474,57 @@ export default function NewPredictionPage() {
 
   if (!firebaseUser) {
     return (
-      <div className="mx-auto max-w-md py-16 text-center">
-        <div
-          className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full text-2xl"
-          style={{ background: "rgba(229,57,53,0.1)", border: "1px solid rgba(229,57,53,0.2)" }}
-        >
-          ⚾
-        </div>
-        <h1
-          className="mb-3 text-xl font-bold"
-          style={{ color: "var(--text-primary)" }}
-        >
-          ログインが必要です
-        </h1>
-        <p
-          className="mb-6 text-sm"
-          style={{ color: "var(--text-secondary)" }}
-        >
-          予想を登録するにはGoogleアカウントでログインしてください
-        </p>
-        <button
-          onClick={signIn}
-          className="rounded px-6 py-2.5 text-sm font-bold transition-all hover:opacity-90"
-          style={{
-            background: "rgba(229,57,53,0.15)",
-            border: "1px solid rgba(229,57,53,0.3)",
-            color: "var(--stitch)",
-          }}
-        >
-          Googleでログイン
-        </button>
-      </div>
+      <EntryShell>
+        <BroadcastPanel className="p-4">
+          <div className="grid gap-4 md:grid-cols-[1.1fr_0.9fr]">
+            <div>
+              <div className="mb-3 flex gap-2">
+                <BroadcastChip active>セ・リーグ</BroadcastChip>
+                <BroadcastChip>パ・リーグ</BroadcastChip>
+              </div>
+              <div className="space-y-2">
+                {CENTRAL_TEAMS.slice(0, 6).map((team, index) => (
+                  <TeamPreviewRow key={team} team={team} rank={index + 1} />
+                ))}
+              </div>
+            </div>
+            <div
+              className="flex flex-col justify-between rounded-sm p-4"
+              style={{ background: "var(--bg-inset)", border: "1px solid var(--border-primary)" }}
+            >
+              <div>
+                <p
+                  className="text-[10px] font-black uppercase"
+                  style={{
+                    color: "var(--field)",
+                    fontFamily: "var(--font-display)",
+                    letterSpacing: "0.16em",
+                  }}
+                >
+                  SIGN IN REQUIRED
+                </p>
+                <h2 className="mt-2 text-lg font-black" style={{ color: "var(--text-primary)" }}>
+                  ログインして予想を登録
+                </h2>
+                <p className="mt-2 text-sm leading-6" style={{ color: "var(--text-secondary)" }}>
+                  Googleアカウントでログインすると、順位予想の並び替えとタイトル予想の入力へ進めます。
+                </p>
+              </div>
+              <button
+                onClick={signIn}
+                className="mt-5 rounded-sm px-5 py-3 text-sm font-black transition-all hover:opacity-90"
+                style={{
+                  background: "var(--field)",
+                  color: "#fff",
+                  boxShadow: "0 3px 10px rgba(31,122,63,0.22)",
+                }}
+              >
+                Googleでログイン
+              </button>
+            </div>
+          </div>
+        </BroadcastPanel>
+      </EntryShell>
     );
   }
 
@@ -474,11 +539,7 @@ export default function NewPredictionPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <h1 className="mb-2 text-2xl font-bold">予想を登録する</h1>
-      <p className="mb-6 text-sm text-gray-500">
-        セ・パ両リーグの順位予想とタイトル予想を入力してください
-      </p>
+    <EntryShell>
 
       {/* Step indicator */}
       <div className="mb-8 flex items-center gap-2">
@@ -491,9 +552,10 @@ export default function NewPredictionPage() {
             <div
               className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${
                 step >= n
-                  ? "bg-blue-600 text-white"
+                  ? "text-white"
                   : "bg-gray-200 text-gray-500"
               }`}
+              style={{ background: step >= n ? "var(--field)" : undefined }}
             >
               {n}
             </div>
@@ -515,7 +577,7 @@ export default function NewPredictionPage() {
 
       {/* Step 1: User & Season */}
       {step === 1 && (
-        <div className="rounded-lg border bg-white p-6 shadow-sm">
+        <BroadcastPanel className="p-6">
           <h2 className="mb-4 text-lg font-semibold">基本情報</h2>
           <div className="space-y-4">
             <div>
@@ -560,14 +622,14 @@ export default function NewPredictionPage() {
               </select>
             </div>
           </div>
-        </div>
+        </BroadcastPanel>
       )}
 
       {/* Step 2: Rankings */}
       {step === 2 && (
         <div className="space-y-6">
           {LEAGUES.map((league) => (
-            <div key={league} className="rounded-lg border bg-white p-6 shadow-sm">
+            <BroadcastPanel key={league} className="p-6">
               <h2 className="mb-4 text-lg font-semibold">
                 {LEAGUE_LABELS[league]} 順位予想
               </h2>
@@ -577,7 +639,7 @@ export default function NewPredictionPage() {
                 rankings={rankings[league]}
                 onChange={handleRankingChange}
               />
-            </div>
+            </BroadcastPanel>
           ))}
         </div>
       )}
@@ -586,7 +648,7 @@ export default function NewPredictionPage() {
       {step === 3 && (
         <div className="space-y-6">
           {LEAGUES.map((league) => (
-            <div key={league} className="rounded-lg border bg-white p-6 shadow-sm">
+            <BroadcastPanel key={league} className="p-6">
               <h2 className="mb-4 text-lg font-semibold">
                 {LEAGUE_LABELS[league]} タイトル予想
               </h2>
@@ -596,7 +658,7 @@ export default function NewPredictionPage() {
                 titles={titles[league]}
                 onChange={handleTitleChange}
               />
-            </div>
+            </BroadcastPanel>
           ))}
 
           {/* Summary */}
@@ -633,6 +695,7 @@ export default function NewPredictionPage() {
             type="button"
             onClick={nextStep}
             className="rounded bg-blue-600 px-6 py-2 text-sm font-bold text-white hover:bg-blue-700"
+            style={{ background: "var(--field)" }}
           >
             次へ →
           </button>
@@ -647,6 +710,6 @@ export default function NewPredictionPage() {
           </button>
         )}
       </div>
-    </div>
+    </EntryShell>
   );
 }
