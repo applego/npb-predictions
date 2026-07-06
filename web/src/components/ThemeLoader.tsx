@@ -5,35 +5,8 @@ import { getFirebaseAuth, onAuthStateChanged, type FirebaseUser } from "@/lib/fi
 import {
   DEFAULT_COLOR_THEME_ID,
   DEFAULT_NUMBER_FONT_ID,
-  getNumberFont,
-  getColorTheme,
-  buildGoogleFontsUrl,
 } from "@/lib/theme-presets";
-
-const LOCAL_COLOR_THEME_KEY = "npb_color_theme";
-const LOCAL_NUMBER_FONT_KEY = "npb_number_font";
-
-function applyTheme(themeId: string, numFontId: string) {
-  const numFont = getNumberFont(numFontId);
-  const theme = getColorTheme(themeId);
-
-  const fontsUrl = buildGoogleFontsUrl(numFontId);
-  const existing = document.getElementById("theme-google-fonts");
-  if (existing) existing.remove();
-  const link = document.createElement("link");
-  link.id = "theme-google-fonts";
-  link.rel = "stylesheet";
-  link.href = fontsUrl;
-  document.head.appendChild(link);
-
-  const root = document.documentElement;
-  for (const [key, value] of Object.entries(theme.vars)) {
-    root.style.setProperty(key, value);
-  }
-  root.style.setProperty("--font-display", numFont.family);
-  root.style.setProperty("--font-body", "var(--font-body-default)");
-  document.body.style.fontFamily = "var(--font-body-default)";
-}
+import { applyLocalThemeFallback, applyTheme, readLocalThemeSettings } from "@/lib/theme-apply";
 
 /**
  * Client component that loads theme settings from /api/settings
@@ -58,26 +31,17 @@ export function ThemeLoader() {
 
       try {
         const res = await fetch("/api/settings", { headers });
-        if (!res.ok || cancelled) return;
+        if (!res.ok) throw new Error("settings unavailable");
+        if (cancelled) return;
         const data = await res.json();
         const s = data as Record<string, string>;
-        const localThemeId = !user ? window.localStorage.getItem(LOCAL_COLOR_THEME_KEY) : null;
-        const localNumFontId = !user ? window.localStorage.getItem(LOCAL_NUMBER_FONT_KEY) : null;
-        const numFontId = localNumFontId ?? s.font_number ?? DEFAULT_NUMBER_FONT_ID;
-        const themeId = localThemeId ?? s.color_theme ?? DEFAULT_COLOR_THEME_ID;
+        const local = !user ? readLocalThemeSettings() : { colorTheme: null, numberFont: null };
+        const numFontId = local.numberFont ?? s.font_number ?? DEFAULT_NUMBER_FONT_ID;
+        const themeId = local.colorTheme ?? s.color_theme ?? DEFAULT_COLOR_THEME_ID;
 
         applyTheme(themeId, numFontId);
-        window.localStorage.setItem(LOCAL_COLOR_THEME_KEY, themeId);
-        window.localStorage.setItem(LOCAL_NUMBER_FONT_KEY, numFontId);
       } catch {
-        const localThemeId = window.localStorage.getItem(LOCAL_COLOR_THEME_KEY);
-        const localNumFontId = window.localStorage.getItem(LOCAL_NUMBER_FONT_KEY);
-        if (localThemeId || localNumFontId) {
-          applyTheme(
-            localThemeId ?? DEFAULT_COLOR_THEME_ID,
-            localNumFontId ?? DEFAULT_NUMBER_FONT_ID,
-          );
-        }
+        applyLocalThemeFallback();
       }
     }
 

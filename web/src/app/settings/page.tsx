@@ -5,14 +5,11 @@ import {
   DEFAULT_COLOR_THEME_ID,
   DEFAULT_NUMBER_FONT_ID,
   NUMBER_FONTS, DESIGN_COLOR_THEMES,
-  getNumberFont, getColorTheme,
-  buildGoogleFontsUrl,
+  getNumberFont,
 } from "@/lib/theme-presets";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import { useAuth } from "@/contexts/AuthContext";
-
-const LOCAL_COLOR_THEME_KEY = "npb_color_theme";
-const LOCAL_NUMBER_FONT_KEY = "npb_number_font";
+import { applyTheme, readLocalThemeSettings, saveLocalThemeSetting } from "@/lib/theme-apply";
 
 // ── Load Google Fonts dynamically ──
 
@@ -26,25 +23,6 @@ function useGoogleFont(query: string) {
     link.href = `https://fonts.googleapis.com/css2?${query}&display=swap`;
     document.head.appendChild(link);
   }, [query]);
-}
-
-function applyTheme(themeId: string, numFontId: string) {
-  const numFont = getNumberFont(numFontId);
-  const theme = getColorTheme(themeId);
-  const fontsUrl = buildGoogleFontsUrl(numFontId);
-  const existing = document.getElementById("theme-google-fonts");
-  if (existing) existing.remove();
-  const link = document.createElement("link");
-  link.id = "theme-google-fonts";
-  link.rel = "stylesheet";
-  link.href = fontsUrl;
-  document.head.appendChild(link);
-
-  const root = document.documentElement;
-  for (const [key, value] of Object.entries(theme.vars)) {
-    root.style.setProperty(key, value);
-  }
-  root.style.setProperty("--font-display", numFont.family);
 }
 
 // ── Shared preview component ──
@@ -119,10 +97,9 @@ export default function SettingsPage() {
       .then((r) => r.json())
       .then((d) => {
         const s = d as Record<string, string>;
-        const localThemeId = !firebaseUser ? window.localStorage.getItem(LOCAL_COLOR_THEME_KEY) : null;
-        const localNumFontId = !firebaseUser ? window.localStorage.getItem(LOCAL_NUMBER_FONT_KEY) : null;
-        const nextNumFont = localNumFontId ?? s.font_number ?? DEFAULT_NUMBER_FONT_ID;
-        const nextColorTheme = localThemeId ?? s.color_theme ?? DEFAULT_COLOR_THEME_ID;
+        const local = !firebaseUser ? readLocalThemeSettings() : { colorTheme: null, numberFont: null };
+        const nextNumFont = local.numberFont ?? s.font_number ?? DEFAULT_NUMBER_FONT_ID;
+        const nextColorTheme = local.colorTheme ?? s.color_theme ?? DEFAULT_COLOR_THEME_ID;
         setNumFont(nextNumFont);
         setColorTheme(nextColorTheme);
         applyTheme(nextColorTheme, nextNumFont);
@@ -130,11 +107,8 @@ export default function SettingsPage() {
       .catch(() => {});
   }, [authLoading, firebaseUser]);
 
-  const save = useCallback(async (key: string, value: string) => {
-    window.localStorage.setItem(
-      key === "color_theme" ? LOCAL_COLOR_THEME_KEY : LOCAL_NUMBER_FONT_KEY,
-      value,
-    );
+  const save = useCallback(async (key: "color_theme" | "font_number", value: string) => {
+    saveLocalThemeSetting(key, value);
 
     if (!firebaseUser) {
       setMessage("この端末に保存しました — ログインするとアカウントにも保存できます");
