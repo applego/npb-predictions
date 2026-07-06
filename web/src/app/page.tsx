@@ -6,13 +6,13 @@ import type { Season, Prediction } from "@/lib/types";
 import { NewsCompact } from "./news/NewsClient";
 
 export const metadata: Metadata = {
-  title: "NPB Predictions League | プロ野球順位予想リーグ",
+  title: "NPB Predictions | プロ野球順位予想",
   description:
-    "プロ野球順位予想を競うリーグ。セ・パ両リーグの1位予想分布、解説者ランキング、最新ニュースをチェックして、あなたも挑戦しよう。",
+    "プロ野球順位予想を競う情報ボード。セ・パ両リーグの1位予想分布、解説者ランキング、最新ニュースをチェックできます。",
   openGraph: {
-    title: "NPB Predictions League | プロ野球順位予想リーグ",
+    title: "NPB Predictions | プロ野球順位予想",
     description:
-      "セ・パ完全的中チャレンジ — 歴代最高スコアを超えられるか？",
+      "放送席のように、プロ野球順位予想と的中状況を見渡せる情報ボード。",
     type: "website",
   },
   alternates: { canonical: "/" },
@@ -187,9 +187,9 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-6">
-      {/* ══════════ HERO: CHALLENGE ══════════ */}
+      {/* ══════════ HERO: BROADCAST BOARD ══════════ */}
       <section
-        className="relative overflow-hidden rounded-2xl"
+        className="relative overflow-hidden rounded-lg"
         style={{
           background: "var(--bg-surface)",
           border: "1px solid var(--border-primary)",
@@ -197,14 +197,33 @@ export default async function HomePage() {
             "0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.03)",
         }}
       >
-        {/* Stitch accent top */}
         <div
-          className="h-1 w-full"
+          className="flex items-center justify-between px-5 py-4"
           style={{
-            background:
-              "linear-gradient(90deg, var(--stitch), var(--stitch-light) 50%, transparent 100%)",
+            background: "var(--field)",
+            color: "#fff",
           }}
-        />
+        >
+          <span
+            style={{
+              fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
+              fontSize: "1rem",
+              fontWeight: 700,
+              letterSpacing: "0.08em",
+            }}
+          >
+            NPB PREDICTIONS
+          </span>
+          <span
+            style={{
+              fontSize: "0.7rem",
+              fontWeight: 700,
+              letterSpacing: "0.16em",
+            }}
+          >
+            {year} SEASON
+          </span>
+        </div>
 
         {/* Subtle diamond watermark */}
         <div
@@ -226,9 +245,9 @@ export default async function HomePage() {
             <span
               className="flex h-10 w-10 items-center justify-center rounded-lg text-lg"
               style={{
-                background: "var(--stitch)",
+                background: "var(--field)",
                 color: "#fff",
-                boxShadow: "0 2px 8px rgba(229,57,53,0.25)",
+                boxShadow: "0 2px 8px rgba(31,122,63,0.22)",
               }}
             >
               &#127942;
@@ -270,7 +289,7 @@ export default async function HomePage() {
                 lineHeight: 1.15,
               }}
             >
-              セパ完全的中チャレンジ
+              {year} 順位予想ダッシュボード
             </span>
           </h1>
 
@@ -292,7 +311,7 @@ export default async function HomePage() {
                     "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
                   fontSize: "clamp(2.5rem, 8vw, 4rem)",
                   lineHeight: 1,
-                  color: "var(--stitch)",
+                  color: "var(--field)",
                   letterSpacing: "0.02em",
                 }}
               >
@@ -338,7 +357,7 @@ export default async function HomePage() {
                   style={{
                     width: `${Math.round((BEST_SCORE / PERFECT_SCORE) * 100)}%`,
                     background:
-                      "linear-gradient(90deg, var(--stitch), var(--stitch-light))",
+                      "linear-gradient(90deg, var(--field), var(--border-strong))",
                   }}
                 />
               </div>
@@ -368,9 +387,9 @@ export default async function HomePage() {
               href="/predictions/new"
               className="inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-bold transition-all"
               style={{
-                background: "var(--stitch)",
+                background: "var(--field)",
                 color: "#fff",
-                boxShadow: "0 2px 8px rgba(229,57,53,0.3)",
+                boxShadow: "0 2px 8px rgba(31,122,63,0.24)",
               }}
             >
               今すぐ予想する

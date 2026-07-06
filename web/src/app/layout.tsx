@@ -127,11 +127,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Link href="/" className="mr-auto flex shrink-0 items-center gap-2.5">
                 <span
                   className="home-plate flex h-8 w-8 items-center justify-center text-sm font-black"
-                  style={{ background: "var(--stitch)", color: "#fff" }}
+                  style={{ background: "var(--field)", color: "#fff" }}
                 >
                   N
                 </span>
                 <span
+                  className="hidden sm:inline"
                   style={{
                     fontFamily: "var(--font-display, var(--font-display-default))",
                     fontSize: "1.25rem",
@@ -139,7 +140,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     color: "var(--text-primary)",
                   }}
                 >
-                  NPB <span style={{ color: "var(--stitch)" }}>LEAGUE</span>
+                  NPB <span style={{ color: "var(--field)" }}>PREDICTIONS</span>
+                </span>
+                <span
+                  className="inline sm:hidden"
+                  style={{
+                    fontFamily: "var(--font-display, var(--font-display-default))",
+                    fontSize: "1.25rem",
+                    letterSpacing: "0.1em",
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  NPB
                 </span>
               </Link>
               <Nav />
@@ -163,7 +175,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   color: "var(--text-muted)",
                 }}
               >
-                NPB PREDICTIONS LEAGUE
+                NPB PREDICTIONS
               </span>
             </div>
           </footer>

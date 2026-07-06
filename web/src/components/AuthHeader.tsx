@@ -22,7 +22,7 @@ export function AuthHeader() {
         onClick={signIn}
         className="whitespace-nowrap rounded-sm px-3 py-1.5 text-xs font-medium tracking-wider transition-all"
         style={{
-          background: "var(--stitch)",
+          background: "var(--field)",
           color: "#fff",
           letterSpacing: "0.08em",
         }}
