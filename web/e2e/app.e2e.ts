@@ -118,6 +118,33 @@ test.describe("Predictions compare page", () => {
     expect(body).not.toContain("NEXT_REDIRECT");
     expect(body).toMatch(/ランキング|順位予想一覧|ライブスコア|タイトル予想|確定結果/);
   });
+
+  test("/rankings/predictions keeps matrix team badges compact", async ({ page }) => {
+    const res = await page.goto("/rankings/predictions?year=2026");
+    expect(res, "/rankings/predictions navigation must return a response").not.toBeNull();
+    expect(res!.status(), "/rankings/predictions must not 5xx").toBeLessThan(500);
+    await page.waitForLoadState("networkidle");
+
+    const body = (await page.textContent("body")) ?? "";
+    expect(body).not.toContain("Application error");
+    expect(body).not.toContain("Internal Server Error");
+
+    const badges = page.locator(
+      'table [aria-label="ソフトバンク"], table [aria-label="オリックス"], table [aria-label="日本ハム"]',
+    );
+    const count = await badges.count();
+    expect(count, "matrix should render long-name Pacific teams from seeded predictions").toBeGreaterThan(0);
+
+    for (let i = 0; i < Math.min(count, 12); i++) {
+      const badge = badges.nth(i);
+      await badge.scrollIntoViewIfNeeded();
+      const box = await badge.boundingBox();
+      const text = (await badge.textContent())?.trim() ?? "";
+      expect(box, `badge ${i} should be visible`).not.toBeNull();
+      expect(text, `badge ${i} must use compact matrix abbreviation`).toMatch(/^[^\s]{1,2}$/);
+      expect(box!.height, `badge ${i} must remain one-line compact`).toBeLessThanOrEqual(32);
+    }
+  });
 });
 
 // ── Commentator rankings ───────────────────────────────────────────────────
