@@ -8,8 +8,8 @@ import {
   type HeadlineChar,
 } from "@/lib/public-image-data";
 
-const W = 1080;
-const H = 1920;
+const W = 720;
+const H = 1280;
 
 type OgFont = {
   name: string;
@@ -18,29 +18,20 @@ type OgFont = {
   style: "normal";
 };
 
-// Tiled textShadow creates a faux stroke since Satori does not support -webkit-text-stroke.
-function stroke(color: string, width: number): string {
-  const offs: [number, number][] = [];
-  for (let dx = -width; dx <= width; dx++) {
-    for (let dy = -width; dy <= width; dy++) {
-      if (dx * dx + dy * dy <= width * width && (dx !== 0 || dy !== 0)) {
-        offs.push([dx, dy]);
-      }
-    }
-  }
-  return offs.map(([x, y]) => `${x}px ${y}px 0 ${color}`).join(", ");
+function stroke(color: string): string {
+  return [
+    `2px 0 0 ${color}`,
+    `-2px 0 0 ${color}`,
+    `0 2px 0 ${color}`,
+    `0 -2px 0 ${color}`,
+  ].join(", ");
 }
 
-async function loadJPFont(
-  family: "serif" | "sans",
-  weight: 400 | 700 | 900,
-): Promise<ArrayBuffer> {
-  const base =
-    family === "serif"
-      ? "https://cdn.jsdelivr.net/fontsource/fonts/noto-serif-jp@latest/japanese"
-      : "https://cdn.jsdelivr.net/fontsource/fonts/noto-sans-jp@latest/japanese";
-  const res = await fetch(`${base}-${weight}-normal.ttf`);
-  if (!res.ok) throw new Error(`Font ${family}/${weight} ${res.status}`);
+async function loadJPFont(weight: 400 | 700 | 900): Promise<ArrayBuffer> {
+  const res = await fetch(
+    `https://cdn.jsdelivr.net/fontsource/fonts/noto-sans-jp@latest/japanese-${weight}-normal.ttf`,
+  );
+  if (!res.ok) throw new Error(`Font sans/${weight} ${res.status}`);
   return res.arrayBuffer();
 }
 
@@ -48,20 +39,13 @@ let fontPromise: Promise<OgFont[]> | null = null;
 
 function loadFonts(): Promise<OgFont[]> {
   fontPromise ??= (async () => {
-    const meta: Array<{
-      family: "serif" | "sans";
-      name: string;
-      weight: 400 | 700 | 900;
-    }> = [
-      { family: "serif", name: "Serif JP", weight: 900 },
-      { family: "serif", name: "Serif JP", weight: 400 },
-      { family: "sans", name: "Sans JP", weight: 900 },
-      { family: "sans", name: "Sans JP", weight: 700 },
-      { family: "sans", name: "Sans JP", weight: 400 },
+    const meta: Array<{ name: string; weight: 400 | 700 | 900 }> = [
+      { name: "Sans JP", weight: 900 },
+      { name: "Sans JP", weight: 700 },
+      { name: "Sans JP", weight: 400 },
     ];
-
     const results = await Promise.allSettled(
-      meta.map((font) => loadJPFont(font.family, font.weight)),
+      meta.map((font) => loadJPFont(font.weight)),
     );
 
     return results
@@ -97,13 +81,11 @@ export async function GET(
     );
   }
 
-  // Sports tabloid palette
-  const paper = "#fffbeb"; // cream yellow-tinted paper
+  const paper = "#fffbeb";
   const ink = "#0a0a0a";
   const red = "#dc2626";
   const yellow = "#facc15";
   const redDeep = "#991b1b";
-
   const fonts = await loadFonts();
 
   const renderHeadlineLine = (chars: HeadlineChar[]) => (
@@ -113,13 +95,12 @@ export async function GET(
           key={i}
           style={{
             display: "flex",
-            // 太ゴシックで「スポーツ紙感」を出す（明朝ではなく Sans JP 900）
             fontFamily: "Sans JP",
-            fontSize: c.size,
+            fontSize: Math.round(c.size * 0.58),
             fontWeight: 900,
             lineHeight: 0.92,
             color: c.style === "solid" ? (c.color ?? ink) : "#fff",
-            textShadow: c.style === "outline" ? stroke(ink, 6) : `6px 6px 0 ${ink}`,
+            textShadow: c.style === "outline" ? stroke(ink) : `3px 3px 0 ${ink}`,
             marginRight: -4,
           }}
         >
@@ -140,74 +121,47 @@ export async function GET(
           background: paper,
           color: ink,
           fontFamily: "Sans JP",
-          position: "relative",
         }}
       >
-        {/* ── Masthead ── */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            padding: "22px 40px 14px 40px",
+            padding: "16px 28px 10px",
             borderBottom: `4px solid ${ink}`,
             background: "#fff",
           }}
         >
-          <div style={{ display: "flex", alignItems: "baseline", gap: 14 }}>
-            <div
-              style={{
-                display: "flex",
-                fontSize: 42,
-                fontWeight: 900,
-                color: red,
-                letterSpacing: "0.08em",
-              }}
-            >
+          <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
+            <div style={{ display: "flex", fontSize: 34, fontWeight: 900, color: red }}>
               NPB
             </div>
-            <div
-              style={{
-                display: "flex",
-                fontSize: 38,
-                fontWeight: 900,
-                color: ink,
-                letterSpacing: "0.04em",
-              }}
-            >
+            <div style={{ display: "flex", fontSize: 30, fontWeight: 900 }}>
               予想スポーツ
             </div>
-            <div
-              style={{
-                display: "flex",
-                fontSize: 18,
-                color: "#666",
-                marginLeft: 4,
-              }}
-            >
+            <div style={{ display: "flex", fontSize: 15, color: "#666" }}>
               {team.name}版
             </div>
           </div>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-            <div style={{ display: "flex", fontSize: 20, fontWeight: 700, color: ink }}>
+            <div style={{ display: "flex", fontSize: 17, fontWeight: 700 }}>
               {article.date}
             </div>
-            <div style={{ display: "flex", fontSize: 14, color: "#666" }}>
+            <div style={{ display: "flex", fontSize: 12, color: "#666" }}>
               {article.edition} / 第 {new Date().getDate()} 号
             </div>
           </div>
         </div>
 
-        {/* ── Team color banner ── */}
-        <div style={{ display: "flex", height: 12, background: team.color }} />
+        <div style={{ display: "flex", height: 10, background: team.color }} />
 
-        {/* ── Kicker banner (yellow) ── */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 14,
-            padding: "14px 40px",
+            gap: 12,
+            padding: "10px 28px",
             background: yellow,
             borderBottom: `3px solid ${ink}`,
           }}
@@ -217,29 +171,27 @@ export async function GET(
               display: "flex",
               background: red,
               color: "#fff",
-              padding: "6px 16px",
-              fontSize: 24,
+              padding: "5px 14px",
+              fontSize: 20,
               fontWeight: 900,
-              letterSpacing: "0.1em",
-              transform: "skewX(-8deg)",
+              letterSpacing: "0.08em",
             }}
           >
             速報
           </div>
-          <div style={{ display: "flex", fontSize: 30, fontWeight: 900, color: redDeep, letterSpacing: "0.05em" }}>
+          <div style={{ display: "flex", fontSize: 24, fontWeight: 900, color: redDeep }}>
             {article.kicker}
           </div>
-          <div style={{ display: "flex", marginLeft: "auto", fontSize: 16, color: ink, fontWeight: 700 }}>
-            {team.name} vs {article.opponent} / {article.venue}
+          <div style={{ display: "flex", marginLeft: "auto", fontSize: 13, fontWeight: 700 }}>
+            {article.venue}
           </div>
         </div>
 
-        {/* ── HEADLINE ZONE: yellow bg, mixed-size red+outlined characters ── */}
         <div
           style={{
             display: "flex",
             flexDirection: "column",
-            padding: "32px 40px 24px 40px",
+            padding: "22px 28px 16px",
             background: yellow,
             borderBottom: `5px solid ${ink}`,
           }}
@@ -250,30 +202,26 @@ export async function GET(
           </div>
         </div>
 
-        {/* Subheadline — yellow strip */}
         <div
           style={{
             display: "flex",
-            padding: "14px 40px",
+            padding: "10px 28px",
             background: yellow,
-            borderTop: `3px solid ${ink}`,
             borderBottom: `3px solid ${ink}`,
           }}
         >
-          <div style={{ display: "flex", fontSize: 30, fontWeight: 900, color: redDeep, letterSpacing: "0.04em" }}>
+          <div style={{ display: "flex", fontSize: 23, fontWeight: 900, color: redDeep }}>
             {article.subheadline}
           </div>
         </div>
 
-        {/* ── HUGE hero "photo" block — dominates layout ── */}
-        <div style={{ display: "flex", padding: "16px 40px 0 40px", gap: 10 }}>
-          {/* Left: main big photo block */}
+        <div style={{ display: "flex", padding: "12px 28px 0", gap: 10 }}>
           <div
             style={{
               display: "flex",
               flexDirection: "column",
               flex: 1,
-              height: 420,
+              height: 260,
               background: team.color,
               color: team.textColor,
               alignItems: "center",
@@ -282,28 +230,25 @@ export async function GET(
               position: "relative",
             }}
           >
-            {/* Score overlay inside the "photo" — top right */}
             <div
               style={{
                 display: "flex",
                 position: "absolute",
                 top: 10,
                 right: 10,
-                padding: "6px 14px",
+                padding: "5px 12px",
                 background: "#fff",
                 color: ink,
                 border: `3px solid ${ink}`,
-                fontSize: 36,
+                fontSize: 28,
                 fontWeight: 900,
               }}
             >
               {article.scoreLine}
             </div>
-            {/* Big abbr */}
-            <div style={{ display: "flex", fontSize: 300, fontWeight: 900, lineHeight: 0.9 }}>
+            <div style={{ display: "flex", fontSize: 210, fontWeight: 900, lineHeight: 0.9 }}>
               {team.abbr}
             </div>
-            {/* Red caption bar at bottom */}
             <div
               style={{
                 display: "flex",
@@ -313,10 +258,9 @@ export async function GET(
                 right: 0,
                 background: red,
                 color: "#fff",
-                padding: "10px 14px",
-                fontSize: 20,
+                padding: "8px 12px",
+                fontSize: 17,
                 fontWeight: 900,
-                letterSpacing: "0.03em",
               }}
             >
               &gt; {article.focusName}・{article.focusStat}
@@ -324,14 +268,13 @@ export async function GET(
           </div>
         </div>
 
-        {/* ── Row of 4 framed photo thumbnails with red caption bars ── */}
-        <div style={{ display: "flex", gap: 8, padding: "10px 40px 0 40px" }}>
+        <div style={{ display: "flex", gap: 8, padding: "8px 28px 0" }}>
           {[
             { label: team.shortName, color: team.color, textColor: team.textColor, caption: article.kicker },
             { label: article.facts[0].label, color: "#fff", textColor: ink, caption: article.facts[0].caption },
             { label: article.facts[1].label, color: "#fff", textColor: ink, caption: article.facts[1].caption },
             { label: article.facts[2].label, color: "#fff", textColor: ink, caption: article.facts[2].caption },
-          ].map((t, i) => (
+          ].map((item, i) => (
             <div
               key={i}
               style={{
@@ -346,13 +289,13 @@ export async function GET(
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  height: 130,
-                  background: t.color,
-                  color: t.textColor,
+                  height: 78,
+                  background: item.color,
+                  color: item.textColor,
                 }}
               >
-                <div style={{ display: "flex", fontSize: 52, fontWeight: 900, lineHeight: 1, letterSpacing: "0.02em" }}>
-                  {t.label}
+                <div style={{ display: "flex", fontSize: 30, fontWeight: 900 }}>
+                  {item.label}
                 </div>
               </div>
               <div
@@ -360,26 +303,24 @@ export async function GET(
                   display: "flex",
                   background: red,
                   color: "#fff",
-                  padding: "6px 8px",
-                  fontSize: 14,
+                  padding: "5px 7px",
+                  fontSize: 11,
                   fontWeight: 900,
-                  letterSpacing: "0.05em",
                 }}
               >
-                {t.caption}
+                {item.caption}
               </div>
             </div>
           ))}
         </div>
 
-        {/* ── Dramatic yellow banner (second headline) ── */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            padding: "16px 40px",
-            margin: "14px 0 0 0",
+            padding: "10px 28px",
+            marginTop: 10,
             background: yellow,
             borderTop: `4px solid ${ink}`,
             borderBottom: `4px solid ${ink}`,
@@ -388,89 +329,79 @@ export async function GET(
           <div
             style={{
               display: "flex",
-              fontFamily: "Sans JP",
-              fontSize: 64,
+              fontSize: 40,
               fontWeight: 900,
               color: red,
-              letterSpacing: "0.04em",
-              textShadow: stroke(ink, 4),
+              textShadow: stroke(ink),
             }}
           >
             {article.dramaticBanner}
           </div>
         </div>
 
-        {/* ── Body article (2 columns, compact) ── */}
         <div
           style={{
             display: "flex",
-            gap: 20,
-            padding: "16px 40px 0 40px",
-            fontFamily: "Serif JP",
+            gap: 18,
+            padding: "12px 28px 0",
+            fontSize: 15,
+            lineHeight: 1.45,
           }}
         >
-          <div style={{ display: "flex", flexDirection: "column", flex: 1, fontSize: 19, lineHeight: 1.75, color: ink }}>
-            <div style={{ display: "flex", marginBottom: 12 }}>{article.body[0]}</div>
+          <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+            <div style={{ display: "flex", marginBottom: 8 }}>{article.body[0]}</div>
             <div style={{ display: "flex" }}>{article.body[1]}</div>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", flex: 1, fontSize: 19, lineHeight: 1.75, color: ink }}>
-            <div style={{ display: "flex", marginBottom: 12 }}>{article.body[2]}</div>
-            {/* Quote box in right column */}
+          <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+            <div style={{ display: "flex", marginBottom: 8 }}>{article.body[2]}</div>
             <div
               style={{
                 display: "flex",
                 flexDirection: "column",
-                padding: "10px 14px",
+                padding: "8px 12px",
                 background: "#fff",
                 border: `3px solid ${ink}`,
               }}
             >
-              <div style={{ display: "flex", fontSize: 13, fontWeight: 900, color: red, letterSpacing: "0.1em", fontFamily: "Sans JP" }}>
+              <div style={{ display: "flex", fontSize: 12, fontWeight: 900, color: red }}>
                 &gt; データメモ
               </div>
-              <div style={{ display: "flex", fontSize: 17, fontWeight: 700, color: ink, lineHeight: 1.45, marginTop: 4 }}>
+              <div style={{ display: "flex", fontSize: 14, fontWeight: 700, lineHeight: 1.35, marginTop: 4 }}>
                 「{article.quote}」
               </div>
-              <div style={{ display: "flex", fontSize: 13, color: "#666", marginTop: 6, justifyContent: "flex-end", fontFamily: "Sans JP" }}>
-                — {article.quoteBy}
+              <div style={{ display: "flex", fontSize: 11, color: "#666", marginTop: 6, justifyContent: "flex-end" }}>
+                - {article.quoteBy}
               </div>
             </div>
           </div>
         </div>
 
-        {/* ── Bottom bar: season stats ── */}
         <div
           style={{
             display: "flex",
             marginTop: "auto",
             background: ink,
             color: paper,
-            padding: "10px 40px",
+            padding: "8px 28px",
             alignItems: "center",
-            gap: 24,
+            gap: 20,
           }}
         >
           <div style={{ display: "flex", flexDirection: "column" }}>
-            <div style={{ display: "flex", fontSize: 11, color: "#aaa", letterSpacing: "0.15em" }}>
-              通算
-            </div>
-            <div style={{ display: "flex", fontSize: 22, fontWeight: 900 }}>{article.seasonRecord}</div>
+            <div style={{ display: "flex", fontSize: 10, color: "#aaa" }}>通算</div>
+            <div style={{ display: "flex", fontSize: 18, fontWeight: 900 }}>{article.seasonRecord}</div>
           </div>
-          <div style={{ display: "flex", width: 1, height: 30, background: "#555" }} />
+          <div style={{ display: "flex", width: 1, height: 28, background: "#555" }} />
           <div style={{ display: "flex", flexDirection: "column" }}>
-            <div style={{ display: "flex", fontSize: 11, color: "#aaa", letterSpacing: "0.15em" }}>
-              順位
-            </div>
-            <div style={{ display: "flex", fontSize: 18, fontWeight: 900, color: yellow }}>
+            <div style={{ display: "flex", fontSize: 10, color: "#aaa" }}>順位</div>
+            <div style={{ display: "flex", fontSize: 16, fontWeight: 900, color: yellow }}>
               {article.leagueRank}
             </div>
           </div>
-          <div style={{ display: "flex", width: 1, height: 30, background: "#555" }} />
+          <div style={{ display: "flex", width: 1, height: 28, background: "#555" }} />
           <div style={{ display: "flex", flexDirection: "column" }}>
-            <div style={{ display: "flex", fontSize: 11, color: "#aaa", letterSpacing: "0.15em" }}>
-              次戦
-            </div>
-            <div style={{ display: "flex", fontSize: 16, fontWeight: 700 }}>{article.nextGame}</div>
+            <div style={{ display: "flex", fontSize: 10, color: "#aaa" }}>次戦</div>
+            <div style={{ display: "flex", fontSize: 13, fontWeight: 700 }}>{article.nextGame}</div>
           </div>
           <div style={{ display: "flex", marginLeft: "auto", fontSize: 12, color: "#777" }}>
             npb-predictions.pages.dev

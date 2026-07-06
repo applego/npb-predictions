@@ -92,6 +92,26 @@ test.describe("OG image generation", () => {
     });
   }
 
+  for (const route of [
+    "/api/newspaper/hanshin-tigers",
+    "/api/ranking-card/overall",
+  ] as const) {
+    test(`${route} returns non-empty PNG`, async ({ request }) => {
+      const res = await request.get(route);
+      expect(res.status(), `${route} must not 5xx`).toBeLessThan(500);
+      const ct = res.headers()["content-type"] ?? "";
+      expect(ct).toMatch(/image\/png/);
+      const body = await res.body();
+      expect(body.length, `${route} body must be non-empty`).toBeGreaterThan(
+        100,
+      );
+      expect(body[0]).toBe(0x89);
+      expect(body[1]).toBe(0x50);
+      expect(body[2]).toBe(0x4e);
+      expect(body[3]).toBe(0x47);
+    });
+  }
+
   // 2026-05-23: anti-fallback guard — empty / 1x1 / NPB-only default cards
   // are < 20KB. A real card with rendered Japanese typography + ranking rows
   // is >25KB. This catches the silent "PNG returned but it's the default
