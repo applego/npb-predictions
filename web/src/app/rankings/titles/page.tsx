@@ -259,10 +259,16 @@ export default async function TitlesPage() {
               {lg.label}
             </div>
             <div
-              className="overflow-x-auto rounded-b-md"
+              className="max-w-full overflow-x-auto rounded-b-md"
               style={{ border: "1px solid var(--border-primary)", borderTop: "none" }}
             >
-              <table className="w-full" style={{ borderCollapse: "collapse" }}>
+              <table
+                className="w-full"
+                style={{
+                  borderCollapse: "collapse",
+                  minWidth: `${13 + predictors.length * 7}rem`,
+                }}
+              >
                 <thead>
                   <tr style={{ background: "var(--bg-inset)" }}>
                     <th

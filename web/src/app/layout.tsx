@@ -123,8 +123,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               borderBottom: "1px solid var(--border-primary)",
             }}
           >
-            <nav className="relative mx-auto flex max-w-[72rem] items-center gap-x-4 px-4 py-3 md:px-6">
-              <Link href="/" className="mr-auto flex shrink-0 items-center gap-2.5">
+            <nav className="relative mx-auto flex max-w-[72rem] items-center gap-x-3 px-3 py-2.5 sm:gap-x-4 sm:px-4 md:px-6">
+              <Link href="/" className="mr-auto flex min-h-11 shrink-0 items-center gap-2.5">
                 <span
                   className="home-plate flex h-8 w-8 items-center justify-center text-sm font-black"
                   style={{ background: "var(--field)", color: "#fff" }}

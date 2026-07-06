@@ -103,7 +103,6 @@ async function getStandings(year: number): Promise<StandRow[]> {
 
 // ── theme (cream newsprint, Mincho) ──────────────────────────────────────
 const INK = "#1a1712";
-const PAPER = "#f6f4ed";
 const RULE = "#b8af98";
 const MUTE = "#3a352a";
 const MONO = "#5b5443";
@@ -133,17 +132,7 @@ export default async function NewspaperPage() {
 
   return (
     <>
-      <div
-        style={{
-          margin: "-2rem -1rem 0",
-          background: "#bdbbb4",
-          padding: "32px 16px 48px",
-          display: "flex",
-          justifyContent: "center",
-          overflowX: "auto",
-          fontFamily: "'Shippori Mincho', 'Noto Serif JP', serif",
-        }}
-      >
+      <div className="newspaper-preview-shell">
         {/* Mincho fonts for this page only — React hoists stylesheet links. */}
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link
@@ -151,30 +140,18 @@ export default async function NewspaperPage() {
           rel="stylesheet"
         />
 
-        <div
-          style={{
-            width: 912,
-            flex: "none",
-            background: PAPER,
-            backgroundImage:
-              "linear-gradient(rgba(0,0,0,0.016) 1px,transparent 1px)",
-            backgroundSize: "100% 4px",
-            color: INK,
-            padding: "34px 32px 30px",
-            boxShadow: "0 18px 50px rgba(40,34,22,0.22)",
-            border: "1px solid #cabfa4",
-          }}
-        >
-          {/* ── 題字 ── */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "stretch",
-              justifyContent: "space-between",
-              borderBottom: `1px solid ${INK}`,
-              paddingBottom: 10,
-            }}
-          >
+        <div className="newspaper-preview-frame">
+          <div className="newspaper-preview-sheet">
+            {/* ── 題字 ── */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "stretch",
+                justifyContent: "space-between",
+                borderBottom: `1px solid ${INK}`,
+                paddingBottom: 10,
+              }}
+            >
             <div style={{ display: "flex", alignItems: "baseline", gap: 16 }}>
               <div
                 style={{
@@ -654,8 +631,12 @@ export default async function NewspaperPage() {
                 ? "ライブスコア準備中です ／ "
                 : "見出し・本文はライブスコアから自動生成です ／ "}
               順位推移は
+              <span className="newspaper-scaled-label" style={{ color: "#6a6353" }}>
+                順位表
+              </span>
               <Link
                 href="/rankings/scoreboard"
+                className="newspaper-unscaled-link"
                 style={{ color: "#6a6353", textDecoration: "underline" }}
               >
                 順位表
@@ -664,7 +645,19 @@ export default async function NewspaperPage() {
             </span>
             <span>ＮＰＢ予想新聞社</span>
           </div>
+          </div>
         </div>
+        <Link
+          href="/rankings/scoreboard"
+          className="mt-3 inline-flex min-h-11 items-center rounded-sm px-4 text-sm font-semibold"
+          style={{
+            background: "var(--field)",
+            color: "#fff",
+            letterSpacing: "0.04em",
+          }}
+        >
+          順位表を開く
+        </Link>
       </div>
 
       {/* ── 球団別 一面（自動生成画像）— 既存機能を保持 ── */}

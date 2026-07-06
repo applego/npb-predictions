@@ -292,7 +292,7 @@ export default async function StandingsPage({
         >
           <Link
             href={`/rankings/scoreboard?year=${selectedYear}&view=year`}
-            className="px-3 py-1.5 text-xs font-bold tracking-wider transition-all"
+            className="inline-flex min-h-9 items-center px-3 py-1.5 text-xs font-bold tracking-wider transition-all"
             style={{
               fontFamily: "var(--font-display)",
               letterSpacing: "0.1em",
@@ -304,7 +304,7 @@ export default async function StandingsPage({
           </Link>
           <Link
             href={`/rankings/scoreboard?year=${selectedYear}&view=trend`}
-            className="px-3 py-1.5 text-xs font-bold tracking-wider transition-all"
+            className="inline-flex min-h-9 items-center px-3 py-1.5 text-xs font-bold tracking-wider transition-all"
             style={{
               fontFamily: "var(--font-display)",
               letterSpacing: "0.1em",
@@ -327,7 +327,7 @@ export default async function StandingsPage({
                 <Link
                   key={s.year}
                   href={`/rankings/scoreboard?year=${s.year}&view=year`}
-                  className="rounded-sm px-3 py-1.5 text-xs font-medium transition-all"
+                  className="inline-flex min-h-9 items-center rounded-sm px-3 py-1.5 text-xs font-medium transition-all"
                   style={{
                     fontFamily: "var(--font-display)",
                     letterSpacing: "0.06em",
@@ -361,14 +361,19 @@ export default async function StandingsPage({
           </div>
         ) : (
           <div
-            className="overflow-x-auto rounded-xl"
+            className="max-w-full overflow-x-auto rounded-xl"
             style={{
               background: "var(--bg-surface)",
               border: "1px solid var(--border-primary)",
             }}
           >
             <table
-              style={{ fontSize: "12px", borderCollapse: "collapse", width: "100%" }}
+              style={{
+                fontSize: "12px",
+                borderCollapse: "collapse",
+                width: "100%",
+                minWidth: `${254 + reversedActiveYears.length * 60}px`,
+              }}
             >
               <thead>
                 <tr style={{ borderBottom: "2px solid var(--border-primary)" }}>

@@ -20,7 +20,7 @@ export function AuthHeader() {
     return (
       <button
         onClick={signIn}
-        className="whitespace-nowrap rounded-sm px-3 py-1.5 text-xs font-medium tracking-wider transition-all"
+        className="min-h-11 whitespace-nowrap rounded-sm px-3 py-2 text-xs font-medium tracking-wider transition-all"
         style={{
           background: "var(--field)",
           color: "#fff",
@@ -37,7 +37,7 @@ export function AuthHeader() {
 
   return (
     <div className="flex items-center gap-2.5">
-      <Link href="/me" className="flex items-center gap-2 transition-opacity hover:opacity-80">
+      <Link href="/me" className="flex min-h-11 items-center gap-2 transition-opacity hover:opacity-80">
         {avatarUrl ? (
           <img
             src={avatarUrl}
@@ -59,7 +59,7 @@ export function AuthHeader() {
       </Link>
       <button
         onClick={signOut}
-        className="whitespace-nowrap text-xs transition-colors hover:text-red-600"
+        className="min-h-11 whitespace-nowrap px-1 text-xs transition-colors hover:text-red-600"
         style={{ color: "var(--text-muted)" }}
       >
         ログアウト
