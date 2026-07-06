@@ -3,11 +3,9 @@
 import { useEffect } from "react";
 import { getFirebaseAuth, onAuthStateChanged, type FirebaseUser } from "@/lib/firebase";
 import {
-  DEFAULT_BODY_FONT_ID,
   DEFAULT_COLOR_THEME_ID,
   DEFAULT_NUMBER_FONT_ID,
   getNumberFont,
-  getBodyFont,
   getColorTheme,
   buildGoogleFontsUrl,
 } from "@/lib/theme-presets";
@@ -39,15 +37,13 @@ export function ThemeLoader() {
         const data = await res.json();
         const s = data as Record<string, string>;
         const numFontId = s.font_number ?? DEFAULT_NUMBER_FONT_ID;
-        const bodyFontId = s.font_body ?? DEFAULT_BODY_FONT_ID;
         const themeId = s.color_theme ?? DEFAULT_COLOR_THEME_ID;
 
         const numFont = getNumberFont(numFontId);
-        const bodyFont = getBodyFont(bodyFontId);
         const theme = getColorTheme(themeId);
 
         // 1. Inject Google Fonts <link>
-        const fontsUrl = buildGoogleFontsUrl(numFontId, bodyFontId);
+        const fontsUrl = buildGoogleFontsUrl(numFontId);
         const existing = document.getElementById("theme-google-fonts");
         if (existing) existing.remove();
         const link = document.createElement("link");
@@ -62,10 +58,8 @@ export function ThemeLoader() {
           root.style.setProperty(key, value);
         }
         root.style.setProperty("--font-display", numFont.family);
-        root.style.setProperty("--font-body", bodyFont.family);
-
-        // 3. Apply body font-family directly
-        document.body.style.fontFamily = bodyFont.family;
+        root.style.setProperty("--font-body", "var(--font-body-default)");
+        document.body.style.fontFamily = "var(--font-body-default)";
       } catch {
         // Silently fall back to CSS defaults
       }

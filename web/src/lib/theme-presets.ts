@@ -1,4 +1,4 @@
-// Theme system: independent selection of number font, body font, and color theme
+// Theme system: independent selection of number font and color theme.
 
 // ── Number/Display Fonts ──
 
@@ -18,31 +18,6 @@ export const NUMBER_FONTS: NumberFont[] = [
   { id: "jetbrains", name: "JetBrains Mono", family: "'JetBrains Mono', monospace", googleQuery: "family=JetBrains+Mono:wght@400;700", sample: "monospace" },
   { id: "saira", name: "Saira Condensed", family: "'Saira Condensed', sans-serif", googleQuery: "family=Saira+Condensed:wght@400;700;900", sample: "scoreboard" },
   { id: "anton", name: "Anton", family: "'Anton', sans-serif", googleQuery: "family=Anton", sample: "impact" },
-];
-
-// ── Body/Japanese Fonts ──
-
-export interface BodyFont {
-  id: string;
-  name: string;
-  family: string;
-  googleQuery: string;
-}
-
-export const BODY_FONTS: BodyFont[] = [
-  // ── ゴシック体 ──
-  { id: "noto", name: "Noto Sans JP", family: "'Noto Sans JP', sans-serif", googleQuery: "family=Noto+Sans+JP:wght@400;700" },
-  { id: "zen", name: "Zen Kaku Gothic New", family: "'Zen Kaku Gothic New', sans-serif", googleQuery: "family=Zen+Kaku+Gothic+New:wght@400;700" },
-  { id: "mplus", name: "M PLUS 1p", family: "'M PLUS 1p', sans-serif", googleQuery: "family=M+PLUS+1p:wght@400;700" },
-  { id: "biz", name: "BIZ UDPGothic", family: "'BIZ UDPGothic', sans-serif", googleQuery: "family=BIZ+UDPGothic:wght@400;700" },
-  { id: "murecho", name: "Murecho", family: "'Murecho', sans-serif", googleQuery: "family=Murecho:wght@400;700" },
-  { id: "maru", name: "Zen Maru Gothic", family: "'Zen Maru Gothic', sans-serif", googleQuery: "family=Zen+Maru+Gothic:wght@400;700" },
-  // ── 明朝体（新聞風） ──
-  { id: "noto-serif", name: "Noto Serif JP", family: "'Noto Serif JP', serif", googleQuery: "family=Noto+Serif+JP:wght@400;700;900" },
-  { id: "shippori", name: "Shippori Mincho B1", family: "'Shippori Mincho B1', serif", googleQuery: "family=Shippori+Mincho+B1:wght@400;700;800" },
-  { id: "zen-old", name: "Zen Old Mincho", family: "'Zen Old Mincho', serif", googleQuery: "family=Zen+Old+Mincho:wght@400;700;900" },
-  { id: "biz-mincho", name: "BIZ UDPMincho", family: "'BIZ UDPMincho', serif", googleQuery: "family=BIZ+UDPMincho" },
-  { id: "zen-antique", name: "Zen Antique", family: "'Zen Antique', serif", googleQuery: "family=Zen+Antique" },
 ];
 
 // ── Color Themes ──
@@ -504,22 +479,16 @@ export const COLOR_THEMES: ColorTheme[] = [
 
 export const DEFAULT_COLOR_THEME_ID = "broadcast";
 export const DEFAULT_NUMBER_FONT_ID = "saira";
-export const DEFAULT_BODY_FONT_ID = "noto";
 
 export function getNumberFont(id: string): NumberFont {
   return NUMBER_FONTS.find((f) => f.id === id) ?? NUMBER_FONTS[0];
-}
-
-export function getBodyFont(id: string): BodyFont {
-  return BODY_FONTS.find((f) => f.id === id) ?? BODY_FONTS[0];
 }
 
 export function getColorTheme(id: string): ColorTheme {
   return COLOR_THEMES.find((t) => t.id === id) ?? COLOR_THEMES.find((t) => t.id === DEFAULT_COLOR_THEME_ID) ?? COLOR_THEMES[0];
 }
 
-export function buildGoogleFontsUrl(numFontId: string, bodyFontId: string): string {
+export function buildGoogleFontsUrl(numFontId: string): string {
   const nf = getNumberFont(numFontId);
-  const bf = getBodyFont(bodyFontId);
-  return `https://fonts.googleapis.com/css2?${nf.googleQuery}&${bf.googleQuery}&display=swap`;
+  return `https://fonts.googleapis.com/css2?${nf.googleQuery}&display=swap`;
 }
