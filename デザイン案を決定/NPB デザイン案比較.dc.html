@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira+Semi+Condensed:wght@500;600;700&family=Saira:wght@400;500;600&family=Sora:wght@400;600;700;800&family=Spline+Sans+Mono:wght@400;500;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Newsreader:ital,opsz,wght@1,6..72,400&family=Shippori+Mincho+B1:wght@700;800&family=Shippori+Mincho:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+::-webkit-scrollbar{width:10px;height:10px;}
+::-webkit-scrollbar-thumb{background:rgba(120,120,110,0.35);border-radius:8px;}
+::-webkit-scrollbar-track{background:transparent;}
+button{font:inherit;}
+</style>
+</helmet>
+<div style="min-width:100%;min-height:100vh;width:max-content;box-sizing:border-box;padding:28px 32px 56px;background:#e7e5df;font-family:'Saira',system-ui,sans-serif;">
+
+  <div style="position:sticky;top:14px;z-index:60;display:flex;align-items:center;gap:18px;background:#16140f;color:#fff;border-radius:14px;padding:13px 18px;box-shadow:0 10px 30px rgba(20,18,12,0.28);margin-bottom:24px;flex-wrap:wrap;">
+    <div style="display:flex;flex-direction:column;gap:1px;padding-right:14px;border-right:1px solid rgba(255,255,255,0.14);">
+      <div style="font-family:'Saira Semi Condensed',sans-serif;font-weight:700;font-size:16px;letter-spacing:0.01em;white-space:nowrap;">{{ title }}</div>
+      <div style="font-family:'Spline Sans Mono',monospace;font-size:10px;letter-spacing:0.16em;color:rgba(255,255,255,0.5);text-transform:uppercase;">{{ sub }}</div>
+    </div>
+    <div style="display:flex;gap:4px;background:rgba(255,255,255,0.06);padding:4px;border-radius:10px;">
+      <sc-for list="{{ pageTabs }}" as="tab" hint-placeholder-count="4">
+        <button onClick="{{ tab.on }}" style="font-family:'Saira',sans-serif;font-size:13px;font-weight:{{ tab.weight }};padding:7px 15px;border-radius:7px;border:none;background:{{ tab.bg }};color:{{ tab.fg }};cursor:pointer;white-space:nowrap;transition:all .15s;">{{ tab.label }}</button>
+      </sc-for>
+    </div>
+    <sc-if value="{{ isExpanded }}" hint-placeholder-val="{{ true }}">
+      <button onClick="{{ onCollapse }}" style="margin-left:auto;font-family:'Spline Sans Mono',monospace;font-size:11px;letter-spacing:0.1em;padding:8px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:transparent;color:#fff;cursor:pointer;">◀ 3案を並べて比較</button>
+    </sc-if>
+  </div>
+
+  <div style="display:flex;gap:26px;align-items:flex-start;">
+    <sc-for list="{{ lanes }}" as="lane" hint-placeholder-count="3">
+      <div data-screen-label="案{{ lane.id }}" style="flex:none;width:{{ lane.frameW }}px;display:{{ lane.display }};">
+
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:11px;padding:0 2px;gap:10px;">
+          <div style="min-width:0;">
+            <div style="font-family:'Spline Sans Mono',monospace;font-size:10px;letter-spacing:0.22em;color:#9b988f;">案 {{ lane.id }} ／ {{ lane.en }}</div>
+            <div style="display:flex;align-items:baseline;gap:8px;">
+              <span style="font-family:'Saira Semi Condensed',sans-serif;font-weight:700;font-size:21px;color:#23211b;">{{ lane.label }}</span>
+              <span style="font-size:12px;color:#88857c;">{{ lane.sub }}</span>
+            </div>
+          </div>
+          <button onClick="{{ lane.onExpand }}" style="flex:none;font-family:'Spline Sans Mono',monospace;font-size:10px;letter-spacing:0.08em;padding:7px 11px;border-radius:7px;border:1px solid #cfccc2;background:#fff;color:#56544c;cursor:pointer;white-space:nowrap;">{{ lane.expandLabel }}</button>
+        </div>
+
+        <div style="height:768px;overflow:auto;background:{{ lane.theme.frame }};border:1px solid {{ lane.theme.border }};border-radius:{{ lane.theme.radius }}px;box-shadow:0 6px 22px rgba(20,18,12,0.10);font-family:{{ lane.theme.fontBody }};color:{{ lane.theme.ink }};position:relative;">
+
+          <div style="position:sticky;top:0;z-index:8;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 16px;background:{{ lane.theme.headerBg }};color:{{ lane.theme.headerInk }};border-bottom:1px solid {{ lane.theme.border }};">
+            <div style="font-family:{{ lane.theme.fontDisp }};font-weight:{{ lane.theme.dispWeight }};font-size:14px;letter-spacing:{{ lane.theme.dispSpacing }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ lane.brand }}</div>
+            <div style="flex:none;font-family:'Spline Sans Mono',monospace;font-size:9.5px;letter-spacing:0.14em;opacity:0.62;text-transform:uppercase;white-space:nowrap;">2025 SEASON</div>
+          </div>
+
+          <div style="padding:10px 14px;border-bottom:1px solid {{ lane.theme.line }};display:flex;gap:6px;background:{{ lane.theme.frame }};">
+            <sc-if value="{{ lane.show.league }}" hint-placeholder-val="{{ true }}">
+              <sc-for list="{{ lane.yearTabs }}" as="tab" hint-placeholder-count="3">
+                <button onClick="{{ tab.on }}" style="font-family:{{ lane.theme.fontBody }};font-size:12px;font-weight:{{ tab.weight }};padding:6px 13px;border-radius:{{ lane.theme.chipRadius }}px;border:1px solid {{ tab.bd }};background:{{ tab.bg }};color:{{ tab.fg }};cursor:pointer;">{{ tab.label }}</button>
+              </sc-for>
+            </sc-if>
+            <sc-if value="{{ lane.showLeagueTabs }}" hint-placeholder-val="{{ true }}">
+              <sc-for list="{{ lane.leagueTabs }}" as="tab" hint-placeholder-count="2">
+                <button onClick="{{ tab.on }}" style="font-family:{{ lane.theme.fontBody }};font-size:12px;font-weight:{{ tab.weight }};padding:6px 14px;border-radius:{{ lane.theme.chipRadius }}px;border:1px solid {{ tab.bd }};background:{{ tab.bg }};color:{{ tab.fg }};cursor:pointer;">{{ tab.label }}</button>
+              </sc-for>
+            </sc-if>
+          </div>
+
+          <!-- ================= TITLES ================= -->
+          <sc-if value="{{ lane.show.titles }}" hint-placeholder-val="{{ true }}">
+            <div style="padding:16px 14px 22px;">
+              <div style="font-family:'Spline Sans Mono',monospace;font-size:10px;letter-spacing:{{ lane.theme.kicker }};text-transform:uppercase;color:{{ lane.theme.accent }};margin-bottom:5px;">{{ lane.copy.titlesKick }}</div>
+              <div style="font-family:{{ lane.theme.fontDisp }};font-weight:{{ lane.theme.dispWeight }};font-size:25px;letter-spacing:{{ lane.theme.dispSpacing }};margin-bottom:14px;line-height:1.1;">{{ lane.copy.titlesTitle }}</div>
+
+              <!-- A : table -->
+              <sc-if value="{{ lane.isTable }}" hint-placeholder-val="{{ true }}">
+                <div style="overflow-x:auto;border:1px solid {{ lane.theme.border }};border-radius:8px;">
+                  <div style="min-width:560px;">
+                    <div style="display:grid;grid-template-columns:84px 96px repeat(5,minmax(88px,1fr));background:{{ lane.theme.surface2 }};border-bottom:2px solid {{ lane.theme.ink }};">
+                      <div style="padding:8px 9px;font-size:11px;font-weight:600;color:{{ lane.theme.muted }};">タイトル</div>
+                      <div style="padding:8px 9px;font-size:11px;font-weight:600;color:{{ lane.theme.accent2 }};border-left:1px solid {{ lane.theme.line }};">実際の結果</div>
+                      <sc-for list="{{ lane.userNames }}" as="u" hint-placeholder-count="5">
+                        <div style="padding:8px 9px;font-size:11px;font-weight:600;color:{{ lane.theme.muted }};border-left:1px solid {{ lane.theme.line }};text-align:center;">{{ u }}</div>
+                      </sc-for>
+                    </div>
+                    <sc-for list="{{ lane.titleRows }}" as="row" hint-placeholder-count="7">
+                      <div style="display:grid;grid-template-columns:84px 96px repeat(5,minmax(88px,1fr));border-top:1px solid {{ lane.theme.line }};">
+                        <div style="padding:9px;font-size:12px;font-weight:600;display:flex;flex-direction:column;gap:3px;">{{ row.cat }}<span style="font-family:'Spline Sans Mono',monospace;font-size:8px;letter-spacing:0.06em;color:{{ row.actualFg }};">{{ row.statusLabel }}</span></div>
+                        <div style="padding:9px;border-left:1px solid {{ lane.theme.line }};background:{{ row.actualBg }};display:flex;align-items:center;gap:5px;">
+                          <sc-if value="{{ row.isFixed }}" hint-placeholder-val="{{ true }}"><span style="flex:none;width:17px;height:17px;border-radius:{{ lane.theme.chipRadius }}px;background:{{ row.actualTeam.color }};color:{{ row.actualTeam.ink }};font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ row.actualTeam.mark }}</span></sc-if>
+                          <span style="font-size:11px;font-weight:600;color:{{ row.actualFg }};">{{ row.actualName }}</span>
+                        </div>
+                        <sc-for list="{{ row.cells }}" as="c" hint-placeholder-count="5">
+                          <div style="padding:8px;border-left:1px solid {{ lane.theme.line }};background:{{ c.bg }};display:flex;flex-direction:column;gap:4px;">
+                            <div style="display:flex;align-items:center;gap:4px;"><span style="flex:none;width:16px;height:16px;border-radius:{{ lane.theme.chipRadius }}px;background:{{ c.team.color }};color:{{ c.team.ink }};font-size:8.5px;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ c.team.mark }}</span><span style="font-size:8.5px;color:{{ lane.theme.faint }};">{{ c.team.name }}</span></div>
+                            <div style="display:flex;align-items:center;justify-content:space-between;"><span style="font-size:11px;color:{{ c.ink }};">{{ c.player }}</span><span style="font-size:12px;font-weight:700;color:{{ c.mk }};">{{ c.mark }}</span></div>
+                          </div>
+                        </sc-for>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-if>
+
+              <!-- B : cards -->
+              <sc-if value="{{ lane.isCards }}" hint-placeholder-val="{{ true }}">
+                <sc-for list="{{ lane.titleRows }}" as="row" hint-placeholder-count="7">
+                  <div style="background:{{ lane.theme.surface }};border:1px solid {{ lane.theme.border }};border-radius:16px;padding:13px;margin-bottom:11px;box-shadow:{{ lane.theme.shadow }};">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;">
+                      <div style="font-family:{{ lane.theme.fontDisp }};font-weight:700;font-size:16px;">{{ row.cat }}</div>
+                      <div style="display:flex;align-items:center;gap:7px;padding:4px 9px;border-radius:20px;background:{{ row.actualBg }};">
+                        <span style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:0.08em;color:{{ row.actualFg }};">{{ row.statusLabel }}</span>
+                        <sc-if value="{{ row.isFixed }}" hint-placeholder-val="{{ true }}"><span style="font-size:11px;font-weight:600;color:{{ row.actualFg }};">{{ row.actualName }}</span></sc-if>
+                      </div>
+                    </div>
+                    <div style="display:flex;gap:7px;overflow-x:auto;padding-bottom:3px;">
+                      <sc-for list="{{ row.cells }}" as="c" hint-placeholder-count="5">
+                        <div style="flex:none;width:98px;background:{{ c.bg }};border:1px solid {{ c.bd }};border-radius:11px;padding:9px;display:flex;flex-direction:column;gap:6px;">
+                          <div style="display:flex;align-items:center;justify-content:space-between;"><span style="font-size:11px;color:{{ lane.theme.muted }};">{{ c.name }}</span><span style="font-size:13px;font-weight:700;color:{{ c.mk }};">{{ c.mark }}</span></div>
+                          <div style="display:flex;align-items:center;gap:5px;"><span style="flex:none;width:18px;height:18px;border-radius:{{ lane.theme.chipRadius }}px;background:{{ c.team.color }};color:{{ c.team.ink }};font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ c.team.mark }}</span><span style="font-size:11.5px;color:{{ c.ink }};">{{ c.player }}</span></div>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-for>
+              </sc-if>
+
+              <!-- C : paper -->
+              <sc-if value="{{ lane.isPaper }}" hint-placeholder-val="{{ true }}">
+                <div style="border-top:2px solid {{ lane.theme.ink }};">
+                  <sc-for list="{{ lane.titleRows }}" as="row" hint-placeholder-count="7">
+                    <div style="border-bottom:1px solid {{ lane.theme.line }};padding:12px 2px;">
+                      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;">
+                        <div style="font-family:{{ lane.theme.fontDisp }};font-weight:600;font-size:18px;">{{ row.cat }}</div>
+                        <div style="display:flex;align-items:baseline;gap:6px;"><span style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:0.1em;color:{{ lane.theme.faint }};">結果</span><span style="font-size:14px;font-weight:600;color:{{ row.actualFg }};font-style:italic;">{{ row.actualName }}</span></div>
+                      </div>
+                      <div style="display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:8px;">
+                        <sc-for list="{{ row.cells }}" as="c" hint-placeholder-count="5">
+                          <div style="display:flex;align-items:center;gap:5px;font-size:13px;"><span style="color:{{ lane.theme.muted }};">{{ c.name }}</span><span style="color:{{ lane.theme.faint }};">—</span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:{{ c.team.color }};"></span><span style="color:{{ c.ink }};">{{ c.player }}</span><span style="font-weight:700;color:{{ c.mk }};">{{ c.mark }}</span></div>
+                        </sc-for>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+
+              <!-- summary (shared) -->
+              <div style="margin-top:16px;">
+                <div style="font-family:'Spline Sans Mono',monospace;font-size:10px;letter-spacing:{{ lane.theme.kicker }};text-transform:uppercase;color:{{ lane.theme.muted }};margin-bottom:8px;">TITLE SCORE ・ 確定{{ lane.fixedCount }}タイトル</div>
+                <div style="display:flex;gap:7px;">
+                  <sc-for list="{{ lane.summary }}" as="s" hint-placeholder-count="5">
+                    <div style="flex:1;background:{{ lane.theme.surface }};border:1px solid {{ lane.theme.border }};border-top:3px solid {{ s.color }};border-radius:{{ lane.theme.chipRadius }}px;padding:9px 4px;text-align:center;">
+                      <div style="font-size:10px;color:{{ lane.theme.muted }};">{{ s.name }}</div>
+                      <div style="font-family:'Spline Sans Mono',monospace;font-weight:700;font-size:19px;color:{{ lane.theme.ink }};">{{ s.pos }}</div>
+                      <div style="font-size:9px;color:{{ lane.theme.faint }};">{{ s.hits }}/{{ s.fixed }} 的中</div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- ================= LEAGUE ================= -->
+          <sc-if value="{{ lane.show.league }}" hint-placeholder-val="{{ true }}">
+            <div style="padding:16px 14px 22px;">
+              <div style="font-family:'Spline Sans Mono',monospace;font-size:10px;letter-spacing:{{ lane.theme.kicker }};text-transform:uppercase;color:{{ lane.theme.accent }};margin-bottom:5px;">{{ lane.copy.leagueKick }}</div>
+              <div style="font-family:{{ lane.theme.fontDisp }};font-weight:{{ lane.theme.dispWeight }};font-size:25px;letter-spacing:{{ lane.theme.dispSpacing }};margin-bottom:14px;line-height:1.1;">{{ lane.copy.leagueTitle }}</div>
+
+              <div style="background:{{ lane.theme.surface }};border:1px solid {{ lane.theme.border }};border-radius:{{ lane.theme.radius }}px;padding:13px;margin-bottom:14px;box-shadow:{{ lane.theme.shadow }};">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"><span style="font-family:'Spline Sans Mono',monospace;font-size:10px;letter-spacing:0.14em;color:{{ lane.theme.muted }};">RANK TREND ・ 月次順位推移</span></div>
+                <svg viewBox="0 0 320 178" style="width:100%;height:auto;display:block;">
+                  <line x1="16" y1="18" x2="312" y2="18" stroke="{{ lane.theme.line }}" stroke-width="1"/>
+                  <line x1="16" y1="52" x2="312" y2="52" stroke="{{ lane.theme.line }}" stroke-width="1"/>
+                  <line x1="16" y1="86" x2="312" y2="86" stroke="{{ lane.theme.line }}" stroke-width="1"/>
+                  <line x1="16" y1="120" x2="312" y2="120" stroke="{{ lane.theme.line }}" stroke-width="1"/>
+                  <line x1="16" y1="154" x2="312" y2="154" stroke="{{ lane.theme.line }}" stroke-width="1"/>
+                  <text x="6" y="21" font-size="8" fill="{{ lane.theme.faint }}" font-family="monospace">1</text>
+                  <text x="6" y="55" font-size="8" fill="{{ lane.theme.faint }}" font-family="monospace">2</text>
+                  <text x="6" y="89" font-size="8" fill="{{ lane.theme.faint }}" font-family="monospace">3</text>
+                  <text x="6" y="123" font-size="8" fill="{{ lane.theme.faint }}" font-family="monospace">4</text>
+                  <text x="6" y="157" font-size="8" fill="{{ lane.theme.faint }}" font-family="monospace">5</text>
+                  <sc-for list="{{ lane.monthTicks }}" as="m" hint-placeholder-count="7">
+                    <text x="{{ m.x }}" y="174" font-size="8" fill="{{ lane.theme.faint }}" font-family="monospace" text-anchor="middle">{{ m.m }}</text>
+                  </sc-for>
+                  <sc-for list="{{ lane.chartLines }}" as="ln" hint-placeholder-count="5">
+                    <polyline points="{{ ln.points }}" fill="none" stroke="{{ ln.color }}" stroke-width="{{ lane.theme.chartStroke }}" stroke-linejoin="round" stroke-linecap="round" style="filter:{{ lane.theme.lineFilter }};"></polyline>
+                  </sc-for>
+                  <sc-for list="{{ lane.chartLines }}" as="ln" hint-placeholder-count="5">
+                    <circle cx="{{ ln.dx }}" cy="{{ ln.dy }}" r="{{ lane.theme.chartDot }}" fill="{{ ln.color }}"></circle>
+                  </sc-for>
+                </svg>
+                <div style="display:flex;gap:11px;flex-wrap:wrap;margin-top:8px;">
+                  <sc-for list="{{ lane.chartLines }}" as="ln" hint-placeholder-count="5">
+                    <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:{{ lane.theme.muted }};"><span style="width:11px;height:3px;border-radius:2px;background:{{ ln.color }};"></span>{{ ln.name }}</span>
+                  </sc-for>
+                </div>
+              </div>
+
+              <div style="font-family:'Spline Sans Mono',monospace;font-size:10px;letter-spacing:{{ lane.theme.kicker }};text-transform:uppercase;color:{{ lane.theme.muted }};margin-bottom:8px;">CURRENT STANDINGS</div>
+
+              <!-- B cards -->
+              <sc-if value="{{ lane.isCards }}" hint-placeholder-val="{{ true }}">
+                <sc-for list="{{ lane.standRows }}" as="s" hint-placeholder-count="5">
+                  <div style="display:flex;align-items:center;gap:11px;background:{{ lane.theme.surface }};border:1px solid {{ lane.theme.border }};border-radius:14px;padding:11px 12px;margin-bottom:8px;box-shadow:{{ lane.theme.shadow }};">
+                    <div style="flex:none;width:32px;height:32px;border-radius:9px;background:{{ s.medalBg }};color:{{ s.medalFg }};display:flex;align-items:center;justify-content:center;font-family:'Spline Sans Mono',monospace;font-weight:700;font-size:14px;">{{ s.rank }}</div>
+                    <div style="flex:1;min-width:0;">
+                      <div style="display:flex;align-items:baseline;justify-content:space-between;"><span style="font-size:14px;font-weight:600;">{{ s.user }}</span><span style="font-family:'Spline Sans Mono',monospace;font-size:11px;color:{{ lane.theme.faint }};">順位{{ s.rankPt }} ・ 冠{{ s.titlePt }}</span></div>
+                      <div style="height:7px;background:{{ lane.theme.surface2 }};border-radius:6px;overflow:hidden;margin-top:6px;"><div style="height:100%;width:{{ s.barPct }}%;background:{{ s.barColor }};border-radius:6px;"></div></div>
+                    </div>
+                    <div style="font-family:'Spline Sans Mono',monospace;font-weight:700;font-size:22px;color:{{ lane.theme.accent }};">{{ s.total }}</div>
+                  </div>
+                </sc-for>
+              </sc-if>
+
+              <!-- A / C table -->
+              <sc-if value="{{ lane.notCards }}" hint-placeholder-val="{{ true }}">
+                <div style="border-top:1px solid {{ lane.theme.ink }};">
+                  <div style="display:grid;grid-template-columns:30px 1fr 50px 44px 52px;align-items:center;gap:4px;padding:7px 2px;border-bottom:1px solid {{ lane.theme.line }};font-size:10px;color:{{ lane.theme.muted }};font-family:'Spline Sans Mono',monospace;">
+                    <div>#</div><div>予想者</div><div style="text-align:right;">順位点</div><div style="text-align:right;">冠</div><div style="text-align:right;">合計</div>
+                  </div>
+                  <sc-for list="{{ lane.standRows }}" as="s" hint-placeholder-count="5">
+                    <div style="padding-top:8px;">
+                      <div style="display:grid;grid-template-columns:30px 1fr 50px 44px 52px;align-items:center;gap:4px;">
+                        <div style="width:22px;height:22px;border-radius:{{ lane.theme.chipRadius }}px;background:{{ s.medalBg }};color:{{ s.medalFg }};display:flex;align-items:center;justify-content:center;font-family:'Spline Sans Mono',monospace;font-weight:700;font-size:11px;">{{ s.rank }}</div>
+                        <div style="font-size:14px;font-weight:600;">{{ s.user }}</div>
+                        <div style="text-align:right;font-family:'Spline Sans Mono',monospace;font-size:13px;color:{{ lane.theme.muted }};">{{ s.rankPt }}</div>
+                        <div style="text-align:right;font-family:'Spline Sans Mono',monospace;font-size:13px;color:{{ lane.theme.muted }};">{{ s.titlePt }}</div>
+                        <div style="text-align:right;font-family:'Spline Sans Mono',monospace;font-size:16px;font-weight:700;color:{{ lane.theme.ink }};">{{ s.total }}</div>
+                      </div>
+                      <div style="height:3px;background:{{ lane.theme.line }};border-radius:2px;overflow:hidden;margin:7px 0 8px;"><div style="height:100%;width:{{ s.barPct }}%;background:{{ s.barColor }};"></div></div>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <!-- ================= PREDICTIONS ================= -->
+          <sc-if value="{{ lane.show.predictions }}" hint-placeholder-val="{{ true }}">
+            <div style="padding:16px 14px 22px;">
+              <div style="font-family:'Spline Sans Mono',monospace;font-size:10px;letter-spacing:{{ lane.theme.kicker }};text-transform:uppercase;color:{{ lane.theme.accent }};margin-bottom:5px;">{{ lane.copy.predKick }}</div>
+              <div style="font-family:{{ lane.theme.fontDisp }};font-weight:{{ lane.theme.dispWeight }};font-size:25px;letter-spacing:{{ lane.theme.dispSpacing }};margin-bottom:14px;line-height:1.1;">{{ lane.copy.predTitle }}</div>
+
+              <!-- B user cards -->
+              <sc-if value="{{ lane.isCards }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;gap:9px;overflow-x:auto;padding-bottom:4px;">
+                  <div style="flex:none;width:118px;background:{{ lane.theme.surface2 }};border:1px solid {{ lane.theme.border }};border-radius:13px;padding:9px;">
+                    <div style="font-family:'Spline Sans Mono',monospace;font-size:10px;letter-spacing:0.1em;color:{{ lane.theme.accent2 }};margin-bottom:8px;">確定順位</div>
+                    <sc-for list="{{ lane.predActual.items }}" as="it" hint-placeholder-count="6">
+                      <div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-top:1px solid {{ lane.theme.line }};"><span style="font-family:'Spline Sans Mono',monospace;font-size:11px;color:{{ lane.theme.faint }};width:14px;">{{ it.rank }}</span><span style="flex:none;width:18px;height:18px;border-radius:{{ lane.theme.chipRadius }}px;background:{{ it.team.color }};color:{{ it.team.ink }};font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ it.team.mark }}</span><span style="font-size:11px;">{{ it.team.name }}</span></div>
+                    </sc-for>
+                  </div>
+                  <sc-for list="{{ lane.predUsers }}" as="u" hint-placeholder-count="5">
+                    <div style="flex:none;width:118px;background:{{ lane.theme.surface }};border:1px solid {{ lane.theme.border }};border-top:3px solid {{ u.color }};border-radius:13px;padding:9px;box-shadow:{{ lane.theme.shadow }};">
+                      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;"><span style="font-size:12px;font-weight:600;">{{ u.name }}</span><span style="font-family:'Spline Sans Mono',monospace;font-size:9px;color:{{ lane.theme.accent }};">{{ u.hits }}的中</span></div>
+                      <sc-for list="{{ u.items }}" as="it" hint-placeholder-count="6">
+                        <div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-top:1px solid {{ lane.theme.line }};background:{{ it.bg }};"><span style="font-family:'Spline Sans Mono',monospace;font-size:11px;color:{{ lane.theme.faint }};width:14px;">{{ it.rank }}</span><span style="flex:none;width:18px;height:18px;border-radius:{{ lane.theme.chipRadius }}px;background:{{ it.team.color }};color:{{ it.team.ink }};font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ it.team.mark }}</span><span style="font-size:11px;flex:1;">{{ it.team.name }}</span><span style="font-size:11px;font-weight:700;color:{{ it.mk }};">{{ it.mark }}</span></div>
+                      </sc-for>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+
+              <!-- A / C grid -->
+              <sc-if value="{{ lane.notCards }}" hint-placeholder-val="{{ true }}">
+                <div style="overflow-x:auto;border:1px solid {{ lane.theme.border }};border-radius:8px;">
+                  <div style="min-width:600px;">
+                    <div style="display:grid;grid-template-columns:42px 92px repeat(5,minmax(86px,1fr));background:{{ lane.theme.surface2 }};border-bottom:2px solid {{ lane.theme.ink }};">
+                      <div style="padding:8px 6px;font-size:11px;font-weight:600;color:{{ lane.theme.muted }};">順位</div>
+                      <div style="padding:8px 6px;font-size:11px;font-weight:600;color:{{ lane.theme.accent2 }};border-left:1px solid {{ lane.theme.line }};">確定</div>
+                      <sc-for list="{{ lane.userNames }}" as="u" hint-placeholder-count="5">
+                        <div style="padding:8px 6px;font-size:11px;font-weight:600;color:{{ lane.theme.muted }};border-left:1px solid {{ lane.theme.line }};text-align:center;">{{ u }}</div>
+                      </sc-for>
+                    </div>
+                    <sc-for list="{{ lane.predRows }}" as="row" hint-placeholder-count="6">
+                      <div style="display:grid;grid-template-columns:42px 92px repeat(5,minmax(86px,1fr));border-top:1px solid {{ lane.theme.line }};">
+                        <div style="padding:9px 6px;font-family:'Spline Sans Mono',monospace;font-size:14px;font-weight:700;color:{{ lane.theme.muted }};">{{ row.rank }}</div>
+                        <div style="padding:8px 6px;border-left:1px solid {{ lane.theme.line }};background:{{ lane.theme.fixedBg }};display:flex;align-items:center;gap:5px;"><span style="flex:none;width:17px;height:17px;border-radius:{{ lane.theme.chipRadius }}px;background:{{ row.actualTeam.color }};color:{{ row.actualTeam.ink }};font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ row.actualTeam.mark }}</span><span style="font-size:10.5px;font-weight:600;">{{ row.actualTeam.name }}</span></div>
+                        <sc-for list="{{ row.cells }}" as="c" hint-placeholder-count="5">
+                          <div style="padding:8px 6px;border-left:1px solid {{ lane.theme.line }};background:{{ c.bg }};display:flex;align-items:center;gap:4px;"><span style="flex:none;width:16px;height:16px;border-radius:{{ lane.theme.chipRadius }}px;background:{{ c.team.color }};color:{{ c.team.ink }};font-size:8.5px;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ c.team.mark }}</span><span style="font-size:10px;flex:1;">{{ c.team.name }}</span><span style="font-size:10px;font-weight:700;color:{{ c.mk }};">{{ c.mark }}</span></div>
+                        </sc-for>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-if>
+              <div style="margin-top:10px;font-size:11px;color:{{ lane.theme.faint }};">※ 背景ハイライトは確定順位との一致（的中）を示します。</div>
+            </div>
+          </sc-if>
+
+          <!-- ================= NEW ================= -->
+          <sc-if value="{{ lane.show.newpred }}" hint-placeholder-val="{{ true }}">
+            <div style="padding:16px 14px 22px;">
+              <sc-if value="{{ lane.submitted }}" hint-placeholder-val="{{ true }}">
+                <div style="text-align:center;padding:40px 16px;">
+                  <div style="width:64px;height:64px;border-radius:50%;background:{{ lane.theme.hitBg }};border:2px solid {{ lane.theme.hit }};color:{{ lane.theme.hit }};display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 18px;">✓</div>
+                  <div style="font-family:{{ lane.theme.fontDisp }};font-weight:{{ lane.theme.dispWeight }};font-size:23px;margin-bottom:8px;">予想を登録しました</div>
+                  <div style="font-size:13px;color:{{ lane.theme.muted }};margin-bottom:22px;line-height:1.6;">{{ lane.leagueName }}の順位予想とタイトル予想を<br>受け付けました。マイページで確認できます。</div>
+                  <button onClick="{{ lane.onReset }}" style="font-family:{{ lane.theme.fontBody }};font-size:13px;font-weight:600;padding:11px 24px;border-radius:{{ lane.theme.chipRadius }}px;border:1px solid {{ lane.theme.border }};background:{{ lane.theme.surface2 }};color:{{ lane.theme.ink }};cursor:pointer;">もう一度入力する</button>
+                </div>
+              </sc-if>
+              <sc-if value="{{ lane.notSubmitted }}" hint-placeholder-val="{{ true }}">
+                <div style="font-family:'Spline Sans Mono',monospace;font-size:10px;letter-spacing:{{ lane.theme.kicker }};text-transform:uppercase;color:{{ lane.theme.accent }};margin-bottom:5px;">{{ lane.copy.newKick }}</div>
+                <div style="font-family:{{ lane.theme.fontDisp }};font-weight:{{ lane.theme.dispWeight }};font-size:24px;letter-spacing:{{ lane.theme.dispSpacing }};margin-bottom:14px;line-height:1.1;">{{ lane.copy.newTitle }}</div>
+
+                <div style="font-size:12px;color:{{ lane.theme.muted }};margin-bottom:9px;">{{ lane.leagueName }}の順位予想 ・ ドラッグまたは ▲▼ で並び替え</div>
+                <sc-for list="{{ lane.orderRows }}" as="row" hint-placeholder-count="6">
+                  <div draggable="true" onDragStart="{{ row.onDragStart }}" onDragOver="{{ row.onDragOver }}" onDrop="{{ row.onDrop }}" style="display:flex;align-items:center;gap:10px;padding:11px 11px;border:1px solid {{ lane.theme.border }};border-radius:{{ lane.theme.radius }}px;margin-bottom:7px;background:{{ lane.theme.surface }};box-shadow:{{ lane.theme.shadow }};cursor:grab;">
+                    <div style="font-family:'Spline Sans Mono',monospace;font-size:16px;font-weight:700;color:{{ lane.theme.accent }};width:20px;">{{ row.no }}</div>
+                    <div style="flex:none;width:26px;height:26px;border-radius:{{ lane.theme.chipRadius }}px;background:{{ row.team.color }};color:{{ row.team.ink }};font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ row.team.mark }}</div>
+                    <div style="flex:1;font-size:15px;font-weight:600;">{{ row.team.name }}</div>
+                    <button onClick="{{ row.up }}" style="width:30px;height:30px;border-radius:7px;border:1px solid {{ lane.theme.border }};background:{{ lane.theme.surface2 }};color:{{ lane.theme.muted }};cursor:pointer;font-size:12px;">▲</button>
+                    <button onClick="{{ row.down }}" style="width:30px;height:30px;border-radius:7px;border:1px solid {{ lane.theme.border }};background:{{ lane.theme.surface2 }};color:{{ lane.theme.muted }};cursor:pointer;font-size:12px;">▼</button>
+                    <div style="color:{{ lane.theme.faint }};font-size:16px;letter-spacing:-2px;cursor:grab;">⋮⋮</div>
+                  </div>
+                </sc-for>
+
+                <div style="margin-top:16px;font-size:12px;color:{{ lane.theme.muted }};margin-bottom:9px;">タイトル予想 ・ タップで候補を切替</div>
+                <div style="display:flex;gap:9px;flex-wrap:wrap;margin-bottom:20px;">
+                  <sc-for list="{{ lane.picks }}" as="p" hint-placeholder-count="2">
+                    <button onClick="{{ p.on }}" style="flex:1;min-width:140px;text-align:left;padding:11px 13px;border:1px solid {{ lane.theme.border }};border-radius:{{ lane.theme.radius }}px;background:{{ lane.theme.surface }};cursor:pointer;">
+                      <div style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:0.1em;color:{{ lane.theme.faint }};margin-bottom:4px;">{{ p.label }}</div>
+                      <div style="display:flex;align-items:center;justify-content:space-between;"><span style="font-size:15px;font-weight:600;color:{{ lane.theme.ink }};">{{ p.name }}</span><span style="font-size:11px;color:{{ lane.theme.accent }};">切替 ⟳</span></div>
+                    </button>
+                  </sc-for>
+                </div>
+
+                <button onClick="{{ lane.onSubmit }}" style="width:100%;padding:15px;border-radius:{{ lane.theme.radius }}px;border:none;background:{{ lane.theme.accent }};color:{{ lane.theme.onAccent }};font-family:{{ lane.theme.fontDisp }};font-weight:{{ lane.theme.dispWeight }};font-size:16px;letter-spacing:{{ lane.theme.dispSpacing }};cursor:pointer;box-shadow:{{ lane.theme.shadow }};">{{ lane.copy.newCta }}</button>
+              </sc-if>
+            </div>
+          </sc-if>
+
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="margin-top:22px;max-width:760px;font-size:12px;color:#8a877e;line-height:1.6;font-family:'Spline Sans Mono',monospace;letter-spacing:0.02em;">
+    上部タブでページ切替（タイトル予想 / リーグ順位 / 順位予想 / 予想登録）。各案の「拡大 ▶」でデスクトップ幅のレスポンシブ表示に。リーグ・年・並び替え・登録は実際に操作できます。データはUX設計書のサンプル（鈴木誠也・岡本和真ほか）。
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;defaultPage&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;titles&quot;,&quot;league&quot;,&quot;predictions&quot;,&quot;newpred&quot;],&quot;default&quot;:&quot;titles&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;defaultLeague&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;central&quot;,&quot;pacific&quot;],&quot;default&quot;:&quot;central&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  constructor(p){
+    super(p);
+    this.state = {
+      page: p.defaultPage || 'titles',
+      league: p.defaultLeague || 'central',
+      year: 2025,
+      expanded: null,
+      order: ['hanshin','giants','hiroshima','chunichi','denav','yakult'],
+      dragIndex: null,
+      submitted: false,
+      tp1: 0,
+      tp2: 0,
+    };
+    this.TEAMS = {
+      hanshin:{name:'阪神',color:'#f5c518',ink:'#16140f',mark:'神'},
+      giants:{name:'巨人',color:'#ec6a1a',ink:'#ffffff',mark:'巨'},
+      hiroshima:{name:'広島',color:'#c8202f',ink:'#ffffff',mark:'広'},
+      chunichi:{name:'中日',color:'#1f4e9c',ink:'#ffffff',mark:'中'},
+      denav:{name:'DeNA',color:'#1f7fc4',ink:'#ffffff',mark:'De'},
+      yakult:{name:'ヤクルト',color:'#15518f',ink:'#ffffff',mark:'ヤ'},
+      softbank:{name:'ソフトバンク',color:'#f3c200',ink:'#16140f',mark:'鷹'},
+      nippon:{name:'日本ハム',color:'#005f9e',ink:'#ffffff',mark:'日'},
+      lotte:{name:'ロッテ',color:'#1d1d1d',ink:'#ffffff',mark:'ロ'},
+      rakuten:{name:'楽天',color:'#8a0b1e',ink:'#ffffff',mark:'楽'},
+      seibu:{name:'西武',color:'#0b2b66',ink:'#ffffff',mark:'西'},
+      orix:{name:'オリックス',color:'#1a1a2e',ink:'#e7c873',mark:'オ'},
+    };
+    this.LEAGUES = {
+      central:{
+        actual:['hanshin','hiroshima','giants','chunichi','yakult','denav'],
+        preds:{
+          A:['hanshin','giants','hiroshima','chunichi','denav','yakult'],
+          B:['hanshin','hiroshima','giants','chunichi','yakult','denav'],
+          C:['giants','hanshin','hiroshima','denav','chunichi','yakult'],
+          D:['hiroshima','hanshin','giants','chunichi','yakult','denav'],
+          E:['hanshin','giants','chunichi','hiroshima','denav','yakult'],
+        },
+        titles:[
+          {cat:'首位打者',status:'fixed',actual:{p:'鈴木 誠也',t:'hiroshima'},picks:{A:{p:'鈴木 誠也',t:'hiroshima'},B:{p:'丸 佳浩',t:'giants'},C:{p:'近本 光司',t:'hanshin'},D:{p:'牧 秀悟',t:'denav'},E:{p:'岡林 勇希',t:'chunichi'}}},
+          {cat:'本塁打王',status:'fixed',actual:{p:'岡本 和真',t:'giants'},picks:{A:{p:'岡本 和真',t:'giants'},B:{p:'岡本 和真',t:'giants'},C:{p:'村上 宗隆',t:'yakult'},D:{p:'佐藤 輝明',t:'hanshin'},E:{p:'岡本 和真',t:'giants'}}},
+          {cat:'打点王',status:'fixed',actual:{p:'村上 宗隆',t:'yakult'},picks:{A:{p:'大山 悠輔',t:'hanshin'},B:{p:'村上 宗隆',t:'yakult'},C:{p:'牧 秀悟',t:'denav'},D:{p:'岡本 和真',t:'giants'},E:{p:'大山 悠輔',t:'hanshin'}}},
+          {cat:'最多勝',status:'pending',actual:null,picks:{A:{p:'大竹 耕太郎',t:'hanshin'},B:{p:'戸郷 翔征',t:'giants'},C:{p:'小川 泰弘',t:'yakult'},D:{p:'床田 寛樹',t:'hiroshima'},E:{p:'戸郷 翔征',t:'giants'}}},
+          {cat:'防御率',status:'pending',actual:null,picks:{A:{p:'村上 頌樹',t:'hanshin'},B:{p:'今永 昇太',t:'denav'},C:{p:'髙橋 宏斗',t:'chunichi'},D:{p:'村上 頌樹',t:'hanshin'},E:{p:'東 克樹',t:'denav'}}},
+          {cat:'最多奪三振',status:'pending',actual:null,picks:{A:{p:'今永 昇太',t:'denav'},B:{p:'戸郷 翔征',t:'giants'},C:{p:'髙橋 宏斗',t:'chunichi'},D:{p:'今永 昇太',t:'denav'},E:{p:'戸郷 翔征',t:'giants'}}},
+          {cat:'最多セーブ',status:'pending',actual:null,picks:{A:{p:'岩崎 優',t:'hanshin'},B:{p:'栗林 良吏',t:'hiroshima'},C:{p:'マルティネス',t:'chunichi'},D:{p:'岩崎 優',t:'hanshin'},E:{p:'ロドリゲス',t:'giants'}}},
+        ],
+      },
+      pacific:{
+        actual:['softbank','nippon','orix','lotte','rakuten','seibu'],
+        preds:{
+          A:['softbank','nippon','orix','lotte','rakuten','seibu'],
+          B:['softbank','orix','nippon','lotte','seibu','rakuten'],
+          C:['nippon','softbank','orix','rakuten','lotte','seibu'],
+          D:['softbank','nippon','lotte','orix','rakuten','seibu'],
+          E:['orix','softbank','nippon','lotte','rakuten','seibu'],
+        },
+        titles:[
+          {cat:'首位打者',status:'fixed',actual:{p:'近藤 健介',t:'softbank'},picks:{A:{p:'近藤 健介',t:'softbank'},B:{p:'柳田 悠岐',t:'softbank'},C:{p:'源田 壮亮',t:'seibu'},D:{p:'松本 剛',t:'nippon'},E:{p:'近藤 健介',t:'softbank'}}},
+          {cat:'本塁打王',status:'fixed',actual:{p:'山川 穂高',t:'softbank'},picks:{A:{p:'山川 穂高',t:'softbank'},B:{p:'浅村 栄斗',t:'rakuten'},C:{p:'ポランコ',t:'lotte'},D:{p:'山川 穂高',t:'softbank'},E:{p:'森 友哉',t:'orix'}}},
+          {cat:'打点王',status:'fixed',actual:{p:'近藤 健介',t:'softbank'},picks:{A:{p:'近藤 健介',t:'softbank'},B:{p:'山川 穂高',t:'softbank'},C:{p:'浅村 栄斗',t:'rakuten'},D:{p:'近藤 健介',t:'softbank'},E:{p:'ポランコ',t:'lotte'}}},
+          {cat:'最多勝',status:'pending',actual:null,picks:{A:{p:'有原 航平',t:'softbank'},B:{p:'伊藤 大海',t:'nippon'},C:{p:'宮城 大弥',t:'orix'},D:{p:'種市 篤暉',t:'lotte'},E:{p:'則本 昂大',t:'rakuten'}}},
+          {cat:'防御率',status:'pending',actual:null,picks:{A:{p:'宮城 大弥',t:'orix'},B:{p:'伊藤 大海',t:'nippon'},C:{p:'佐々木 朗希',t:'lotte'},D:{p:'宮城 大弥',t:'orix'},E:{p:'隅田 知一郎',t:'seibu'}}},
+          {cat:'最多奪三振',status:'pending',actual:null,picks:{A:{p:'佐々木 朗希',t:'lotte'},B:{p:'伊藤 大海',t:'nippon'},C:{p:'宮城 大弥',t:'orix'},D:{p:'佐々木 朗希',t:'lotte'},E:{p:'種市 篤暉',t:'lotte'}}},
+          {cat:'最多セーブ',status:'pending',actual:null,picks:{A:{p:'松井 裕樹',t:'rakuten'},B:{p:'オスナ',t:'softbank'},C:{p:'益田 直也',t:'lotte'},D:{p:'オスナ',t:'softbank'},E:{p:'平良 海馬',t:'seibu'}}},
+        ],
+      },
+    };
+    this.STANDINGS=[
+      {user:'Aさん',rankPt:22,titlePt:6},
+      {user:'Bさん',rankPt:18,titlePt:4},
+      {user:'Cさん',rankPt:14,titlePt:6},
+      {user:'Dさん',rankPt:12,titlePt:3},
+      {user:'Eさん',rankPt:10,titlePt:0},
+    ];
+    this.TREND={ A:[4,3,2,1,1,1,1], B:[1,1,1,2,2,2,2], C:[2,2,3,3,3,3,3], D:[3,4,4,4,4,4,4], E:[5,5,5,5,5,5,5] };
+    this.MONTHS=['4月','5月','6月','7月','8月','9月','現在'];
+    this.TP1=['鈴木 誠也','近本 光司','牧 秀悟','岡林 勇希'];
+    this.TP2=['岡本 和真','村上 宗隆','佐藤 輝明'];
+    this.THEMES=[
+      { id:'A', en:'BROADCAST', label:'放送席', sub:'白基調・実況の情報密度', brand:'NPB PREDICTIONS',
+        copy:{titlesKick:'TITLE PREDICTIONS',titlesTitle:'タイトル予想 的中率',leagueKick:'LEAGUE STANDINGS',leagueTitle:'2025 リーグ順位',predKick:'PREDICTION MATRIX',predTitle:'順位予想マトリクス',newKick:'NEW ENTRY',newTitle:'予想を登録する',newCta:'この内容で登録する'},
+        t:{ frame:'#ffffff',surface:'#ffffff',surface2:'#f5f4ef',ink:'#1b1b18',muted:'#76746c',faint:'#a3a199',border:'#e6e4dd',line:'#edece6',
+            accent:'#1f7a3f',accent2:'#b07d12',stitch:'#cf3a32',onAccent:'#ffffff',
+            hit:'#1f7a3f',hitBg:'rgba(31,122,63,0.10)',hitBorder:'rgba(31,122,63,0.40)',
+            miss:'#cf3a32',missBg:'rgba(207,58,50,0.05)',missBorder:'rgba(207,58,50,0.22)',missInk:'#a3a199',
+            pend:'#8d8b82',pendBg:'#faf9f5',pendBorder:'#e6e4dd',fixed:'#b07d12',fixedBg:'rgba(176,125,18,0.10)',
+            headerBg:'#1d6e3a',headerInk:'#ffffff',
+            fontDisp:"'Saira Semi Condensed', sans-serif",fontBody:"'Saira', system-ui, sans-serif",
+            radius:'10',chipRadius:'4',shadow:'0 1px 3px rgba(20,20,15,0.07)',dispWeight:'700',dispSpacing:'-0.01em',kicker:'0.18em',
+            chartStroke:'2.4',chartDot:'3.6',lineFilter:'none',users:['#2e7d32','#0277bd','#7b1fa2','#d84315','#b08900'] } },
+      { id:'B', en:'STADIUM', label:'ナイター', sub:'暗転・LEDスコアボード', brand:'NPB ｜ SCOREBOARD',
+        copy:{titlesKick:'的中チェック',titlesTitle:'誰が当てた？',leagueKick:'SCOREBOARD',leagueTitle:'いま首位は誰だ',predKick:'全員の本気',predTitle:'順位予想バトル',newKick:'ENTRY',newTitle:'キミの予想をブチ込め',newCta:'この予想で勝負する'},
+        t:{ frame:'#10141b',surface:'#161c26',surface2:'#1c2330',ink:'#eef3f8',muted:'#8b97a6',faint:'#5b6675',border:'#262f3d',line:'#222b38',
+            accent:'#4ade80',accent2:'#fbbf24',stitch:'#fb7185',onAccent:'#08130b',
+            hit:'#4ade80',hitBg:'rgba(74,222,128,0.14)',hitBorder:'rgba(74,222,128,0.5)',
+            miss:'#fb7185',missBg:'rgba(251,113,133,0.10)',missBorder:'rgba(251,113,133,0.35)',missInk:'#7a8694',
+            pend:'#8b97a6',pendBg:'#1c2330',pendBorder:'#2a3442',fixed:'#fbbf24',fixedBg:'rgba(251,191,36,0.12)',
+            headerBg:'#0b0f15',headerInk:'#eef3f8',
+            fontDisp:"'Sora', sans-serif",fontBody:"'Sora', sans-serif",
+            radius:'16',chipRadius:'8',shadow:'0 10px 30px rgba(0,0,0,0.5)',dispWeight:'800',dispSpacing:'-0.02em',kicker:'0.22em',
+            chartStroke:'3',chartDot:'5',lineFilter:'drop-shadow(0 0 5px rgba(80,230,160,0.45))',users:['#4ade80','#38bdf8','#c084fc','#fb7185','#fbbf24'] } },
+      { id:'C', en:'NEWSPRINT', label:'紙面', sub:'活版・予想新聞の採点表', brand:'NPB 予想新聞',
+        copy:{titlesKick:'紙上採点',titlesTitle:'タイトル予想 採点表',leagueKick:'順位の変遷',leagueTitle:'二〇二五年 順位表',predKick:'各人の見立て',predTitle:'順位予想 一覧',newKick:'投稿',newTitle:'予想を投じる',newCta:'この予想を投じる'},
+        t:{ frame:'#f4f1e8',surface:'#f4f1e8',surface2:'#eae5d8',ink:'#191712',muted:'#6a6457',faint:'#9a9385',border:'#cdc6b6',line:'#d8d2c3',
+            accent:'#8a1f1f',accent2:'#3a5a2e',stitch:'#8a1f1f',onAccent:'#f4f1e8',
+            hit:'#3a5a2e',hitBg:'rgba(58,90,46,0.07)',hitBorder:'#9caa92',
+            miss:'#8a1f1f',missBg:'transparent',missBorder:'#cdc6b6',missInk:'#9a9385',
+            pend:'#6a6457',pendBg:'transparent',pendBorder:'#cdc6b6',fixed:'#8a1f1f',fixedBg:'rgba(138,31,31,0.06)',
+            headerBg:'#f4f1e8',headerInk:'#191712',
+            fontDisp:"'Newsreader', Georgia, serif",fontBody:"'Newsreader', Georgia, serif",
+            radius:'2',chipRadius:'2',shadow:'none',dispWeight:'600',dispSpacing:'0',kicker:'0.3em',
+            chartStroke:'1.4',chartDot:'2.6',lineFilter:'none',users:['#1c1a14','#8a5a2b','#6a6457','#8a1f1f','#a98300'] } },
+      { id:'D', en:'NEWSPAPER', label:'新聞', sub:'明朝・新聞紙面', brand:'ＮＰＢ予想新聞',
+        copy:{titlesKick:'紙上採点',titlesTitle:'タイトル予想 紙上採点',leagueKick:'戦況',leagueTitle:'二〇二五年 順位の趨勢',predKick:'各人の眼',predTitle:'順位予想 総覧',newKick:'投票',newTitle:'予想を投じる',newCta:'この予想を投じる'},
+        t:{ frame:'#f6f4ed',surface:'#f6f4ed',surface2:'#ebe8de',ink:'#1a1712',muted:'#5f594d',faint:'#938c7c',border:'#c7bfac',line:'#d8d1bf',
+            accent:'#1a1712',accent2:'#3a5a2e',stitch:'#1a1712',onAccent:'#f6f4ed',
+            hit:'#2f5a32',hitBg:'rgba(47,90,50,0.08)',hitBorder:'#9caa92',
+            miss:'#6a6353',missBg:'transparent',missBorder:'#c7bfac',missInk:'#938c7c',
+            pend:'#6a6353',pendBg:'transparent',pendBorder:'#c7bfac',fixed:'#1a1712',fixedBg:'rgba(0,0,0,0.05)',
+            headerBg:'#1a1712',headerInk:'#f6f4ed',
+            fontDisp:"'Shippori Mincho B1', serif",fontBody:"'Shippori Mincho', 'Noto Serif JP', serif",
+            radius:'0',chipRadius:'2',shadow:'none',dispWeight:'800',dispSpacing:'0.04em',kicker:'0.32em',
+            chartStroke:'1.6',chartDot:'2.8',lineFilter:'none',users:['#1a1712','#8a5a2b','#2f5a32','#1f3a66','#a98300'] } },
+    ];
+  }
+
+  setPage(k){ this.setState({page:k}); }
+  setLeague(l){ this.setState({league:l}); }
+  setYear(y){ this.setState({year:y}); }
+  toggleExpand(id){ this.setState(s=>({expanded: s.expanded===id?null:id})); }
+  move(i,d){ const a=[...this.state.order]; const j=i+d; if(j<0||j>=a.length) return; const t=a[i]; a[i]=a[j]; a[j]=t; this.setState({order:a}); }
+  setDrag(i){ this.setState({dragIndex:i}); }
+  drop(i){ const f=this.state.dragIndex; if(f==null||f===i) return; const a=[...this.state.order]; const x=a.splice(f,1)[0]; a.splice(i,0,x); this.setState({order:a,dragIndex:null}); }
+  submit(){ this.setState({submitted:true}); }
+  resetForm(){ this.setState({submitted:false}); }
+  cycle1(){ this.setState(s=>({tp1:(s.tp1+1)%this.TP1.length})); }
+  cycle2(){ this.setState(s=>({tp2:(s.tp2+1)%this.TP2.length})); }
+
+  renderVals(){
+    const self=this, S=this.state, T=this.TEAMS, lg=this.LEAGUES[S.league];
+    const USERS=['A','B','C','D','E'], UNAME={A:'Aさん',B:'Bさん',C:'Cさん',D:'Dさん',E:'Eさん'};
+
+    const baseTitles=lg.titles.map(t=>({
+      cat:t.cat,status:t.status,statusLabel:t.status==='fixed'?'確定':'未確定',
+      actualName:t.actual?t.actual.p:'未確定',actualTid:t.actual?t.actual.t:null,isFixed:t.status==='fixed',
+      cells:USERS.map(k=>{ const pk=t.picks[k]; const st=t.status==='fixed'?(pk.t===t.actual.t?'hit':'miss'):'pending'; return {key:k,name:UNAME[k],player:pk.p,tid:pk.t,st}; })
+    }));
+    const fixedCount=lg.titles.filter(t=>t.status==='fixed').length;
+    const baseSummary=USERS.map(k=>{ let h=0; lg.titles.forEach(t=>{ if(t.status==='fixed'&&t.picks[k].t===t.actual.t) h++; }); return {name:UNAME[k],hits:h,fixed:fixedCount,pts:h*3}; });
+
+    const basePred=lg.actual.map((tid,r)=>({ rank:r+1,actualTid:tid, cells:USERS.map(k=>({name:UNAME[k],tid:lg.preds[k][r],hit:lg.preds[k][r]===tid})) }));
+    const predHits=USERS.map(k=>{ let h=0; lg.actual.forEach((tid,r)=>{ if(lg.preds[k][r]===tid) h++; }); return h; });
+
+    const maxTotal=Math.max(...this.STANDINGS.map(s=>s.rankPt+s.titlePt));
+    const baseStand=this.STANDINGS.map(s=>({...s,total:s.rankPt+s.titlePt})).sort((a,b)=>b.total-a.total);
+
+    const MONTHS=this.MONTHS, xs=i=>16+i*47, ys=r=>18+(r-1)*34;
+    const monthTicks=MONTHS.map((m,i)=>({m,x:xs(i)}));
+    const tkeys=['A','B','C','D','E'];
+
+    const orderRows=S.order.map((id,i)=>({ no:i+1,team:T[id],
+      up:()=>self.move(i,-1), down:()=>self.move(i,1),
+      onDragStart:()=>self.setDrag(i), onDragOver:e=>{e.preventDefault();}, onDrop:()=>self.drop(i) }));
+    const picks=[{label:'首位打者',name:this.TP1[S.tp1],on:()=>self.cycle1()},{label:'本塁打王',name:this.TP2[S.tp2],on:()=>self.cycle2()}];
+    const leagueName=S.league==='central'?'セ・リーグ':'パ・リーグ';
+
+    const PAGES=[['titles','タイトル予想'],['league','リーグ順位'],['predictions','順位予想'],['newpred','予想登録']];
+    const pageTabs=PAGES.map(a=>({label:a[1],on:()=>self.setPage(a[0]),bg:S.page===a[0]?'#f5c518':'transparent',fg:S.page===a[0]?'#16140f':'rgba(255,255,255,0.62)',weight:S.page===a[0]?'700':'500'}));
+
+    const lanes=this.THEMES.map(theme=>{
+      const th=theme.t, id=theme.id;
+      const tab=(label,on,active)=>({label,on,bg:active?th.accent:th.surface2,fg:active?th.onAccent:th.muted,bd:active?th.accent:th.border,weight:active?'700':'500'});
+      const leagueTabs=[tab('セ・リーグ',()=>self.setLeague('central'),S.league==='central'),tab('パ・リーグ',()=>self.setLeague('pacific'),S.league==='pacific')];
+      const yearTabs=[2025,2024,2023].map(y=>tab(String(y)+'年',()=>self.setYear(y),S.year===y));
+      const cs=st=> st==='hit'?{bg:th.hitBg,bd:th.hitBorder,mark:'✓',mk:th.hit,ink:th.ink}
+                  : st==='miss'?{bg:th.missBg,bd:th.missBorder,mark:'✗',mk:th.miss,ink:th.missInk}
+                  : {bg:th.pendBg,bd:th.pendBorder,mark:'',mk:th.pend,ink:th.ink};
+      const titleRows=baseTitles.map(r=>({
+        cat:r.cat,status:r.status,statusLabel:r.statusLabel,isFixed:r.isFixed,actualName:r.actualName,
+        actualTeam:r.actualTid?T[r.actualTid]:{color:'transparent',ink:th.ink,mark:'',name:''},
+        actualBg:r.isFixed?th.fixedBg:th.pendBg, actualFg:r.isFixed?th.fixed:th.pend,
+        cells:r.cells.map(c=>{ const x=cs(c.st); return {name:c.name,player:c.player,team:T[c.tid],bg:x.bg,bd:x.bd,mark:x.mark,mk:x.mk,ink:x.ink}; })
+      }));
+      const summary=baseSummary.map((s,i)=>({name:s.name,hits:s.hits,fixed:s.fixed,pos:'+'+s.pts,color:th.users[i]}));
+      const predRows=basePred.map(r=>({ rank:r.rank,actualTeam:T[r.actualTid],
+        cells:r.cells.map(c=>({name:c.name,team:T[c.tid],hit:c.hit,bg:c.hit?th.hitBg:'transparent',mark:c.hit?'✓':'',mk:c.hit?th.hit:'transparent'})) }));
+      const predUsers=USERS.map((k,i)=>({name:UNAME[k],color:th.users[i],hits:predHits[i],
+        items:basePred.map(r=>{ const c=r.cells[i]; return {rank:r.rank,team:T[c.tid],hit:c.hit,bg:c.hit?th.hitBg:'transparent',mark:c.hit?'✓':'',mk:c.hit?th.hit:'transparent'}; }) }));
+      const predActual={items:basePred.map(r=>({rank:r.rank,team:T[r.actualTid]}))};
+      const standRows=baseStand.map((s,i)=>({ rank:i+1,user:s.user,rankPt:s.rankPt,titlePt:s.titlePt,total:s.total,
+        barPct:Math.round(s.total/maxTotal*100),barColor:th.users[i],
+        medalBg:i===0?'#d4a017':i===1?'#9aa0a6':i===2?'#b06a32':th.surface2, medalFg:i<3?'#ffffff':th.muted }));
+      const chartLines=tkeys.map((k,i)=>({name:UNAME[k],color:th.users[i],points:this.TREND[k].map((r,j)=>xs(j)+','+ys(r)).join(' '),dx:xs(MONTHS.length-1),dy:ys(this.TREND[k][MONTHS.length-1])}));
+      const c=theme.copy;
+      const pageName=S.page==='titles'?c.titlesTitle:S.page==='league'?c.leagueTitle:S.page==='predictions'?c.predTitle:c.newTitle;
+      return {
+        id,en:theme.en,label:theme.label,sub:theme.sub,brand:theme.brand,theme:th,
+        isTable:id==='A',isCards:id==='B',isPaper:id==='C'||id==='D',notCards:id!=='B',
+        show:{titles:S.page==='titles',league:S.page==='league',predictions:S.page==='predictions',newpred:S.page==='newpred'},
+        showLeagueTabs:S.page!=='league',
+        frameW:S.expanded===id?1180:380,
+        display:(S.expanded&&S.expanded!==id)?'none':'block',
+        expandLabel:S.expanded===id?'◀ 戻す':'拡大 ▶',
+        onExpand:()=>self.toggleExpand(id),
+        leagueTabs,yearTabs,leagueName,pageName,copy:c,userNames:['Aさん','Bさん','Cさん','Dさん','Eさん'],
+        titleRows,summary,fixedCount,predRows,predUsers,predActual,standRows,chartLines,monthTicks,
+        orderRows,picks,submitted:S.submitted,notSubmitted:!S.submitted,onSubmit:()=>self.submit(),onReset:()=>self.resetForm(),
+      };
+    });
+
+    return { title:'NPB予想リーグ ｜ デザイン案 比較', sub:'A 放送席 / B ナイター / C 紙面 / D 新聞', pageTabs, isExpanded:!!S.expanded, onCollapse:()=>self.setState({expanded:null}), lanes };
+  }
+}
+</script>
+</body>
+</html>
