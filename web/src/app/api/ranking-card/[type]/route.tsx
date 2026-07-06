@@ -20,6 +20,10 @@ type OgFont = {
 
 let fontPromise: Promise<ArrayBuffer> | null = null;
 
+function displayText(value: string): string {
+  return value.normalize("NFKC");
+}
+
 function loadFont(): Promise<ArrayBuffer> {
   fontPromise ??= (async () => {
     const fontUrl = new URL(
@@ -95,6 +99,23 @@ export async function GET(
   });
   if (!fontData) return await renderFallbackCard("Font unavailable");
 
+  const renderData = {
+    ...data,
+    title: displayText(data.title),
+    note: displayText(data.note),
+    sections: data.sections.map((section) => ({
+      ...section,
+      label: displayText(section.label),
+      rows: section.rows.map((row) => ({
+        ...row,
+        name: displayText(row.name),
+        affiliation: displayText(row.affiliation),
+        role: displayText(row.role),
+        value: displayText(row.value),
+      })),
+    })),
+  };
+
   try {
     const img = new ImageResponse(
       <div
@@ -124,7 +145,7 @@ export async function GET(
               NPB予想スポーツ
             </div>
             <div style={{ display: "flex", fontSize: 20, fontWeight: 700 }}>
-              {data.title}
+              {renderData.title}
             </div>
           </div>
           <div
@@ -142,7 +163,7 @@ export async function GET(
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", flex: 1, paddingTop: 12, gap: 10 }}>
-          {data.sections.map((section, si) => (
+          {renderData.sections.map((section, si) => (
             <div
               key={section.label}
               style={{
@@ -220,7 +241,7 @@ export async function GET(
             color: "#4b5563",
           }}
         >
-          <div style={{ display: "flex" }}>{data.note}</div>
+          <div style={{ display: "flex" }}>{renderData.note}</div>
           <div style={{ display: "flex" }}>npb-predictions.pages.dev</div>
         </div>
       </div>
