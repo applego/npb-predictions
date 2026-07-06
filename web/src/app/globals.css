@@ -68,9 +68,9 @@ button:disabled,
 /* ── Baseball Motif Utilities ── */
 
 @layer utilities {
-  /* Stitch border: red dots — baseball seam on white leather */
+  /* Stitch border: dotted ticker rule under the global header */
   .stitch-border {
-    background-image: radial-gradient(circle, var(--stitch) 1.5px, transparent 1.5px);
+    background-image: radial-gradient(circle, var(--field) 1.5px, transparent 1.5px);
     background-size: 10px 3px;
     background-repeat: repeat-x;
     height: 3px;

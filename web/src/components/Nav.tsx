@@ -71,7 +71,7 @@ export function Nav() {
             className="relative whitespace-nowrap text-xs font-medium tracking-widest transition-colors"
             style={{
               fontFamily: "var(--font-display)",
-              color: isActive(href) ? "var(--stitch)" : "var(--text-muted)",
+              color: isActive(href) ? "var(--field)" : "var(--text-muted)",
               letterSpacing: "0.15em",
             }}
           >
@@ -79,7 +79,7 @@ export function Nav() {
             {isActive(href) && (
               <span
                 className="absolute -bottom-2 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full"
-                style={{ background: "var(--stitch)" }}
+                style={{ background: "var(--field)" }}
               />
             )}
           </Link>
