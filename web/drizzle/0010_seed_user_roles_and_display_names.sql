@@ -66,11 +66,4 @@ WHERE `slug` NOT IN ('oya', 'tsuneshige', 'kumagae', 'ishiro', 'kuramoto')
       'nishimoto-hijiri',
       'iwata-minoru'
     )
-    OR `id` IN (
-      SELECT p.`user_id`
-      FROM `predictions` p
-      JOIN `ranking_picks` rp ON rp.`prediction_id` = p.`id`
-      GROUP BY p.`user_id`
-      HAVING COUNT(DISTINCT p.`season_id`) > 1
-    )
   );

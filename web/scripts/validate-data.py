@@ -173,10 +173,20 @@ def validate_role_backfill_migration():
             VALUES (9004, 'AERA dot.', 'aera-dot', 'friend', 'AERA dot.(1/1', NULL);
             INSERT INTO users (id, name, slug, role, source, variant)
             VALUES (9005, '記者記事', 'reporter-article', 'friend', 'スポーツ紙', NULL);
+            INSERT INTO users (id, name, slug, role, source, variant)
+            VALUES (9006, '一般参加者', 'multi-season-friend', 'friend', NULL, NULL);
             INSERT INTO predictions (id, user_id, season_id)
             VALUES (9103, 9003, 2026);
+            INSERT INTO predictions (id, user_id, season_id)
+            VALUES (9106, 9006, 2025);
+            INSERT INTO predictions (id, user_id, season_id)
+            VALUES (9107, 9006, 2026);
             INSERT INTO ranking_picks (id, prediction_id)
             VALUES (9203, 9103);
+            INSERT INTO ranking_picks (id, prediction_id)
+            VALUES (9206, 9106);
+            INSERT INTO ranking_picks (id, prediction_id)
+            VALUES (9207, 9107);
         """)
         apply_sql_file(conn, WEB_ROOT / "drizzle/0010_seed_user_roles_and_display_names.sql")
 
@@ -191,6 +201,8 @@ def validate_role_backfill_migration():
         outlet_role = cur.fetchone()[0]
         cur.execute("SELECT role FROM users WHERE slug='reporter-article'")
         reporter_article_role = cur.fetchone()[0]
+        cur.execute("SELECT role FROM users WHERE slug='multi-season-friend'")
+        multi_season_friend_role = cur.fetchone()[0]
         conn.close()
 
     check(
@@ -212,6 +224,10 @@ def validate_role_backfill_migration():
     check(
         reporter_article_role != "commentator",
         "0010 keeps reporter article rows out of commentator rankings",
+    )
+    check(
+        multi_season_friend_role == "friend",
+        "0010 keeps multi-season friend users out of commentator rankings",
     )
 
 
