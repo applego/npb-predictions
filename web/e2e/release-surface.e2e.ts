@@ -1,32 +1,82 @@
+import { readdirSync, statSync } from "node:fs";
+import path from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 
 const PUBLIC_ROUTES = [
   "/",
   "/standings",
   "/games",
+  "/games/2026-07-08",
   "/news",
   "/newspaper",
   "/predictions",
   "/predictions/new",
   "/rankings",
+  "/rankings/predictions",
   "/rankings/predictions?year=2026",
   "/rankings/live",
   "/rankings/titles",
+  "/rankings/scoreboard",
   "/rankings/scoreboard?year=2026&view=year",
   "/rankings/scoreboard?year=2026&view=trend",
   "/rankings/all-time",
   "/rankings/commentators",
+  "/rankings/commentators/kondo-hiroshi",
+  "/commentators/kondo-hiroshi",
   "/groups",
   "/groups/join",
+  "/groups/kondo-hiroshi",
   "/settings",
   "/me",
   "/admin",
   "/archive/2024",
   "/archive/2024/predictions",
   "/seo/2026",
+  "/seo/2026/central/final-standings",
+  "/seo/2026/central/title-leaders",
+  "/seo/2026/commentator-accuracy",
+  "/seo/2026/teams/yomiuri-giants",
+  "/seo/2026/title-leaders",
   "/seo/past-seasons",
   "/users/99999",
 ];
+
+const APP_ROUTE_REPRESENTATIVES: Record<string, string> = {
+  "/archive/[year]": "/archive/2024",
+  "/archive/[year]/predictions": "/archive/2024/predictions",
+  "/commentators/[slug]": "/commentators/kondo-hiroshi",
+  "/games/[date]": "/games/2026-07-08",
+  "/groups/[slug]": "/groups/kondo-hiroshi",
+  "/rankings/commentators/[slug]": "/rankings/commentators/kondo-hiroshi",
+  "/seo/[year]": "/seo/2026",
+  "/seo/[year]/[league]/final-standings":
+    "/seo/2026/central/final-standings",
+  "/seo/[year]/[league]/title-leaders": "/seo/2026/central/title-leaders",
+  "/seo/[year]/commentator-accuracy": "/seo/2026/commentator-accuracy",
+  "/seo/[year]/teams/[team]": "/seo/2026/teams/yomiuri-giants",
+  "/seo/[year]/title-leaders": "/seo/2026/title-leaders",
+  "/users/[userId]": "/users/99999",
+};
+
+function collectAppPageRoutes(dir = path.join(process.cwd(), "src/app")) {
+  const routes: string[] = [];
+
+  function walk(current: string) {
+    for (const name of readdirSync(current)) {
+      const entry = path.join(current, name);
+      if (statSync(entry).isDirectory()) {
+        walk(entry);
+        continue;
+      }
+      if (name !== "page.tsx") continue;
+      const routeDir = path.relative(dir, path.dirname(entry));
+      routes.push(routeDir === "" ? "/" : `/${routeDir}`);
+    }
+  }
+
+  walk(dir);
+  return routes.sort();
+}
 
 function recordFatalErrors(page: Page) {
   const fatalErrors: string[] = [];
@@ -70,6 +120,15 @@ async function loadReleaseSurface(page: Page, path: string) {
 }
 
 test.describe("release surface", () => {
+  test("public release route list covers every app page route", () => {
+    const routeSet = new Set(PUBLIC_ROUTES.map((route) => route.split("?")[0]));
+    const missing = collectAppPageRoutes()
+      .map((route) => APP_ROUTE_REPRESENTATIVES[route] ?? route)
+      .filter((route) => !routeSet.has(route));
+
+    expect(missing).toEqual([]);
+  });
+
   for (const route of PUBLIC_ROUTES) {
     test(`${route} renders without runtime failure`, async ({ page }) => {
       await loadReleaseSurface(page, route);
