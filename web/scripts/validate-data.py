@@ -169,6 +169,10 @@ def validate_role_backfill_migration():
             VALUES (9002, '熊谷', 'kumagae', 'friend');
             INSERT INTO users (id, name, slug, role)
             VALUES (9003, '権藤 博', 'kondo-hiroshi', 'friend');
+            INSERT INTO users (id, name, slug, role, source, variant)
+            VALUES (9004, 'AERA dot.', 'aera-dot', 'friend', 'AERA dot.(1/1', NULL);
+            INSERT INTO users (id, name, slug, role, source, variant)
+            VALUES (9005, '記者記事', 'reporter-article', 'friend', 'スポーツ紙', NULL);
             INSERT INTO predictions (id, user_id, season_id)
             VALUES (9103, 9003, 2026);
             INSERT INTO ranking_picks (id, prediction_id)
@@ -183,6 +187,10 @@ def validate_role_backfill_migration():
         friend_role = cur.fetchone()[0]
         cur.execute("SELECT role FROM users WHERE slug='kondo-hiroshi'")
         seed_commentator_role = cur.fetchone()[0]
+        cur.execute("SELECT role FROM users WHERE slug='aera-dot'")
+        outlet_role = cur.fetchone()[0]
+        cur.execute("SELECT role FROM users WHERE slug='reporter-article'")
+        reporter_article_role = cur.fetchone()[0]
         conn.close()
 
     check(
@@ -196,6 +204,14 @@ def validate_role_backfill_migration():
     check(
         seed_commentator_role == "commentator",
         "0010 backfills single-season seed commentator users",
+    )
+    check(
+        outlet_role != "commentator",
+        "0010 keeps outlet/source rows out of commentator rankings",
+    )
+    check(
+        reporter_article_role != "commentator",
+        "0010 keeps reporter article rows out of commentator rankings",
     )
 
 
@@ -327,7 +343,7 @@ def main():
     print("\n=== 6. Non-commentator leak check ===")
     non_commentator_patterns = [
         '%最終順位%', '%AI%', '%ChatGPT%', '%GPT%', '%Gemini%',
-        '%編集部%', '%記者%均%', '%AERA%', '%朝日新聞%', '%SPAIA%',
+        '%編集部%', '%記者%', '%AERA%', '%朝日新聞%', '%SPAIA%',
         '%読者%', '%アンケート%', '%平均%', '%合計%', '%データ%',
     ]
     leaked = []
