@@ -29,6 +29,7 @@ jobs:
       NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
       NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
       NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
+      WRANGLER_PERSIST_TO: ${{ runner.temp }}/npb-e2e-d1-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - uses: actions/checkout@v4
 
@@ -63,19 +64,20 @@ jobs:
       # drizzle/*.sql を順に適用 → src/db/seed-commentators.sql で初期データ。
       - name: Migrate local D1 (schema)
         run: |
+          mkdir -p "$WRANGLER_PERSIST_TO"
           for f in drizzle/*.sql; do
             echo "Applying $f"
-            npx wrangler d1 execute npb-predictions --local --file="$f"
+            timeout 120s npx wrangler d1 execute npb-predictions --local --persist-to "$WRANGLER_PERSIST_TO" --file="$f"
           done
 
       - name: Seed local D1 (commentators + predictions)
-        run: npx wrangler d1 execute npb-predictions --local --file=src/db/seed-commentators.sql
+        run: timeout 120s npx wrangler d1 execute npb-predictions --local --persist-to "$WRANGLER_PERSIST_TO" --file=src/db/seed-commentators.sql
 
       # E2E-only fixture: minimal actual_team_standings rows so the LIVE
       # SCOREBOARD regression guard can assert non-zero scores in CI.
       # Production data is unaffected.
       - name: Seed local D1 (e2e standings fixture)
-        run: npx wrangler d1 execute npb-predictions --local --file=src/db/fixtures/e2e-standings.sql
+        run: timeout 120s npx wrangler d1 execute npb-predictions --local --persist-to "$WRANGLER_PERSIST_TO" --file=src/db/fixtures/e2e-standings.sql
 
       - name: E2E smoke (against built CF Pages output)
         run: npm run test:e2e
