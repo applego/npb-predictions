@@ -6,11 +6,13 @@ on:
     paths:
       - 'web/**'
       - '.github/workflows/npb-predictions-ci.yml'
+      - '.github/hooks/**'
   pull_request:
     branches: [main]
     paths:
       - 'web/**'
       - '.github/workflows/npb-predictions-ci.yml'
+      - '.github/hooks/**'
 
 defaults:
   run:
@@ -29,13 +31,14 @@ jobs:
       NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
       NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
       NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
+      WRANGLER_PERSIST_TO: /tmp/npb-e2e-d1-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
           cache-dependency-path: web/package-lock.json
 
@@ -51,6 +54,9 @@ jobs:
       - name: Build for Cloudflare Pages
         run: npx @cloudflare/next-on-pages
 
+      - name: Performance budget
+        run: npm run check:perf-budget
+
       # 2026-05-23: deploy 前に Playwright E2E スモークを走らせる (永続保証)。
       # 過去 OG 画像が 0B を返す bug を E2E が検知していたのに CI で回って
       # おらず prod に出てしまった反省。落ちたら deploy しない。
@@ -63,22 +69,26 @@ jobs:
       # drizzle/*.sql を順に適用 → src/db/seed-commentators.sql で初期データ。
       - name: Migrate local D1 (schema)
         run: |
+          mkdir -p "$WRANGLER_PERSIST_TO"
           for f in drizzle/*.sql; do
             echo "Applying $f"
-            npx wrangler d1 execute npb-predictions --local --file="$f"
+            timeout 120s npx wrangler d1 execute npb-predictions --local --persist-to "$WRANGLER_PERSIST_TO" --file="$f"
           done
 
       - name: Seed local D1 (commentators + predictions)
-        run: npx wrangler d1 execute npb-predictions --local --file=src/db/seed-commentators.sql
+        run: timeout 120s npx wrangler d1 execute npb-predictions --local --persist-to "$WRANGLER_PERSIST_TO" --file=src/db/seed-commentators.sql
 
       # E2E-only fixture: minimal actual_team_standings rows so the LIVE
       # SCOREBOARD regression guard can assert non-zero scores in CI.
       # Production data is unaffected.
       - name: Seed local D1 (e2e standings fixture)
-        run: npx wrangler d1 execute npb-predictions --local --file=src/db/fixtures/e2e-standings.sql
+        run: timeout 120s npx wrangler d1 execute npb-predictions --local --persist-to "$WRANGLER_PERSIST_TO" --file=src/db/fixtures/e2e-standings.sql
+
+      - name: Data correctness gate
+        run: npm run validate-data:persisted
 
       - name: E2E smoke (against built CF Pages output)
-        run: npm run test:e2e
+        run: npm run test:e2e -- --workers=1
 
       # wrangler-action v3 は `command` 入力を改行で split して各行を別コマンドとして
       # 実行する。`github.event.head_commit.message` は squash merge 時に commit body

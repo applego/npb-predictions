@@ -17,6 +17,7 @@ import { downloadPredictionPng, type PngCol } from "@/lib/prediction-png";
 // ── Constants ──
 
 const AVAILABLE_YEARS = [2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026] as const;
+const DEFAULT_YEAR = AVAILABLE_YEARS[AVAILABLE_YEARS.length - 1];
 
 type YearOption = (typeof AVAILABLE_YEARS)[number] | "all";
 
@@ -748,7 +749,7 @@ function LoadingSkeleton() {
 // ── Main Client Component ──
 
 export function CommentatorRankingsClient() {
-  const [year, setYear] = useState<YearOption>(2025);
+  const [year, setYear] = useState<YearOption>(DEFAULT_YEAR);
   const [league, setLeague] = useState<LeagueFilter>("all");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortKey>("score");
@@ -812,15 +813,19 @@ export function CommentatorRankingsClient() {
 
   // Fetch data from API
   const fetchData = useCallback(async (y: YearOption, l: LeagueFilter) => {
+    const fetchRanking = async (yr: number, lg: LeagueFilter) => {
+      const res = await fetch(`/api/rankings/commentators?year=${yr}&league=${lg}`);
+      if (!res.ok) return null;
+      return (await res.json()) as CommentatorRankingsResponse;
+    };
+
     if (y === "all") {
       setLoading(true);
       setError(null);
       try {
         const results = await Promise.all(
           AVAILABLE_YEARS.map(async (yr) => {
-            const res = await fetch(`/api/rankings/commentators?year=${yr}&league=${l}`);
-            if (!res.ok) return null;
-            return (await res.json()) as CommentatorRankingsResponse;
+            return fetchRanking(yr, l);
           })
         );
 
@@ -866,14 +871,28 @@ export function CommentatorRankingsClient() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/rankings/commentators?year=${y}&league=${l}`);
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        setError((body as { error?: string }).error ?? `Error ${res.status}`);
+      const json = await fetchRanking(y, l);
+      if (!json) {
+        setError("データの取得に失敗しました");
         setData(null);
         return;
       }
-      const json = (await res.json()) as CommentatorRankingsResponse;
+      if (l === "all" && json.commentators.length === 0) {
+        const [central, pacific] = await Promise.all([
+          fetchRanking(y, "central"),
+          fetchRanking(y, "pacific"),
+        ]);
+        const fallback =
+          (central?.commentators.length ?? 0) >= (pacific?.commentators.length ?? 0)
+            ? { league: "central" as const, data: central }
+            : { league: "pacific" as const, data: pacific };
+
+        if (fallback.data && fallback.data.commentators.length > 0) {
+          setLeague(fallback.league);
+          setData(fallback.data);
+          return;
+        }
+      }
       setData(json);
     } catch {
       setError("データの取得に失敗しました");

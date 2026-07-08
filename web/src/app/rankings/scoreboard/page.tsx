@@ -5,6 +5,7 @@ import Link from "next/link";
 import ShareButton from "@/components/ShareButton";
 import { getSeasons, getScoreboardData } from "@/lib/scoreboard";
 import { ScoreboardTable } from "./ScoreboardClient";
+import { formatPredictionOwnerSubline } from "@/lib/prediction-owner-display";
 import {
   BreadcrumbJsonLd,
   SportsEventJsonLd,
@@ -62,6 +63,11 @@ type UserYearStat = { score: number; rank: number };
 type UserHistory = {
   userId: number;
   name: string;
+  slug?: string;
+  source?: string | null;
+  sourceUrl?: string | null;
+  variant?: string | null;
+  role?: string;
   byYear: Map<number, UserYearStat>;
 };
 
@@ -107,13 +113,29 @@ function buildUserHistory(
 ): UserHistory[] {
   const map = new Map<
     number,
-    { name: string; byYear: Map<number, UserYearStat> }
+    {
+      name: string;
+      slug?: string;
+      source?: string | null;
+      sourceUrl?: string | null;
+      variant?: string | null;
+      role?: string;
+      byYear: Map<number, UserYearStat>;
+    }
   >();
   for (const { year, data } of allResults) {
     if (!data || data.scores.length === 0) continue;
     data.scores.forEach((entry, idx) => {
       if (!map.has(entry.userId)) {
-        map.set(entry.userId, { name: entry.userName, byYear: new Map() });
+        map.set(entry.userId, {
+          name: entry.userName,
+          slug: entry.slug,
+          source: entry.source,
+          sourceUrl: entry.sourceUrl,
+          variant: entry.variant,
+          role: entry.userRole,
+          byYear: new Map(),
+        });
       }
       map.get(entry.userId)!.byYear.set(year, {
         score: entry.totalScore,
@@ -124,6 +146,11 @@ function buildUserHistory(
   return Array.from(map.entries()).map(([userId, info]) => ({
     userId,
     name: info.name,
+    slug: info.slug,
+    source: info.source,
+    sourceUrl: info.sourceUrl,
+    variant: info.variant,
+    role: info.role,
     byYear: info.byYear,
   }));
 }
@@ -237,6 +264,11 @@ export default async function StandingsPage({
         b.byYear.size;
       return avgB - avgA;
     });
+
+  const trendNameCounts = trendUsers.reduce((counts, user) => {
+    counts.set(user.name, (counts.get(user.name) ?? 0) + 1);
+    return counts;
+  }, new Map<string, number>());
 
   const reversedActiveYears = [...activeYears].reverse();
 
@@ -372,7 +404,7 @@ export default async function StandingsPage({
                 fontSize: "12px",
                 borderCollapse: "collapse",
                 width: "100%",
-                minWidth: `${254 + reversedActiveYears.length * 60}px`,
+                minWidth: `${318 + reversedActiveYears.length * 60}px`,
               }}
             >
               <thead>
@@ -385,7 +417,7 @@ export default async function StandingsPage({
                       fontFamily: "var(--font-display)",
                       letterSpacing: "0.1em",
                       zIndex: 2,
-                      minWidth: "130px",
+                      minWidth: "194px",
                     }}
                   >
                     予想者
@@ -452,6 +484,14 @@ export default async function StandingsPage({
                   const scores = [...user.byYear.values()];
                   const avg =
                     scores.reduce((s, v) => s + v.score, 0) / scores.length;
+                  const userYears = [...user.byYear.keys()];
+                  const metaLine = formatPredictionOwnerSubline({
+                    source: user.source,
+                    variant: user.variant,
+                    slug: user.slug,
+                    activeYears: userYears,
+                    includeSlugFallback: (trendNameCounts.get(user.name) ?? 0) > 1,
+                  });
                   const rowBg =
                     idx % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)";
                   return (
@@ -476,16 +516,26 @@ export default async function StandingsPage({
                           style={{
                             color: "var(--text-secondary)",
                             fontWeight: 500,
+                            display: "block",
                           }}
                         >
                           {user.name}
                         </span>
-                        <span
-                          className="ml-1.5"
-                          style={{ color: "var(--text-muted)", fontSize: "10px" }}
-                        >
-                          {user.byYear.size}年
-                        </span>
+                        {metaLine && (
+                          <span
+                            style={{
+                              color: "var(--text-muted)",
+                              display: "block",
+                              fontSize: "10px",
+                              lineHeight: 1.35,
+                              marginTop: "2px",
+                              maxWidth: "168px",
+                              whiteSpace: "normal",
+                            }}
+                          >
+                            {metaLine}
+                          </span>
+                        )}
                       </td>
                       {reversedActiveYears.map((y) => {
                         const stat = user.byYear.get(y);

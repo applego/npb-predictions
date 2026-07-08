@@ -7,8 +7,8 @@
 #
 # Stages:
 #   1. Preflight     — wrangler login, git state, env vars
-#   2. Quality gates — typecheck, vitest, next build, CF build
-#   3. Feature guard — E2E (image-gen / news / commentator-ranking)
+#   2. Quality gates — typecheck, vitest, next build, CF build, performance budget
+#   3. Feature guard — local D1 data correctness + E2E
 #   4. Deploy        — wrangler pages deploy
 #   5. Post-verify   — probe /api/cron/feature-health + smoke routes on live URL
 #
@@ -148,6 +148,10 @@ else
   log "running Cloudflare build (next-on-pages)"
   npm run build:cf >/tmp/deploy-cf.log 2>&1 || { cat /tmp/deploy-cf.log; fail "build:cf failed"; exit 1; }
   ok ".vercel/output/static ready"
+
+  log "checking performance budget"
+  npm run check:perf-budget
+  ok "performance budget pass"
 fi
 
 # ── Stage 3: Feature Guarantees (E2E) ───────────────────────────────
@@ -177,6 +181,10 @@ else
   npx wrangler d1 execute npb-predictions --local --file=src/db/fixtures/e2e-standings.sql
   ok "local D1 seed ready"
 
+  log "validating local D1 data correctness"
+  npm run validate-data
+  ok "data correctness pass"
+
   if [[ $FULL_E2E -eq 1 ]]; then
     log "running ALL playwright E2E (includes app.e2e.ts — may fail on missing local seed)"
     E2E_ARGS=()
@@ -184,7 +192,7 @@ else
     log "running main-feature E2E: ${FEATURE_TESTS[*]}"
     E2E_ARGS=("${FEATURE_TESTS[@]}")
   fi
-  if npx playwright test "${E2E_ARGS[@]}" --reporter=list >/tmp/deploy-e2e.log 2>&1; then
+  if npx playwright test "${E2E_ARGS[@]}" --workers=1 --reporter=list >/tmp/deploy-e2e.log 2>&1; then
     ok "E2E pass"
   else
     tail -60 /tmp/deploy-e2e.log

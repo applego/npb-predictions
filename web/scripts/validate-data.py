@@ -141,6 +141,138 @@ def open_database():
     return bootstrap_temp_db()
 
 
+def validate_role_backfill_migration():
+    with tempfile.TemporaryDirectory(prefix="npb-role-backfill-") as temp_dir:
+        db_path = Path(temp_dir) / "role-backfill.sqlite"
+        conn = sqlite3.connect(db_path)
+        conn.executescript("""
+            CREATE TABLE users (
+                id INTEGER PRIMARY KEY,
+                name TEXT NOT NULL,
+                slug TEXT NOT NULL,
+                role TEXT DEFAULT 'friend' NOT NULL,
+                source TEXT,
+                variant TEXT
+            );
+            CREATE TABLE predictions (
+                id INTEGER PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                season_id INTEGER NOT NULL
+            );
+            CREATE TABLE ranking_picks (
+                id INTEGER PRIMARY KEY,
+                prediction_id INTEGER NOT NULL
+            );
+            INSERT INTO users (id, name, slug, role, source, variant)
+            VALUES (9001, '旧解説者', 'legacy-commentator', 'friend', 'スポーツ紙', NULL);
+            INSERT INTO users (id, name, slug, role)
+            VALUES (9002, '熊谷', 'kumagae', 'friend');
+            INSERT INTO users (id, name, slug, role)
+            VALUES (9003, '権藤 博', 'kondo-hiroshi', 'friend');
+            INSERT INTO users (id, name, slug, role, source, variant)
+            VALUES (9004, 'AERA dot.', 'aera-dot', 'friend', 'AERA dot.(1/1', NULL);
+            INSERT INTO users (id, name, slug, role, source, variant)
+            VALUES (9005, '記者記事', 'reporter-article', 'friend', 'スポーツ紙', NULL);
+            INSERT INTO users (id, name, slug, role, source, variant)
+            VALUES (9006, '一般参加者', 'multi-season-friend', 'friend', NULL, NULL);
+            INSERT INTO predictions (id, user_id, season_id)
+            VALUES (9103, 9003, 2026);
+            INSERT INTO predictions (id, user_id, season_id)
+            VALUES (9106, 9006, 2025);
+            INSERT INTO predictions (id, user_id, season_id)
+            VALUES (9107, 9006, 2026);
+            INSERT INTO ranking_picks (id, prediction_id)
+            VALUES (9203, 9103);
+            INSERT INTO ranking_picks (id, prediction_id)
+            VALUES (9206, 9106);
+            INSERT INTO ranking_picks (id, prediction_id)
+            VALUES (9207, 9107);
+        """)
+        apply_sql_file(conn, WEB_ROOT / "drizzle/0010_seed_user_roles_and_display_names.sql")
+
+        cur = conn.cursor()
+        cur.execute("SELECT role FROM users WHERE slug='legacy-commentator'")
+        legacy_role = cur.fetchone()[0]
+        cur.execute("SELECT role FROM users WHERE slug='kumagae'")
+        friend_role = cur.fetchone()[0]
+        cur.execute("SELECT role FROM users WHERE slug='kondo-hiroshi'")
+        seed_commentator_role = cur.fetchone()[0]
+        cur.execute("SELECT role FROM users WHERE slug='aera-dot'")
+        outlet_role = cur.fetchone()[0]
+        cur.execute("SELECT role FROM users WHERE slug='reporter-article'")
+        reporter_article_role = cur.fetchone()[0]
+        cur.execute("SELECT role FROM users WHERE slug='multi-season-friend'")
+        multi_season_friend_role = cur.fetchone()[0]
+        conn.close()
+
+    check(
+        legacy_role == "commentator",
+        "0010 backfills source-backed legacy commentator users",
+    )
+    check(
+        friend_role == "friend",
+        "0010 keeps known friend seed users out of commentator rankings",
+    )
+    check(
+        seed_commentator_role == "commentator",
+        "0010 backfills single-season seed commentator users",
+    )
+    check(
+        outlet_role != "commentator",
+        "0010 keeps outlet/source rows out of commentator rankings",
+    )
+    check(
+        reporter_article_role != "commentator",
+        "0010 keeps reporter article rows out of commentator rankings",
+    )
+    check(
+        multi_season_friend_role == "friend",
+        "0010 keeps multi-season friend users out of commentator rankings",
+    )
+
+
+def validate_seed_team_normalization():
+    with tempfile.TemporaryDirectory(prefix="npb-seed-normalize-") as temp_dir:
+        db_path = Path(temp_dir) / "seed-normalize.sqlite"
+        conn = sqlite3.connect(db_path)
+
+        for migration in sorted((WEB_ROOT / "drizzle").glob("*.sql")):
+            apply_sql_file(conn, migration)
+
+        apply_sql_file(conn, WEB_ROOT / "src/db/seed-commentators.sql")
+
+        short_team_names = tuple(sorted(TEAM_ALIASES))
+        cur = conn.cursor()
+        cur.execute(
+            f"""
+            SELECT COUNT(*)
+            FROM ranking_picks
+            WHERE team_name IN ({','.join('?' for _ in short_team_names)})
+            """,
+            short_team_names,
+        )
+        short_ranking_picks = cur.fetchone()[0]
+        cur.execute(
+            f"""
+            SELECT COUNT(*)
+            FROM title_picks
+            WHERE team_name IN ({','.join('?' for _ in short_team_names)})
+            """,
+            short_team_names,
+        )
+        short_title_picks = cur.fetchone()[0]
+        conn.close()
+
+    check(
+        short_ranking_picks == 0,
+        "seed-commentators leaves no short team names in ranking_picks",
+    )
+    check(
+        short_title_picks == 0,
+        "seed-commentators leaves no short team names in title_picks",
+    )
+
+
 def main():
     conn, temp_dir = open_database()
     cur = conn.cursor()
@@ -227,7 +359,7 @@ def main():
     print("\n=== 6. Non-commentator leak check ===")
     non_commentator_patterns = [
         '%最終順位%', '%AI%', '%ChatGPT%', '%GPT%', '%Gemini%',
-        '%編集部%', '%記者%均%', '%AERA%', '%朝日新聞%', '%SPAIA%',
+        '%編集部%', '%記者%', '%AERA%', '%朝日新聞%', '%SPAIA%',
         '%読者%', '%アンケート%', '%平均%', '%合計%', '%データ%',
     ]
     leaked = []
@@ -238,7 +370,13 @@ def main():
     for item in leaked[:10]:
         print(f"    -> id={item[0]} name='{item[1]}' should be role=system")
 
-    print("\n=== 7. Source validation ===")
+    print("\n=== 7. Role backfill migration ===")
+    validate_role_backfill_migration()
+
+    print("\n=== 8. Seed team normalization ===")
+    validate_seed_team_normalization()
+
+    print("\n=== 9. Source validation ===")
     cur.execute("SELECT COUNT(*) FROM users WHERE role='commentator'")
     total_commentators = cur.fetchone()[0]
     cur.execute("SELECT COUNT(*) FROM users WHERE role='commentator' AND source IS NOT NULL AND source != ''")
@@ -301,7 +439,7 @@ def main():
                 bad_dates.append(source)
     check(len(bad_dates) == 0, f"All source dates have valid M/DD format ({len(bad_dates)} invalid)")
 
-    print("\n=== 8. No duplicate predictions ===")
+    print("\n=== 10. No duplicate predictions ===")
     cur.execute("""
         SELECT u.name, s.year, COUNT(*)
         FROM predictions p

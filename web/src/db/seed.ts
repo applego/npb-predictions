@@ -39,11 +39,11 @@ const PACIFIC_TEAMS = [
 ];
 
 const MEMBERS = [
-  { name: "Oya", slug: "oya" },
+  { name: "大矢", slug: "oya" },
   { name: "Ishiro", slug: "ishiro" },
   { name: "Kuramoto", slug: "kuramoto" },
-  { name: "Tsuneshige", slug: "tsuneshige" },
-  { name: "Kumagae", slug: "kumagae" },
+  { name: "常重", slug: "tsuneshige" },
+  { name: "熊谷", slug: "kumagae" },
 ] as const;
 
 type League = "central" | "pacific";

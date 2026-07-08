@@ -58,6 +58,20 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          ensure_label() {
+            local name="$1"
+            local color="$2"
+            local description="$3"
+            if ! gh label list --search "$name" --json name --jq '.[].name' | grep -Fxq "$name"; then
+              gh label create "$name" --color "$color" --description "$description" || \
+                gh label list --search "$name" --json name --jq '.[].name' | grep -Fxq "$name"
+            fi
+          }
+
+          ensure_label "auto-generated" "ededed" "Created or maintained by automation"
+          ensure_label "feature" "1d76db" "Feature health alert"
+          ensure_label "needs-fix" "d73a4a" "Requires a code or operations fix"
+
           jq -c '.needsAttention[]' /tmp/feature-health.json | while read -r src; do
             SOURCE=$(echo "$src" | jq -r '.source')
             ERROR=$(echo "$src" | jq -r '.latestError // "unknown"')
@@ -65,6 +79,7 @@ jobs:
             DETAIL=$(echo "$src" | jq -c '.detail // {}')
 
             LABEL="feature:${SOURCE}"
+            ensure_label "$LABEL" "5319e7" "Feature health source: ${SOURCE}"
             EXISTING=$(gh issue list --label "auto-generated" --label "$LABEL" --state open --json number -L 1 | jq 'length')
             if [ "$EXISTING" -gt 0 ]; then
               NUM=$(gh issue list --label "auto-generated" --label "$LABEL" --state open --json number -L 1 | jq -r '.[0].number')
@@ -121,9 +136,21 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          ensure_label() {
+            local name="$1"
+            local color="$2"
+            local description="$3"
+            if ! gh label list --search "$name" --json name --jq '.[].name' | grep -Fxq "$name"; then
+              gh label create "$name" --color "$color" --description "$description" || \
+                gh label list --search "$name" --json name --jq '.[].name' | grep -Fxq "$name"
+            fi
+          }
+
+          ensure_label "auto-generated" "ededed" "Created or maintained by automation"
           jq -c '.allSources[] | select(.healthy == true)' /tmp/feature-health.json | while read -r src; do
             SOURCE=$(echo "$src" | jq -r '.source')
             LABEL="feature:${SOURCE}"
+            ensure_label "$LABEL" "5319e7" "Feature health source: ${SOURCE}"
             OPEN_NUMS=$(gh issue list --label "auto-generated" --label "$LABEL" --state open --json number -L 20 | jq -r '.[].number')
             for NUM in $OPEN_NUMS; do
               gh issue comment "$NUM" --body "✅ 復旧を確認。自動クローズします。"

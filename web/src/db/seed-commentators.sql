@@ -2,10 +2,14 @@
 INSERT OR IGNORE INTO seasons (year, label, is_active) VALUES (2026, '2026シーズン', 1);
 
 -- Core 5 users
-INSERT OR IGNORE INTO users (name, slug) VALUES ('Oya','oya'),('Ishiro','ishiro'),('Kuramoto','kuramoto'),('Tsuneshige','tsuneshige'),('Kumagae','kumagae');
+INSERT OR IGNORE INTO users (name, slug, role) VALUES ('大矢','oya','friend'),('Ishiro','ishiro','friend'),('Kuramoto','kuramoto','friend'),('常重','tsuneshige','friend'),('熊谷','kumagae','friend');
+UPDATE users SET name='大矢', role='friend' WHERE slug='oya';
+UPDATE users SET name='常重', role='friend' WHERE slug='tsuneshige';
+UPDATE users SET name='熊谷', role='friend' WHERE slug='kumagae';
 
 -- 24 commentators
-INSERT OR IGNORE INTO users (name, slug) VALUES ('権藤 博','kondo-hiroshi'),('一枝 修平','ichieda-shuhei'),('山田 久志','yamada-hisashi'),('真弓 明信','mayumi-akinobu'),('梨田 昌孝','nashida-masataka'),('大石大二郎','oishi-daijiro'),('中西 清起','nakanishi-kiyoki'),('緒方 孝市','ogata-koichi'),('桧山進次郎','hiyama-shinjiro'),('浜名 千広','hamana-chihiro'),('今岡 真訴','imaoka-masato'),('鳥谷 敬','toritani-takashi'),('平石 洋介','hiraishi-yosuke'),('里崎 智也','satozaki-tomoya'),('上原 浩治','uehara-koji'),('谷繁 元信','tanishige-motonobu'),('宮本 慎也','miyamoto-shinya'),('佐々木主浩','sasaki-kazuhiro'),('緒方 耕一','ogata-koichi-b'),('渡辺 久信','watanabe-hisanobu'),('田村 藤夫','tamura-fujio'),('篠塚 和典','shinozuka-kazunori'),('西本 聖','nishimoto-hijiri'),('岩田 稔','iwata-minoru');
+INSERT OR IGNORE INTO users (name, slug, role) VALUES ('権藤 博','kondo-hiroshi','commentator'),('一枝 修平','ichieda-shuhei','commentator'),('山田 久志','yamada-hisashi','commentator'),('真弓 明信','mayumi-akinobu','commentator'),('梨田 昌孝','nashida-masataka','commentator'),('大石大二郎','oishi-daijiro','commentator'),('中西 清起','nakanishi-kiyoki','commentator'),('緒方 孝市','ogata-koichi','commentator'),('桧山進次郎','hiyama-shinjiro','commentator'),('浜名 千広','hamana-chihiro','commentator'),('今岡 真訴','imaoka-masato','commentator'),('鳥谷 敬','toritani-takashi','commentator'),('平石 洋介','hiraishi-yosuke','commentator'),('里崎 智也','satozaki-tomoya','commentator'),('上原 浩治','uehara-koji','commentator'),('谷繁 元信','tanishige-motonobu','commentator'),('宮本 慎也','miyamoto-shinya','commentator'),('佐々木主浩','sasaki-kazuhiro','commentator'),('緒方 耕一','ogata-koichi-b','commentator'),('渡辺 久信','watanabe-hisanobu','commentator'),('田村 藤夫','tamura-fujio','commentator'),('篠塚 和典','shinozuka-kazunori','commentator'),('西本 聖','nishimoto-hijiri','commentator'),('岩田 稔','iwata-minoru','commentator');
+UPDATE users SET role='commentator' WHERE slug IN ('kondo-hiroshi','ichieda-shuhei','yamada-hisashi','mayumi-akinobu','nashida-masataka','oishi-daijiro','nakanishi-kiyoki','ogata-koichi','hiyama-shinjiro','hamana-chihiro','imaoka-masato','toritani-takashi','hiraishi-yosuke','satozaki-tomoya','uehara-koji','tanishige-motonobu','miyamoto-shinya','sasaki-kazuhiro','ogata-koichi-b','watanabe-hisanobu','tamura-fujio','shinozuka-kazunori','nishimoto-hijiri','iwata-minoru');
 
 -- Predictions for all 29 users
 INSERT OR IGNORE INTO predictions (user_id, season_id, is_locked) SELECT u.id, s.id, 1 FROM users u, seasons s WHERE u.slug='oya' AND s.year=2026;
@@ -307,3 +311,67 @@ INSERT OR IGNORE INTO ranking_picks (prediction_id, league, rank, team_name) SEL
 INSERT OR IGNORE INTO ranking_picks (prediction_id, league, rank, team_name) SELECT (SELECT p.id FROM predictions p JOIN users u ON p.user_id=u.id JOIN seasons s ON p.season_id=s.id WHERE u.slug='iwata-minoru' AND s.year=2026), 'pacific', 4, '西武';
 INSERT OR IGNORE INTO ranking_picks (prediction_id, league, rank, team_name) SELECT (SELECT p.id FROM predictions p JOIN users u ON p.user_id=u.id JOIN seasons s ON p.season_id=s.id WHERE u.slug='iwata-minoru' AND s.year=2026), 'pacific', 5, 'ロッテ';
 INSERT OR IGNORE INTO ranking_picks (prediction_id, league, rank, team_name) SELECT (SELECT p.id FROM predictions p JOIN users u ON p.user_id=u.id JOIN seasons s ON p.season_id=s.id WHERE u.slug='iwata-minoru' AND s.year=2026), 'pacific', 6, '楽天';
+
+-- Keep this seed self-contained: CI applies migrations before this file, so
+-- the normalization migration cannot clean up rows inserted here.
+UPDATE ranking_picks
+SET team_name = CASE team_name
+  WHEN '巨人' THEN '読売ジャイアンツ'
+  WHEN '阪神' THEN '阪神タイガース'
+  WHEN 'DeNA' THEN '横浜DeNAベイスターズ'
+  WHEN '広島' THEN '広島東洋カープ'
+  WHEN '中日' THEN '中日ドラゴンズ'
+  WHEN 'ヤクルト' THEN '東京ヤクルトスワローズ'
+  WHEN 'オリックス' THEN 'オリックス・バファローズ'
+  WHEN 'ソフトバンク' THEN '福岡ソフトバンクホークス'
+  WHEN 'ロッテ' THEN '千葉ロッテマリーンズ'
+  WHEN '楽天' THEN '東北楽天ゴールデンイーグルス'
+  WHEN '西武' THEN '埼玉西武ライオンズ'
+  WHEN '日本ハム' THEN '北海道日本ハムファイターズ'
+  ELSE team_name
+END
+WHERE team_name IN (
+  '巨人',
+  '阪神',
+  'DeNA',
+  '広島',
+  '中日',
+  'ヤクルト',
+  'オリックス',
+  'ソフトバンク',
+  'ロッテ',
+  '楽天',
+  '西武',
+  '日本ハム'
+);
+
+UPDATE title_picks
+SET team_name = CASE team_name
+  WHEN '巨人' THEN '読売ジャイアンツ'
+  WHEN '阪神' THEN '阪神タイガース'
+  WHEN 'DeNA' THEN '横浜DeNAベイスターズ'
+  WHEN '広島' THEN '広島東洋カープ'
+  WHEN '中日' THEN '中日ドラゴンズ'
+  WHEN 'ヤクルト' THEN '東京ヤクルトスワローズ'
+  WHEN 'オリックス' THEN 'オリックス・バファローズ'
+  WHEN 'ソフトバンク' THEN '福岡ソフトバンクホークス'
+  WHEN 'ロッテ' THEN '千葉ロッテマリーンズ'
+  WHEN '楽天' THEN '東北楽天ゴールデンイーグルス'
+  WHEN '西武' THEN '埼玉西武ライオンズ'
+  WHEN '日本ハム' THEN '北海道日本ハムファイターズ'
+  ELSE team_name
+END
+WHERE team_name IN (
+  '巨人',
+  '阪神',
+  'DeNA',
+  '広島',
+  '中日',
+  'ヤクルト',
+  'オリックス',
+  'ソフトバンク',
+  'ロッテ',
+  '楽天',
+  '西武',
+  '日本ハム'
+);

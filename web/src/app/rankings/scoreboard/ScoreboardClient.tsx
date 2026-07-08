@@ -2,6 +2,7 @@
 
 import { useState, useCallback, Fragment } from "react";
 import Link from "next/link";
+import { formatPredictionOwnerSubline } from "@/lib/prediction-owner-display";
 
 // ── Types ──
 
@@ -9,6 +10,10 @@ interface ScoreEntry {
   userId: number;
   userName: string;
   slug?: string;
+  userRole?: string;
+  source?: string | null;
+  sourceUrl?: string | null;
+  variant?: string | null;
   rankingScore: number;
   titleScore: number;
   totalScore: number;
@@ -165,8 +170,13 @@ export function ScoreboardTable({
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [expandCache, setExpandCache] = useState<Record<number, ExpandData>>({});
   const [loadingId, setLoadingId] = useState<number | null>(null);
+  const nameCounts = scores.reduce((counts, entry) => {
+    counts.set(entry.userName, (counts.get(entry.userName) ?? 0) + 1);
+    return counts;
+  }, new Map<string, number>());
 
-  const toggleExpand = useCallback(async (userId: number, slug?: string) => {
+  const toggleExpand = useCallback(async (userId: number, slug?: string, userRole?: string) => {
+    if (userRole !== "commentator") return;
     if (expandedId === userId) {
       setExpandedId(null);
       return;
@@ -232,19 +242,27 @@ export function ScoreboardTable({
         <tbody>
           {scores.map((entry, idx) => {
             const isTop3 = idx < 3;
+            const canExpand = entry.userRole === "commentator" && Boolean(entry.slug);
             const isExpanded = expandedId === entry.userId;
             const cached = expandCache[entry.userId];
             const isLoading = loadingId === entry.userId;
             const sparkScores = sparklineData[entry.userId];
+            const metaLine = formatPredictionOwnerSubline({
+              source: entry.source,
+              variant: entry.variant,
+              slug: entry.slug,
+              activeYears: [year],
+              includeSlugFallback: (nameCounts.get(entry.userName) ?? 0) > 1,
+            });
 
             return (
               <Fragment key={entry.userId}>
                 <tr
-                  onClick={() => toggleExpand(entry.userId, entry.slug)}
+                  onClick={() => toggleExpand(entry.userId, entry.slug, entry.userRole)}
                   style={{
                     borderBottom: isExpanded ? "none" : "1px solid var(--border-primary)",
                     background: isTop3 ? "rgba(212,160,23,0.03)" : "transparent",
-                    cursor: entry.slug ? "pointer" : "default",
+                    cursor: canExpand ? "pointer" : "default",
                   }}
                 >
                   <td
@@ -257,13 +275,37 @@ export function ScoreboardTable({
                     {getRankDisplay(idx)}
                   </td>
                   <td className="px-3 py-2.5">
-                    <span className="font-medium" style={{ color: "var(--text-primary)" }}>
-                      {entry.userName}
-                    </span>
-                    {entry.slug && (
-                      <span className="ml-1.5 text-xs" style={{ color: "var(--text-muted)" }}>
-                        {isExpanded ? "\u25B2" : "\u25BC"}
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="font-medium" style={{ color: "var(--text-primary)" }}>
+                        {entry.userName}
                       </span>
+                      <span
+                        className="rounded-sm px-1 py-0.5 text-[10px]"
+                        style={{
+                          color: entry.userRole === "commentator" ? "var(--stitch)" : "var(--text-muted)",
+                          background: "var(--bg-elevated)",
+                          border: "1px solid var(--border-primary)",
+                        }}
+                      >
+                        {entry.userRole === "commentator" ? "解説者" : "参加者"}
+                      </span>
+                      {canExpand && (
+                        <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+                          {isExpanded ? "\u25B2" : "\u25BC"}
+                        </span>
+                      )}
+                    </div>
+                    {metaLine && (
+                      <div
+                        className="mt-1 text-[10px] leading-snug"
+                        style={{
+                          color: "var(--text-muted)",
+                          maxWidth: "12rem",
+                          whiteSpace: "normal",
+                        }}
+                      >
+                        {metaLine}
+                      </div>
                     )}
                   </td>
                   <td
@@ -321,7 +363,7 @@ export function ScoreboardTable({
                             <span>順位予想: <span style={{ color: "var(--stitch)" }}>{fmtScore(cached.rankingScore)}pt</span></span>
                             <span>タイトル予想: <span style={{ color: "var(--stitch)" }}>{fmtScore(cached.titleScore)}pt</span></span>
                             <span>合計: <span style={{ color: "var(--stitch)", fontWeight: 600 }}>{fmtScore(cached.totalScore)}pt</span></span>
-                            {entry.slug && (
+                            {canExpand && entry.slug && (
                               <Link
                                 href={`/commentators/${entry.slug}?year=${year}`}
                                 className="ml-auto inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium"
