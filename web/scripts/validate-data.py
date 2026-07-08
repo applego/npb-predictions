@@ -141,6 +141,52 @@ def open_database():
     return bootstrap_temp_db()
 
 
+def validate_role_backfill_migration():
+    with tempfile.TemporaryDirectory(prefix="npb-role-backfill-") as temp_dir:
+        db_path = Path(temp_dir) / "role-backfill.sqlite"
+        conn = sqlite3.connect(db_path)
+        conn.executescript("""
+            CREATE TABLE users (
+                id INTEGER PRIMARY KEY,
+                name TEXT NOT NULL,
+                slug TEXT NOT NULL,
+                role TEXT DEFAULT 'friend' NOT NULL,
+                source TEXT,
+                variant TEXT
+            );
+            CREATE TABLE predictions (
+                id INTEGER PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                season_id INTEGER NOT NULL
+            );
+            CREATE TABLE ranking_picks (
+                id INTEGER PRIMARY KEY,
+                prediction_id INTEGER NOT NULL
+            );
+            INSERT INTO users (id, name, slug, role, source, variant)
+            VALUES (9001, '旧解説者', 'legacy-commentator', 'friend', 'スポーツ紙', NULL);
+            INSERT INTO users (id, name, slug, role)
+            VALUES (9002, '熊谷', 'kumagae', 'friend');
+        """)
+        apply_sql_file(conn, WEB_ROOT / "drizzle/0010_seed_user_roles_and_display_names.sql")
+
+        cur = conn.cursor()
+        cur.execute("SELECT role FROM users WHERE slug='legacy-commentator'")
+        legacy_role = cur.fetchone()[0]
+        cur.execute("SELECT role FROM users WHERE slug='kumagae'")
+        friend_role = cur.fetchone()[0]
+        conn.close()
+
+    check(
+        legacy_role == "commentator",
+        "0010 backfills source-backed legacy commentator users",
+    )
+    check(
+        friend_role == "friend",
+        "0010 keeps known friend seed users out of commentator rankings",
+    )
+
+
 def main():
     conn, temp_dir = open_database()
     cur = conn.cursor()
@@ -238,7 +284,10 @@ def main():
     for item in leaked[:10]:
         print(f"    -> id={item[0]} name='{item[1]}' should be role=system")
 
-    print("\n=== 7. Source validation ===")
+    print("\n=== 7. Role backfill migration ===")
+    validate_role_backfill_migration()
+
+    print("\n=== 8. Source validation ===")
     cur.execute("SELECT COUNT(*) FROM users WHERE role='commentator'")
     total_commentators = cur.fetchone()[0]
     cur.execute("SELECT COUNT(*) FROM users WHERE role='commentator' AND source IS NOT NULL AND source != ''")
@@ -301,7 +350,7 @@ def main():
                 bad_dates.append(source)
     check(len(bad_dates) == 0, f"All source dates have valid M/DD format ({len(bad_dates)} invalid)")
 
-    print("\n=== 8. No duplicate predictions ===")
+    print("\n=== 9. No duplicate predictions ===")
     cur.execute("""
         SELECT u.name, s.year, COUNT(*)
         FROM predictions p
