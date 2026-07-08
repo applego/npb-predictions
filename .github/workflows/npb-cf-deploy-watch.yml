@@ -82,11 +82,25 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          ensure_label() {
+            local name="$1"
+            local color="$2"
+            local description="$3"
+            if ! gh label list --search "$name" --json name --jq '.[].name' | grep -Fxq "$name"; then
+              gh label create "$name" --color "$color" --description "$description" || \
+                gh label list --search "$name" --json name --jq '.[].name' | grep -Fxq "$name"
+            fi
+          }
+
           LABEL="cf:deploy-stale"
           MAIN_SHORT="${{ steps.main_sha.outputs.short }}"
           SERVED_SHORT="${{ steps.served.outputs.short }}"
           BUILT_AT="${{ steps.served.outputs.built_at }}"
           AGE_MIN="${{ steps.main_sha.outputs.age_min }}"
+          ensure_label "auto-generated" "ededed" "Created or maintained by automation"
+          ensure_label "deploy" "0e8a16" "Deployment health alert"
+          ensure_label "needs-fix" "d73a4a" "Requires a code or operations fix"
+          ensure_label "$LABEL" "b60205" "Cloudflare Pages deploy stale"
 
           EXISTING=$(gh issue list --label "auto-generated" --label "$LABEL" --state open --json number -L 1 | jq 'length')
           if [ "$EXISTING" -gt 0 ]; then
@@ -129,7 +143,19 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          ensure_label() {
+            local name="$1"
+            local color="$2"
+            local description="$3"
+            if ! gh label list --search "$name" --json name --jq '.[].name' | grep -Fxq "$name"; then
+              gh label create "$name" --color "$color" --description "$description" || \
+                gh label list --search "$name" --json name --jq '.[].name' | grep -Fxq "$name"
+            fi
+          }
+
           LABEL="cf:deploy-stale"
+          ensure_label "auto-generated" "ededed" "Created or maintained by automation"
+          ensure_label "$LABEL" "b60205" "Cloudflare Pages deploy stale"
           OPEN_NUMS=$(gh issue list --label "auto-generated" --label "$LABEL" --state open --json number -L 20 | jq -r '.[].number')
           for NUM in $OPEN_NUMS; do
             gh issue comment "$NUM" --body "✅ deploy同期確認 (served=${{ steps.served.outputs.short }} == main=${{ steps.main_sha.outputs.short }})。自動クローズ。"
