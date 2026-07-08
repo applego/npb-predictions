@@ -65,6 +65,9 @@ export interface ScoreEntry {
   userName: string;
   slug?: string;
   userRole?: string;
+  source?: string | null;
+  sourceUrl?: string | null;
+  variant?: string | null;
   rankingScore: number;
   titleScore: number;
   totalScore: number;

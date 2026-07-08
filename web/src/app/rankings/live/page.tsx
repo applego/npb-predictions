@@ -16,6 +16,7 @@ import {
   socialPreview,
   SEO_TERMS,
 } from "@/lib/seo-meta";
+import { formatPredictionOwnerSubline } from "@/lib/prediction-owner-display";
 
 export const metadata: Metadata = {
   title: "2026 リーグ順位",
@@ -45,7 +46,11 @@ const CURRENT_YEAR = 2026;
 interface ScoreEntry {
   userId: number;
   userName: string;
+  slug?: string;
   userRole?: string;
+  source?: string | null;
+  sourceUrl?: string | null;
+  variant?: string | null;
   userSource?: string | null;
   rankingScore: number;
   titleScore: number;
@@ -397,6 +402,10 @@ export default async function LivePage() {
   const data = await getCurrentScoreboard();
   const hasScores = data && data.scores.length > 0;
   const hasStandings = data && data.standings && data.standings.length > 0;
+  const scoreNameCounts = (data?.scores ?? []).reduce((counts, entry) => {
+    counts.set(entry.userName, (counts.get(entry.userName) ?? 0) + 1);
+    return counts;
+  }, new Map<string, number>());
 
   const breadcrumbItems = [
     { label: "ランキング", href: "/rankings/predictions" },
@@ -470,6 +479,13 @@ export default async function LivePage() {
               <tbody>
                 {data.scores.map((entry, idx) => {
                   const isTop3 = idx < 3;
+                  const metaLine = formatPredictionOwnerSubline({
+                    source: entry.source ?? entry.userSource,
+                    variant: entry.variant,
+                    slug: entry.slug,
+                    activeYears: [CURRENT_YEAR],
+                    includeSlugFallback: (scoreNameCounts.get(entry.userName) ?? 0) > 1,
+                  });
                   return (
                     <tr
                       key={entry.userId}
@@ -498,13 +514,13 @@ export default async function LivePage() {
                         >
                           {entry.userName}
                         </span>
-                        {entry.userSource && (
-                          <span
-                            className="ml-2 text-xs"
+                        {metaLine && (
+                          <div
+                            className="mt-1 text-[10px] leading-snug"
                             style={{ color: "var(--text-secondary)" }}
                           >
-                            （{entry.userSource}）
-                          </span>
+                            {metaLine}
+                          </div>
                         )}
                       </td>
                       <td
