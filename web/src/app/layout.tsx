@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
-import { Bebas_Neue, Noto_Sans_JP } from "next/font/google";
+import { Bebas_Neue } from "next/font/google";
 import { Providers } from "@/components/Providers";
 import { AuthHeader } from "@/components/AuthHeader";
 import { Nav } from "@/components/Nav";
@@ -26,14 +26,6 @@ const bebasNeue = Bebas_Neue({
   display: "swap",
   preload: false,
   fallback: ["Impact", "system-ui", "sans-serif"],
-});
-
-const notoSansJP = Noto_Sans_JP({
-  subsets: ["latin"],
-  variable: "--font-body-default",
-  display: "swap",
-  preload: false,
-  fallback: ["Hiragino Sans", "Hiragino Kaku Gothic ProN", "system-ui", "sans-serif"],
 });
 
 const ROOT_DESCRIPTION = clampDescription(
@@ -101,7 +93,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ja" className={`${bebasNeue.variable} ${notoSansJP.variable}`}>
+    <html lang="ja" className={bebasNeue.variable}>
       <body
         className="min-h-screen antialiased"
         style={{
@@ -123,15 +115,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               borderBottom: "1px solid var(--border-primary)",
             }}
           >
-            <nav className="relative mx-auto flex max-w-[72rem] items-center gap-x-4 px-4 py-3 md:px-6">
-              <Link href="/" className="mr-auto flex shrink-0 items-center gap-2.5">
+            <nav className="relative mx-auto flex max-w-[72rem] items-center gap-x-3 px-3 py-2.5 sm:gap-x-4 sm:px-4 md:px-6">
+              <Link href="/" className="mr-auto flex min-h-11 shrink-0 items-center gap-2.5">
                 <span
                   className="home-plate flex h-8 w-8 items-center justify-center text-sm font-black"
-                  style={{ background: "var(--stitch)", color: "#fff" }}
+                  style={{ background: "var(--field)", color: "#fff" }}
                 >
                   N
                 </span>
                 <span
+                  className="hidden sm:inline"
                   style={{
                     fontFamily: "var(--font-display, var(--font-display-default))",
                     fontSize: "1.25rem",
@@ -139,7 +132,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     color: "var(--text-primary)",
                   }}
                 >
-                  NPB <span style={{ color: "var(--stitch)" }}>LEAGUE</span>
+                  NPB <span style={{ color: "var(--field)" }}>PREDICTIONS</span>
+                </span>
+                <span
+                  className="inline sm:hidden"
+                  style={{
+                    fontFamily: "var(--font-display, var(--font-display-default))",
+                    fontSize: "1.25rem",
+                    letterSpacing: "0.1em",
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  NPB
                 </span>
               </Link>
               <Nav />
@@ -163,7 +167,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   color: "var(--text-muted)",
                 }}
               >
-                NPB PREDICTIONS LEAGUE
+                NPB PREDICTIONS
               </span>
             </div>
           </footer>

@@ -63,15 +63,15 @@ export function Nav() {
   return (
     <>
       {/* Desktop nav */}
-      <div className="hidden items-center gap-5 md:flex">
+      <div className="hidden items-center gap-2 lg:flex">
         {allLinks.map(({ href, label }) => (
           <Link
             key={href}
             href={href}
-            className="relative whitespace-nowrap text-xs font-medium tracking-widest transition-colors"
+            className="relative inline-flex min-h-9 items-center whitespace-nowrap px-2 text-xs font-medium tracking-widest transition-colors"
             style={{
               fontFamily: "var(--font-display)",
-              color: isActive(href) ? "var(--stitch)" : "var(--text-muted)",
+              color: isActive(href) ? "var(--field)" : "var(--text-muted)",
               letterSpacing: "0.15em",
             }}
           >
@@ -79,7 +79,7 @@ export function Nav() {
             {isActive(href) && (
               <span
                 className="absolute -bottom-2 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full"
-                style={{ background: "var(--stitch)" }}
+                style={{ background: "var(--field)" }}
               />
             )}
           </Link>
@@ -91,7 +91,7 @@ export function Nav() {
         ref={buttonRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex h-11 w-11 items-center justify-center rounded-sm md:hidden"
+        className="flex h-11 w-11 items-center justify-center rounded-sm lg:hidden"
         style={{
           background: open ? "rgba(229,57,53,0.08)" : "transparent",
           border: "1px solid var(--border-primary)",
@@ -122,7 +122,7 @@ export function Nav() {
           role="dialog"
           aria-modal="true"
           aria-label="Mobile navigation"
-          className="absolute left-0 right-0 top-full z-50 md:hidden"
+          className="absolute left-0 right-0 top-full z-50 lg:hidden"
           style={{
             background: "var(--bg-surface)",
             borderBottom: "1px solid var(--border-primary)",

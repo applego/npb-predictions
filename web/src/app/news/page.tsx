@@ -73,7 +73,7 @@ export default async function NewsPage() {
 
         <Link
           href="/"
-          className="rounded px-3 py-1.5 text-xs font-medium tracking-wider transition-all"
+          className="inline-flex min-h-9 items-center rounded px-3 py-1.5 text-xs font-medium tracking-wider transition-all"
           style={{
             fontFamily:
               "var(--font-display, 'Bebas Neue', Impact, sans-serif)",

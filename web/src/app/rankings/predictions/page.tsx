@@ -1,10 +1,17 @@
 export const runtime = "edge";
 
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import Link from "next/link";
 import type { Prediction, Season } from "@/lib/types";
-import { getTeamByName } from "@/lib/teams";
+import { TeamBadge } from "@/components/TeamBadge";
 import ShareButton from "@/components/ShareButton";
+import {
+  BroadcastBand,
+  BroadcastChip,
+  BroadcastHeading,
+  BroadcastPanel,
+} from "@/components/BroadcastShell";
 import { BreadcrumbJsonLd } from "@/components/StructuredData";
 import {
   canonicalAlternates,
@@ -14,11 +21,25 @@ import {
   SEO_TERMS,
 } from "@/lib/seo-meta";
 
-const API_BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://npb-predictions.pages.dev";
+const FALLBACK_API_BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://npb-predictions.pages.dev";
+const RANKINGS_REVALIDATE_SECONDS = 600;
 
-async function getActiveYear(): Promise<number> {
+async function getApiBase(): Promise<string> {
+  const headerList = await headers();
+  const host = headerList.get("x-forwarded-host") ?? headerList.get("host");
+  if (!host) return FALLBACK_API_BASE;
+
+  const proto =
+    headerList.get("x-forwarded-proto") ??
+    (host.startsWith("localhost") || host.startsWith("127.0.0.1") ? "http" : "https");
+  return `${proto}://${host}`;
+}
+
+async function getActiveYear(apiBase: string): Promise<number> {
   try {
-    const res = await fetch(`${API_BASE}/api/seasons`, { cache: "no-store" });
+    const res = await fetch(`${apiBase}/api/seasons`, {
+      next: { revalidate: RANKINGS_REVALIDATE_SECONDS },
+    });
     if (!res.ok) return new Date().getFullYear();
     const seasons = (await res.json()) as Season[];
     const active = seasons.find((s) => s.isActive) ?? seasons[0];
@@ -28,9 +49,11 @@ async function getActiveYear(): Promise<number> {
   }
 }
 
-async function getAllSeasons(): Promise<Season[]> {
+async function getAllSeasons(apiBase: string): Promise<Season[]> {
   try {
-    const res = await fetch(`${API_BASE}/api/seasons`, { cache: "no-store" });
+    const res = await fetch(`${apiBase}/api/seasons`, {
+      next: { revalidate: RANKINGS_REVALIDATE_SECONDS },
+    });
     if (!res.ok) return [];
     return res.json() as Promise<Season[]>;
   } catch {
@@ -38,9 +61,11 @@ async function getAllSeasons(): Promise<Season[]> {
   }
 }
 
-async function getPredictions(year: number): Promise<Prediction[]> {
+async function getPredictions(apiBase: string, year: number): Promise<Prediction[]> {
   try {
-    const res = await fetch(`${API_BASE}/api/seasons/${year}/predictions`, { cache: "no-store" });
+    const res = await fetch(`${apiBase}/api/seasons/${year}/predictions`, {
+      next: { revalidate: RANKINGS_REVALIDATE_SECONDS },
+    });
     if (!res.ok) return [];
     return res.json() as Promise<Prediction[]>;
   } catch {
@@ -56,8 +81,9 @@ export async function generateMetadata({
   searchParams: Promise<{ year?: string }>;
 }): Promise<Metadata> {
   const { year: yearParam } = await searchParams;
-  const year = yearParam ? parseInt(yearParam, 10) : await getActiveYear();
-  const title = `${year}年 順位予想一覧`;
+  const apiBase = await getApiBase();
+  const year = yearParam ? parseInt(yearParam, 10) : await getActiveYear(apiBase);
+  const title = `${year}年 順位予想マトリクス`;
   const description = clampDescription(
     `${year}年${SEO_TERMS.npbFull}の${SEO_TERMS.bothLeagues}順位予想をまとめて比較。プロ野球解説者・評論家・一般参加者の開幕前予想を一覧で確認できます。`,
   );
@@ -80,34 +106,18 @@ export async function generateMetadata({
   };
 }
 
-function TeamBadge({ teamName }: { teamName: string }) {
-  const team = getTeamByName(teamName);
-  if (!team) return <span className="text-xs" style={{ color: "var(--text-muted)" }}>—</span>;
-  return (
-    <div
-      className="flex items-center justify-center rounded-sm py-1 text-[11px] font-bold"
-      style={{
-        background: team.color,
-        color: team.textColor,
-        textShadow: team.textColor === "#fff" ? "0 1px 2px rgba(0,0,0,0.3)" : "none",
-      }}
-    >
-      {team.shortName}
-    </div>
-  );
-}
-
 export default async function PredictionsPage({
   searchParams,
 }: {
   searchParams: Promise<{ year?: string }>;
 }) {
   const { year: yearParam } = await searchParams;
-  const year = yearParam ? parseInt(yearParam, 10) : await getActiveYear();
+  const apiBase = await getApiBase();
+  const year = yearParam ? parseInt(yearParam, 10) : await getActiveYear(apiBase);
 
   const [predictions, allSeasons] = await Promise.all([
-    getPredictions(year),
-    getAllSeasons(),
+    getPredictions(apiBase, year),
+    getAllSeasons(apiBase),
   ]);
 
   // Only show predictions that have at least some picks
@@ -121,23 +131,11 @@ export default async function PredictionsPage({
   return (
     <div className="space-y-5">
       <BreadcrumbJsonLd items={breadcrumbItems} />
-      {/* Header */}
+      <BroadcastBand year={year} />
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1
-            style={{
-              fontFamily: "var(--font-display)",
-              fontSize: "clamp(1.5rem, 4vw, 2.25rem)",
-              letterSpacing: "0.04em",
-              color: "var(--text-primary)",
-            }}
-          >
-            <span style={{ color: "var(--stitch)" }}>{year}</span> {"\u9806\u4F4D\u4E88\u60F3\u4E00\u89A7"}
-          </h1>
-          <p className="mt-0.5 text-sm" style={{ color: "var(--text-muted)" }}>
-            {filtered.length}{"\u4EBA"}
-          </p>
-        </div>
+        <BroadcastHeading kicker="PREDICTION MATRIX" title="順位予想マトリクス">
+          <p>{filtered.length}人のセ・パ両リーグ順位予想を横断比較します。</p>
+        </BroadcastHeading>
         <ShareButton type="scoreboard" year={year} />
       </div>
 
@@ -150,16 +148,8 @@ export default async function PredictionsPage({
               <Link
                 key={s.year}
                 href={`/rankings/predictions?year=${s.year}`}
-                className="rounded-sm px-3 py-2 text-xs font-medium"
-                style={{
-                  fontFamily: "var(--font-display)",
-                  letterSpacing: "0.06em",
-                  background: s.year === year ? "var(--stitch)" : "var(--bg-surface)",
-                  color: s.year === year ? "#fff" : "var(--text-muted)",
-                  border: `1px solid ${s.year === year ? "var(--stitch)" : "var(--border-primary)"}`,
-                }}
               >
-                {s.year}
+                <BroadcastChip active={s.year === year}>{s.year}年</BroadcastChip>
               </Link>
             ))}
         </div>
@@ -167,19 +157,20 @@ export default async function PredictionsPage({
 
       {/* Matrix: セ・パ横並び */}
       {filtered.length === 0 ? (
-        <div
-          className="rounded-xl p-10 text-center"
-          style={{ background: "var(--bg-surface)", border: "1px solid var(--border-primary)" }}
-        >
+        <BroadcastPanel className="p-10 text-center">
           <p style={{ color: "var(--text-muted)" }}>
             {year}{"\u5E74\u306E\u4E88\u60F3\u30C7\u30FC\u30BF\u306F\u3042\u308A\u307E\u305B\u3093"}
           </p>
-        </div>
+        </BroadcastPanel>
       ) : (
-        <div
-          className="overflow-x-auto rounded-xl"
-          style={{ background: "var(--bg-surface)", border: "1px solid var(--border-primary)" }}
-        >
+        <BroadcastPanel className="overflow-x-auto p-0">
+          <div
+            className="flex items-center gap-2 px-3 py-3"
+            style={{ borderBottom: "1px solid var(--border-primary)" }}
+          >
+            <BroadcastChip active>セ・リーグ</BroadcastChip>
+            <BroadcastChip>パ・リーグ</BroadcastChip>
+          </div>
           <table className="w-full" style={{ borderCollapse: "separate", borderSpacing: 0 }}>
             <thead
               className="z-30"
@@ -333,7 +324,7 @@ export default async function PredictionsPage({
                       const pick = centralPicks.find((p) => p.rank === rank);
                       return (
                         <td key={`c-${rank}`} className="p-0.5">
-                          {pick ? <TeamBadge teamName={pick.teamName} /> : (
+                          {pick ? <TeamBadge teamName={pick.teamName} variant="cell" /> : (
                             <div className="flex items-center justify-center py-1 text-xs" style={{ color: "var(--text-muted)" }}>—</div>
                           )}
                         </td>
@@ -352,7 +343,7 @@ export default async function PredictionsPage({
                       const pick = pacificPicks.find((p) => p.rank === rank);
                       return (
                         <td key={`p-${rank}`} className="p-0.5">
-                          {pick ? <TeamBadge teamName={pick.teamName} /> : (
+                          {pick ? <TeamBadge teamName={pick.teamName} variant="cell" /> : (
                             <div className="flex items-center justify-center py-1 text-xs" style={{ color: "var(--text-muted)" }}>—</div>
                           )}
                         </td>
@@ -363,7 +354,7 @@ export default async function PredictionsPage({
               })}
             </tbody>
           </table>
-        </div>
+        </BroadcastPanel>
       )}
 
       {/* Stats */}

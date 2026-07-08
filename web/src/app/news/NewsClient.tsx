@@ -243,7 +243,7 @@ function NewspaperCard({ item }: { item: NewsItem }) {
             <button
               type="button"
               onClick={() => setExpanded(!expanded)}
-              className="mb-2 text-xs font-medium transition-colors"
+              className="mb-2 inline-flex min-h-9 items-center text-xs font-medium transition-colors"
               style={{ color: "var(--stitch)" }}
             >
               {expanded ? "▲ 閉じる" : "▼ 続きを読む"}
@@ -450,7 +450,7 @@ export function NewsClient({ items }: { items: NewsItem[] }) {
                 key={tab.value}
                 type="button"
                 onClick={() => { setFilter(tab.value); setShowAll(false); }}
-                className="inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition-all"
+                className="inline-flex min-h-9 items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition-all"
                 style={{
                   fontFamily: "var(--font-display)",
                   letterSpacing: "0.08em",

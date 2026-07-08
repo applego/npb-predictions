@@ -1,6 +1,7 @@
 export const runtime = "edge";
 
 import type { Metadata } from "next";
+import { BroadcastBand, BroadcastHeading, BroadcastPanel, BroadcastChip } from "@/components/BroadcastShell";
 import { getDb } from "@/db";
 import {
   seasons,
@@ -173,57 +174,13 @@ export default async function TitlesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Broadcast header band */}
-      <div
-        className="flex items-center justify-between rounded-md px-4 py-3"
-        style={{ background: "var(--border-strong)", color: "#fff" }}
-      >
-        <span
-          style={{
-            fontFamily: "var(--font-display)",
-            fontSize: "1.1rem",
-            letterSpacing: "0.12em",
-          }}
-        >
-          NPB PREDICTIONS
-        </span>
-        <span
-          style={{
-            fontFamily: "var(--font-display)",
-            fontSize: "0.8rem",
-            letterSpacing: "0.16em",
-            opacity: 0.8,
-          }}
-        >
-          {activeSeason.year} SEASON
-        </span>
-      </div>
+      <BroadcastBand year={activeSeason.year} />
 
-      <div>
-        <p
-          className="text-[0.7rem]"
-          style={{
-            fontFamily: "var(--font-display)",
-            letterSpacing: "0.2em",
-            color: "var(--stitch)",
-          }}
-        >
-          TITLE PREDICTIONS
-        </p>
-        <h1
-          style={{
-            fontFamily: "var(--font-display)",
-            fontSize: "clamp(1.5rem, 4vw, 2.25rem)",
-            letterSpacing: "0.03em",
-            color: "var(--text-primary)",
-          }}
-        >
-          タイトル予想 的中率
-        </h1>
-        <p className="mt-0.5 text-sm" style={{ color: "var(--text-muted)" }}>
+      <BroadcastHeading kicker="TITLE PREDICTIONS" title="タイトル予想 的中率">
+        <p>
           確定 {confirmedCount} タイトル ／ タイトル予想者 {predictors.length}人
         </p>
-      </div>
+      </BroadcastHeading>
 
       {!hasPredictors && (
         <div
@@ -240,36 +197,36 @@ export default async function TitlesPage() {
       {/* Per-league accuracy tables */}
       {hasPredictors &&
         LEAGUES.map((lg) => (
-          <section key={lg.id}>
-            <div
-              className="rounded-t-md px-3 py-1.5 text-sm font-bold"
-              style={{
-                background: lg.id === "central" ? "var(--central)" : "var(--pacific)",
-                color: "#fff",
-                letterSpacing: "0.08em",
-              }}
-            >
-              {lg.label}
+          <BroadcastPanel key={lg.id} className="overflow-hidden">
+            <div className="flex gap-2 border-b px-3 py-3" style={{ borderColor: "var(--border-primary)" }}>
+              <BroadcastChip active>{lg.label}</BroadcastChip>
             </div>
             <div
-              className="overflow-x-auto rounded-b-md"
-              style={{ border: "1px solid var(--border-primary)", borderTop: "none" }}
+              className="max-w-full overflow-x-auto"
+              style={{ borderTop: "none" }}
             >
-              <table className="w-full" style={{ borderCollapse: "collapse" }}>
+              <table
+                className="w-full"
+                style={{
+                  borderCollapse: "collapse",
+                  minWidth: `${13 + predictors.length * 7}rem`,
+                }}
+              >
                 <thead>
-                  <tr style={{ background: "var(--bg-inset)" }}>
+                  <tr style={{ background: "var(--bg-inset)", borderBottom: "2px solid var(--text-primary)" }}>
                     <th
                       className="px-3 py-2 text-left text-xs"
-                      style={{ color: "var(--text-muted)", minWidth: "6rem" }}
+                        style={{ color: "var(--text-muted)", minWidth: "6rem", background: "var(--bg-inset)" }}
                     >
                       タイトル
                     </th>
                     <th
                       className="px-3 py-2 text-left text-xs"
                       style={{
-                        color: "var(--text-primary)",
+                        color: "var(--dirt)",
                         borderLeft: "1px solid var(--border-primary)",
                         minWidth: "7rem",
+                        background: "var(--bg-inset)",
                       }}
                     >
                       実際の結果
@@ -282,6 +239,7 @@ export default async function TitlesPage() {
                           color: "var(--text-muted)",
                           borderLeft: "1px solid var(--border-primary)",
                           minWidth: "7rem",
+                          background: "var(--bg-inset)",
                         }}
                       >
                         {p.name}
@@ -323,7 +281,7 @@ export default async function TitlesPage() {
                           className="px-3 py-2.5"
                           style={{
                             borderLeft: "1px solid var(--border-primary)",
-                            background: confirmed ? "var(--bg-elevated)" : "transparent",
+                            background: confirmed ? "rgba(138,90,0,0.08)" : "transparent",
                           }}
                         >
                           {actual ? (
@@ -354,7 +312,10 @@ export default async function TitlesPage() {
                             <td
                               key={p.predictionId}
                               className="px-3 py-2.5"
-                              style={{ borderLeft: "1px solid var(--border-primary)" }}
+                              style={{
+                                borderLeft: "1px solid var(--border-primary)",
+                                background: hit ? "rgba(31,122,63,0.1)" : confirmed && pick ? "rgba(207,58,50,0.045)" : "transparent",
+                              }}
                             >
                               {pick ? (
                                 <div className="flex items-center justify-between gap-1.5">
@@ -390,7 +351,7 @@ export default async function TitlesPage() {
                 </tbody>
               </table>
             </div>
-          </section>
+          </BroadcastPanel>
         ))}
 
       {/* TITLE SCORE cards */}

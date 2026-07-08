@@ -2,11 +2,15 @@ import { test, expect } from "@playwright/test";
 
 // Verify /rankings/commentators shows commentator entries with scores.
 
+async function waitForCommentatorRanking(page: import("@playwright/test").Page) {
+  await expect(page.getByText(/人表示/)).toBeVisible();
+}
+
 test.describe("Commentator ranking", () => {
   test("/rankings/commentators loads and shows ranking rows", async ({ page }) => {
     const res = await page.goto("/rankings/commentators");
     expect(res?.status(), "/rankings/commentators must not 5xx").toBeLessThan(500);
-    await page.waitForLoadState("networkidle");
+    await waitForCommentatorRanking(page);
 
     const body = await page.textContent("body");
     expect(body).not.toContain("Application error");
@@ -21,7 +25,7 @@ test.describe("Commentator ranking", () => {
     page,
   }) => {
     await page.goto("/rankings/commentators");
-    await page.waitForLoadState("networkidle");
+    await waitForCommentatorRanking(page);
     const body = (await page.textContent("body")) ?? "";
     // A ranking page must show at least one rank indicator (1位 / #1 / 1st) OR a score (+12 / -5)
     const hasRankIndicator = /(?:^|\s)(?:\d+\s*位|#\d+|No\.\s*\d+)/.test(body);
@@ -32,14 +36,14 @@ test.describe("Commentator ranking", () => {
     ).toBe(true);
   });
 
-  test("/commentators/[slug] loads a detail page for the top commentator", async ({
+  test("/rankings/commentators/[slug] loads a detail page for the top commentator", async ({
     page,
     request,
   }) => {
     // Try to resolve a real slug via the listing page, fall back to a known id-1 slug.
     await page.goto("/rankings/commentators");
-    await page.waitForLoadState("networkidle");
-    const firstLink = page.locator('a[href*="/commentators/"]').first();
+    await waitForCommentatorRanking(page);
+    const firstLink = page.locator('a[href*="/rankings/commentators/"]').first();
     const count = await firstLink.count();
     expect(count, "ranking page must expose at least one commentator detail link").toBeGreaterThan(0);
     const href = (await firstLink.getAttribute("href")) ?? "";

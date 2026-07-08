@@ -35,12 +35,14 @@
      data tables so their column headers stick just below the app header
      while scrolling (score-sheet behaviour from the C/D design study). */
   --app-header-h: 72px;
+
+  --font-body-default: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "YuGothic", system-ui, sans-serif;
 }
 
-/* Desktop header is shorter (no hamburger row) — Tailwind md breakpoint. */
-@media (min-width: 768px) {
+/* Desktop header is shorter (no hamburger row) — Tailwind lg breakpoint. */
+@media (min-width: 1024px) {
   :root {
-    --app-header-h: 60px;
+    --app-header-h: 68px;
   }
 }
 
@@ -68,9 +70,9 @@ button:disabled,
 /* ── Baseball Motif Utilities ── */
 
 @layer utilities {
-  /* Stitch border: red dots — baseball seam on white leather */
+  /* Stitch border: dotted ticker rule under the global header */
   .stitch-border {
-    background-image: radial-gradient(circle, var(--stitch) 1.5px, transparent 1.5px);
+    background-image: radial-gradient(circle, var(--field) 1.5px, transparent 1.5px);
     background-size: 10px 3px;
     background-repeat: repeat-x;
     height: 3px;
@@ -118,6 +120,48 @@ button:disabled,
       45deg, transparent, transparent 10px,
       rgba(0, 0, 0, 0.015) 10px, rgba(0, 0, 0, 0.015) 11px
     );
+  }
+
+  .newspaper-preview-shell {
+    background: #bdbbb4;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Shippori Mincho', 'Noto Serif JP', serif;
+    justify-content: center;
+    align-items: center;
+    margin: -2rem -1rem 0;
+    overflow-x: hidden;
+    padding: 32px 16px 48px;
+  }
+
+  .newspaper-preview-sheet {
+    background: #f6f4ed;
+    background-image: linear-gradient(rgba(0,0,0,0.016) 1px,transparent 1px);
+    background-size: 100% 4px;
+    border: 1px solid #cabfa4;
+    box-shadow: 0 18px 50px rgba(40,34,22,0.22);
+    color: #1a1712;
+    flex: none;
+    padding: 34px 32px 30px;
+    transform-origin: top center;
+    width: 912px;
+  }
+
+  @media (max-width: 943px) {
+    .newspaper-preview-shell {
+      padding: 16px 8px 28px;
+    }
+
+    .newspaper-preview-frame {
+      height: calc(1066px * ((100vw - 16px) / 912px));
+      overflow: hidden;
+      width: calc(100vw - 16px);
+    }
+
+    .newspaper-preview-sheet {
+      transform: scale(calc((100vw - 16px) / 912px));
+      transform-origin: top left;
+    }
   }
 
   /* Font classes */

@@ -206,13 +206,13 @@ export function ScoreboardTable({
 
   return (
     <div
-      className="overflow-x-auto rounded-xl"
+      className="max-w-full overflow-x-auto rounded-xl"
       style={{
         background: "var(--bg-surface)",
         border: "1px solid var(--border-primary)",
       }}
     >
-      <table className="w-full text-sm">
+      <table className="w-full min-w-[26rem] text-sm">
         <thead>
           <tr style={{ borderBottom: "2px solid var(--border-primary)" }}>
             {["#", "予想者", "順位点", "タイトル点", "合計", "趨勢"].map((col, i) => (

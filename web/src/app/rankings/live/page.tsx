@@ -2,6 +2,12 @@ export const runtime = "edge";
 
 import type { Metadata } from "next";
 import Link from "next/link";
+import {
+  BroadcastBand,
+  BroadcastChip,
+  BroadcastHeading,
+  BroadcastPanel,
+} from "@/components/BroadcastShell";
 import { BreadcrumbJsonLd, SportsEventJsonLd } from "@/components/StructuredData";
 import {
   canonicalAlternates,
@@ -12,7 +18,7 @@ import {
 } from "@/lib/seo-meta";
 
 export const metadata: Metadata = {
-  title: "2026 LIVE SCOREBOARD",
+  title: "2026 リーグ順位",
   description: clampDescription(
     `2026年${SEO_TERMS.npbFull}シーズンのリアルタイムスコアボード。${SEO_TERMS.bothLeagues}の実績順位が更新されると、予想家のスコアが自動で再計算されます。`,
   ),
@@ -24,7 +30,7 @@ export const metadata: Metadata = {
   ],
   alternates: canonicalAlternates("/rankings/live"),
   ...socialPreview({
-    title: "2026 LIVE SCOREBOARD | NPB予想リーグ",
+    title: "2026 リーグ順位 | NPB予想リーグ",
     description: "2026年シーズンのリアルタイム予想スコア。実績順位が更新されると自動計算。",
     pathname: "/rankings/live",
     ogImage: ogImageUrl("season", { year: 2026 }),
@@ -272,6 +278,121 @@ function StandingsTable({
   );
 }
 
+function RankTrendPanel({
+  standings,
+  changes,
+}: {
+  standings: StandingEntry[];
+  changes: RankChange[];
+}) {
+  const central = standings
+    .filter((s) => s.league === "central")
+    .sort((a, b) => a.rank - b.rank)
+    .slice(0, 6);
+  const pacific = standings
+    .filter((s) => s.league === "pacific")
+    .sort((a, b) => a.rank - b.rank)
+    .slice(0, 6);
+  const changeMap = new Map(changes.map((c) => [`${c.league}:${c.teamName}`, c]));
+  const pointsFor = (entry: StandingEntry) => {
+    const change = changeMap.get(`${entry.league}:${entry.teamName}`);
+    const previous = change?.previousRank ?? entry.rank;
+    const mid = Math.round((previous + entry.rank) / 2);
+    const y = (rank: number) => 28 + (Math.max(1, Math.min(6, rank)) - 1) * 34;
+    return `24,${y(previous)} 164,${y(mid)} 304,${y(entry.rank)} 444,${y(entry.rank)}`;
+  };
+
+  return (
+    <BroadcastPanel className="overflow-hidden p-0">
+      <div
+        className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+        style={{ borderBottom: "1px solid var(--border-primary)" }}
+      >
+        <div>
+          <p
+            className="text-[10px] font-black uppercase"
+            style={{
+              color: "var(--field)",
+              fontFamily: "var(--font-display)",
+              letterSpacing: "0.16em",
+            }}
+          >
+            RANK TREND
+          </p>
+          <h2 className="text-base font-black" style={{ color: "var(--text-primary)" }}>
+            月次順位推移
+          </h2>
+        </div>
+        <BroadcastChip active>{CURRENT_YEAR}年</BroadcastChip>
+      </div>
+      <div className="grid gap-0 md:grid-cols-2">
+        {[
+          { label: "\u30BB\u30FB\u30EA\u30FC\u30B0", rows: central, color: "var(--central, #1E40AF)" },
+          { label: "\u30D1\u30FB\u30EA\u30FC\u30B0", rows: pacific, color: "var(--pacific, #B91C1C)" },
+        ].map((league) => (
+          <div
+            key={league.label}
+            className="p-4"
+            style={{ borderRight: league.label.startsWith("\u30BB") ? "1px solid var(--border-primary)" : undefined }}
+          >
+            <div className="mb-3 flex items-center gap-2">
+              <span
+                className="rounded px-1.5 py-0.5 text-[10px] font-black"
+                style={{ background: league.color, color: "#fff" }}
+              >
+                {league.label}
+              </span>
+            </div>
+            <div className="relative h-56">
+              <svg viewBox="0 0 480 210" className="h-full w-full" role="img" aria-label={`${league.label}順位推移`}>
+                {[1, 2, 3, 4, 5, 6].map((rank) => {
+                  const y = 28 + (rank - 1) * 34;
+                  return (
+                    <g key={rank}>
+                      <line x1="24" x2="444" y1={y} y2={y} stroke="var(--border-primary)" strokeWidth="1" />
+                      <text x="6" y={y + 4} fill="var(--text-muted)" fontSize="10" fontWeight="700">{rank}</text>
+                    </g>
+                  );
+                })}
+                {league.rows.map((entry, index) => {
+                  const teamColor = TEAM_COLORS[entry.teamName]?.bg ?? league.color;
+                  return (
+                    <g key={entry.teamName}>
+                      <polyline
+                        points={pointsFor(entry)}
+                        fill="none"
+                        stroke={teamColor}
+                        strokeWidth={index === 0 ? 5 : 3}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        opacity={index < 4 ? 0.95 : 0.55}
+                      />
+                      <circle cx="444" cy={28 + (entry.rank - 1) * 34} r={index === 0 ? 5 : 4} fill={teamColor} />
+                    </g>
+                  );
+                })}
+              </svg>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {league.rows.slice(0, 4).map((entry) => (
+                <div key={entry.teamName} className="flex items-center gap-2 text-xs">
+                  <span
+                    className="h-2.5 w-2.5 rounded-sm"
+                    style={{ background: TEAM_COLORS[entry.teamName]?.bg ?? league.color }}
+                  />
+                  <span className="truncate" style={{ color: "var(--text-secondary)" }}>
+                    {entry.rank}位 {SHORT_NAMES[entry.teamName] ?? entry.teamName}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </BroadcastPanel>
+  );
+}
+
 export default async function LivePage() {
   const data = await getCurrentScoreboard();
   const hasScores = data && data.scores.length > 0;
@@ -291,37 +412,38 @@ export default async function LivePage() {
         pathname="/rankings/live"
         description={`${CURRENT_YEAR}年${SEO_TERMS.npbFull}のリアルタイム予想スコア`}
       />
-      {/* Header */}
-      <div>
-        <h1
-          style={{
-            fontFamily: "var(--font-display)",
-            fontSize: "clamp(1.5rem, 4vw, 2.25rem)",
-            letterSpacing: "0.04em",
-            color: "var(--text-primary)",
-          }}
-        >
-          <span style={{ fontSize: "0.85em" }}>{"\u{1F4C8}"}</span>{" "}
-          <span style={{ color: "var(--stitch)" }}>{CURRENT_YEAR}</span> LIVE
-          SCOREBOARD
-        </h1>
-        <p className="mt-0.5 text-sm" style={{ color: "var(--text-muted)" }}>
+      <BroadcastBand year={CURRENT_YEAR} />
+      <BroadcastHeading kicker="LEAGUE STANDINGS" title={`${CURRENT_YEAR} リーグ順位`}>
+        <p>
           {hasScores
             ? `${data.scores.length}\u4EBA\u306E\u30B9\u30B3\u30A2\u3092\u30EA\u30A2\u30EB\u30BF\u30A4\u30E0\u8A08\u7B97\u4E2D`
             : "\u30B7\u30FC\u30BA\u30F3\u9032\u884C\u4E2D \u2014 \u5B9F\u7E3E\u30C7\u30FC\u30BF\u5F85\u3061"}
         </p>
-      </div>
+      </BroadcastHeading>
 
       {hasScores ? (
         <>
+          {hasStandings && (
+            <RankTrendPanel standings={data.standings} changes={data.changes} />
+          )}
+
           {/* Live scoreboard table */}
-          <div
-            className="overflow-x-auto rounded-xl"
-            style={{
-              background: "var(--bg-surface)",
-              border: "1px solid var(--border-primary)",
-            }}
-          >
+          <BroadcastPanel className="overflow-x-auto p-0">
+            <div
+              className="px-4 py-3"
+              style={{ borderBottom: "1px solid var(--border-primary)" }}
+            >
+              <p
+                className="text-[10px] font-black uppercase"
+                style={{
+                  color: "var(--field)",
+                  fontFamily: "var(--font-display)",
+                  letterSpacing: "0.16em",
+                }}
+              >
+                LIVE SCORE
+              </p>
+            </div>
             <table className="w-full text-sm">
               <thead>
                 <tr
@@ -425,17 +547,11 @@ export default async function LivePage() {
                 })}
               </tbody>
             </table>
-          </div>
+          </BroadcastPanel>
 
           {/* Standings tables */}
           {hasStandings && (
-            <section
-              className="overflow-hidden rounded-xl"
-              style={{
-                background: "var(--bg-surface)",
-                border: "1px solid var(--border-primary)",
-              }}
-            >
+            <BroadcastPanel className="overflow-hidden p-0">
               <div
                 className="flex items-center gap-3 px-5 py-3"
                 style={{ borderBottom: "1px solid var(--border-primary)" }}
@@ -473,7 +589,7 @@ export default async function LivePage() {
                   changes={data.changes}
                 />
               </div>
-            </section>
+            </BroadcastPanel>
           )}
 
           {/* CTA */}
@@ -504,13 +620,7 @@ export default async function LivePage() {
         </>
       ) : (
         /* Placeholder state */
-        <section
-          className="overflow-hidden rounded-xl"
-          style={{
-            background: "var(--bg-surface)",
-            border: "1px solid var(--border-primary)",
-          }}
-        >
+        <BroadcastPanel className="overflow-hidden p-0">
           <div
             className="h-1 w-full"
             style={{
@@ -556,7 +666,7 @@ export default async function LivePage() {
               </Link>
             </div>
           </div>
-        </section>
+        </BroadcastPanel>
       )}
     </div>
   );

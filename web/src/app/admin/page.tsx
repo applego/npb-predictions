@@ -5,10 +5,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import {
   NUMBER_FONTS,
-  BODY_FONTS,
   COLOR_THEMES,
   DEFAULT_NUMBER_FONT_ID,
-  DEFAULT_BODY_FONT_ID,
   DEFAULT_COLOR_THEME_ID,
 } from "@/lib/theme-presets";
 
@@ -808,7 +806,6 @@ function ResultDisplay({ result }: { result: ApiResult | null }) {
 
 function SiteThemeAdmin() {
   const [numFont, setNumFont] = useState(DEFAULT_NUMBER_FONT_ID);
-  const [bodyFont, setBodyFont] = useState(DEFAULT_BODY_FONT_ID);
   const [colorTheme, setColorTheme] = useState(DEFAULT_COLOR_THEME_ID);
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
@@ -819,7 +816,6 @@ function SiteThemeAdmin() {
       .then((d) => {
         const s = d as Record<string, string>;
         if (s.font_number) setNumFont(s.font_number);
-        if (s.font_body) setBodyFont(s.font_body);
         if (s.color_theme) setColorTheme(s.color_theme);
       })
       .catch(() => {});
@@ -845,8 +841,8 @@ function SiteThemeAdmin() {
     <section className="rounded-lg border bg-white p-6 shadow-sm">
       <h2 className="mb-1 text-lg font-bold">サイトテーマ・フォント設定</h2>
       <p className="mb-4 text-xs text-gray-500">
-        サイト全体の配色とフォント（リリースの見た目）を設定します。各ユーザーは
-        /settings で自分の配色とフォントを上書きできます。
+        サイト全体の配色と数字フォント（リリースの見た目）を設定します。各ユーザーは
+        /settings で自分の配色と数字フォントを上書きできます。
       </p>
       {message && (
         <p className="mb-3 text-sm" style={{ color: "var(--field)" }}>
@@ -931,31 +927,6 @@ function SiteThemeAdmin() {
             >
               <span style={{ fontWeight: 700 }}>+48</span>{" "}
               <span className="text-xs text-gray-600">{f.name}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      <h3 className="mb-2 text-sm font-semibold text-gray-600">日本語フォント</h3>
-      <div className="mb-4 flex flex-wrap gap-2">
-        {BODY_FONTS.map((f) => {
-          const active = bodyFont === f.id;
-          return (
-            <button
-              key={f.id}
-              type="button"
-              disabled={saving}
-              onClick={() => {
-                setBodyFont(f.id);
-                void save("font_body", f.id);
-              }}
-              className="rounded-md px-3 py-2"
-              style={{
-                border: active ? "2px solid var(--stitch)" : "1px solid var(--border-primary)",
-                background: active ? "rgba(0,0,0,0.03)" : "#fff",
-              }}
-            >
-              <span style={{ fontSize: "0.85rem" }}>{f.name}</span>
             </button>
           );
         })}
