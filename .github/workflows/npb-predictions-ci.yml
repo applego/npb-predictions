@@ -6,11 +6,13 @@ on:
     paths:
       - 'web/**'
       - '.github/workflows/npb-predictions-ci.yml'
+      - '.github/hooks/**'
   pull_request:
     branches: [main]
     paths:
       - 'web/**'
       - '.github/workflows/npb-predictions-ci.yml'
+      - '.github/hooks/**'
 
 defaults:
   run:
@@ -36,7 +38,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
           cache-dependency-path: web/package-lock.json
 
@@ -51,6 +53,9 @@ jobs:
 
       - name: Build for Cloudflare Pages
         run: npx @cloudflare/next-on-pages
+
+      - name: Performance budget
+        run: npm run check:perf-budget
 
       # 2026-05-23: deploy 前に Playwright E2E スモークを走らせる (永続保証)。
       # 過去 OG 画像が 0B を返す bug を E2E が検知していたのに CI で回って
@@ -79,8 +84,11 @@ jobs:
       - name: Seed local D1 (e2e standings fixture)
         run: timeout 120s npx wrangler d1 execute npb-predictions --local --persist-to "$WRANGLER_PERSIST_TO" --file=src/db/fixtures/e2e-standings.sql
 
+      - name: Data correctness gate
+        run: npm run validate-data:persisted
+
       - name: E2E smoke (against built CF Pages output)
-        run: npm run test:e2e
+        run: npm run test:e2e -- --workers=1
 
       # wrangler-action v3 は `command` 入力を改行で split して各行を別コマンドとして
       # 実行する。`github.event.head_commit.message` は squash merge 時に commit body

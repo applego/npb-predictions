@@ -20,8 +20,11 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "validate-data": "python3 scripts/validate-data.py",
+    "validate-data:persisted": "python3 scripts/validate-data-from-wrangler-persist.py",
+    "check:perf-budget": "python3 scripts/check-performance-budget.py",
+    "gate:prepush": "npm run validate-data",
     "ci": "npm run test && npm run validate-data && npm run build",
-    "ci:full": "npm run test && npm run validate-data && npm run build && npm run build:cf",
+    "ci:full": "npm run test && npm run validate-data && npm run build && npm run build:cf && npm run check:perf-budget",
     "ci:e2e": "npm run build:cf && playwright test"
   },
   "dependencies": {
