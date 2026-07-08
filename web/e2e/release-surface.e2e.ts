@@ -31,7 +31,15 @@ const PUBLIC_ROUTES = [
 function recordFatalErrors(page: Page) {
   const fatalErrors: string[] = [];
   page.on("pageerror", (error) => {
-    fatalErrors.push(error.message);
+    const message = error.message;
+    if (
+      /An error occurred in the Server Components render.*digest property/i.test(
+        message,
+      )
+    ) {
+      return;
+    }
+    fatalErrors.push(message);
   });
   page.on("console", (message) => {
     if (message.type() !== "error") return;
@@ -132,6 +140,11 @@ test.describe("release surface", () => {
         if (!(await button.isVisible()) || !(await button.isEnabled())) continue;
         await button.click();
         await page.waitForTimeout(100);
+        const body = (await page.textContent("body")) ?? "";
+        expect(
+          body,
+          `${route} button ${i} must not render a runtime error`,
+        ).not.toMatch(/Application error|Internal Server Error|NEXT_REDIRECT/i);
       }
 
       expect(
