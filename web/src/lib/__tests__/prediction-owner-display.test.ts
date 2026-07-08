@@ -31,4 +31,14 @@ describe("prediction owner display helpers", () => {
       }),
     ).toBe("shinozuka-kazunori-2024");
   });
+
+  it("keeps the slug fallback when active years alone cannot identify duplicate names", () => {
+    expect(
+      formatPredictionOwnerSubline({
+        activeYears: [2026],
+        slug: "shinozuka-kazunori-2026-alt",
+        includeSlugFallback: true,
+      }),
+    ).toBe("2026年 / shinozuka-kazunori-2026-alt");
+  });
 });

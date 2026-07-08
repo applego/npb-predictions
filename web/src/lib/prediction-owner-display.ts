@@ -33,18 +33,19 @@ export function formatActiveYears(years: number[] = []): string | null {
 export function formatPredictionOwnerSubline(
   input: PredictionOwnerDisplayInput,
 ): string | null {
+  const source = cleanText(input.source);
+  const variant = cleanText(input.variant);
+  const slug = cleanText(input.slug);
+  const metadataParts = [source, variant].filter((part): part is string =>
+    Boolean(part),
+  );
   const parts = [
-    cleanText(input.source),
-    cleanText(input.variant),
+    ...metadataParts,
     formatActiveYears(input.activeYears ?? []),
   ].filter((part): part is string => Boolean(part));
 
-  if (
-    input.includeSlugFallback &&
-    parts.length === 0 &&
-    cleanText(input.slug)
-  ) {
-    parts.push(cleanText(input.slug)!);
+  if (input.includeSlugFallback && metadataParts.length === 0 && slug) {
+    parts.push(slug);
   }
 
   return parts.length > 0 ? parts.join(" / ") : null;
