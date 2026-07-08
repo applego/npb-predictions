@@ -170,9 +170,10 @@ export async function GET(req: Request) {
   }
   const deduped = Array.from(firstByUser.values());
 
-  // The combined view should rank any commentator with at least one league prediction.
+  // The combined view compares complete セ+パ predictions only. Partial entries
+  // remain comparable in their individual league tabs.
   const filtered = leagueParam === "all"
-    ? deduped.filter((c) => c.centralDetails.length > 0 || c.pacificDetails.length > 0)
+    ? deduped.filter((c) => c.centralDetails.length > 0 && c.pacificDetails.length > 0)
     : deduped.filter((c) =>
         leagueParam === "central"
           ? c.centralDetails.length > 0

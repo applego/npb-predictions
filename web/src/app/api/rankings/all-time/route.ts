@@ -50,7 +50,7 @@ export async function GET() {
 
   for (const pred of allPreds) {
     const user = userMap.get(pred.userId);
-    if (!user || user.role === "system") continue;
+    if (!user || user.role !== "commentator") continue;
 
     const year = seasonYearMap.get(pred.seasonId);
     if (!year) continue;

@@ -59,4 +59,34 @@ test.describe("Commentator ranking", () => {
     const res = await request.get("/api/commentators/tsuneshige?year=2026");
     expect(res.status()).toBe(404);
   });
+
+  test("combined commentator rankings only compare both-league prediction rows", async ({
+    request,
+  }) => {
+    const res = await request.get("/api/rankings/commentators?year=2026&league=all");
+    expect(res.status()).toBe(200);
+    const data = (await res.json()) as {
+      commentators: { centralDetails: unknown[]; pacificDetails: unknown[] }[];
+    };
+
+    for (const commentator of data.commentators) {
+      expect(commentator.centralDetails.length).toBeGreaterThan(0);
+      expect(commentator.pacificDetails.length).toBeGreaterThan(0);
+    }
+  });
+
+  test("all-time rankings only expose commentator identities", async ({
+    request,
+  }) => {
+    const res = await request.get("/api/rankings/all-time");
+    expect(res.status()).toBe(200);
+    const data = (await res.json()) as {
+      commentators: { slug: string }[];
+    };
+    const slugs = new Set(data.commentators.map((commentator) => commentator.slug));
+
+    expect(slugs.has("tsuneshige")).toBe(false);
+    expect(slugs.has("kumagae")).toBe(false);
+    expect(slugs.has("oya")).toBe(false);
+  });
 });
