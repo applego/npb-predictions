@@ -8,16 +8,20 @@ checked-in migrations and SQL seed so `npm run ci` is reproducible.
 """
 
 from pathlib import Path
+import json
 import os
+import re
 import sqlite3
 import sys
 import tempfile
 
 
 WEB_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = WEB_ROOT.parent
 D1_DIR = WEB_ROOT / ".wrangler/state/v3/d1/miniflare-D1DatabaseObject"
 LEGACY_DB_NAME = "ebe107f426ba83322c62809723b53c3169b31ddb2289bafa01897cad3061e808.sqlite"
 CURRENT_RELEASE_YEAR = 2026
+SOURCELESS_NON_COMMENTATOR_NAMES = {"優勝", "2位", "3位", "4位", "5位", "6位"}
 
 TEAM_ALIASES = {
     "巨人": "読売ジャイアンツ",
@@ -64,6 +68,41 @@ def check(condition, msg):
 
 def canonical_team(team):
     return TEAM_ALIASES.get(team, team)
+
+
+def source_less_commentator_slugs():
+    data_path = REPO_ROOT / "data/commentator_predictions.json"
+    data = json.loads(data_path.read_text())
+    year_groups = {}
+
+    for year_str, year_data in data.items():
+        year = int(year_str)
+        for league in ("central", "pacific"):
+            for entry in year_data.get(league, []) or []:
+                name = entry["name"]
+                variant = entry.get("variant") or ""
+                source = entry.get("source") or ""
+                key = f"{name}|{variant}"
+                year_groups.setdefault(year, {}).setdefault(key, {})
+                year_groups[year][key].setdefault(
+                    league,
+                    {"name": name, "variant": variant, "source": source},
+                )
+
+    identities = {}
+    for name_map in year_groups.values():
+        for key, league_map in name_map.items():
+            if key not in identities:
+                identities[key] = next(iter(league_map.values()))
+
+    slugs = set()
+    for identity in identities.values():
+        if identity["source"] or identity["variant"]:
+            continue
+        if identity["name"] in SOURCELESS_NON_COMMENTATOR_NAMES:
+            continue
+        slugs.add(re.sub(r"\s+", "-", identity["name"]))
+    return slugs
 
 
 def has_table(db_path, table_name):
@@ -175,18 +214,30 @@ def validate_role_backfill_migration():
             VALUES (9005, '記者記事', 'reporter-article', 'friend', 'スポーツ紙', NULL);
             INSERT INTO users (id, name, slug, role, source, variant)
             VALUES (9006, '一般参加者', 'multi-season-friend', 'friend', NULL, NULL);
+            INSERT INTO users (id, name, slug, role, source, variant)
+            VALUES (9007, '福留孝介', '福留孝介', 'friend', NULL, NULL);
+            INSERT INTO users (id, name, slug, role, source, variant)
+            VALUES (9008, '優勝', '優勝', 'friend', NULL, NULL);
             INSERT INTO predictions (id, user_id, season_id)
             VALUES (9103, 9003, 2026);
             INSERT INTO predictions (id, user_id, season_id)
             VALUES (9106, 9006, 2025);
             INSERT INTO predictions (id, user_id, season_id)
             VALUES (9107, 9006, 2026);
+            INSERT INTO predictions (id, user_id, season_id)
+            VALUES (9108, 9007, 2023);
+            INSERT INTO predictions (id, user_id, season_id)
+            VALUES (9109, 9008, 2023);
             INSERT INTO ranking_picks (id, prediction_id)
             VALUES (9203, 9103);
             INSERT INTO ranking_picks (id, prediction_id)
             VALUES (9206, 9106);
             INSERT INTO ranking_picks (id, prediction_id)
             VALUES (9207, 9107);
+            INSERT INTO ranking_picks (id, prediction_id)
+            VALUES (9208, 9108);
+            INSERT INTO ranking_picks (id, prediction_id)
+            VALUES (9209, 9109);
         """)
         apply_sql_file(conn, WEB_ROOT / "drizzle/0010_seed_user_roles_and_display_names.sql")
 
@@ -203,7 +254,17 @@ def validate_role_backfill_migration():
         reporter_article_role = cur.fetchone()[0]
         cur.execute("SELECT role FROM users WHERE slug='multi-season-friend'")
         multi_season_friend_role = cur.fetchone()[0]
+        cur.execute("SELECT role FROM users WHERE slug='福留孝介'")
+        source_less_commentator_role = cur.fetchone()[0]
+        cur.execute("SELECT role FROM users WHERE slug='優勝'")
+        standings_label_role = cur.fetchone()[0]
         conn.close()
+
+    migration_text = (WEB_ROOT / "drizzle/0010_seed_user_roles_and_display_names.sql").read_text()
+    slug_section = migration_text.split("OR `slug` IN (", 1)[1].split(")", 1)[0]
+    migration_slugs = set(re.findall(r"'([^']+)'", slug_section))
+    missing_source_less = sorted(source_less_commentator_slugs() - migration_slugs)
+    unexpected_non_commentators = sorted(SOURCELESS_NON_COMMENTATOR_NAMES & migration_slugs)
 
     check(
         legacy_role == "commentator",
@@ -228,6 +289,22 @@ def validate_role_backfill_migration():
     check(
         multi_season_friend_role == "friend",
         "0010 keeps multi-season friend users out of commentator rankings",
+    )
+    check(
+        source_less_commentator_role == "commentator",
+        "0010 backfills source-less legacy commentator users imported by JSON seed",
+    )
+    check(
+        standings_label_role == "friend",
+        "0010 keeps source-less standings label rows out of commentator rankings",
+    )
+    check(
+        not missing_source_less,
+        f"0010 covers JSON seed source-less commentator slugs ({len(missing_source_less)} missing)",
+    )
+    check(
+        not unexpected_non_commentators,
+        "0010 excludes source-less standings label slugs from commentator backfill",
     )
 
 
