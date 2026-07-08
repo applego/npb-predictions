@@ -114,25 +114,24 @@ test.describe("release surface", () => {
     expect(page.url()).toContain("view=trend");
   });
 
-  test("safe visible buttons on ranking surfaces do not crash", async ({ page }) => {
+  test("safe visible buttons across public release routes do not crash", async ({
+    page,
+  }) => {
     const fatalErrors = recordFatalErrors(page);
-    const pages = [
-      "/rankings/commentators",
-      "/rankings/predictions?year=2026",
-      "/rankings/titles",
-      "/rankings/live",
-    ];
 
-    for (const path of pages) {
-      await page.goto(path);
+    for (const path of PUBLIC_ROUTES) {
+      const response = await page.goto(path);
+      expect(response, `${path} must return a response`).not.toBeNull();
+      expect(response!.status(), `${path} must not 5xx`).toBeLessThan(500);
       await page.waitForLoadState("networkidle");
 
       const buttons = page
         .getByRole("button")
         .filter({
-          hasNotText: /Google|ログイン|共有|コピー|保存|ダウンロード|PNG|Xで/i,
+          hasNotText:
+            /Google|ログイン|ログアウト|共有|コピー|保存|削除|ダウンロード|PNG|Xで|送信|投稿|作成|参加/i,
         });
-      const count = Math.min(await buttons.count(), 8);
+      const count = Math.min(await buttons.count(), 6);
       for (let i = 0; i < count; i++) {
         const button = buttons.nth(i);
         if (!(await button.isVisible()) || !(await button.isEnabled())) continue;
