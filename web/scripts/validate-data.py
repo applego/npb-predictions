@@ -167,6 +167,12 @@ def validate_role_backfill_migration():
             VALUES (9001, '旧解説者', 'legacy-commentator', 'friend', 'スポーツ紙', NULL);
             INSERT INTO users (id, name, slug, role)
             VALUES (9002, '熊谷', 'kumagae', 'friend');
+            INSERT INTO users (id, name, slug, role)
+            VALUES (9003, '権藤 博', 'kondo-hiroshi', 'friend');
+            INSERT INTO predictions (id, user_id, season_id)
+            VALUES (9103, 9003, 2026);
+            INSERT INTO ranking_picks (id, prediction_id)
+            VALUES (9203, 9103);
         """)
         apply_sql_file(conn, WEB_ROOT / "drizzle/0010_seed_user_roles_and_display_names.sql")
 
@@ -175,6 +181,8 @@ def validate_role_backfill_migration():
         legacy_role = cur.fetchone()[0]
         cur.execute("SELECT role FROM users WHERE slug='kumagae'")
         friend_role = cur.fetchone()[0]
+        cur.execute("SELECT role FROM users WHERE slug='kondo-hiroshi'")
+        seed_commentator_role = cur.fetchone()[0]
         conn.close()
 
     check(
@@ -184,6 +192,10 @@ def validate_role_backfill_migration():
     check(
         friend_role == "friend",
         "0010 keeps known friend seed users out of commentator rankings",
+    )
+    check(
+        seed_commentator_role == "commentator",
+        "0010 backfills single-season seed commentator users",
     )
 
 
