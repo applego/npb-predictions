@@ -15,7 +15,7 @@ export interface TitlePredictorSummary<TPick>
   extends TitlePredictorInput<TPick> {
   hits: number;
   score: number;
-  attemptedConfirmedCount: number;
+  confirmedTitleCount: number;
 }
 
 function norm(s: string): string {
@@ -35,12 +35,10 @@ export function scoreTitlePredictors<TPick extends { playerName: string }>(
 ): TitlePredictorSummary<TPick>[] {
   return predictors.filter(hasAnyTitlePick).map((predictor) => {
     let hits = 0;
-    let attemptedConfirmedCount = 0;
     for (const key of confirmedKeys) {
       const actual = actualByKey.get(key);
       const pick = predictor.picks.get(key);
       if (!actual || !pick) continue;
-      attemptedConfirmedCount += 1;
       if (norm(pick.playerName) === norm(actual.playerName)) {
         hits += 1;
       }
@@ -48,7 +46,7 @@ export function scoreTitlePredictors<TPick extends { playerName: string }>(
     return {
       ...predictor,
       hits,
-      attemptedConfirmedCount,
+      confirmedTitleCount: confirmedKeys.length,
       score: hits * TITLE_HIT_SCORE,
     };
   });

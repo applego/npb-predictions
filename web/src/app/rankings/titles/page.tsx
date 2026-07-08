@@ -394,7 +394,7 @@ export default async function TitlesPage() {
                   +{p.score}
                 </div>
                 <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>
-                  {p.hits}/{p.attemptedConfirmedCount} 的中
+                  {p.hits}/{p.confirmedTitleCount} 的中
                 </div>
               </div>
             ))}
