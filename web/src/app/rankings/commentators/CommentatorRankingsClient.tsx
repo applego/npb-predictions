@@ -17,6 +17,7 @@ import { downloadPredictionPng, type PngCol } from "@/lib/prediction-png";
 // ── Constants ──
 
 const AVAILABLE_YEARS = [2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026] as const;
+const DEFAULT_YEAR = AVAILABLE_YEARS[AVAILABLE_YEARS.length - 1];
 
 type YearOption = (typeof AVAILABLE_YEARS)[number] | "all";
 
@@ -748,7 +749,7 @@ function LoadingSkeleton() {
 // ── Main Client Component ──
 
 export function CommentatorRankingsClient() {
-  const [year, setYear] = useState<YearOption>(2025);
+  const [year, setYear] = useState<YearOption>(DEFAULT_YEAR);
   const [league, setLeague] = useState<LeagueFilter>("all");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortKey>("score");

@@ -9,6 +9,7 @@ interface ScoreEntry {
   userId: number;
   userName: string;
   slug?: string;
+  userRole?: string;
   rankingScore: number;
   titleScore: number;
   totalScore: number;
@@ -166,7 +167,8 @@ export function ScoreboardTable({
   const [expandCache, setExpandCache] = useState<Record<number, ExpandData>>({});
   const [loadingId, setLoadingId] = useState<number | null>(null);
 
-  const toggleExpand = useCallback(async (userId: number, slug?: string) => {
+  const toggleExpand = useCallback(async (userId: number, slug?: string, userRole?: string) => {
+    if (userRole !== "commentator") return;
     if (expandedId === userId) {
       setExpandedId(null);
       return;
@@ -232,6 +234,7 @@ export function ScoreboardTable({
         <tbody>
           {scores.map((entry, idx) => {
             const isTop3 = idx < 3;
+            const canExpand = entry.userRole === "commentator" && Boolean(entry.slug);
             const isExpanded = expandedId === entry.userId;
             const cached = expandCache[entry.userId];
             const isLoading = loadingId === entry.userId;
@@ -240,11 +243,11 @@ export function ScoreboardTable({
             return (
               <Fragment key={entry.userId}>
                 <tr
-                  onClick={() => toggleExpand(entry.userId, entry.slug)}
+                  onClick={() => toggleExpand(entry.userId, entry.slug, entry.userRole)}
                   style={{
                     borderBottom: isExpanded ? "none" : "1px solid var(--border-primary)",
                     background: isTop3 ? "rgba(212,160,23,0.03)" : "transparent",
-                    cursor: entry.slug ? "pointer" : "default",
+                    cursor: canExpand ? "pointer" : "default",
                   }}
                 >
                   <td
@@ -260,7 +263,17 @@ export function ScoreboardTable({
                     <span className="font-medium" style={{ color: "var(--text-primary)" }}>
                       {entry.userName}
                     </span>
-                    {entry.slug && (
+                    <span
+                      className="ml-1.5 rounded-sm px-1 py-0.5 text-[10px]"
+                      style={{
+                        color: entry.userRole === "commentator" ? "var(--stitch)" : "var(--text-muted)",
+                        background: "var(--bg-elevated)",
+                        border: "1px solid var(--border-primary)",
+                      }}
+                    >
+                      {entry.userRole === "commentator" ? "解説者" : "参加者"}
+                    </span>
+                    {canExpand && (
                       <span className="ml-1.5 text-xs" style={{ color: "var(--text-muted)" }}>
                         {isExpanded ? "\u25B2" : "\u25BC"}
                       </span>
@@ -321,7 +334,7 @@ export function ScoreboardTable({
                             <span>順位予想: <span style={{ color: "var(--stitch)" }}>{fmtScore(cached.rankingScore)}pt</span></span>
                             <span>タイトル予想: <span style={{ color: "var(--stitch)" }}>{fmtScore(cached.titleScore)}pt</span></span>
                             <span>合計: <span style={{ color: "var(--stitch)", fontWeight: 600 }}>{fmtScore(cached.totalScore)}pt</span></span>
-                            {entry.slug && (
+                            {canExpand && entry.slug && (
                               <Link
                                 href={`/commentators/${entry.slug}?year=${year}`}
                                 className="ml-auto inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium"

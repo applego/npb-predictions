@@ -11,7 +11,7 @@ import {
   actualTeamStandings,
   actualTitleSnapshots,
 } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { and, eq, desc } from "drizzle-orm";
 import { calcRankingPointForTeam } from "@/lib/scoring";
 
 /**
@@ -30,7 +30,10 @@ export async function GET(
   const db = getDb();
 
   // Find user by slug
-  const [user] = await db.select().from(users).where(eq(users.slug, slug));
+  const [user] = await db
+    .select()
+    .from(users)
+    .where(and(eq(users.slug, slug), eq(users.role, "commentator")));
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }

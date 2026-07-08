@@ -6,6 +6,8 @@ import { users, seasons, predictions, rankingPicks, actualTeamStandings } from "
 import { eq, desc } from "drizzle-orm";
 import { calcRankingPointForTeam } from "@/lib/scoring";
 
+const DEFAULT_YEAR = 2026;
+
 /**
  * GET /api/rankings/commentators?year=2025&league=all
  *
@@ -17,11 +19,7 @@ export async function GET(req: Request) {
   const yearParam = searchParams.get("year");
   const leagueParam = searchParams.get("league") ?? "all";
 
-  if (!yearParam) {
-    return NextResponse.json({ error: "year is required" }, { status: 400 });
-  }
-
-  const year = parseInt(yearParam, 10);
+  const year = yearParam ? parseInt(yearParam, 10) : DEFAULT_YEAR;
   if (Number.isNaN(year)) {
     return NextResponse.json({ error: "Invalid year" }, { status: 400 });
   }
@@ -172,10 +170,14 @@ export async function GET(req: Request) {
   }
   const deduped = Array.from(firstByUser.values());
 
-  // Filter: combined ranking only includes users who predicted BOTH leagues
+  // The combined view should rank any commentator with at least one league prediction.
   const filtered = leagueParam === "all"
-    ? deduped.filter((c) => c.centralDetails.length > 0 && c.pacificDetails.length > 0)
-    : deduped;
+    ? deduped.filter((c) => c.centralDetails.length > 0 || c.pacificDetails.length > 0)
+    : deduped.filter((c) =>
+        leagueParam === "central"
+          ? c.centralDetails.length > 0
+          : c.pacificDetails.length > 0,
+      );
 
   // Sort by effectiveTotal descending
   filtered.sort((a, b) => b.effectiveTotal - a.effectiveTotal);

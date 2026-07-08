@@ -17,6 +17,7 @@ import {
   socialPreview,
   SEO_TERMS,
 } from "@/lib/seo-meta";
+import { scoreTitlePredictors } from "@/lib/title-accuracy";
 
 export const metadata: Metadata = {
   title: "タイトル予想 的中率",
@@ -44,7 +45,6 @@ const LEAGUES: { id: "central" | "pacific"; label: string }[] = [
   { id: "central", label: "セ・リーグ" },
   { id: "pacific", label: "パ・リーグ" },
 ];
-const TITLE_HIT_SCORE = 3;
 const HIT_GREEN = "#16A34A";
 const MISS_RED = "#DC2626";
 
@@ -80,8 +80,6 @@ interface Predictor {
   name: string;
   source: string | null;
   picks: Map<string, { playerName: string; teamName: string | null }>;
-  hits: number;
-  score: number;
 }
 
 export default async function TitlesPage() {
@@ -154,25 +152,20 @@ export default async function TitlesPage() {
     }
   }
 
-  const predictors: Predictor[] = [...predictorMeta.entries()].map(([predictionId, meta]) => {
+  const predictorInputs: Predictor[] = [...predictorMeta.entries()].map(([predictionId, meta]) => {
     const picks = picksByPred.get(predictionId) ?? new Map();
-    let hits = 0;
-    for (const key of confirmedKeys) {
-      const actual = actualByKey.get(key);
-      const pick = picks.get(key);
-      if (actual && pick && norm(pick.playerName) === norm(actual.playerName)) {
-        hits += 1;
-      }
-    }
     return {
       predictionId,
       name: meta.name,
       source: meta.source,
       picks,
-      hits,
-      score: hits * TITLE_HIT_SCORE,
     };
   });
+  const predictors = scoreTitlePredictors(
+    predictorInputs,
+    actualByKey,
+    confirmedKeys,
+  );
   predictors.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
 
   const confirmedCount = confirmedKeys.length;
@@ -228,7 +221,7 @@ export default async function TitlesPage() {
           タイトル予想 的中率
         </h1>
         <p className="mt-0.5 text-sm" style={{ color: "var(--text-muted)" }}>
-          確定 {confirmedCount} タイトル ／ 予想者 {predictors.length}人
+          確定 {confirmedCount} タイトル ／ タイトル予想者 {predictors.length}人
         </p>
       </div>
 
@@ -440,7 +433,7 @@ export default async function TitlesPage() {
                   +{p.score}
                 </div>
                 <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>
-                  {p.hits}/{confirmedCount} 的中
+                  {p.hits}/{p.attemptedConfirmedCount} 的中
                 </div>
               </div>
             ))}

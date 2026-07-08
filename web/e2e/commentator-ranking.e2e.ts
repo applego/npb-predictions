@@ -41,14 +41,18 @@ test.describe("Commentator ranking", () => {
     await page.waitForLoadState("networkidle");
     const firstLink = page.locator('a[href*="/commentators/"]').first();
     const count = await firstLink.count();
-    if (count === 0) {
-      test.skip(true, "No commentator link on ranking page — seed data missing");
-      return;
-    }
+    expect(count, "ranking page must expose at least one commentator detail link").toBeGreaterThan(0);
     const href = (await firstLink.getAttribute("href")) ?? "";
     expect(href).toBeTruthy();
 
     const detailRes = await request.get(href);
     expect(detailRes.status(), `${href} must not 5xx`).toBeLessThan(500);
+  });
+
+  test("friend seed users are not exposed through commentator detail API", async ({
+    request,
+  }) => {
+    const res = await request.get("/api/commentators/tsuneshige?year=2026");
+    expect(res.status()).toBe(404);
   });
 });

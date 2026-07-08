@@ -95,6 +95,7 @@ export async function getScoreboardData(
       userId: user.id,
       userName: user.name,
       slug: user.slug,
+      userRole: user.role,
       rankingScore,
       titleScore: 0,
       totalScore: rankingScore,
