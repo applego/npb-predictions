@@ -846,7 +846,7 @@ function GroupsCard({ groups }: { groups: GroupEntry[] }) {
           fontFamily: "var(--font-display)",
         }}
       >
-        MY GROUPS
+        参加グループ
       </h2>
       <div
         style={{

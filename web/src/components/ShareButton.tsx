@@ -34,7 +34,7 @@ export default function ShareButton({
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
         await navigator.share({
-          title: "NPB Predictions League",
+          title: "NPB予想リーグ",
           text: getShareText(type, params),
           url: getShareUrl(type, params),
         });
@@ -76,10 +76,10 @@ export default function ShareButton({
       <button
         onClick={handleShare}
         className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
-        aria-label="Share"
+        aria-label="共有"
       >
         <ShareIcon />
-        <span>Share</span>
+        <span>共有</span>
       </button>
 
       {showMenu && (
@@ -117,7 +117,7 @@ export default function ShareButton({
               className="flex w-full items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
             >
               <CopyIcon />
-              {copied ? "Copied!" : "URLをコピー"}
+              {copied ? "コピーしました" : "URLをコピー"}
             </button>
           </div>
         </>

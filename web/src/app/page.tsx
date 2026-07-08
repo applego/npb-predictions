@@ -6,11 +6,11 @@ import type { Season, Prediction } from "@/lib/types";
 import { NewsCompact } from "./news/NewsClient";
 
 export const metadata: Metadata = {
-  title: "NPB Predictions | プロ野球順位予想",
+  title: "NPB予想リーグ | プロ野球順位予想",
   description:
     "プロ野球順位予想を競う情報ボード。セ・パ両リーグの1位予想分布、解説者ランキング、最新ニュースをチェックできます。",
   openGraph: {
-    title: "NPB Predictions | プロ野球順位予想",
+    title: "NPB予想リーグ | プロ野球順位予想",
     description:
       "放送席のように、プロ野球順位予想と的中状況を見渡せる情報ボード。",
     type: "website",
@@ -212,7 +212,7 @@ export default async function HomePage() {
               letterSpacing: "0.08em",
             }}
           >
-            NPB PREDICTIONS
+            NPB 予想リーグ
           </span>
           <span
             style={{
@@ -221,7 +221,7 @@ export default async function HomePage() {
               letterSpacing: "0.16em",
             }}
           >
-            {year} SEASON
+            {year} シーズン
           </span>
         </div>
 
@@ -268,7 +268,7 @@ export default async function HomePage() {
                   className="animate-pulse-dot inline-block h-1.5 w-1.5 rounded-full"
                   style={{ background: "var(--field)" }}
                 />
-                {year} SEASON
+                {year} シーズン
               </span>
             )}
           </div>
@@ -365,7 +365,7 @@ export default async function HomePage() {
                 className="mt-1 text-right text-[10px] font-medium"
                 style={{ color: "var(--text-muted)" }}
               >
-                {Math.round((BEST_SCORE / PERFECT_SCORE) * 100)}% of perfect
+                満点比 {Math.round((BEST_SCORE / PERFECT_SCORE) * 100)}%
               </p>
             </div>
           </div>
@@ -548,7 +548,7 @@ export default async function HomePage() {
                 className="text-sm font-bold"
                 style={{ color: "var(--text-primary)" }}
               >
-                LATEST NEWS
+                最新ニュース
               </span>
             </div>
             <Link
@@ -559,7 +559,7 @@ export default async function HomePage() {
                 letterSpacing: "0.08em",
               }}
             >
-              VIEW ALL &#8594;
+              すべて見る &#8594;
             </Link>
           </div>
 
@@ -781,7 +781,7 @@ export default async function HomePage() {
             className="text-sm font-bold"
             style={{ color: "var(--text-primary)" }}
           >
-            SCORE RULES
+            採点ルール
           </span>
         </div>
 
@@ -847,7 +847,7 @@ export default async function HomePage() {
                 letterSpacing: "0.2em",
               }}
             >
-              PAST SEASONS
+              過去シーズン
             </span>
             <div
               className="h-px flex-1"

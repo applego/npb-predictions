@@ -16,7 +16,7 @@ import {
 const SITE_URL = absoluteUrl("/").replace(/\/$/, "");
 
 export const metadata: Metadata = {
-  title: "通算ランキング | ALL-TIME RANKINGS",
+  title: "通算ランキング",
   description: clampDescription(
     `${SEO_TERMS.npbFull}解説者・評論家の通算順位予想的中ランキング。2014年からの全年通算スコアを集計し、${SEO_TERMS.bothLeagues}の的中率を比較します。`,
   ),
@@ -110,7 +110,7 @@ export default async function AllTimeRankingsPage() {
               color: "var(--text-primary)",
             }}
           >
-            ALL-TIME <span style={{ color: "var(--stitch)" }}>RANKINGS</span>
+            通算<span style={{ color: "var(--stitch)" }}>ランキング</span>
           </h1>
           <p className="mt-1 text-sm" style={{ color: "var(--text-muted)" }}>
             2014年からの通算スコアランキング — {data?.totalCommentators ?? 0}人
@@ -126,7 +126,7 @@ export default async function AllTimeRankingsPage() {
             letterSpacing: "0.1em",
           }}
         >
-          YEARLY →
+          年度別 →
         </Link>
       </div>
 

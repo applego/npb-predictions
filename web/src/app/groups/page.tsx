@@ -88,7 +88,7 @@ export default function GroupsPage() {
             color: "var(--text-primary)",
           }}
         >
-          <span style={{ color: "var(--stitch)" }}>BATTLE</span> GROUPS
+          <span style={{ color: "var(--stitch)" }}>対決</span>グループ
         </h1>
         <div className="card rounded-lg p-10 text-center">
           <p style={{ color: "var(--text-secondary)" }}>
@@ -119,7 +119,7 @@ export default function GroupsPage() {
               color: "var(--text-primary)",
             }}
           >
-            <span style={{ color: "var(--stitch)" }}>BATTLE</span> GROUPS
+            <span style={{ color: "var(--stitch)" }}>対決</span>グループ
           </h1>
           <p className="mt-0.5 text-sm" style={{ color: "var(--text-muted)" }}>
             友達とグループを作って予想の的中率を競おう

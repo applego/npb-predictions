@@ -69,12 +69,12 @@ function drawPredictionImage(
   ctx.fillStyle = RED_ACCENT;
   ctx.fillRect(0, 0, W, 6);
 
-  // Header: "NPB PREDICTIONS LEAGUE"
+  // Header
   ctx.fillStyle = RED_ACCENT;
   ctx.font = "bold 16px 'Helvetica Neue', Arial, sans-serif";
   ctx.letterSpacing = "4px";
   ctx.textAlign = "left";
-  ctx.fillText("NPB PREDICTIONS LEAGUE", 40, 40);
+  ctx.fillText("NPB 予想リーグ", 40, 40);
   ctx.letterSpacing = "0px";
 
   // Year badge
@@ -119,10 +119,10 @@ function drawPredictionImage(
   const rankingsY = Math.max(subY + 24, 240);
 
   // Central League
-  drawLeagueRankings(ctx, 40, rankingsY, "CENTRAL", props.centralPicks);
+  drawLeagueRankings(ctx, 40, rankingsY, "セ・リーグ", props.centralPicks);
 
   // Pacific League
-  drawLeagueRankings(ctx, W / 2 + 20, rankingsY, "PACIFIC", props.pacificPicks);
+  drawLeagueRankings(ctx, W / 2 + 20, rankingsY, "パ・リーグ", props.pacificPicks);
 
   // Footer
   ctx.fillStyle = "#E5E5E5";
@@ -132,7 +132,7 @@ function drawPredictionImage(
   ctx.fillStyle = MUTED_TEXT;
   ctx.font = "14px 'Hiragino Sans', 'Noto Sans JP', sans-serif";
   ctx.textAlign = "left";
-  ctx.fillText(`Predicted by ${props.userName}`, 40, H - 28);
+  ctx.fillText(`予想者: ${props.userName}`, 40, H - 28);
 
   // URL branding
   ctx.textAlign = "right";
@@ -154,7 +154,7 @@ function drawLeagueRankings(
   const colW = 520;
 
   // League header
-  ctx.fillStyle = label === "CENTRAL" ? "#1565C0" : "#00695C";
+  ctx.fillStyle = label.startsWith("セ") ? "#1565C0" : "#00695C";
   roundRect(ctx, x, y, colW, 30, 4);
   ctx.fill();
   ctx.fillStyle = "#fff";

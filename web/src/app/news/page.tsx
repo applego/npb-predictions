@@ -13,7 +13,7 @@ import {
   SEO_TERMS,
 } from "@/lib/seo-meta";
 
-const NEWS_TITLE = "NEWS | ニュース・アクティビティ";
+const NEWS_TITLE = "ニュース・アクティビティ";
 const NEWS_DESCRIPTION = clampDescription(
   `${SEO_TERMS.site}の最新ニュース。的中速報、ランキング変動、新規予想、${SEO_TERMS.bothLeagues}解説者の注目情報をまとめてチェックできます。`,
 );
@@ -59,9 +59,9 @@ export default async function NewsPage() {
             }}
           >
             <span className="animate-amber-glow" style={{ color: "var(--stitch)" }}>
-              NEWS
+              ニュース
             </span>{" "}
-            FEED
+            フィード
           </h1>
           <p
             className="mt-1 text-sm"
@@ -83,7 +83,7 @@ export default async function NewsPage() {
             color: "var(--text-secondary)",
           }}
         >
-          HOME
+          トップ
         </Link>
       </div>
 

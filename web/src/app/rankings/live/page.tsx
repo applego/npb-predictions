@@ -315,14 +315,14 @@ function RankTrendPanel({
       >
         <div>
           <p
-            className="text-[10px] font-black uppercase"
+            className="text-[10px] font-black"
             style={{
               color: "var(--field)",
               fontFamily: "var(--font-display)",
               letterSpacing: "0.16em",
             }}
           >
-            RANK TREND
+            順位推移
           </p>
           <h2 className="text-base font-black" style={{ color: "var(--text-primary)" }}>
             月次順位推移
@@ -409,7 +409,7 @@ export default async function LivePage() {
 
   const breadcrumbItems = [
     { label: "ランキング", href: "/rankings/predictions" },
-    { label: `${CURRENT_YEAR} LIVE` },
+    { label: `${CURRENT_YEAR}年 リーグ順位` },
   ];
 
   return (
@@ -422,7 +422,7 @@ export default async function LivePage() {
         description={`${CURRENT_YEAR}年${SEO_TERMS.npbFull}のリアルタイム予想スコア`}
       />
       <BroadcastBand year={CURRENT_YEAR} />
-      <BroadcastHeading kicker="LEAGUE STANDINGS" title={`${CURRENT_YEAR} リーグ順位`}>
+      <BroadcastHeading kicker="リーグ順位" title={`${CURRENT_YEAR} リーグ順位`}>
         <p>
           {hasScores
             ? `${data.scores.length}\u4EBA\u306E\u30B9\u30B3\u30A2\u3092\u30EA\u30A2\u30EB\u30BF\u30A4\u30E0\u8A08\u7B97\u4E2D`
@@ -443,14 +443,14 @@ export default async function LivePage() {
               style={{ borderBottom: "1px solid var(--border-primary)" }}
             >
               <p
-                className="text-[10px] font-black uppercase"
+                className="text-[10px] font-black"
                 style={{
                   color: "var(--field)",
                   fontFamily: "var(--font-display)",
                   letterSpacing: "0.16em",
                 }}
               >
-                LIVE SCORE
+                現在スコア
               </p>
             </div>
             <table className="w-full text-sm">

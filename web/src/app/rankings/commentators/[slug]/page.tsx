@@ -211,7 +211,7 @@ export default async function CommentatorDetailPage({ params }: Props) {
               className="text-xs uppercase tracking-widest"
               style={{ color: "color-mix(in srgb, var(--dirt) 50%, transparent)", letterSpacing: "0.15em" }}
             >
-              ALL-TIME
+              通算
             </div>
             <div
               className="font-display text-2xl"
@@ -300,7 +300,7 @@ export default async function CommentatorDetailPage({ params }: Props) {
           <table className="w-full text-sm">
             <thead>
               <tr style={{ borderBottom: "1px solid var(--border-primary)" }}>
-                {["YEAR", "CENTRAL", "PACIFIC", "TOTAL"].map((col, i) => (
+                {["年度", "セ・リーグ", "パ・リーグ", "合計"].map((col, i) => (
                   <th
                     key={col}
                     className={`px-4 py-3 text-xs font-medium uppercase tracking-widest ${i === 0 ? "text-left" : "text-right"}`}
@@ -407,7 +407,7 @@ export default async function CommentatorDetailPage({ params }: Props) {
                     letterSpacing: "0.1em",
                   }}
                 >
-                  TOTAL
+                  合計
                 </td>
                 <td className="px-4 py-3.5 text-right">
                   <span

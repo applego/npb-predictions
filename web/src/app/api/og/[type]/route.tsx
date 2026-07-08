@@ -1217,7 +1217,7 @@ async function renderCommentatorCard(
                   letterSpacing: "0.1em",
                 }}
               >
-                ALL-TIME
+                通算
               </div>
               <div
                 style={{
