@@ -311,3 +311,67 @@ INSERT OR IGNORE INTO ranking_picks (prediction_id, league, rank, team_name) SEL
 INSERT OR IGNORE INTO ranking_picks (prediction_id, league, rank, team_name) SELECT (SELECT p.id FROM predictions p JOIN users u ON p.user_id=u.id JOIN seasons s ON p.season_id=s.id WHERE u.slug='iwata-minoru' AND s.year=2026), 'pacific', 4, '西武';
 INSERT OR IGNORE INTO ranking_picks (prediction_id, league, rank, team_name) SELECT (SELECT p.id FROM predictions p JOIN users u ON p.user_id=u.id JOIN seasons s ON p.season_id=s.id WHERE u.slug='iwata-minoru' AND s.year=2026), 'pacific', 5, 'ロッテ';
 INSERT OR IGNORE INTO ranking_picks (prediction_id, league, rank, team_name) SELECT (SELECT p.id FROM predictions p JOIN users u ON p.user_id=u.id JOIN seasons s ON p.season_id=s.id WHERE u.slug='iwata-minoru' AND s.year=2026), 'pacific', 6, '楽天';
+
+-- Keep this seed self-contained: CI applies migrations before this file, so
+-- the normalization migration cannot clean up rows inserted here.
+UPDATE ranking_picks
+SET team_name = CASE team_name
+  WHEN '巨人' THEN '読売ジャイアンツ'
+  WHEN '阪神' THEN '阪神タイガース'
+  WHEN 'DeNA' THEN '横浜DeNAベイスターズ'
+  WHEN '広島' THEN '広島東洋カープ'
+  WHEN '中日' THEN '中日ドラゴンズ'
+  WHEN 'ヤクルト' THEN '東京ヤクルトスワローズ'
+  WHEN 'オリックス' THEN 'オリックス・バファローズ'
+  WHEN 'ソフトバンク' THEN '福岡ソフトバンクホークス'
+  WHEN 'ロッテ' THEN '千葉ロッテマリーンズ'
+  WHEN '楽天' THEN '東北楽天ゴールデンイーグルス'
+  WHEN '西武' THEN '埼玉西武ライオンズ'
+  WHEN '日本ハム' THEN '北海道日本ハムファイターズ'
+  ELSE team_name
+END
+WHERE team_name IN (
+  '巨人',
+  '阪神',
+  'DeNA',
+  '広島',
+  '中日',
+  'ヤクルト',
+  'オリックス',
+  'ソフトバンク',
+  'ロッテ',
+  '楽天',
+  '西武',
+  '日本ハム'
+);
+
+UPDATE title_picks
+SET team_name = CASE team_name
+  WHEN '巨人' THEN '読売ジャイアンツ'
+  WHEN '阪神' THEN '阪神タイガース'
+  WHEN 'DeNA' THEN '横浜DeNAベイスターズ'
+  WHEN '広島' THEN '広島東洋カープ'
+  WHEN '中日' THEN '中日ドラゴンズ'
+  WHEN 'ヤクルト' THEN '東京ヤクルトスワローズ'
+  WHEN 'オリックス' THEN 'オリックス・バファローズ'
+  WHEN 'ソフトバンク' THEN '福岡ソフトバンクホークス'
+  WHEN 'ロッテ' THEN '千葉ロッテマリーンズ'
+  WHEN '楽天' THEN '東北楽天ゴールデンイーグルス'
+  WHEN '西武' THEN '埼玉西武ライオンズ'
+  WHEN '日本ハム' THEN '北海道日本ハムファイターズ'
+  ELSE team_name
+END
+WHERE team_name IN (
+  '巨人',
+  '阪神',
+  'DeNA',
+  '広島',
+  '中日',
+  'ヤクルト',
+  'オリックス',
+  'ソフトバンク',
+  'ロッテ',
+  '楽天',
+  '西武',
+  '日本ハム'
+);

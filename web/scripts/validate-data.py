@@ -199,6 +199,48 @@ def validate_role_backfill_migration():
     )
 
 
+def validate_seed_team_normalization():
+    with tempfile.TemporaryDirectory(prefix="npb-seed-normalize-") as temp_dir:
+        db_path = Path(temp_dir) / "seed-normalize.sqlite"
+        conn = sqlite3.connect(db_path)
+
+        for migration in sorted((WEB_ROOT / "drizzle").glob("*.sql")):
+            apply_sql_file(conn, migration)
+
+        apply_sql_file(conn, WEB_ROOT / "src/db/seed-commentators.sql")
+
+        short_team_names = tuple(sorted(TEAM_ALIASES))
+        cur = conn.cursor()
+        cur.execute(
+            f"""
+            SELECT COUNT(*)
+            FROM ranking_picks
+            WHERE team_name IN ({','.join('?' for _ in short_team_names)})
+            """,
+            short_team_names,
+        )
+        short_ranking_picks = cur.fetchone()[0]
+        cur.execute(
+            f"""
+            SELECT COUNT(*)
+            FROM title_picks
+            WHERE team_name IN ({','.join('?' for _ in short_team_names)})
+            """,
+            short_team_names,
+        )
+        short_title_picks = cur.fetchone()[0]
+        conn.close()
+
+    check(
+        short_ranking_picks == 0,
+        "seed-commentators leaves no short team names in ranking_picks",
+    )
+    check(
+        short_title_picks == 0,
+        "seed-commentators leaves no short team names in title_picks",
+    )
+
+
 def main():
     conn, temp_dir = open_database()
     cur = conn.cursor()
@@ -299,7 +341,10 @@ def main():
     print("\n=== 7. Role backfill migration ===")
     validate_role_backfill_migration()
 
-    print("\n=== 8. Source validation ===")
+    print("\n=== 8. Seed team normalization ===")
+    validate_seed_team_normalization()
+
+    print("\n=== 9. Source validation ===")
     cur.execute("SELECT COUNT(*) FROM users WHERE role='commentator'")
     total_commentators = cur.fetchone()[0]
     cur.execute("SELECT COUNT(*) FROM users WHERE role='commentator' AND source IS NOT NULL AND source != ''")
@@ -362,7 +407,7 @@ def main():
                 bad_dates.append(source)
     check(len(bad_dates) == 0, f"All source dates have valid M/DD format ({len(bad_dates)} invalid)")
 
-    print("\n=== 9. No duplicate predictions ===")
+    print("\n=== 10. No duplicate predictions ===")
     cur.execute("""
         SELECT u.name, s.year, COUNT(*)
         FROM predictions p
