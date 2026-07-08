@@ -114,17 +114,12 @@ test.describe("release surface", () => {
     expect(page.url()).toContain("view=trend");
   });
 
-  test("safe visible buttons across public release routes do not crash", async ({
-    page,
-  }) => {
-    const fatalErrors = recordFatalErrors(page);
-
-    for (const path of PUBLIC_ROUTES) {
-      const response = await page.goto(path);
-      expect(response, `${path} must return a response`).not.toBeNull();
-      expect(response!.status(), `${path} must not 5xx`).toBeLessThan(500);
-      await page.waitForLoadState("networkidle");
-
+  for (const route of PUBLIC_ROUTES) {
+    test(`safe visible buttons on ${route} do not crash`, async ({ page }) => {
+      const fatalErrors = recordFatalErrors(page);
+      const response = await page.goto(route);
+      expect(response, `${route} must return a response`).not.toBeNull();
+      expect(response!.status(), `${route} must not 5xx`).toBeLessThan(500);
       const buttons = page
         .getByRole("button")
         .filter({
@@ -138,10 +133,11 @@ test.describe("release surface", () => {
         await button.click();
         await page.waitForTimeout(100);
       }
-    }
 
-    expect(fatalErrors, "safe button interactions must not crash").toHaveLength(
-      0,
-    );
-  });
+      expect(
+        fatalErrors,
+        `${route} safe button interactions must not crash`,
+      ).toHaveLength(0);
+    });
+  }
 });
