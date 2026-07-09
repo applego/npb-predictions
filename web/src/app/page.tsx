@@ -3,6 +3,7 @@ export const runtime = "edge";
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { Season, Prediction } from "@/lib/types";
+import { getTeamByName } from "@/lib/teams";
 import { NewsCompact } from "./news/NewsClient";
 
 export const metadata: Metadata = {
@@ -98,6 +99,7 @@ async function getTopCommentators(
 
 interface TeamCount {
   teamName: string;
+  displayName: string;
   count: number;
   pct: number;
   color: string;
@@ -121,34 +123,19 @@ function computeFirstPlaceDistribution(
 
   // Sort descending by count
   const sorted = Object.entries(counts)
-    .map(([teamName, count]) => ({
-      teamName,
-      count,
-      pct: Math.round((count / total) * 100),
-      color: getTeamColor(teamName),
-    }))
+    .map(([teamName, count]) => {
+      const team = getTeamByName(teamName);
+      return {
+        teamName,
+        displayName: team?.shortName ?? teamName,
+        count,
+        pct: Math.round((count / total) * 100),
+        color: team?.color ?? "var(--stitch)",
+      };
+    })
     .sort((a, b) => b.count - a.count);
 
   return sorted;
-}
-
-// Map team shortName to their brand color for bar display
-function getTeamColor(name: string): string {
-  const map: Record<string, string> = {
-    巨人: "#F97316",
-    阪神: "#FBBF24",
-    DeNA: "#2563EB",
-    広島: "#DC2626",
-    中日: "#1E40AF",
-    ヤクルト: "#059669",
-    オリックス: "#1E3A5F",
-    ソフトバンク: "#F5D100",
-    ロッテ: "#1a1a1a",
-    楽天: "#B91C1C",
-    西武: "#1D4ED8",
-    日本ハム: "#1E3A5F",
-  };
-  return map[name] ?? "var(--stitch)";
 }
 
 // ── Score rules ──
@@ -887,10 +874,11 @@ function DistributionBar({ team }: { team: TeamCount }) {
   return (
     <div className="flex items-center gap-3">
       <span
-        className="w-20 shrink-0 text-right text-sm font-semibold"
+        className="w-24 shrink-0 truncate whitespace-nowrap text-right text-sm font-semibold"
         style={{ color: "var(--text-primary)" }}
+        title={team.teamName}
       >
-        {team.teamName}
+        {team.displayName}
       </span>
       <div
         className="h-6 flex-1 overflow-hidden rounded"
