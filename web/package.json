@@ -19,7 +19,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "validate-data": "python3 scripts/validate-data.py",
+    "validate-data": "python3 scripts/validate-data.py && python3 scripts/validate-source-less-commentator-backfill.py",
     "validate-data:persisted": "python3 scripts/validate-data-from-wrangler-persist.py",
     "check:perf-budget": "python3 scripts/check-performance-budget.py",
     "gate:prepush": "npm run validate-data",
