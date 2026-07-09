@@ -6,12 +6,12 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 
 const NAV_LINKS = [
-  { href: "/", label: "HOME" },
-  { href: "/rankings", label: "RANKINGS" },
-  { href: "/games", label: "GAMES" },
-  { href: "/groups", label: "GROUPS" },
-  { href: "/news", label: "NEWS" },
-  { href: "/settings", label: "SETTINGS" },
+  { href: "/", label: "トップ" },
+  { href: "/rankings", label: "ランキング" },
+  { href: "/games", label: "試合" },
+  { href: "/groups", label: "グループ" },
+  { href: "/news", label: "ニュース" },
+  { href: "/settings", label: "設定" },
 ];
 
 export function Nav() {
@@ -22,7 +22,7 @@ export function Nav() {
   const { isAdmin } = useAuth();
 
   const allLinks = isAdmin
-    ? [...NAV_LINKS, { href: "/admin", label: "ADMIN" }]
+    ? [...NAV_LINKS, { href: "/admin", label: "管理" }]
     : NAV_LINKS;
 
   function isActive(href: string) {
@@ -96,7 +96,7 @@ export function Nav() {
           background: open ? "rgba(229,57,53,0.08)" : "transparent",
           border: "1px solid var(--border-primary)",
         }}
-        aria-label="Menu"
+        aria-label="メニュー"
         aria-expanded={open}
         aria-controls="mobile-navigation"
       >
@@ -121,7 +121,7 @@ export function Nav() {
           id="mobile-navigation"
           role="dialog"
           aria-modal="true"
-          aria-label="Mobile navigation"
+          aria-label="モバイルナビゲーション"
           className="absolute left-0 right-0 top-full z-50 lg:hidden"
           style={{
             background: "var(--bg-surface)",

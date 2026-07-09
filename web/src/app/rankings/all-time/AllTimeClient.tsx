@@ -134,7 +134,7 @@ export function AllTimeTable({ commentators }: { commentators: Commentator[] }) 
           <span className="text-2xl">{"\u{1F3C6}"}</span>
           <div>
             <p className="text-xs font-medium" style={{ color: "var(--text-muted)", letterSpacing: "0.08em" }}>
-              SINGLE SEASON BEST
+              単年最高
             </p>
             <p style={{ fontFamily: "var(--font-display)", fontSize: "1.5rem", color: "var(--dirt)", lineHeight: 1.2 }}>
               {fmtScore(allTimeBest.score)}

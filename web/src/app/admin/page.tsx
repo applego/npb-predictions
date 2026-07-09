@@ -30,6 +30,31 @@ interface ApiResult {
 
 // --- Helpers ---
 
+const ADMIN_THEME_LABELS: Record<string, string> = {
+  baseball: "野球場",
+  stadium: "スタジアム",
+  newspaper: "新聞",
+  night: "ナイター",
+  "sports-red": "スポーツ赤",
+  "sports-blue": "スポーツ青",
+  "editorial-cream-crimson": "クリーム赤",
+  "editorial-pure-paper": "白紙面",
+  "editorial-sepia-archive": "セピア紙面",
+  "editorial-forest-ivory": "深緑",
+  "editorial-navy-ivory": "紺",
+  "editorial-stone-orange": "石版オレンジ",
+  "editorial-charcoal-gold": "黒金",
+  "editorial-midnight-red": "深夜赤",
+  "editorial-rose-plum": "ローズ",
+  "editorial-matcha-cream": "抹茶",
+  "editorial-sky-vermillion": "空色朱",
+  "editorial-paper-black": "墨黒",
+  broadcast: "放送席",
+  "stadium-night": "ナイター",
+  newsprint: "紙面",
+  "newspaper-mincho": "新聞明朝",
+};
+
 async function apiPost(url: string, body: unknown): Promise<ApiResult> {
   try {
     const res = await fetchWithAuth(url, {
@@ -796,7 +821,7 @@ function ResultDisplay({ result }: { result: ApiResult | null }) {
           {JSON.stringify(result.data, null, 2)}
         </pre>
       ) : (
-        <p>Error: {result.error}</p>
+        <p>エラー: {result.error}</p>
       )}
     </div>
   );
@@ -874,14 +899,14 @@ function SiteThemeAdmin() {
             >
               <div className="mb-1 flex items-center justify-between">
                 <span style={{ fontSize: "0.8rem", fontWeight: 700, color: v["--text-primary"] }}>
-                  {t.name}
+                  {ADMIN_THEME_LABELS[t.id] ?? t.name}
                 </span>
                 {active && (
                   <span
                     className="rounded px-1 text-[9px] font-bold"
                     style={{ background: v["--stitch"], color: "#fff" }}
                   >
-                    ON
+                    選択中
                   </span>
                 )}
               </div>
@@ -978,7 +1003,7 @@ export default function AdminPage() {
               letterSpacing: "0.08em",
             }}
           >
-            ADMIN
+            管理画面
           </h1>
           <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
             管理画面にアクセスするにはログインしてください。
@@ -1014,10 +1039,10 @@ export default function AdminPage() {
               letterSpacing: "0.08em",
             }}
           >
-            ACCESS DENIED
+            権限がありません
           </h1>
           <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-            このアカウントにはAdmin権限がありません。
+            このアカウントには管理権限がありません。
           </p>
           <p className="text-xs" style={{ color: "var(--text-muted)" }}>
             UID: {firebaseUser.uid}
@@ -1038,7 +1063,7 @@ export default function AdminPage() {
             letterSpacing: "0.08em",
           }}
         >
-          ADMIN
+          管理画面
         </h1>
         <span className="text-xs" style={{ color: "var(--text-muted)" }}>
           {firebaseUser.email}

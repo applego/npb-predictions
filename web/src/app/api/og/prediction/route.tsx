@@ -277,7 +277,7 @@ function newspaperLayout(
               color: "#DC2626",
             }}
           >
-            NPB PREDICTIONS LEAGUE
+            NPB 予想リーグ
           </div>
           <div
             style={{
@@ -595,7 +595,7 @@ function renderFallback() {
             color: "#DC2626",
           }}
         >
-          NPB PREDICTIONS LEAGUE
+          NPB 予想リーグ
         </div>
         <div
           style={{
@@ -606,7 +606,7 @@ function renderFallback() {
           }}
         >
           {/* ASCII only — must render even when font load fails */}
-          #NPB-LEAGUE
+          #NPB予想リーグ
         </div>
       </div>
     ),
