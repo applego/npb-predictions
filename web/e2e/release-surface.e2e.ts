@@ -25,6 +25,7 @@ const PUBLIC_ROUTES = [
   "/commentators/kondo-hiroshi",
   "/groups",
   "/groups/join",
+  "/groups/new",
   "/groups/kondo-hiroshi",
   "/settings",
   "/me",

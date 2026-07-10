@@ -3,7 +3,7 @@
 export const runtime = "edge";
 
 import { useState, useEffect, useCallback } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
@@ -51,6 +51,7 @@ interface GroupDetail {
 
 export default function GroupDetailPage() {
   const params = useParams<{ slug: string }>();
+  const router = useRouter();
   const { firebaseUser, loading: authLoading, signIn } = useAuth();
   const [data, setData] = useState<GroupDetail | null>(null);
   const [fetching, setFetching] = useState(true);
@@ -60,6 +61,10 @@ export default function GroupDetailPage() {
   const [league, setLeague] = useState<"central" | "pacific">("central");
 
   const fetchGroup = useCallback(async () => {
+    if (params.slug === "new") {
+      setFetching(false);
+      return;
+    }
     setFetching(true);
     try {
       const yearQ = year ? `?year=${year}` : "";
@@ -77,6 +82,10 @@ export default function GroupDetailPage() {
       setFetching(false);
     }
   }, [params.slug, year]);
+
+  useEffect(() => {
+    if (params.slug === "new") router.replace("/groups?create=1");
+  }, [params.slug, router]);
 
   useEffect(() => {
     fetchGroup();
