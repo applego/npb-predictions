@@ -284,6 +284,14 @@ def main():
     active_years = [year for year, is_active in season_rows if is_active]
     check(CURRENT_RELEASE_YEAR in db_years, f"Release season {CURRENT_RELEASE_YEAR} exists")
     check(CURRENT_RELEASE_YEAR in active_years, f"Release season {CURRENT_RELEASE_YEAR} is active")
+    check(len(active_years) == 1, f"Exactly one active season ({len(active_years)} found)")
+    cur.execute("SELECT year FROM seasons WHERE is_active=0 AND lock_date IS NULL ORDER BY year")
+    inactive_without_lock = [str(r[0]) for r in cur.fetchall()]
+    check(
+        len(inactive_without_lock) == 0,
+        "Inactive seasons have lock_date set so late submissions cannot enter competitive scoring"
+        + (f" (missing: {', '.join(inactive_without_lock)})" if inactive_without_lock else ""),
+    )
     print(f"  [INFO] Seasons present: {', '.join(str(y) for y in db_years)}")
 
     print("\n=== 2. Actual standings integrity ===")

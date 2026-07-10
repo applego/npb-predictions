@@ -23,6 +23,7 @@ import { CSS } from "@dnd-kit/utilities";
 import type { Season } from "@/lib/types";
 import { LEAGUE_LABELS, TITLE_CATEGORY_LABELS } from "@/lib/types";
 import { getTeamsByLeague, getTeamByName } from "@/lib/teams";
+import { getPredictionWindowStatus } from "@/lib/prediction-window";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import {
@@ -331,7 +332,7 @@ export default function NewPredictionPage() {
       .then((r) => r.json() as Promise<Season[]>)
       .then((s) => {
         setSeasons(s);
-        const active = s.find((season) => season.isActive);
+        const active = s.find((season) => getPredictionWindowStatus(season).allowed);
         if (active) setSeasonId(active.id);
         setIsLoadingData(false);
       })
@@ -461,6 +462,7 @@ export default function NewPredictionPage() {
   }
 
   const selectedSeason = seasons.find((s) => s.id === seasonId);
+  const openSeasons = seasons.filter((s) => getPredictionWindowStatus(s).allowed);
 
   // Auth guard: redirect to login if not authenticated
   if (authLoading) {
@@ -613,7 +615,7 @@ export default function NewPredictionPage() {
                 className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
                 <option value="">— 選択してください —</option>
-                {seasons.map((s) => (
+                {openSeasons.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.label}
                     {s.isActive ? " (現在)" : ""}

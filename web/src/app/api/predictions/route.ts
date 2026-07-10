@@ -6,6 +6,7 @@ import { predictions, rankingPicks, titlePicks, seasons } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 import { requireAuth } from "@/lib/auth-server";
+import { getPredictionWindowStatus, predictionWindowErrorMessage } from "@/lib/prediction-window";
 
 const LEAGUES = ["central", "pacific"] as const;
 const CATEGORIES = [
@@ -110,9 +111,10 @@ export async function POST(req: Request) {
   if (!season) {
     return NextResponse.json({ error: "Season not found" }, { status: 404 });
   }
-  if (season.lockDate && season.lockDate.getTime() <= Date.now()) {
+  const seasonStatus = getPredictionWindowStatus(season);
+  if (!seasonStatus.allowed) {
     return NextResponse.json(
-      { error: "Predictions are locked for this season" },
+      { error: predictionWindowErrorMessage(seasonStatus.reason) },
       { status: 403 }
     );
   }
@@ -268,9 +270,10 @@ export async function PUT(req: Request) {
   if (!season) {
     return NextResponse.json({ error: "Season not found" }, { status: 404 });
   }
-  if (season.lockDate && season.lockDate.getTime() <= Date.now()) {
+  const seasonStatus = getPredictionWindowStatus(season);
+  if (!seasonStatus.allowed) {
     return NextResponse.json(
-      { error: "Predictions are locked for this season" },
+      { error: predictionWindowErrorMessage(seasonStatus.reason) },
       { status: 403 }
     );
   }
