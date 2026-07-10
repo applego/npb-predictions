@@ -112,16 +112,16 @@ The release default is `broadcast`.
 
 | Level | Font | Size | Tracking | Usage |
 |-------|------|------|----------|-------|
-| Display XL | Bebas Neue | clamp(2.5rem,6vw,4rem) | 0.04em | Hero year number |
-| Display LG | Bebas Neue | clamp(1.5rem,4vw,2.25rem) | 0.04em | Section h1 |
-| Display SM | Bebas Neue | 0.75rem | 0.15em | Nav links, labels |
-| Body | Noto Sans JP | 0.875rem | 0 | Body text |
-| Body SM | Noto Sans JP | 0.75rem | 0 | Captions |
-| Data | Bebas Neue | 1rem | 0.02em | Scores, rank numbers |
+| Display XL | Saira Semi Condensed | clamp(2.5rem,6vw,4rem) | 0.04em | Hero year number |
+| Display LG | Saira Semi Condensed | clamp(1.5rem,4vw,2.25rem) | 0.04em | Section h1 |
+| Display SM | Saira Semi Condensed | 0.75rem | 0.15em | Nav links, labels |
+| Body | Saira + Japanese fallback | 0.875rem | 0 | Body text |
+| Body SM | Saira + Japanese fallback | 0.75rem | 0 | Captions |
+| Data | Saira Semi Condensed | 1rem | 0.02em | Scores, rank numbers |
 
 ```css
---font-display: 'Bebas Neue', 'Impact', 'Arial Narrow', sans-serif;
---font-body: 'Noto Sans JP', sans-serif;
+--font-display: 'Saira Semi Condensed', 'Arial Narrow', sans-serif;
+--font-body: 'Saira', 'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic', system-ui, sans-serif;
 ```
 
 ---
@@ -282,7 +282,7 @@ TV中継/新聞スポーツ欄風のメインコンポーネント。
 - `--stitch` (赤) を primary accent として統一する
 - 野球モチーフ (stitch, home-plate, bat-divider) をUI装飾に使う
 - チームカラーはマトリクスセルのみに限定（UI全体に散らさない）
-- Bebas Neue は常に uppercase + wide tracking
+- Saira Semi Condensed は常に uppercase + wide tracking
 - データテーブルは密度重視（cell padding は小さく）
 - コンテンツブロックは `--bg-surface` + `--border-primary`
 
@@ -306,7 +306,7 @@ Text: primary=#1B1B18, secondary=#33493B, muted=#76746C
 Border: primary=#E6E4DD, strong=#1D6E3A
 Accent: --stitch=#CF3A32 (baseball stitch / broadcast alert red)
 Gold: --dirt=#8A5A00 (1位 highlight / readable telop gold)
-Fonts: display=Saira Condensed, body=Noto Sans JP
+Fonts: display=Saira Semi Condensed, body=Saira + Japanese fallback
 Motifs: broadcast header, scorebug panels, stitch-border, home-plate, compact rundown rules
 Matrix: team colors fill cells, 3px gap, league color band header, compact score-sheet density
 Card: white surface + restrained border + subtle shadow, radius 0.5rem

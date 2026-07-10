@@ -16,7 +16,7 @@ export const NUMBER_FONTS: NumberFont[] = [
   { id: "barlow", name: "Barlow Condensed", family: "'Barlow Condensed', sans-serif", googleQuery: "family=Barlow+Condensed:wght@400;600;700", sample: "modern" },
   { id: "teko", name: "Teko", family: "'Teko', sans-serif", googleQuery: "family=Teko:wght@400;600;700", sample: "tall" },
   { id: "jetbrains", name: "JetBrains Mono", family: "'JetBrains Mono', monospace", googleQuery: "family=JetBrains+Mono:wght@400;700", sample: "monospace" },
-  { id: "saira", name: "Saira Condensed", family: "'Saira Condensed', sans-serif", googleQuery: "family=Saira+Condensed:wght@400;700;900", sample: "scoreboard" },
+  { id: "saira", name: "Saira Semi Condensed", family: "'Saira Semi Condensed', sans-serif", googleQuery: "family=Saira+Semi+Condensed:wght@400;600;700", sample: "broadcast" },
   { id: "anton", name: "Anton", family: "'Anton', sans-serif", googleQuery: "family=Anton", sample: "impact" },
 ];
 

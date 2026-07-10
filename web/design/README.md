@@ -21,9 +21,10 @@ This directory keeps design references and generated previews. It is not the pro
 
 ## Current Release Direction
 
-The release direction is **Navy Editorial Scorebook**:
+The release direction is **Broadcast Booth / 放送席**:
 
-- base theme: `editorial-navy-ivory`
+- base theme: `broadcast`
 - reference: `../../デザイン案を決定/NPB デザイン案比較.dc.html`
-- adopted direction: C「紙面」/ D「新聞」 information density
-- deferred directions: A「放送席」 and B「ナイター」
+- adopted direction: A「放送席」 white base, dark-green headers, broadcast clarity, and dense but readable information hierarchy
+- supporting patterns: C「紙面」/ D「新聞」 thin rules, compact scoring, and strong section hierarchy
+- deferred directions: B「ナイター」 and Navy Editorial variants

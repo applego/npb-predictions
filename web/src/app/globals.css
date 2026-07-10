@@ -36,7 +36,9 @@
      while scrolling (score-sheet behaviour from the C/D design study). */
   --app-header-h: 72px;
 
-  --font-body-default: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "YuGothic", system-ui, sans-serif;
+  --font-display: var(--font-display-default);
+  --font-body-default: var(--font-body-latin), "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "YuGothic", system-ui, sans-serif;
+  --font-body: var(--font-body-default);
 }
 
 /* Desktop header is shorter (no hamburger row) — Tailwind lg breakpoint. */
@@ -166,12 +168,12 @@ button:disabled,
 
   /* Font classes */
   .font-display {
-    font-family: var(--font-display, 'Bebas Neue', 'Impact', 'Arial Narrow', sans-serif);
+    font-family: var(--font-display, var(--font-display-default));
     letter-spacing: 0.04em;
   }
 
   .font-body {
-    font-family: var(--font-body, 'Noto Sans JP', sans-serif);
+    font-family: var(--font-body, var(--font-body-default));
   }
 
   /* Card: Expo-style white card with subtle shadow */

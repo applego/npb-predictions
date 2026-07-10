@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
-import { Bebas_Neue } from "next/font/google";
+import { Saira, Saira_Semi_Condensed } from "next/font/google";
 import { Providers } from "@/components/Providers";
 import { AuthHeader } from "@/components/AuthHeader";
 import { Nav } from "@/components/Nav";
@@ -19,13 +19,22 @@ import "./globals.css";
 // preload: false + explicit fallback shrinks dev-mode google fonts retries
 // (Next.js retries every weight/subset on each restart — harmless in prod
 //  thanks to build-time prefetch, but ~37 retries during dev startup).
-const bebasNeue = Bebas_Neue({
-  weight: "400",
+const sairaSemiCondensed = Saira_Semi_Condensed({
+  weight: ["400", "600", "700"],
   subsets: ["latin"],
   variable: "--font-display-default",
   display: "swap",
   preload: false,
-  fallback: ["Impact", "system-ui", "sans-serif"],
+  fallback: ["Arial Narrow", "system-ui", "sans-serif"],
+});
+
+const saira = Saira({
+  weight: ["400", "500", "600"],
+  subsets: ["latin"],
+  variable: "--font-body-latin",
+  display: "swap",
+  preload: false,
+  fallback: ["system-ui", "sans-serif"],
 });
 
 const ROOT_DESCRIPTION = clampDescription(
@@ -93,7 +102,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ja" className={bebasNeue.variable}>
+    <html lang="ja" className={`${sairaSemiCondensed.variable} ${saira.variable}`}>
       <body
         className="min-h-screen antialiased"
         style={{
