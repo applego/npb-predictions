@@ -8,6 +8,15 @@ test.describe("Groups privacy", () => {
     expect(data.error).toMatch(/Unauthorized/i);
   });
 
+  test("seed login link endpoint is admin-only", async ({ request }) => {
+    const res = await request.post("/api/admin/users/link-login", {
+      data: { targetSlug: "oya", sourceEmail: "oya@example.com" },
+    });
+    expect(res.status()).toBe(401);
+    const data = (await res.json()) as { error?: string };
+    expect(data.error).toMatch(/Unauthorized/i);
+  });
+
   test("unauthenticated visitors see login gate instead of group contents", async ({
     page,
   }) => {
