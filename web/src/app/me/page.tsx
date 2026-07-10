@@ -6,6 +6,7 @@ import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import PredictionImageGenerator from "@/components/PredictionImageGenerator";
 import { generateArticleV2, type ArticleVarsV2 } from "@/lib/article-templates-v2";
+import { fetchWithAuth } from "@/lib/fetch-with-auth";
 
 // ── Types ──
 
@@ -75,7 +76,7 @@ export default function MyPage() {
       try {
         const [allTimeRes, groupsRes, seasonsRes] = await Promise.all([
           fetch("/api/rankings/all-time"),
-          fetch(`/api/groups/my?firebaseUid=${firebaseUser!.uid}`),
+          fetchWithAuth("/api/groups/my"),
           fetch("/api/seasons"),
         ]);
 

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
+import { fetchWithAuth } from "@/lib/fetch-with-auth";
 
 interface GroupSummary {
   id: number;
@@ -27,9 +28,7 @@ export default function GroupsPage() {
       return;
     }
     try {
-      const res = await fetch(
-        `/api/groups/my?firebaseUid=${encodeURIComponent(firebaseUser.uid)}`,
-      );
+      const res = await fetchWithAuth("/api/groups/my");
       if (res.ok) {
         const data = (await res.json()) as { groups?: GroupSummary[] };
         setGroups(data.groups ?? []);
@@ -54,12 +53,11 @@ export default function GroupsPage() {
     if (!firebaseUser || !newName.trim()) return;
     setCreating(true);
     try {
-      const res = await fetch("/api/groups", {
+      const res = await fetchWithAuth("/api/groups", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: newName.trim(),
-          firebaseUid: firebaseUser.uid,
         }),
       });
       if (res.ok) {

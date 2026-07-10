@@ -18,6 +18,10 @@ WEB_ROOT = Path(__file__).resolve().parents[1]
 D1_DIR = WEB_ROOT / ".wrangler/state/v3/d1/miniflare-D1DatabaseObject"
 LEGACY_DB_NAME = "ebe107f426ba83322c62809723b53c3169b31ddb2289bafa01897cad3061e808.sqlite"
 CURRENT_RELEASE_YEAR = 2026
+CORE_FIVE_GROUP_SLUG = "core-five"
+CORE_FIVE_GROUP_NAME = "コア5人リーグ"
+CORE_FIVE_INVITE_CODE = "CORE5X"
+CORE_FIVE_MEMBER_SLUGS = {"oya", "ishiro", "kuramoto", "tsuneshige", "kumagae"}
 
 TEAM_ALIASES = {
     "巨人": "読売ジャイアンツ",
@@ -273,6 +277,36 @@ def validate_seed_team_normalization():
     )
 
 
+def validate_core_five_group(cur):
+    cur.execute(
+        """
+        SELECT g.name, g.invite_code, u.slug
+        FROM battle_groups g
+        JOIN battle_group_members bgm ON bgm.group_id = g.id
+        JOIN users u ON u.id = bgm.user_id
+        WHERE g.slug = ?
+        ORDER BY u.slug
+        """,
+        (CORE_FIVE_GROUP_SLUG,),
+    )
+    rows = cur.fetchall()
+    member_slugs = {row[2] for row in rows}
+
+    check(len(rows) == 5, f"core-five battle group has exactly 5 members ({len(rows)} found)")
+    check(
+        member_slugs == CORE_FIVE_MEMBER_SLUGS,
+        "core-five battle group members are the release cohort"
+        + (f" (found: {', '.join(sorted(member_slugs))})" if member_slugs != CORE_FIVE_MEMBER_SLUGS else ""),
+    )
+    if rows:
+        names = {row[0] for row in rows}
+        invite_codes = {row[1] for row in rows}
+        check(names == {CORE_FIVE_GROUP_NAME}, f"core-five battle group name is {CORE_FIVE_GROUP_NAME}")
+        check(invite_codes == {CORE_FIVE_INVITE_CODE}, f"core-five invite code is {CORE_FIVE_INVITE_CODE}")
+    else:
+        check(False, "core-five battle group exists")
+
+
 def main():
     conn, temp_dir = open_database()
     cur = conn.cursor()
@@ -384,7 +418,10 @@ def main():
     print("\n=== 8. Seed team normalization ===")
     validate_seed_team_normalization()
 
-    print("\n=== 9. Source validation ===")
+    print("\n=== 9. Core-five battle group seed ===")
+    validate_core_five_group(cur)
+
+    print("\n=== 10. Source validation ===")
     cur.execute("SELECT COUNT(*) FROM users WHERE role='commentator'")
     total_commentators = cur.fetchone()[0]
     cur.execute("SELECT COUNT(*) FROM users WHERE role='commentator' AND source IS NOT NULL AND source != ''")
@@ -447,7 +484,7 @@ def main():
                 bad_dates.append(source)
     check(len(bad_dates) == 0, f"All source dates have valid M/DD format ({len(bad_dates)} invalid)")
 
-    print("\n=== 10. No duplicate predictions ===")
+    print("\n=== 11. No duplicate predictions ===")
     cur.execute("""
         SELECT u.name, s.year, COUNT(*)
         FROM predictions p

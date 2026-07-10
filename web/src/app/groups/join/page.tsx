@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
+import { fetchWithAuth } from "@/lib/fetch-with-auth";
 
 export default function JoinGroupPage() {
   const searchParams = useSearchParams();
@@ -35,12 +36,11 @@ export default function JoinGroupPage() {
     setError(null);
 
     try {
-      const res = await fetch("/api/groups/join", {
+      const res = await fetchWithAuth("/api/groups/join", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           inviteCode: inviteCode.trim().toUpperCase(),
-          firebaseUid: firebaseUser.uid,
         }),
       });
 

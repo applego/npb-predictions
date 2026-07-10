@@ -2,43 +2,26 @@ export const runtime = "edge";
 
 import { NextResponse } from "next/server";
 import { getDb } from "@/db";
-import { battleGroups, battleGroupMembers, users } from "@/db/schema";
+import { battleGroups, battleGroupMembers } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { requireAuth } from "@/lib/auth-server";
 
 /**
- * GET /api/groups/my?firebaseUid=xxx
+ * GET /api/groups/my
  *
  * Returns all groups the current user belongs to, with member count.
  */
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const firebaseUid = searchParams.get("firebaseUid");
-
-  if (!firebaseUid) {
-    return NextResponse.json(
-      { error: "firebaseUid is required" },
-      { status: 400 },
-    );
-  }
+  const auth = await requireAuth(req);
+  if (auth instanceof Response) return auth;
 
   const db = getDb();
-
-  // Find user
-  const [user] = await db
-    .select()
-    .from(users)
-    .where(eq(users.firebaseUid, firebaseUid))
-    .limit(1);
-
-  if (!user) {
-    return NextResponse.json({ groups: [] });
-  }
 
   // Find all group memberships for this user
   const memberships = await db
     .select()
     .from(battleGroupMembers)
-    .where(eq(battleGroupMembers.userId, user.id));
+    .where(eq(battleGroupMembers.userId, auth.user.id));
 
   if (memberships.length === 0) {
     return NextResponse.json({ groups: [] });

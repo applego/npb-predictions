@@ -2,35 +2,28 @@ export const runtime = "edge";
 
 import { NextResponse } from "next/server";
 import { getDb } from "@/db";
-import { battleGroups, battleGroupMembers, users } from "@/db/schema";
+import { battleGroups, battleGroupMembers } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { requireAuth } from "@/lib/auth-server";
 
 /**
  * POST /api/groups/join — Join a group via invite code
- * Body: { inviteCode: string, firebaseUid: string }
+ * Body: { inviteCode: string }
  */
 export async function POST(req: Request) {
-  const body = await req.json() as { inviteCode?: string; firebaseUid?: string };
+  const auth = await requireAuth(req);
+  if (auth instanceof Response) return auth;
 
-  if (!body.inviteCode || !body.firebaseUid) {
+  const body = await req.json() as { inviteCode?: string };
+
+  if (!body.inviteCode) {
     return NextResponse.json(
-      { error: "inviteCode and firebaseUid are required" },
+      { error: "inviteCode is required" },
       { status: 400 },
     );
   }
 
   const db = getDb();
-
-  // Find user
-  const [user] = await db
-    .select()
-    .from(users)
-    .where(eq(users.firebaseUid, body.firebaseUid))
-    .limit(1);
-
-  if (!user) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
-  }
 
   // Find group by invite code
   const [group] = await db
@@ -52,7 +45,7 @@ export async function POST(req: Request) {
     .from(battleGroupMembers)
     .where(eq(battleGroupMembers.groupId, group.id));
 
-  const alreadyMember = existingMembers.some((m) => m.userId === user.id);
+  const alreadyMember = existingMembers.some((m) => m.userId === auth.user.id);
   if (alreadyMember) {
     return NextResponse.json({
       message: "Already a member",
@@ -67,7 +60,7 @@ export async function POST(req: Request) {
   // Add member
   await db.insert(battleGroupMembers).values({
     groupId: group.id,
-    userId: user.id,
+    userId: auth.user.id,
   });
 
   return NextResponse.json(

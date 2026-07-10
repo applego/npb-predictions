@@ -11,8 +11,9 @@ import {
   rankingPicks,
   actualTeamStandings,
 } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { and, eq, desc } from "drizzle-orm";
 import { calcRankingPointForTeam } from "@/lib/scoring";
+import { requireAuth } from "@/lib/auth-server";
 
 /**
  * GET /api/groups/[slug]?year=2025
@@ -23,6 +24,9 @@ export async function GET(
   req: Request,
   { params }: { params: Promise<{ slug: string }> },
 ) {
+  const auth = await requireAuth(req);
+  if (auth instanceof Response) return auth;
+
   const { slug } = await params;
   const { searchParams } = new URL(req.url);
   const yearParam = searchParams.get("year");
@@ -38,6 +42,24 @@ export async function GET(
 
   if (!group) {
     return NextResponse.json({ error: "Group not found" }, { status: 404 });
+  }
+
+  const [requesterMembership] = await db
+    .select()
+    .from(battleGroupMembers)
+    .where(
+      and(
+        eq(battleGroupMembers.groupId, group.id),
+        eq(battleGroupMembers.userId, auth.user.id),
+      ),
+    )
+    .limit(1);
+
+  if (!requesterMembership) {
+    return NextResponse.json(
+      { error: "Group membership required" },
+      { status: 403 },
+    );
   }
 
   // 2. Fetch members

@@ -9,6 +9,7 @@ import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import { getTeamByName } from "@/lib/teams";
 import { downloadPredictionPng } from "@/lib/prediction-png";
+import { fetchWithAuth } from "@/lib/fetch-with-auth";
 
 interface PickDetail {
   rank: number;
@@ -65,23 +66,35 @@ export default function GroupDetailPage() {
       setFetching(false);
       return;
     }
+    if (authLoading) return;
+    if (!firebaseUser) {
+      setData(null);
+      setError(null);
+      setFetching(false);
+      return;
+    }
     setFetching(true);
     try {
       const yearQ = year ? `?year=${year}` : "";
-      const res = await fetch(`/api/groups/${params.slug}${yearQ}`);
+      const res = await fetchWithAuth(`/api/groups/${params.slug}${yearQ}`);
       if (!res.ok) {
-        setError("グループが見つかりません");
+        setError(
+          res.status === 403
+            ? "このグループを見るには参加が必要です"
+            : "グループが見つかりません",
+        );
         return;
       }
       const json = (await res.json()) as GroupDetail;
       setData(json);
+      setError(null);
       if (!year && json.season) setYear(json.season.year);
     } catch {
       setError("データの取得に失敗しました");
     } finally {
       setFetching(false);
     }
-  }, [params.slug, year]);
+  }, [authLoading, firebaseUser, params.slug, year]);
 
   useEffect(() => {
     if (params.slug === "new") router.replace("/groups?create=1");
@@ -118,6 +131,23 @@ export default function GroupDetailPage() {
           className="h-6 w-6 animate-spin rounded-full border-2 border-t-transparent"
           style={{ borderColor: "var(--stitch)", borderTopColor: "transparent" }}
         />
+      </div>
+    );
+  }
+
+  if (!firebaseUser) {
+    return (
+      <div className="card rounded-lg p-10 text-center">
+        <p style={{ color: "var(--text-secondary)" }}>
+          グループを見るにはログインが必要です
+        </p>
+        <button
+          onClick={signIn}
+          className="mt-4 rounded-lg px-6 py-2.5 text-sm font-medium text-white transition hover:opacity-90"
+          style={{ background: "var(--stitch)" }}
+        >
+          Googleでログイン
+        </button>
       </div>
     );
   }

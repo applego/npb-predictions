@@ -7,6 +7,24 @@ UPDATE users SET name='大矢', role='friend' WHERE slug='oya';
 UPDATE users SET name='常重', role='friend' WHERE slug='tsuneshige';
 UPDATE users SET name='熊谷', role='friend' WHERE slug='kumagae';
 
+-- Core 5 private battle group
+INSERT OR IGNORE INTO battle_groups (name, slug, created_by, invite_code)
+SELECT 'コア5人リーグ', 'core-five', u.id, 'CORE5X'
+FROM users u
+WHERE u.slug = 'tsuneshige';
+UPDATE battle_groups
+SET
+  name = 'コア5人リーグ',
+  created_by = (SELECT id FROM users WHERE slug = 'tsuneshige'),
+  invite_code = 'CORE5X'
+WHERE slug = 'core-five'
+  AND EXISTS (SELECT 1 FROM users WHERE slug = 'tsuneshige');
+INSERT OR IGNORE INTO battle_group_members (group_id, user_id)
+SELECT g.id, u.id
+FROM battle_groups g
+JOIN users u ON u.slug IN ('oya', 'ishiro', 'kuramoto', 'tsuneshige', 'kumagae')
+WHERE g.slug = 'core-five';
+
 -- 24 commentators
 INSERT OR IGNORE INTO users (name, slug, role) VALUES ('権藤 博','kondo-hiroshi','commentator'),('一枝 修平','ichieda-shuhei','commentator'),('山田 久志','yamada-hisashi','commentator'),('真弓 明信','mayumi-akinobu','commentator'),('梨田 昌孝','nashida-masataka','commentator'),('大石大二郎','oishi-daijiro','commentator'),('中西 清起','nakanishi-kiyoki','commentator'),('緒方 孝市','ogata-koichi','commentator'),('桧山進次郎','hiyama-shinjiro','commentator'),('浜名 千広','hamana-chihiro','commentator'),('今岡 真訴','imaoka-masato','commentator'),('鳥谷 敬','toritani-takashi','commentator'),('平石 洋介','hiraishi-yosuke','commentator'),('里崎 智也','satozaki-tomoya','commentator'),('上原 浩治','uehara-koji','commentator'),('谷繁 元信','tanishige-motonobu','commentator'),('宮本 慎也','miyamoto-shinya','commentator'),('佐々木主浩','sasaki-kazuhiro','commentator'),('緒方 耕一','ogata-koichi-b','commentator'),('渡辺 久信','watanabe-hisanobu','commentator'),('田村 藤夫','tamura-fujio','commentator'),('篠塚 和典','shinozuka-kazunori','commentator'),('西本 聖','nishimoto-hijiri','commentator'),('岩田 稔','iwata-minoru','commentator');
 UPDATE users SET role='commentator' WHERE slug IN ('kondo-hiroshi','ichieda-shuhei','yamada-hisashi','mayumi-akinobu','nashida-masataka','oishi-daijiro','nakanishi-kiyoki','ogata-koichi','hiyama-shinjiro','hamana-chihiro','imaoka-masato','toritani-takashi','hiraishi-yosuke','satozaki-tomoya','uehara-koji','tanishige-motonobu','miyamoto-shinya','sasaki-kazuhiro','ogata-koichi-b','watanabe-hisanobu','tamura-fujio','shinozuka-kazunori','nishimoto-hijiri','iwata-minoru');

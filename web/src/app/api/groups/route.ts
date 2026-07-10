@@ -2,8 +2,8 @@ export const runtime = "edge";
 
 import { NextResponse } from "next/server";
 import { getDb } from "@/db";
-import { battleGroups, battleGroupMembers, users } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { battleGroups, battleGroupMembers } from "@/db/schema";
+import { requireAuth } from "@/lib/auth-server";
 
 /**
  * Generate a 6-character alphanumeric invite code.
@@ -30,30 +30,22 @@ function slugify(name: string): string {
 
 /**
  * POST /api/groups — Create a new battle group
- * Body: { name: string, firebaseUid: string }
+ * Body: { name: string }
  */
 export async function POST(req: Request) {
-  const body = await req.json() as { name?: string; firebaseUid?: string };
+  const auth = await requireAuth(req);
+  if (auth instanceof Response) return auth;
 
-  if (!body.name || !body.firebaseUid) {
+  const body = await req.json() as { name?: string };
+
+  if (!body.name) {
     return NextResponse.json(
-      { error: "name and firebaseUid are required" },
+      { error: "name is required" },
       { status: 400 },
     );
   }
 
   const db = getDb();
-
-  // Find the user by Firebase UID
-  const [user] = await db
-    .select()
-    .from(users)
-    .where(eq(users.firebaseUid, body.firebaseUid))
-    .limit(1);
-
-  if (!user) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
-  }
 
   const slug = slugify(body.name) + "-" + Date.now().toString(36).slice(-4);
   const inviteCode = generateInviteCode();
@@ -64,7 +56,7 @@ export async function POST(req: Request) {
     .values({
       name: body.name,
       slug,
-      createdBy: user.id,
+      createdBy: auth.user.id,
       inviteCode,
     })
     .returning();
@@ -72,7 +64,7 @@ export async function POST(req: Request) {
   // Add creator as first member
   await db.insert(battleGroupMembers).values({
     groupId: group.id,
-    userId: user.id,
+    userId: auth.user.id,
   });
 
   return NextResponse.json(
