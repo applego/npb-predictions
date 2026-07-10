@@ -118,4 +118,21 @@ describe('calculateStandings', () => {
 |-------------------|--------------------------------------------------------------|
 | /harden-cron-api  | Harden and improve error handling in cron API endpoints      |
 | /improve-dnd-ui   | Enhance drag-and-drop usability in the predictions UI        |
+
+## Screenshot Delivery
+
+Default destination for screen verification screenshots is Discord. Do not
+commit webhook URLs into the repository. Load the local secret before sending:
+
+```bash
+set -a
+source "$HOME/.config/npb-predictions/screenshot-discord-webhook.env"
+set +a
+curl -F "content=NPB Predictions screen verification" \
+  -F "files[]=@/absolute/path/to/screenshot.png" \
+  "$NPB_SCREENSHOT_DISCORD_WEBHOOK_URL"
+```
+
+Use this default for desktop/mobile Playwright screenshots unless the user
+specifies a different recipient.
 ```
