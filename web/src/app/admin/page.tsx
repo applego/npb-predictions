@@ -143,6 +143,9 @@ interface User {
   id: number;
   name: string;
   slug: string;
+  role: string;
+  firebaseUid: string | null;
+  email: string | null;
   source: string | null;
   avatarUrl: string | null;
   sourceUrl: string | null;
@@ -166,7 +169,7 @@ function UserSourceEditor({ user, onSaved }: { user: User; onSaved: () => void }
 
   async function save() {
     setSaving(true);
-    await fetch(`/api/admin/users/${user.id}`, {
+    await fetchWithAuth(`/api/admin/users/${user.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ sourceUrl: sourceUrl || null }),
@@ -182,7 +185,7 @@ function UserSourceEditor({ user, onSaved }: { user: User; onSaved: () => void }
     setYtError(null);
     setYtCandidates(null);
     try {
-      const res = await fetch(`/api/admin/youtube-search?q=${encodeURIComponent(user.name)}`);
+      const res = await fetchWithAuth(`/api/admin/youtube-search?q=${encodeURIComponent(user.name)}`);
       const data = (await res.json()) as { channels?: YTChannel[]; error?: string };
       if (!res.ok || data.error) { setYtError(data.error ?? "検索失敗"); return; }
       setYtCandidates(data.channels ?? []);
@@ -267,6 +270,96 @@ function UserSourceEditor({ user, onSaved }: { user: User; onSaved: () => void }
   );
 }
 
+function SeedLoginLinker({
+  users,
+  onLinked,
+}: {
+  users: User[];
+  onLinked: () => Promise<void>;
+}) {
+  const [targetSlug, setTargetSlug] = useState("");
+  const [sourceEmail, setSourceEmail] = useState("");
+  const [sourceFirebaseUid, setSourceFirebaseUid] = useState("");
+  const [result, setResult] = useState<ApiResult | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const linkableUsers = users.filter((u) => u.role !== "commentator");
+
+  async function handleLink() {
+    setLoading(true);
+    const r = await apiPost("/api/admin/users/link-login", {
+      targetSlug,
+      sourceEmail: sourceEmail.trim() || undefined,
+      sourceFirebaseUid: sourceFirebaseUid.trim() || undefined,
+    });
+    setResult(r);
+    if (r.ok) {
+      setSourceEmail("");
+      setSourceFirebaseUid("");
+      await onLinked();
+    }
+    setLoading(false);
+  }
+
+  return (
+    <div className="mb-6 rounded border bg-gray-50 p-4">
+      <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-semibold text-gray-700">ログイン紐付け</h3>
+          <p className="mt-1 text-xs text-gray-500">
+            seedユーザーに、後からログインしたFirebase UIDまたはメールを紐付けます。
+          </p>
+        </div>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div>
+          <label className="mb-1 block text-sm font-medium">紐付け先</label>
+          <select
+            value={targetSlug}
+            onChange={(e) => setTargetSlug(e.target.value)}
+            className="w-full rounded border px-3 py-2 text-sm"
+          >
+            <option value="">選択...</option>
+            {linkableUsers.map((u) => (
+              <option key={u.id} value={u.slug}>
+                {u.name} ({u.slug}){u.firebaseUid ? " / linked" : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium">ログインメール</label>
+          <input
+            type="email"
+            value={sourceEmail}
+            onChange={(e) => setSourceEmail(e.target.value)}
+            placeholder="person@example.com"
+            className="w-full rounded border px-3 py-2 text-sm"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium">Firebase UID</label>
+          <input
+            type="text"
+            value={sourceFirebaseUid}
+            onChange={(e) => setSourceFirebaseUid(e.target.value)}
+            placeholder="既ログイン行がある時"
+            className="w-full rounded border px-3 py-2 text-sm"
+          />
+        </div>
+      </div>
+      <button
+        onClick={handleLink}
+        disabled={loading || !targetSlug || (!sourceEmail.trim() && !sourceFirebaseUid.trim())}
+        className="mt-3 rounded bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 disabled:opacity-50"
+      >
+        {loading ? "紐付け中..." : "紐付ける"}
+      </button>
+      <ResultDisplay result={result} />
+    </div>
+  );
+}
+
 function UserManager() {
   const [users, setUsers] = useState<User[]>([]);
   const [name, setName] = useState("");
@@ -315,6 +408,8 @@ function UserManager() {
     <section className="rounded-lg border bg-white p-6 shadow-sm">
       <h2 className="mb-4 text-lg font-bold">ユーザー管理</h2>
 
+      <SeedLoginLinker users={users} onLinked={loadUsers} />
+
       {/* Existing users */}
       {users.length > 0 && (
         <div className="mb-6 space-y-3">
@@ -341,7 +436,10 @@ function UserManager() {
               <ul className="divide-y rounded border">
                 {noUrl.map((u) => (
                   <li key={u.id} className="grid grid-cols-[140px_80px_1fr] items-start gap-3 px-3 py-2 text-sm">
-                    <span className="font-medium truncate">{u.name}</span>
+                    <span className="font-medium truncate">
+                      {u.name}
+                      {u.firebaseUid && <span className="ml-1 text-[10px] text-green-600">linked</span>}
+                    </span>
                     <span className="text-xs text-gray-400 truncate">{u.source ?? "—"}</span>
                     <UserSourceEditor user={u} onSaved={loadUsers} />
                   </li>
@@ -359,7 +457,10 @@ function UserManager() {
               <ul className="mt-1 divide-y rounded border">
                 {hasUrl.map((u) => (
                   <li key={u.id} className="grid grid-cols-[140px_80px_1fr] items-start gap-3 px-3 py-2 text-sm">
-                    <span className="font-medium truncate">{u.name}</span>
+                    <span className="font-medium truncate">
+                      {u.name}
+                      {u.firebaseUid && <span className="ml-1 text-[10px] text-green-600">linked</span>}
+                    </span>
                     <span className="text-xs text-gray-400 truncate">{u.source ?? "—"}</span>
                     <UserSourceEditor user={u} onSaved={loadUsers} />
                   </li>
