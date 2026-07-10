@@ -148,7 +148,7 @@ export default function GroupDetailPage() {
             strokeLinejoin="round"
           />
         </svg>
-        GROUPS
+        グループ
       </Link>
 
       {/* Header */}
@@ -197,7 +197,7 @@ export default function GroupDetailPage() {
             color: copied ? "var(--field)" : "var(--text-secondary)",
           }}
         >
-          {copied ? "Copied!" : "招待リンクをコピー"}
+          {copied ? "コピーしました" : "招待リンクをコピー"}
         </button>
       </div>
 

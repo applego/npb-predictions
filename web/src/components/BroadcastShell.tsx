@@ -15,7 +15,7 @@ export function BroadcastBand({ year }: { year?: number | string }) {
           letterSpacing: "0.08em",
         }}
       >
-        NPB PREDICTIONS
+        NPB 予想リーグ
       </span>
       <span
         style={{
@@ -25,7 +25,7 @@ export function BroadcastBand({ year }: { year?: number | string }) {
           opacity: 0.82,
         }}
       >
-        {year ?? new Date().getFullYear()} SEASON
+        {year ?? new Date().getFullYear()} シーズン
       </span>
     </div>
   );
@@ -43,7 +43,7 @@ export function BroadcastHeading({
   return (
     <div>
       <p
-        className="text-[0.68rem] uppercase"
+        className="text-[0.68rem]"
         style={{
           fontFamily: "var(--font-display)",
           letterSpacing: "0.22em",

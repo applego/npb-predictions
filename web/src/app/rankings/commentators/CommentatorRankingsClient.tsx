@@ -1035,9 +1035,9 @@ export function CommentatorRankingsClient() {
             color: "var(--text-primary)",
           }}
         >
-          COMMENTATOR{" "}
+          解説者{" "}
           <span className="animate-amber-glow" style={{ color: "var(--stitch)" }}>
-            RANKINGS
+            ランキング
           </span>
         </h1>
         <p className="mt-1 text-sm" style={{ color: "var(--text-muted)" }}>
@@ -1051,7 +1051,7 @@ export function CommentatorRankingsClient() {
         style={{ background: "var(--bg-surface)", border: "1px solid var(--border-primary)" }}
       >
         <div>
-          <div className="mb-2 text-[10px] font-medium uppercase tracking-widest" style={{ color: "var(--text-muted)", letterSpacing: "0.18em" }}>YEAR</div>
+          <div className="mb-2 text-[10px] font-medium tracking-widest" style={{ color: "var(--text-muted)", letterSpacing: "0.18em" }}>年度</div>
           <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {YEAR_TABS.map((tab) => (
               <TabButton key={tab.value} active={year === tab.value} onClick={() => { setYear(tab.value); setExpandedId(null); }}>
@@ -1063,7 +1063,7 @@ export function CommentatorRankingsClient() {
 
         <div className="flex flex-wrap items-end gap-4">
           <div>
-            <div className="mb-2 text-[10px] font-medium uppercase tracking-widest" style={{ color: "var(--text-muted)", letterSpacing: "0.18em" }}>LEAGUE</div>
+            <div className="mb-2 text-[10px] font-medium tracking-widest" style={{ color: "var(--text-muted)", letterSpacing: "0.18em" }}>リーグ</div>
             <div className="flex flex-wrap gap-2">
               {LEAGUE_TABS.map((tab) => (
                 <TabButton key={tab.value} active={league === tab.value} onClick={() => { setLeague(tab.value); setExpandedId(null); }} accentColor="#38bdf8">
@@ -1074,7 +1074,7 @@ export function CommentatorRankingsClient() {
           </div>
 
           <div>
-            <div className="mb-2 text-[10px] font-medium uppercase tracking-widest" style={{ color: "var(--text-muted)", letterSpacing: "0.18em" }}>SORT</div>
+            <div className="mb-2 text-[10px] font-medium tracking-widest" style={{ color: "var(--text-muted)", letterSpacing: "0.18em" }}>並び替え</div>
             <div className="flex gap-2">
               {SORT_OPTIONS.map((opt) => (
                 <TabButton key={opt.value} active={sort === opt.value} onClick={() => setSort(opt.value)} accentColor="#34d399">
@@ -1233,7 +1233,7 @@ export function CommentatorRankingsClient() {
 
           {/* League selector */}
           <div>
-            <div className="mb-1.5 text-[10px] font-medium uppercase tracking-widest" style={{ color: "var(--text-muted)", letterSpacing: "0.18em" }}>LEAGUE</div>
+            <div className="mb-1.5 text-[10px] font-medium tracking-widest" style={{ color: "var(--text-muted)", letterSpacing: "0.18em" }}>リーグ</div>
             <div className="flex gap-2">
               {(["central", "pacific"] as const).map((lg) => (
                 <button

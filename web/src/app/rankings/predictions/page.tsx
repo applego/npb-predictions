@@ -133,7 +133,7 @@ export default async function PredictionsPage({
       <BreadcrumbJsonLd items={breadcrumbItems} />
       <BroadcastBand year={year} />
       <div className="flex items-start justify-between gap-4">
-        <BroadcastHeading kicker="PREDICTION MATRIX" title="順位予想マトリクス">
+        <BroadcastHeading kicker="順位予想一覧" title="順位予想マトリクス">
           <p>{filtered.length}人のセ・パ両リーグ順位予想を横断比較します。</p>
         </BroadcastHeading>
         <ShareButton type="scoreboard" year={year} />

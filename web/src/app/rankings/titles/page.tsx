@@ -176,7 +176,7 @@ export default async function TitlesPage() {
     <div className="space-y-6">
       <BroadcastBand year={activeSeason.year} />
 
-      <BroadcastHeading kicker="TITLE PREDICTIONS" title="タイトル予想 的中率">
+      <BroadcastHeading kicker="タイトル予想" title="タイトル予想 的中率">
         <p>
           確定 {confirmedCount} タイトル ／ タイトル予想者 {predictors.length}人
         </p>

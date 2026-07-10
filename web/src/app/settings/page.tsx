@@ -11,6 +11,13 @@ import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import { useAuth } from "@/contexts/AuthContext";
 import { applyTheme, readLocalThemeSettings, saveLocalThemeSetting } from "@/lib/theme-apply";
 
+const COLOR_THEME_LABELS: Record<string, string> = {
+  broadcast: "放送席",
+  "stadium-night": "ナイター",
+  newsprint: "紙面",
+  "newspaper-mincho": "新聞",
+};
+
 // ── Load Google Fonts dynamically ──
 
 function useGoogleFont(query: string) {
@@ -134,7 +141,7 @@ export default function SettingsPage() {
     <div className="space-y-8">
       <div>
         <h1 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(1.5rem, 4vw, 2.25rem)", letterSpacing: "0.04em", color: "var(--text-primary)" }}>
-          THEME <span style={{ color: "var(--stitch)" }}>SETTINGS</span>
+          テーマ<span style={{ color: "var(--stitch)" }}>設定</span>
         </h1>
         <p className="mt-0.5 text-sm" style={{ color: "var(--text-muted)" }}>
           カラーテーマ・数字フォントをログインユーザーごとに保存（サイト既定は管理者設定）
@@ -169,7 +176,7 @@ export default function SettingsPage() {
               >
                 <div className="mb-2 flex items-center justify-between">
                   <span className="text-xs font-bold" style={{ color: "var(--text-primary)" }}>{nf.name}</span>
-                  {active && <span className="rounded-sm px-1.5 py-0.5 text-[10px] font-bold" style={{ background: "var(--stitch)", color: "#fff" }}>ON</span>}
+                  {active && <span className="rounded-sm px-1.5 py-0.5 text-[10px] font-bold" style={{ background: "var(--stitch)", color: "#fff" }}>選択中</span>}
                 </div>
                 {/* Number preview */}
                 <div style={{ display: "flex", alignItems: "baseline", gap: "0.75rem" }}>
@@ -209,11 +216,13 @@ export default function SettingsPage() {
               >
                 <div className="mb-3 flex items-center justify-between">
                   <div>
-                    <span style={{ fontSize: "0.875rem", fontWeight: 700, color: v["--text-primary"] }}>{theme.name}</span>
+                    <span style={{ fontSize: "0.875rem", fontWeight: 700, color: v["--text-primary"] }}>
+                      {COLOR_THEME_LABELS[theme.id] ?? theme.name}
+                    </span>
                     <span style={{ fontSize: "0.7rem", color: v["--text-muted"], marginLeft: "0.5rem" }}>{theme.description}</span>
                   </div>
                   {active && (
-                    <span className="rounded-sm px-1.5 py-0.5 text-[9px] font-bold" style={{ background: v["--stitch"], color: "#fff" }}>ON</span>
+                    <span className="rounded-sm px-1.5 py-0.5 text-[9px] font-bold" style={{ background: v["--stitch"], color: "#fff" }}>選択中</span>
                   )}
                 </div>
                 {/* Color swatches */}

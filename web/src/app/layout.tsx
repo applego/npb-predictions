@@ -132,7 +132,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     color: "var(--text-primary)",
                   }}
                 >
-                  NPB <span style={{ color: "var(--field)" }}>PREDICTIONS</span>
+                  NPB <span style={{ color: "var(--field)" }}>予想リーグ</span>
                 </span>
                 <span
                   className="inline sm:hidden"
@@ -167,7 +167,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   color: "var(--text-muted)",
                 }}
               >
-                NPB PREDICTIONS
+                NPB 予想リーグ
               </span>
             </div>
           </footer>

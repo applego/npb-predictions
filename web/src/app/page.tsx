@@ -3,14 +3,15 @@ export const runtime = "edge";
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { Season, Prediction } from "@/lib/types";
+import { getTeamByName } from "@/lib/teams";
 import { NewsCompact } from "./news/NewsClient";
 
 export const metadata: Metadata = {
-  title: "NPB Predictions | プロ野球順位予想",
+  title: "NPB予想リーグ | プロ野球順位予想",
   description:
     "プロ野球順位予想を競う情報ボード。セ・パ両リーグの1位予想分布、解説者ランキング、最新ニュースをチェックできます。",
   openGraph: {
-    title: "NPB Predictions | プロ野球順位予想",
+    title: "NPB予想リーグ | プロ野球順位予想",
     description:
       "放送席のように、プロ野球順位予想と的中状況を見渡せる情報ボード。",
     type: "website",
@@ -98,6 +99,7 @@ async function getTopCommentators(
 
 interface TeamCount {
   teamName: string;
+  displayName: string;
   count: number;
   pct: number;
   color: string;
@@ -121,34 +123,19 @@ function computeFirstPlaceDistribution(
 
   // Sort descending by count
   const sorted = Object.entries(counts)
-    .map(([teamName, count]) => ({
-      teamName,
-      count,
-      pct: Math.round((count / total) * 100),
-      color: getTeamColor(teamName),
-    }))
+    .map(([teamName, count]) => {
+      const team = getTeamByName(teamName);
+      return {
+        teamName,
+        displayName: team?.shortName ?? teamName,
+        count,
+        pct: Math.round((count / total) * 100),
+        color: team?.color ?? "var(--stitch)",
+      };
+    })
     .sort((a, b) => b.count - a.count);
 
   return sorted;
-}
-
-// Map team shortName to their brand color for bar display
-function getTeamColor(name: string): string {
-  const map: Record<string, string> = {
-    巨人: "#F97316",
-    阪神: "#FBBF24",
-    DeNA: "#2563EB",
-    広島: "#DC2626",
-    中日: "#1E40AF",
-    ヤクルト: "#059669",
-    オリックス: "#1E3A5F",
-    ソフトバンク: "#F5D100",
-    ロッテ: "#1a1a1a",
-    楽天: "#B91C1C",
-    西武: "#1D4ED8",
-    日本ハム: "#1E3A5F",
-  };
-  return map[name] ?? "var(--stitch)";
 }
 
 // ── Score rules ──
@@ -212,7 +199,7 @@ export default async function HomePage() {
               letterSpacing: "0.08em",
             }}
           >
-            NPB PREDICTIONS
+            NPB 予想リーグ
           </span>
           <span
             style={{
@@ -221,7 +208,7 @@ export default async function HomePage() {
               letterSpacing: "0.16em",
             }}
           >
-            {year} SEASON
+            {year} シーズン
           </span>
         </div>
 
@@ -268,7 +255,7 @@ export default async function HomePage() {
                   className="animate-pulse-dot inline-block h-1.5 w-1.5 rounded-full"
                   style={{ background: "var(--field)" }}
                 />
-                {year} SEASON
+                {year} シーズン
               </span>
             )}
           </div>
@@ -365,7 +352,7 @@ export default async function HomePage() {
                 className="mt-1 text-right text-[10px] font-medium"
                 style={{ color: "var(--text-muted)" }}
               >
-                {Math.round((BEST_SCORE / PERFECT_SCORE) * 100)}% of perfect
+                満点比 {Math.round((BEST_SCORE / PERFECT_SCORE) * 100)}%
               </p>
             </div>
           </div>
@@ -548,7 +535,7 @@ export default async function HomePage() {
                 className="text-sm font-bold"
                 style={{ color: "var(--text-primary)" }}
               >
-                LATEST NEWS
+                最新ニュース
               </span>
             </div>
             <Link
@@ -559,7 +546,7 @@ export default async function HomePage() {
                 letterSpacing: "0.08em",
               }}
             >
-              VIEW ALL &#8594;
+              すべて見る &#8594;
             </Link>
           </div>
 
@@ -781,7 +768,7 @@ export default async function HomePage() {
             className="text-sm font-bold"
             style={{ color: "var(--text-primary)" }}
           >
-            SCORE RULES
+            採点ルール
           </span>
         </div>
 
@@ -847,7 +834,7 @@ export default async function HomePage() {
                 letterSpacing: "0.2em",
               }}
             >
-              PAST SEASONS
+              過去シーズン
             </span>
             <div
               className="h-px flex-1"
@@ -887,10 +874,11 @@ function DistributionBar({ team }: { team: TeamCount }) {
   return (
     <div className="flex items-center gap-3">
       <span
-        className="w-20 shrink-0 text-right text-sm font-semibold"
+        className="w-24 shrink-0 truncate whitespace-nowrap text-right text-sm font-semibold"
         style={{ color: "var(--text-primary)" }}
+        title={team.teamName}
       >
-        {team.teamName}
+        {team.displayName}
       </span>
       <div
         className="h-6 flex-1 overflow-hidden rounded"

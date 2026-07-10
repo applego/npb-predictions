@@ -19,42 +19,42 @@ const RANKING_CARDS = [
   {
     href: "/rankings/titles",
     icon: "\u{1F451}",
-    kicker: "TITLE PREDICTIONS",
+    kicker: "タイトル予想",
     label: "タイトル予想 的中率",
     caption: "確定タイトルと各予想者の的中状況を比較",
   },
   {
     href: "/rankings/live",
     icon: "\u{1F4C8}",
-    kicker: "LEAGUE STANDINGS",
+    kicker: "リーグ順位",
     label: "リーグ順位",
     caption: "順位推移と実績順位からスコア変動を追跡",
   },
   {
     href: "/rankings/predictions",
     icon: "\u{1F52E}",
-    kicker: "PREDICTION MATRIX",
+    kicker: "順位予想",
     label: "順位予想マトリクス",
     caption: "セ・パ両リーグの順位予想を横断比較",
   },
   {
     href: "/predictions/new",
     icon: "\u270D",
-    kicker: "NEW ENTRY",
+    kicker: "予想登録",
     label: "予想を登録する",
     caption: "ドラッグ操作で順位を並べ、タイトル予想を入力",
   },
   {
     href: "/rankings/scoreboard",
     icon: "\u{1F3C6}",
-    kicker: "FINAL SCORE",
+    kicker: "確定結果",
     label: "確定結果",
     caption: "年度別の結果とスコアボード",
   },
   {
     href: "/rankings/all-time",
     icon: "\u{1F4CA}",
-    kicker: "ALL TIME",
+    kicker: "通算成績",
     label: "殿堂ランキング",
     caption: "通算スコアと長期成績",
   },
@@ -66,7 +66,7 @@ export default function RankingsIndexPage() {
   return (
     <div className="space-y-6">
       <BroadcastBand year={currentYear} />
-      <BroadcastHeading kicker="BROADCAST" title="放送席">
+      <BroadcastHeading kicker="放送席" title="放送席">
         <p>白基調・実況の情報密度で、タイトル予想、リーグ順位、順位予想、予想登録をすばやく確認します。</p>
       </BroadcastHeading>
 
@@ -91,7 +91,7 @@ export default function RankingsIndexPage() {
                 </span>
                 <div>
                   <p
-                    className="text-[10px] font-black uppercase"
+                    className="text-[10px] font-black"
                     style={{
                       color: "var(--field)",
                       fontFamily: "var(--font-display)",

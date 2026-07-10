@@ -130,7 +130,7 @@ export function PredictionCard({ userName, year, league, picks }: Props) {
     ctx.fillStyle = "rgba(212,160,23,0.6)";
     ctx.font = "10px 'Noto Sans JP', sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("NPB PREDICTIONS LEAGUE — npb-predictions.pages.dev", W / 2, H - 20);
+    ctx.fillText("NPB 予想リーグ — npb-predictions.pages.dev", W / 2, H - 20);
 
     setGenerated(true);
   }, [userName, year, league, picks]);
