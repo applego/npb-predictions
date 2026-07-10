@@ -717,7 +717,7 @@ export default async function HomePage() {
           </p>
           <div className="mt-5 flex flex-wrap justify-center gap-3">
             <Link
-              href="/groups/new"
+              href="/groups?create=1"
               className="inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium transition-all"
               style={{
                 background: "var(--field)",

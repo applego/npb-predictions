@@ -43,6 +43,12 @@ export default function GroupsPage() {
     if (!loading) fetchGroups();
   }, [loading, fetchGroups]);
 
+  useEffect(() => {
+    if (loading || !firebaseUser || !appUser) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("create") === "1") setShowCreate(true);
+  }, [appUser, firebaseUser, loading]);
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!firebaseUser || !newName.trim()) return;
