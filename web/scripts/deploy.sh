@@ -240,11 +240,13 @@ else
     if [[ "$UNHEALTHY" == "0" ]]; then
       ok "feature-health all green"
     else
-      warn "feature-health: $UNHEALTHY unhealthy"
+      fail "feature-health: $UNHEALTHY unhealthy"
       echo "$HEALTH" | python3 -m json.tool 2>/dev/null || echo "$HEALTH"
+      exit 1
     fi
   else
-    warn "feature-health endpoint unreachable (may need time to warm)"
+    fail "feature-health endpoint unreachable"
+    exit 1
   fi
 
   # Page smoke tests
@@ -262,6 +264,30 @@ else
     warn "$FAIL page(s) non-2xx — investigate before considering complete"
     exit 1
   fi
+
+  # Share / social image smoke tests. These routes are user-facing through
+  # social previews, copy links, and ranking cards; a 2xx HTML response is not
+  # enough. Require real PNG bytes from the live deployment.
+  for route in \
+    "/api/og/prediction?userId=1&year=2026" \
+    "/api/og/season?year=2026" \
+    "/api/og/commentator?userId=1" \
+    "/api/og/standings" \
+    "/api/newspaper/hanshin-tigers" \
+    "/api/ranking-card/overall"; do
+    tmp=$(mktemp)
+    code=$(curl -L -sS --max-time 25 -o "$tmp" -w "%{http_code}" "$DEPLOY_URL$route" || echo "000")
+    content_type=$(file -b --mime-type "$tmp" 2>/dev/null || echo "unknown")
+    size=$(wc -c < "$tmp" | tr -d ' ')
+    if [[ "$code" =~ ^2 ]] && [[ "$content_type" == "image/png" ]] && (( size >= 10000 )); then
+      ok "$route → $code image/png ${size}B"
+    else
+      fail "$route → code=$code content_type=$content_type size=${size}B"
+      rm -f "$tmp"
+      exit 1
+    fi
+    rm -f "$tmp"
+  done
 fi
 
 stage "DONE"
