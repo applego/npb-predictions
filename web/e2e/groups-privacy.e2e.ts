@@ -25,7 +25,7 @@ test.describe("Groups privacy", () => {
     await page.waitForLoadState("networkidle");
 
     const body = (await page.textContent("body")) ?? "";
-    expect(body).toContain("グループを見るにはログインが必要です");
+    expect(body).toContain("グループを見るには、まずログインしてください。");
     expect(body).not.toContain("CORE5X");
   });
 });
