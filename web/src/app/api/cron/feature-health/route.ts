@@ -45,104 +45,6 @@ interface FeatureStatus {
   detail?: Record<string, unknown>;
 }
 
-type ImageProbe = {
-  path: string;
-  minBytes: number;
-};
-
-const SHARE_IMAGE_PROBES: ImageProbe[] = [
-  { path: "/api/og/prediction?userId=1&year=2026", minBytes: 25_000 },
-  { path: "/api/og/season?year=2026", minBytes: 10_000 },
-  { path: "/api/og/commentator?userId=1", minBytes: 10_000 },
-  { path: "/api/og/standings", minBytes: 10_000 },
-  { path: "/api/newspaper/hanshin-tigers", minBytes: 25_000 },
-  { path: "/api/ranking-card/overall", minBytes: 10_000 },
-];
-
-async function fetchWithTimeout(url: string, timeoutMs: number): Promise<Response> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetch(url, {
-      cache: "no-store",
-      signal: controller.signal,
-    });
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
-async function checkShareImageRoutes(origin: string): Promise<FeatureStatus> {
-  const base: FeatureStatus = {
-    source: "share-images",
-    healthy: false,
-    unresolvedCount: 1,
-    latestError: null,
-    latestAt: new Date().toISOString(),
-    latestHtmlSnippet: null,
-    latestHttpStatus: null,
-  };
-  const results: Array<{
-    path: string;
-    status: number | null;
-    contentType: string | null;
-    bytes: number;
-    ok: boolean;
-    error: string | null;
-  }> = [];
-
-  for (const probe of SHARE_IMAGE_PROBES) {
-    try {
-      const res = await fetchWithTimeout(`${origin}${probe.path}`, 12_000);
-      const contentType = res.headers.get("content-type");
-      const body = new Uint8Array(await res.arrayBuffer());
-      const png =
-        body.length >= 4 &&
-        body[0] === 0x89 &&
-        body[1] === 0x50 &&
-        body[2] === 0x4e &&
-        body[3] === 0x47;
-      const ok =
-        res.ok &&
-        contentType?.includes("image/png") === true &&
-        png &&
-        body.byteLength >= probe.minBytes;
-      results.push({
-        path: probe.path,
-        status: res.status,
-        contentType,
-        bytes: body.byteLength,
-        ok,
-        error: ok
-          ? null
-          : `expected PNG >=${probe.minBytes} bytes, got status=${res.status} contentType=${contentType ?? "n/a"} bytes=${body.byteLength}`,
-      });
-    } catch (e) {
-      results.push({
-        path: probe.path,
-        status: null,
-        contentType: null,
-        bytes: 0,
-        ok: false,
-        error: e instanceof Error ? e.message : String(e),
-      });
-    }
-  }
-
-  const failed = results.filter((r) => !r.ok);
-  return {
-    ...base,
-    healthy: failed.length === 0,
-    unresolvedCount: failed.length === 0 ? 0 : 1,
-    latestError:
-      failed.length === 0
-        ? null
-        : failed.map((r) => `${r.path}: ${r.error ?? "failed"}`).join("; "),
-    latestHttpStatus: failed[0]?.status ?? null,
-    detail: { probes: results },
-  };
-}
-
 async function checkImageGen(): Promise<FeatureStatus> {
   const base: FeatureStatus = {
     source: "image-gen",
@@ -327,30 +229,16 @@ async function checkStandingsFreshness(): Promise<FeatureStatus> {
   }
 }
 
-export async function GET(request: Request) {
-  const origin = new URL(request.url).origin;
-  const [
-    imageGen,
-    shareImages,
-    newsFeed,
-    commentatorRanking,
-    standingsFreshness,
-  ] =
+export async function GET() {
+  const [imageGen, newsFeed, commentatorRanking, standingsFreshness] =
     await Promise.all([
       checkImageGen(),
-      checkShareImageRoutes(origin),
       checkNewsFeed(),
       checkCommentatorRanking(),
       checkStandingsFreshness(),
     ]);
 
-  const all = [
-    imageGen,
-    shareImages,
-    newsFeed,
-    commentatorRanking,
-    standingsFreshness,
-  ];
+  const all = [imageGen, newsFeed, commentatorRanking, standingsFreshness];
   const needsAttention = all.filter((s) => !s.healthy);
 
   return NextResponse.json({
