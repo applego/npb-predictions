@@ -4,6 +4,9 @@ import { test, expect } from "@playwright/test";
 
 async function waitForCommentatorRanking(page: import("@playwright/test").Page) {
   await expect(page.getByText(/人表示/)).toBeVisible();
+  await expect(page.locator('a[href*="/rankings/commentators/"]').first()).toBeVisible({
+    timeout: 15_000,
+  });
 }
 
 test.describe("Commentator ranking", () => {
@@ -44,8 +47,6 @@ test.describe("Commentator ranking", () => {
     await page.goto("/rankings/commentators");
     await waitForCommentatorRanking(page);
     const firstLink = page.locator('a[href*="/rankings/commentators/"]').first();
-    const count = await firstLink.count();
-    expect(count, "ranking page must expose at least one commentator detail link").toBeGreaterThan(0);
     const href = (await firstLink.getAttribute("href")) ?? "";
     expect(href).toBeTruthy();
 
