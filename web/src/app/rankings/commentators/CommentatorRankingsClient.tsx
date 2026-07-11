@@ -861,7 +861,7 @@ export function CommentatorRankingsClient() {
           commentators: sorted,
         });
       } catch {
-        setError("データの取得に失敗しました");
+        setError("読み込みに失敗しました。時間をおいて再度お試しください。");
       } finally {
         setLoading(false);
       }
@@ -873,7 +873,7 @@ export function CommentatorRankingsClient() {
     try {
       const json = await fetchRanking(y, l);
       if (!json) {
-        setError("データの取得に失敗しました");
+        setError("読み込みに失敗しました。時間をおいて再度お試しください。");
         setData(null);
         return;
       }
@@ -895,7 +895,7 @@ export function CommentatorRankingsClient() {
       }
       setData(json);
     } catch {
-      setError("データの取得に失敗しました");
+      setError("読み込みに失敗しました。時間をおいて再度お試しください。");
       setData(null);
     } finally {
       setLoading(false);

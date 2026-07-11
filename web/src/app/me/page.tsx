@@ -336,7 +336,7 @@ function LoginPrompt() {
           marginBottom: "1.5rem",
         }}
       >
-        マイページを表示するにはログインが必要です
+        マイページを見るには、まずログインしてください。
       </p>
       <button
         onClick={signIn}
@@ -351,7 +351,7 @@ function LoginPrompt() {
           cursor: "pointer",
         }}
       >
-        Googleでログイン
+        Googleで続ける
       </button>
     </div>
   );
@@ -718,7 +718,7 @@ function PredictionsCard({
 
       {sortedSeasons.length === 0 && (
         <p style={{ fontSize: "0.875rem", color: "var(--text-muted)" }}>
-          まだ予想がありません
+          まだ予想はありません
         </p>
       )}
 

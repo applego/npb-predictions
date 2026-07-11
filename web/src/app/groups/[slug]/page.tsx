@@ -80,8 +80,8 @@ export default function GroupDetailPage() {
       if (!res.ok) {
         setError(
           res.status === 403
-            ? "このグループを見るには参加が必要です"
-            : "グループが見つかりません",
+            ? "このグループはメンバーだけが見られます"
+            : "グループが見つかりませんでした",
         );
         return;
       }
@@ -90,7 +90,7 @@ export default function GroupDetailPage() {
       setError(null);
       if (!year && json.season) setYear(json.season.year);
     } catch {
-      setError("データの取得に失敗しました");
+      setError("読み込みに失敗しました。時間をおいて再度お試しください。");
     } finally {
       setFetching(false);
     }
@@ -139,14 +139,14 @@ export default function GroupDetailPage() {
     return (
       <div className="card rounded-lg p-10 text-center">
         <p style={{ color: "var(--text-secondary)" }}>
-          グループを見るにはログインが必要です
+          グループを見るには、まずログインしてください。
         </p>
         <button
           onClick={signIn}
           className="mt-4 rounded-lg px-6 py-2.5 text-sm font-medium text-white transition hover:opacity-90"
           style={{ background: "var(--stitch)" }}
         >
-          Googleでログイン
+          Googleで続ける
         </button>
       </div>
     );
@@ -602,14 +602,14 @@ export default function GroupDetailPage() {
       {!firebaseUser && (
         <div className="card rounded-lg p-6 text-center">
           <p style={{ color: "var(--text-secondary)" }}>
-            このグループに参加するにはログインが必要です
+            このグループに入るには、まずログインしてください。
           </p>
           <button
             onClick={signIn}
             className="mt-3 rounded-lg px-6 py-2.5 text-sm font-medium text-white transition hover:opacity-90"
             style={{ background: "var(--stitch)" }}
           >
-            Googleでログイン
+            Googleで続ける
           </button>
         </div>
       )}

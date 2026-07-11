@@ -136,14 +136,14 @@ export default function JoinGroupPage() {
       {!firebaseUser || !appUser ? (
         <div className="card rounded-lg p-8 text-center">
           <p style={{ color: "var(--text-secondary)" }}>
-            グループに参加するにはログインが必要です
+            招待コードを使うには、まずログインしてください。
           </p>
           <button
             onClick={signIn}
             className="mt-4 rounded-lg px-6 py-2.5 text-sm font-medium text-white transition hover:opacity-90"
             style={{ background: "var(--stitch)" }}
           >
-            Googleでログイン
+            Googleで続ける
           </button>
         </div>
       ) : (

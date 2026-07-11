@@ -92,18 +92,18 @@ export default function GroupsPage() {
             color: "var(--text-primary)",
           }}
         >
-          <span style={{ color: "var(--stitch)" }}>対決</span>グループ
+          <span style={{ color: "var(--stitch)" }}>友だち</span>リーグ
         </h1>
         <div className="card rounded-lg p-10 text-center">
           <p style={{ color: "var(--text-secondary)" }}>
-            対決グループに参加するにはログインが必要です
+            友だちのリーグに入るには、まずログインしてください。
           </p>
           <button
             onClick={signIn}
             className="mt-4 rounded-lg px-6 py-2.5 text-sm font-medium text-white transition hover:opacity-90"
             style={{ background: "var(--stitch)" }}
           >
-            Googleでログイン
+            Googleで続ける
           </button>
         </div>
       </div>
@@ -123,10 +123,10 @@ export default function GroupsPage() {
               color: "var(--text-primary)",
             }}
           >
-            <span style={{ color: "var(--stitch)" }}>対決</span>グループ
+            <span style={{ color: "var(--stitch)" }}>友だち</span>リーグ
           </h1>
           <p className="mt-0.5 text-sm" style={{ color: "var(--text-muted)" }}>
-            友達とグループを作って予想の的中率を競おう
+            友だちだけのリーグで、予想の当たり具合を比べよう
           </p>
         </div>
         <button
@@ -145,7 +145,7 @@ export default function GroupsPage() {
             className="mb-3 text-lg font-bold"
             style={{ color: "var(--text-primary)" }}
           >
-            グループ作成
+            グループを作る
           </h2>
           <form onSubmit={handleCreate} className="flex gap-3">
             <input
@@ -167,7 +167,7 @@ export default function GroupsPage() {
               className="rounded-lg px-5 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
               style={{ background: "var(--stitch)" }}
             >
-              {creating ? "作成中..." : "作成"}
+              {creating ? "作成中..." : "作る"}
             </button>
             <button
               type="button"
@@ -188,10 +188,10 @@ export default function GroupsPage() {
       {groups.length === 0 ? (
         <div className="card rounded-lg p-10 text-center">
           <p style={{ color: "var(--text-muted)" }}>
-            まだグループに参加していません
+            まだ参加中のグループはありません
           </p>
           <p className="mt-2 text-sm" style={{ color: "var(--text-muted)" }}>
-            新しいグループを作るか、招待コードで参加しましょう
+            自分で作るか、もらった招待コードで入りましょう
           </p>
           <Link
             href="/groups/join"
@@ -201,7 +201,7 @@ export default function GroupsPage() {
               color: "var(--stitch)",
             }}
           >
-            招待コードで参加
+            招待コードで入る
           </Link>
         </div>
       ) : (
@@ -263,7 +263,7 @@ export default function GroupsPage() {
               color: "var(--text-secondary)",
             }}
           >
-            招待コードで参加
+            招待コードで入る
           </Link>
         </div>
       )}

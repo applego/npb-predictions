@@ -41,8 +41,8 @@ const RANKING_CARDS = [
     href: "/predictions/new",
     icon: "\u270D",
     kicker: "予想登録",
-    label: "予想を登録する",
-    caption: "ドラッグ操作で順位を並べ、タイトル予想を入力",
+    label: "順位予想をつくる",
+    caption: "ドラッグで順位を並べて、タイトル予想も一緒に保存",
   },
   {
     href: "/rankings/scoreboard",

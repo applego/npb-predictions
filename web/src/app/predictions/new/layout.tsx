@@ -7,9 +7,9 @@ import {
   SEO_TERMS,
 } from "@/lib/seo-meta";
 
-const TITLE = "予想を登録する";
+const TITLE = "順位予想をつくる";
 const DESCRIPTION = clampDescription(
-  `${SEO_TERMS.npbFull}の${SEO_TERMS.bothLeagues}順位予想とタイトル予想を登録できます。${SEO_TERMS.site}に参加して年間の的中スコアを競いましょう。`,
+  `${SEO_TERMS.npbFull}の${SEO_TERMS.bothLeagues}順位予想とタイトル予想をつくれます。${SEO_TERMS.site}で年間の的中スコアを比べましょう。`,
 );
 
 export const metadata: Metadata = {

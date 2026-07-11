@@ -102,7 +102,7 @@ function EntryShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="mx-auto max-w-4xl space-y-5">
       <BroadcastBand year={new Date().getFullYear()} />
-      <BroadcastHeading kicker="NEW ENTRY" title="予想を登録する">
+      <BroadcastHeading kicker="NEW ENTRY" title="順位予想をつくる">
         <p>順位予想とタイトル予想を、放送席のスコアシート形式で登録します。</p>
       </BroadcastHeading>
       {children}
@@ -368,7 +368,7 @@ export default function NewPredictionPage() {
 
   function validateStep1() {
     if (!appUser) return "ログインユーザーが取得できませんでした";
-    if (!seasonId) return "シーズンを選択してください";
+    if (!seasonId) return "シーズンを選んでください";
     return null;
   }
 
@@ -376,7 +376,7 @@ export default function NewPredictionPage() {
     const centralFilled = rankings.central.every(Boolean);
     const pacificFilled = rankings.pacific.every(Boolean);
     if (!centralFilled || !pacificFilled)
-      return "セ・パ両リーグの全6チームを選択してください";
+      return "セ・パ両リーグの6チームをすべて並べてください";
     const centralUnique = new Set(rankings.central).size === 6;
     const pacificUnique = new Set(rankings.pacific).size === 6;
     if (!centralUnique || !pacificUnique)
@@ -506,10 +506,10 @@ export default function NewPredictionPage() {
                   SIGN IN REQUIRED
                 </p>
                 <h2 className="mt-2 text-lg font-black" style={{ color: "var(--text-primary)" }}>
-                  ログインして予想を登録
+                  ログインして予想を始める
                 </h2>
                 <p className="mt-2 text-sm leading-6" style={{ color: "var(--text-secondary)" }}>
-                  Googleアカウントでログインすると、順位予想の並び替えとタイトル予想の入力へ進めます。
+                  Googleアカウントで続けると、順位予想の並び替えとタイトル予想を保存できます。
                 </p>
               </div>
               <button
@@ -521,7 +521,7 @@ export default function NewPredictionPage() {
                   boxShadow: "0 3px 10px rgba(31,122,63,0.22)",
                 }}
               >
-                Googleでログイン
+                Googleで続ける
               </button>
             </div>
           </div>
@@ -600,7 +600,7 @@ export default function NewPredictionPage() {
                 </span>
               </div>
               <p className="mt-1 text-xs text-gray-500">
-                ログイン中のアカウントで予想を登録します
+                このアカウントで予想を保存します
               </p>
             </div>
             <div>
@@ -614,7 +614,7 @@ export default function NewPredictionPage() {
                 }
                 className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
-                <option value="">— 選択してください —</option>
+                <option value="">— シーズンを選ぶ —</option>
                 {openSeasons.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.label}
@@ -708,7 +708,7 @@ export default function NewPredictionPage() {
             disabled={submitting}
             className="rounded bg-green-600 px-6 py-2 text-sm font-bold text-white hover:bg-green-700 disabled:opacity-50"
           >
-            {submitting ? "登録中..." : "予想を登録する ✓"}
+            {submitting ? "保存中..." : "この予想で登録 ✓"}
           </button>
         )}
       </div>

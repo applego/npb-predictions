@@ -365,7 +365,7 @@ export default async function HomePage() {
             {topScorer
               ? `現在のトップは ${topScorer.name}（+${topScorer.effectiveTotal}）。`
               : ""}
-            あなたは歴代最高+{BEST_SCORE}を超えられる？
+            歴代最高+{BEST_SCORE}、次に塗り替えるのはあなたかも。
           </p>
 
           {/* CTA */}
@@ -379,7 +379,7 @@ export default async function HomePage() {
                 boxShadow: "0 2px 8px rgba(31,122,63,0.24)",
               }}
             >
-              今すぐ予想する
+              予想してみる
               <span style={{ fontSize: "1.1em" }}>&#8594;</span>
             </Link>
             <Link
@@ -391,7 +391,7 @@ export default async function HomePage() {
                 color: "var(--text-secondary)",
               }}
             >
-              ランキングを見る
+              順位表を見る
             </Link>
           </div>
         </div>
@@ -660,13 +660,13 @@ export default async function HomePage() {
             className="mt-3 text-lg font-bold"
             style={{ color: "var(--text-primary)" }}
           >
-            あなたの予想を新聞一面に
+            あなたの予想を新聞風カードに
           </h2>
           <p
             className="mt-1.5 text-sm"
             style={{ color: "var(--text-secondary)" }}
           >
-            予想を登録して、スポーツ新聞風の画像を自動生成。X でシェアしよう！
+            登録した予想を、スポーツ新聞風の画像にできます。X でシェアしよう！
           </p>
           <div className="mt-5">
             <Link
@@ -678,7 +678,7 @@ export default async function HomePage() {
                 boxShadow: "0 2px 8px rgba(229,57,53,0.3)",
               }}
             >
-              予想を登録して画像を作る
+              画像を作ってシェア
               <span style={{ fontSize: "1.1em" }}>&#8594;</span>
             </Link>
           </div>
@@ -707,13 +707,13 @@ export default async function HomePage() {
             className="mt-3 text-lg font-bold"
             style={{ color: "var(--text-primary)" }}
           >
-            対決グループ
+            友だちリーグ
           </h2>
           <p
             className="mt-1.5 text-sm"
             style={{ color: "var(--text-secondary)" }}
           >
-            友達と予想を競おう！グループを作って順位を比較できます。
+            友だちだけのリーグを作って、予想の当たり具合をゆるく競えます。
           </p>
           <div className="mt-5 flex flex-wrap justify-center gap-3">
             <Link
@@ -735,7 +735,7 @@ export default async function HomePage() {
                 color: "var(--text-secondary)",
               }}
             >
-              招待コードで参加
+              招待コードで入る
             </Link>
           </div>
         </div>
