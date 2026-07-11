@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
-import { Saira, Saira_Semi_Condensed } from "next/font/google";
+import { Noto_Sans_JP, Oswald } from "next/font/google";
 import { Providers } from "@/components/Providers";
 import { AuthHeader } from "@/components/AuthHeader";
 import { Nav } from "@/components/Nav";
@@ -19,8 +19,8 @@ import "./globals.css";
 // preload: false + explicit fallback shrinks dev-mode google fonts retries
 // (Next.js retries every weight/subset on each restart — harmless in prod
 //  thanks to build-time prefetch, but ~37 retries during dev startup).
-const sairaSemiCondensed = Saira_Semi_Condensed({
-  weight: ["400", "600", "700"],
+const oswald = Oswald({
+  weight: ["400", "500", "700"],
   subsets: ["latin"],
   variable: "--font-display-default",
   display: "swap",
@@ -28,13 +28,13 @@ const sairaSemiCondensed = Saira_Semi_Condensed({
   fallback: ["Arial Narrow", "system-ui", "sans-serif"],
 });
 
-const saira = Saira({
-  weight: ["400", "500", "600"],
+const notoSansJp = Noto_Sans_JP({
+  weight: ["400", "500", "700"],
   subsets: ["latin"],
-  variable: "--font-body-latin",
+  variable: "--font-body-ja",
   display: "swap",
   preload: false,
-  fallback: ["system-ui", "sans-serif"],
+  fallback: ["Hiragino Sans", "Yu Gothic", "system-ui", "sans-serif"],
 });
 
 const ROOT_DESCRIPTION = clampDescription(
@@ -102,7 +102,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ja" className={`${sairaSemiCondensed.variable} ${saira.variable}`}>
+    <html lang="ja" className={`${oswald.variable} ${notoSansJp.variable}`}>
       <body
         className="min-h-screen antialiased"
         style={{

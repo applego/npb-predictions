@@ -76,12 +76,12 @@ CREATE TABLE IF NOT EXISTS site_settings (
 );
 INSERT OR IGNORE INTO site_settings (key, value) VALUES
   ('color_theme', 'broadcast'),
-  ('font_number', 'saira'),
+  ('font_number', 'oswald'),
   ('font_body', 'noto');
 UPDATE site_settings SET value = 'broadcast', updated_at = unixepoch()
   WHERE key = 'color_theme' AND value = 'editorial-navy-ivory';
-UPDATE site_settings SET value = 'saira', updated_at = unixepoch()
-  WHERE key = 'font_number' AND value = 'bebas';
+UPDATE site_settings SET value = 'oswald', updated_at = unixepoch()
+  WHERE key = 'font_number' AND value IN ('bebas', 'saira');
 "
 
 echo "  Creating user_settings table..."

@@ -478,7 +478,7 @@ export const COLOR_THEMES: ColorTheme[] = [
 // ── Helpers ──
 
 export const DEFAULT_COLOR_THEME_ID = "broadcast";
-export const DEFAULT_NUMBER_FONT_ID = "saira";
+export const DEFAULT_NUMBER_FONT_ID = "oswald";
 export const DESIGN_COLOR_THEME_IDS = [
   "broadcast",
   "stadium-night",

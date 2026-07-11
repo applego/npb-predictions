@@ -69,9 +69,9 @@ describe("COLOR_THEMES", () => {
   });
 
   it("release default fonts are explicit", () => {
-    expect(DEFAULT_NUMBER_FONT_ID).toBe("saira");
-    expect(getNumberFont(DEFAULT_NUMBER_FONT_ID).name).toBe("Saira Semi Condensed");
-    expect(getNumberFont(DEFAULT_NUMBER_FONT_ID).googleQuery).toContain("Saira+Semi+Condensed");
+    expect(DEFAULT_NUMBER_FONT_ID).toBe("oswald");
+    expect(getNumberFont(DEFAULT_NUMBER_FONT_ID).name).toBe("Oswald");
+    expect(getNumberFont(DEFAULT_NUMBER_FONT_ID).googleQuery).toContain("Oswald");
   });
 
   it("stadium theme is the dark theme", () => {

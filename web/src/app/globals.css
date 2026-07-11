@@ -37,7 +37,7 @@
   --app-header-h: 72px;
 
   --font-display: var(--font-display-default);
-  --font-body-default: var(--font-body-latin), "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "YuGothic", system-ui, sans-serif;
+  --font-body-default: var(--font-body-ja), "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "YuGothic", system-ui, sans-serif;
   --font-body: var(--font-body-default);
 }
 
