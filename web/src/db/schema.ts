@@ -144,6 +144,19 @@ export const userSettings = sqliteTable("user_settings", {
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
 }, (table) => [uniqueIndex("user_settings_user_key_idx").on(table.userId, table.key)]);
 
+export const affiliateClicks = sqliteTable("affiliate_clicks", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  resourceId: text("resource_id").notNull(),
+  category: text("category").notNull(),
+  provider: text("provider").notNull(),
+  href: text("href").notNull(),
+  path: text("path"),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
+}, (table) => [
+  index("affiliate_clicks_resource_created_idx").on(table.resourceId, table.createdAt),
+  index("affiliate_clicks_created_idx").on(table.createdAt),
+]);
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({ predictions: many(predictions), scoreSnapshots: many(scoreSnapshots), awards: many(awards), battleGroupMembers: many(battleGroupMembers), userSettings: many(userSettings) }));
 export const seasonsRelations = relations(seasons, ({ many }) => ({ predictions: many(predictions), actualTeamStandings: many(actualTeamStandings), actualTitleSnapshots: many(actualTitleSnapshots), scoreSnapshots: many(scoreSnapshots), awards: many(awards) }));

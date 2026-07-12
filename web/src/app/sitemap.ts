@@ -51,6 +51,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: absoluteUrl("/rankings/live"), changeFrequency: "hourly", priority: 0.9 },
     { url: absoluteUrl("/predictions"), changeFrequency: "weekly", priority: 0.8 },
     { url: absoluteUrl("/news"), changeFrequency: "daily", priority: 0.75 },
+    { url: absoluteUrl("/resources"), changeFrequency: "weekly", priority: 0.55 },
     { url: absoluteUrl("/seo/past-seasons"), changeFrequency: "yearly", priority: 0.7 },
   ];
 

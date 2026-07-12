@@ -96,6 +96,21 @@ CREATE TABLE IF NOT EXISTS user_settings (
 CREATE UNIQUE INDEX IF NOT EXISTS user_settings_user_key_idx ON user_settings(user_id, key);
 "
 
+echo "  Creating affiliate_clicks table..."
+npx wrangler d1 execute "$DB_NAME" --remote --command "
+CREATE TABLE IF NOT EXISTS affiliate_clicks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+  resource_id TEXT NOT NULL,
+  category TEXT NOT NULL,
+  provider TEXT NOT NULL,
+  href TEXT NOT NULL,
+  path TEXT,
+  created_at INTEGER NOT NULL DEFAULT (unixepoch())
+);
+CREATE INDEX IF NOT EXISTS affiliate_clicks_resource_created_idx ON affiliate_clicks(resource_id, created_at);
+CREATE INDEX IF NOT EXISTS affiliate_clicks_created_idx ON affiliate_clicks(created_at);
+"
+
 echo "  ✅ Schema migrations complete"
 
 # 2. Export local data and import to remote

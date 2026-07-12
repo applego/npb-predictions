@@ -11,6 +11,7 @@ const NAV_LINKS = [
   { href: "/games", label: "試合" },
   { href: "/groups", label: "グループ" },
   { href: "/news", label: "ニュース" },
+  { href: "/resources", label: "道具箱" },
   { href: "/settings", label: "設定" },
 ];
 

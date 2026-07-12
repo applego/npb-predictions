@@ -741,6 +741,54 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* ══════════ RESOURCES CTA ══════════ */}
+      <section
+        className="overflow-hidden rounded-xl"
+        style={{
+          background: "var(--bg-surface)",
+          border: "1px solid var(--border-primary)",
+        }}
+      >
+        <div className="px-6 py-7 sm:px-10">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p
+                className="text-xs font-bold"
+                style={{ color: "var(--stitch)", letterSpacing: "0.12em" }}
+              >
+                観戦・予想の道具箱
+              </p>
+              <h2
+                className="mt-2 text-lg font-bold"
+                style={{ color: "var(--text-primary)" }}
+              >
+                予想の材料をそろえる
+              </h2>
+              <p
+                className="mt-1.5 text-sm leading-6"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                スコアブック、野球本、視聴方法、観戦グッズをまとめています。
+              </p>
+            </div>
+            <Link
+              href="/resources"
+              className="inline-flex min-h-11 items-center justify-center rounded-lg px-5 py-2.5 text-sm font-bold transition-all"
+              style={{
+                background: "var(--bg-elevated)",
+                border: "1px solid var(--border-primary)",
+                color: "var(--text-secondary)",
+              }}
+            >
+              道具箱を見る
+              <span className="ml-2" aria-hidden="true">
+                &#8594;
+              </span>
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* ══════════ SCORE RULES (Compact) ══════════ */}
       <section
         className="overflow-hidden rounded-xl"
