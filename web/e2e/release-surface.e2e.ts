@@ -11,6 +11,7 @@ const PUBLIC_ROUTES = [
   "/newspaper",
   "/predictions",
   "/predictions/new",
+  "/resources",
   "/rankings",
   "/rankings/predictions",
   "/rankings/predictions?year=2026",
@@ -180,6 +181,33 @@ test.describe("release surface", () => {
     await page.goto(refreshedTrendHref!);
     await page.waitForLoadState("networkidle");
     expect(page.url()).toContain("view=trend");
+  });
+
+  test("resources page discloses affiliate links and records allowlisted clicks", async ({
+    page,
+    request,
+  }) => {
+    await loadReleaseSurface(page, "/resources");
+    await expect(
+      page.getByText(/広告・アフィリエイトリンク/),
+      "affiliate disclosure must be visible before outbound commercial links",
+    ).toBeVisible();
+
+    const scorebookLink = page.getByRole("link", {
+      name: /スコアブックを探す/,
+    });
+    const href = await scorebookLink.getAttribute("href");
+    expect(href).toMatch(/^https:\/\//);
+
+    const response = await request.post("/api/affiliate/click", {
+      data: {
+        resourceId: "scorebook",
+        href: href!,
+        path: "/resources",
+      },
+    });
+    expect(response.status()).toBe(200);
+    await expect(response).toBeOK();
   });
 
   for (const route of PUBLIC_ROUTES) {
