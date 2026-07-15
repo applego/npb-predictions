@@ -66,10 +66,10 @@ export default async function Image() {
             marginBottom: "24px",
           }}
         >
-          <div style={{ fontSize: 16, color: "#94a3b8", marginBottom: "8px" }}>
+          <div style={{ display: "flex", fontSize: 16, color: "#94a3b8", marginBottom: "8px" }}>
             NPB Predictions League
           </div>
-          <div style={{ fontSize: 40, fontWeight: 800 }}>
+          <div style={{ display: "flex", fontSize: 40, fontWeight: 800 }}>
             {year} スコアボード
           </div>
         </div>
@@ -112,6 +112,7 @@ export default async function Image() {
               >
                 <div
                   style={{
+                    display: "flex",
                     fontSize: 28,
                     fontWeight: 800,
                     color: rankColors[idx] ?? "#94a3b8",
@@ -120,7 +121,7 @@ export default async function Image() {
                 >
                   {idx + 1}
                 </div>
-                <div style={{ flex: 1, fontSize: 24, fontWeight: 700 }}>
+                <div style={{ display: "flex", flex: 1, fontSize: 24, fontWeight: 700 }}>
                   {entry.name}
                 </div>
                 <div
@@ -132,6 +133,7 @@ export default async function Image() {
                 >
                   <div
                     style={{
+                      display: "flex",
                       fontSize: 28,
                       fontWeight: 800,
                       color: idx === 0 ? "#fbbf24" : "white",
@@ -139,7 +141,7 @@ export default async function Image() {
                   >
                     {entry.totalScore}pt
                   </div>
-                  <div style={{ fontSize: 13, color: "#94a3b8" }}>
+                  <div style={{ display: "flex", fontSize: 13, color: "#94a3b8" }}>
                     順位{entry.rankingScore} + タイトル{entry.titleScore}
                   </div>
                 </div>

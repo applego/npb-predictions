@@ -57,6 +57,7 @@ export default async function Image({ params }: Props) {
         {/* Year */}
         <div
           style={{
+            display: "flex",
             fontSize: 80,
             fontWeight: 900,
             marginBottom: "48px",
@@ -94,7 +95,7 @@ export default async function Image({ params }: Props) {
                 <div style={{ fontSize: 16, color: "#94a3b8", marginBottom: "8px" }}>
                   セ・リーグ優勝
                 </div>
-                <div style={{ fontSize: 36, fontWeight: 800, color: "#fbbf24" }}>
+                <div style={{ display: "flex", fontSize: 36, fontWeight: 800, color: "#fbbf24" }}>
                   🏆 {centralChampion}
                 </div>
               </div>
@@ -116,7 +117,7 @@ export default async function Image({ params }: Props) {
                 <div style={{ fontSize: 16, color: "#94a3b8", marginBottom: "8px" }}>
                   パ・リーグ優勝
                 </div>
-                <div style={{ fontSize: 36, fontWeight: 800, color: "#fbbf24" }}>
+                <div style={{ display: "flex", fontSize: 36, fontWeight: 800, color: "#fbbf24" }}>
                   🏆 {pacificChampion}
                 </div>
               </div>

@@ -114,10 +114,10 @@ export default async function Image({
           }}
         >
           <div style={{ display: "flex", flexDirection: "column" }}>
-            <div style={{ fontSize: 16, color: "#94a3b8", marginBottom: "4px" }}>
+            <div style={{ display: "flex", fontSize: 16, color: "#94a3b8", marginBottom: "4px" }}>
               NPB Predictions League {year}
             </div>
-            <div style={{ fontSize: 36, fontWeight: 800 }}>
+            <div style={{ display: "flex", fontSize: 36, fontWeight: 800 }}>
               {user.name} の順位予想
             </div>
           </div>
@@ -173,6 +173,7 @@ export default async function Image({
                 >
                   <div
                     style={{
+                      display: "flex",
                       width: "32px",
                       fontWeight: 700,
                       color: pick.rank <= 3 ? "#fbbf24" : "#94a3b8",
