@@ -7,6 +7,7 @@ import { gameResults, seasons } from "@/db/schema";
 import { and, desc, eq } from "drizzle-orm";
 import { canonicalAlternates, clampDescription, socialPreview } from "@/lib/seo-meta";
 import { NPB_TEAMS } from "@/lib/teams";
+import { shiftIsoDate } from "@/lib/date-navigation";
 
 interface Props {
   params: Promise<{ date: string }>;
@@ -34,18 +35,6 @@ function teamColor(name: string): string {
 
 function teamShort(name: string): string {
   return NPB_TEAMS.find((t) => t.name === name)?.shortName ?? name;
-}
-
-function prevDate(date: string): string {
-  const d = new Date(`${date}T00:00:00+09:00`);
-  d.setDate(d.getDate() - 1);
-  return d.toISOString().slice(0, 10);
-}
-
-function nextDate(date: string): string {
-  const d = new Date(`${date}T00:00:00+09:00`);
-  d.setDate(d.getDate() + 1);
-  return d.toISOString().slice(0, 10);
 }
 
 export default async function GameDatePage({ params }: Props) {
@@ -85,14 +74,14 @@ export default async function GameDatePage({ params }: Props) {
         <h1 className="text-2xl font-bold">{date} 試合結果</h1>
         <div className="flex gap-1 text-sm">
           <Link
-            href={`/games/${prevDate(date)}`}
+            href={`/games/${shiftIsoDate(date, -1)}`}
             className="px-3 py-1.5 rounded border"
             style={{ borderColor: "var(--border-primary)", color: "var(--text-secondary)" }}
           >
             ← 前日
           </Link>
           <Link
-            href={`/games/${nextDate(date)}`}
+            href={`/games/${shiftIsoDate(date, 1)}`}
             className="px-3 py-1.5 rounded border"
             style={{ borderColor: "var(--border-primary)", color: "var(--text-secondary)" }}
           >
