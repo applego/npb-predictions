@@ -1,0 +1,156 @@
+version: '1'
+loop:
+  id: npb-first-run-journey
+  title: Npb First Run Journey
+  objective: NPB初回ユーザーが解説者比較から予想・友人招待・順位変動での再訪まで完了できる旅を、公開ヘルス・画面証拠・独立レビューで改善する
+  owner: ytsun
+  cadence: event_driven
+  sourceRefs:
+    - loop:examples/fractal-meta-loop.yaml
+    - metaskill:fractal-loop-metaskill
+    - loop:examples/product-design-improvement-loop.yaml
+    - repo:GOAL.md
+    - repo:loops/npb-product-recovery/loop-workspace/plan.md
+  successCriteria:
+    - The run records the reframe delta and one primary user decision before visual changes.
+    - Design and canonical data sources are inspected separately before screen composition.
+    - Desktop and mobile browser evidence proves the primary journey and any changed interaction.
+    - An independent critique has no unresolved blocking findings for hierarchy, accessibility, or recovery states.
+    - Promotion requires verifier evidence and owner review.
+skill:
+  id: npb-first-run-journey
+  scope: project
+  scopeRef:
+    scope: project
+    id: npb-predictions
+  capabilityTier: complex
+metaSkill:
+  id: npb-first-run-journey-metaskill
+  purpose: Create and improve a concrete LoopAndLoop loop contract while preserving evidence and promotion gates.
+  creates:
+    - concrete_loop_yaml
+    - eval_task_candidate
+    - verifier_candidate
+  improves:
+    - concrete_loop_policy
+    - verification_gates
+    - handoff_prompts
+  distributionTargets:
+    - project-loop-package
+  feedbackSources:
+    - turn_evidence
+    - verifier_result
+    - promotion_gate_verdict
+  promotionBoundary: eval_hidden_regression_owner_review
+workflow:
+  phases:
+    - id: reframe_request
+      title: Reframe the user journey
+      objective: Name the primary user decision, action delta, and non-goals before visual changes.
+      inputs:
+        - literal_request
+        - current_user_evidence
+        - product_goal
+      outputs:
+        - reframe_record
+        - journey_contract
+      gates:
+        - primary_user_decision_named
+        - action_delta_recorded_or_no_delta_declared
+    - id: inspect_contracts
+      title: Inspect design and data contracts
+      objective: Inspect the visual contract and canonical domain/API data independently.
+      inputs:
+        - design_source
+        - domain_schema
+        - api_contract
+        - runtime_evidence
+      outputs:
+        - design_contract_record
+        - data_projection_contract
+      gates:
+        - design_source_named_or_absence_declared
+        - canonical_data_source_named
+        - states_and_identity_named
+    - id: compose_surface
+      title: Compose the screen
+      objective: Map the journey, content hierarchy, responsive behavior, and recovery states before implementation.
+      inputs:
+        - journey_contract
+        - design_contract_record
+        - data_projection_contract
+      outputs:
+        - screen_composition_contract
+      gates:
+        - primary_action_visible
+        - component_choice_justified
+        - empty_loading_error_stale_states_defined
+        - desktop_mobile_behavior_defined
+    - id: implement_and_verify
+      title: Implement and verify
+      objective: Apply the smallest scoped change and prove the journey in deterministic checks and browsers.
+      inputs:
+        - screen_composition_contract
+      outputs:
+        - implementation_evidence
+        - browser_evidence
+      gates:
+        - project_checks_pass
+        - desktop_browser_evidence_present
+        - mobile_browser_evidence_present
+        - interaction_proven_when_changed
+    - id: review_and_iterate
+      title: Independent review and stop
+      objective: Accept only independently reviewed work, or stop with a bounded prune or escalation decision.
+      inputs:
+        - implementation_evidence
+        - browser_evidence
+      outputs:
+        - critic_review
+        - run_ledger
+        - promotion_or_prune_decision
+      gates:
+        - no_blocking_hierarchy_findings
+        - no_blocking_accessibility_findings
+        - no_blocking_recovery_state_findings
+        - owner_reviewed
+verifiers:
+  - id: source-refs-declared
+    enabled: true
+  - id: action-delta-recorded
+    enabled: true
+  - id: owner-review-required
+    enabled: true
+  - id: browser-evidence-required
+    enabled: true
+  - id: independent-design-critic-required
+    enabled: true
+promotion:
+  requireApproval: true
+  minEffectSize: 0.05
+safety:
+  destructiveCommandGuard: dcg
+  stopConditions:
+    - objective_not_testable
+    - source_refs_missing
+    - no_action_delta_after_three_pilots
+    - verifier_missing_or_fails
+    - owner_approval_missing
+    - browser_evidence_missing
+    - same_critic_finding_repeats_without_material_delta
+  requireHumanApprovalFor:
+    - promoting_global_or_project_defaults
+    - changing_runtime_settings
+    - adding_write_scoped_tools
+  blockedActions:
+    - promote_without_verifier
+    - promote_without_action_delta
+    - mutate_installed_global_skills_directly
+    - copy_external_hooks_or_mcp_settings_directly
+    - implement_visual_polish_without_named_user_decision
+    - accept_changed_interaction_without_browser_proof
+observability:
+  eventLog: .loopandloop/events/npb-first-run-journey.jsonl
+  artifacts: .loopandloop/artifacts/npb-first-run-journey/
+  runLedger: .loopandloop/runs/npb-first-run-journey.jsonl
+  dailySummary: .loopandloop/summaries/npb-first-run-journey.md

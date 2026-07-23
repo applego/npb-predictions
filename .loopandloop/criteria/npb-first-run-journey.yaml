@@ -1,0 +1,199 @@
+schemaVersion: loopandloop.criteria.v1
+loopId: npb-first-run-journey
+objectiveDigest: 020a66261edf87eac3c2111b946f638e
+contractDigest: 858b91d2eeda1441ae2fb06bfd9feedd
+sourceRefs:
+  - loop:examples/fractal-meta-loop.yaml
+  - metaskill:fractal-loop-metaskill
+  - loop:examples/product-design-improvement-loop.yaml
+  - repo:GOAL.md
+  - repo:loops/npb-product-recovery/loop-workspace/plan.md
+quality: structurally_verified
+requiresOwnerReview: true
+criteria:
+  - id: objective-satisfied
+    statement: 'Observable evidence demonstrates the objective: NPB初回ユーザーが解説者比較から予想・友人招待・順位変動での再訪まで完了できる旅を、公開ヘルス・画面証拠・独立レビューで改善する'
+    evidenceRequired:
+      - artifact_ref
+      - verifier_result
+    verifier: objective-evidence
+  - id: source-grounded
+    statement: Every material decision cites a declared source or an explicit missing-evidence finding.
+    evidenceRequired:
+      - artifact_ref
+      - verifier_result
+    verifier: source-ref-check
+  - id: bounded-stop
+    statement: The run records accepted, blocked, no-progress, or budget-exhausted as an explicit stop reason.
+    evidenceRequired:
+      - artifact_ref
+      - verifier_result
+    verifier: bounded-stop-check
+  - id: authority-preserved
+    statement: No approval-gated or externally visible action occurs without the declared authority receipt.
+    evidenceRequired:
+      - artifact_ref
+      - verifier_result
+    verifier: authority-check
+  - id: success-1
+    statement: The run records the reframe delta and one primary user decision before visual changes.
+    evidenceRequired:
+      - artifact_ref
+      - verifier_result
+    verifier: declared-success-check
+  - id: success-2
+    statement: Design and canonical data sources are inspected separately before screen composition.
+    evidenceRequired:
+      - artifact_ref
+      - verifier_result
+    verifier: declared-success-check
+  - id: success-3
+    statement: Desktop and mobile browser evidence proves the primary journey and any changed interaction.
+    evidenceRequired:
+      - artifact_ref
+      - verifier_result
+    verifier: declared-success-check
+  - id: success-4
+    statement: An independent critique has no unresolved blocking findings for hierarchy, accessibility, or recovery states.
+    evidenceRequired:
+      - artifact_ref
+      - verifier_result
+    verifier: declared-success-check
+  - id: success-5
+    statement: Promotion requires verifier evidence and owner review.
+    evidenceRequired:
+      - artifact_ref
+      - verifier_result
+    verifier: declared-success-check
+  - id: gate-reframe-request-primary-user-decision-named
+    statement: Workflow gate primary_user_decision_named passes during phase reframe_request.
+    evidenceRequired:
+      - artifact_ref
+      - verifier_result
+    verifier: primary_user_decision_named
+  - id: gate-reframe-request-action-delta-recorded-or-no-delta-declared
+    statement: Workflow gate action_delta_recorded_or_no_delta_declared passes during phase reframe_request.
+    evidenceRequired:
+      - artifact_ref
+      - verifier_result
+    verifier: action_delta_recorded_or_no_delta_declared
+  - id: gate-inspect-contracts-design-source-named-or-absence-declared
+    statement: Workflow gate design_source_named_or_absence_declared passes during phase inspect_contracts.
+    evidenceRequired:
+      - artifact_ref
+      - verifier_result
+    verifier: design_source_named_or_absence_declared
+  - id: gate-inspect-contracts-canonical-data-source-named
+    statement: Workflow gate canonical_data_source_named passes during phase inspect_contracts.
+    evidenceRequired:
+      - artifact_ref
+      - verifier_result
+    verifier: canonical_data_source_named
+  - id: gate-inspect-contracts-states-and-identity-named
+    statement: Workflow gate states_and_identity_named passes during phase inspect_contracts.
+    evidenceRequired:
+      - artifact_ref
+      - verifier_result
+    verifier: states_and_identity_named
+  - id: gate-compose-surface-primary-action-visible
+    statement: Workflow gate primary_action_visible passes during phase compose_surface.
+    evidenceRequired:
+      - artifact_ref
+      - verifier_result
+    verifier: primary_action_visible
+  - id: gate-compose-surface-component-choice-justified
+    statement: Workflow gate component_choice_justified passes during phase compose_surface.
+    evidenceRequired:
+      - artifact_ref
+      - verifier_result
+    verifier: component_choice_justified
+  - id: gate-compose-surface-empty-loading-error-stale-states-defined
+    statement: Workflow gate empty_loading_error_stale_states_defined passes during phase compose_surface.
+    evidenceRequired:
+      - artifact_ref
+      - verifier_result
+    verifier: empty_loading_error_stale_states_defined
+  - id: gate-compose-surface-desktop-mobile-behavior-defined
+    statement: Workflow gate desktop_mobile_behavior_defined passes during phase compose_surface.
+    evidenceRequired:
+      - artifact_ref
+      - verifier_result
+    verifier: desktop_mobile_behavior_defined
+  - id: gate-implement-and-verify-project-checks-pass
+    statement: Workflow gate project_checks_pass passes during phase implement_and_verify.
+    evidenceRequired:
+      - artifact_ref
+      - verifier_result
+    verifier: project_checks_pass
+  - id: gate-implement-and-verify-desktop-browser-evidence-present
+    statement: Workflow gate desktop_browser_evidence_present passes during phase implement_and_verify.
+    evidenceRequired:
+      - artifact_ref
+      - verifier_result
+    verifier: desktop_browser_evidence_present
+  - id: gate-implement-and-verify-mobile-browser-evidence-present
+    statement: Workflow gate mobile_browser_evidence_present passes during phase implement_and_verify.
+    evidenceRequired:
+      - artifact_ref
+      - verifier_result
+    verifier: mobile_browser_evidence_present
+  - id: gate-implement-and-verify-interaction-proven-when-changed
+    statement: Workflow gate interaction_proven_when_changed passes during phase implement_and_verify.
+    evidenceRequired:
+      - artifact_ref
+      - verifier_result
+    verifier: interaction_proven_when_changed
+  - id: gate-review-and-iterate-no-blocking-hierarchy-findings
+    statement: Workflow gate no_blocking_hierarchy_findings passes during phase review_and_iterate.
+    evidenceRequired:
+      - artifact_ref
+      - verifier_result
+    verifier: no_blocking_hierarchy_findings
+  - id: gate-review-and-iterate-no-blocking-accessibility-findings
+    statement: Workflow gate no_blocking_accessibility_findings passes during phase review_and_iterate.
+    evidenceRequired:
+      - artifact_ref
+      - verifier_result
+    verifier: no_blocking_accessibility_findings
+  - id: gate-review-and-iterate-no-blocking-recovery-state-findings
+    statement: Workflow gate no_blocking_recovery_state_findings passes during phase review_and_iterate.
+    evidenceRequired:
+      - artifact_ref
+      - verifier_result
+    verifier: no_blocking_recovery_state_findings
+  - id: gate-review-and-iterate-owner-reviewed
+    statement: Workflow gate owner_reviewed passes during phase review_and_iterate.
+    evidenceRequired:
+      - artifact_ref
+      - verifier_result
+    verifier: owner_reviewed
+  - id: verifier-source-refs-declared
+    statement: Verifier source-refs-declared passes with a recorded result.
+    evidenceRequired:
+      - artifact_ref
+      - verifier_result
+    verifier: source-refs-declared
+  - id: verifier-action-delta-recorded
+    statement: Verifier action-delta-recorded passes with a recorded result.
+    evidenceRequired:
+      - artifact_ref
+      - verifier_result
+    verifier: action-delta-recorded
+  - id: verifier-owner-review-required
+    statement: Verifier owner-review-required passes with a recorded result.
+    evidenceRequired:
+      - artifact_ref
+      - verifier_result
+    verifier: owner-review-required
+  - id: verifier-browser-evidence-required
+    statement: Verifier browser-evidence-required passes with a recorded result.
+    evidenceRequired:
+      - artifact_ref
+      - verifier_result
+    verifier: browser-evidence-required
+  - id: verifier-independent-design-critic-required
+    statement: Verifier independent-design-critic-required passes with a recorded result.
+    evidenceRequired:
+      - artifact_ref
+      - verifier_result
+    verifier: independent-design-critic-required
