@@ -1,0 +1,118 @@
+version: 1
+meta:
+  name: npb-product-recovery
+  description: >
+    Recover trust in the core prediction experience, then prove or reject one
+    monetization hypothesis with observable user behavior before adding ads or
+    affiliate surfaces.
+  author: applego/npb-predictions
+  created: 2026-07-23
+
+goal:
+  statement: >
+    Within one seven-day cycle, turn the NPB Predictions core job into a clear
+    journey: compare an expert prediction, make or view a personal prediction,
+    invite a friend into a group, and return to check the score. Repair any
+    release blocker on that journey, measure the journey, and produce a
+    decision-ready monetization experiment. Do not claim revenue until a
+    provider dashboard or payment record confirms yen earned.
+  context_sources:
+    - file: ../../GOAL.md
+    - file: ../../SPEC.md
+    - file: ../../MONETIZATION.md
+    - file: ../../MARKETING_STRATEGY.md
+    - file: ./inputs/current-state.md
+  definition_of_done: >
+    One primary persona and canonical route map are recorded; the first-run
+    and group-invite journeys have deterministic checks; public release health
+    is measured; activation and referral events have named owners and queries;
+    and exactly one monetization experiment is ready for a human business
+    decision. The run ends with either verified revenue, a documented failed
+    hypothesis, or a human-approved external-provider action -- never with an
+    unmeasured affiliate link.
+  verification:
+    - id: loop-artifacts-valid
+      type: programmatic
+      check: ["python3", "loops/npb-product-recovery/scripts/verify_loop.py"]
+      expect: exit_zero
+    - id: journey-regression-suite
+      type: programmatic
+      check: ["npm", "--prefix", "web", "test", "--", "date-navigation"]
+      expect: exit_zero
+    - id: release-health
+      type: programmatic
+      check: ["python3", "loops/npb-product-recovery/scripts/check-public-health.py", "https://npb-predictions.pages.dev"]
+      expect: exit_zero
+    - id: business-decision
+      type: human
+      prompt: >
+        Choose whether to open one named affiliate/advertising provider account
+        or keep monetization disabled. This loop must not enroll, accept terms,
+        or publish paid links without that decision.
+
+host:
+  cli: codex
+  model: gpt-5.6
+  invoke: ["codex", "exec"]
+  timeout_sec: 900
+
+council: []
+
+gates:
+  plan_gate:
+    when: after_plan
+    members: []
+    verdict_policy: fixed_passes
+    criteria: [loop-artifacts-valid]
+    max_revisions: 2
+  delivery_gate:
+    when: after_each_delivery
+    members: []
+    verdict_policy: fixed_passes
+    criteria: [loop-artifacts-valid, journey-regression-suite, release-health, business-decision]
+    max_revisions: 2
+
+loop_control:
+  max_iterations: 7
+  budget:
+    usd: 0.0
+    tokens: 400000
+    wall_clock_min: 120
+  no_progress:
+    max_stalled_iterations: 2
+    signals:
+      - the same user journey has no measurable event or deterministic test
+      - the same public release failure repeats without a root-cause fix
+      - an affiliate plan names no provider, offer, disclosure, or revenue evidence
+    action: stop
+  human_checkpoints:
+    - before an affiliate, advertising, payment, or account-creation action
+    - after the first seven-day experiment readout
+  stop_conditions:
+    - one journey and one monetization experiment pass their evidence gates
+    - a provider/payment dashboard verifies revenue in yen
+    - the hypothesis fails and a prune decision is recorded
+    - a human business decision is required
+    - max_iterations reached
+    - same blocker repeats for 2 iterations
+    - any budget cap exceeded
+
+execution:
+  mode: in_session
+  isolation: current_workspace
+  side_effects:
+    requires_approval: true
+    duplicate_action_check: true
+
+observability:
+  state_file: state.json
+  run_log: run-log.md
+  checkpoint_granularity: gate
+
+privacy:
+  egress: []
+
+workspace:
+  project_root: ../..
+  dir: ./loop-workspace
+  layout: [plan.md, "delivery-{n}.md", "review-{n}.md", state.json, run-log.md]

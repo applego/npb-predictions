@@ -122,6 +122,8 @@ export default async function PredictionsPage({
 
   // Only show predictions that have at least some picks
   const filtered = predictions.filter((p) => p.rankingPicks.length > 0);
+  const commentatorPredictions = filtered.filter((prediction) => prediction.user.role === "commentator");
+  const friendPredictions = filtered.filter((prediction) => prediction.user.role === "friend");
 
   const breadcrumbItems = [
     { label: "ランキング", href: "/rankings/predictions" },
@@ -134,7 +136,10 @@ export default async function PredictionsPage({
       <BroadcastBand year={year} />
       <div className="flex items-start justify-between gap-4">
         <BroadcastHeading kicker="順位予想一覧" title="順位予想マトリクス">
-          <p>{filtered.length}人のセ・パ両リーグ順位予想を横断比較します。</p>
+          <p>
+            解説者・評論家 {commentatorPredictions.length}人と参加者 {friendPredictions.length}人の
+            順位予想を分けて比較します。出典にないリーグは「—」で表示します。
+          </p>
         </BroadcastHeading>
         <ShareButton type="scoreboard" year={year} />
       </div>
@@ -270,88 +275,16 @@ export default async function PredictionsPage({
               </tr>
             </thead>
             <tbody>
-              {filtered.map((pred, idx) => {
-                const centralPicks = pred.rankingPicks
-                  .filter((rp) => rp.league === "central")
-                  .sort((a, b) => a.rank - b.rank);
-                const pacificPicks = pred.rankingPicks
-                  .filter((rp) => rp.league === "pacific")
-                  .sort((a, b) => a.rank - b.rank);
-
-                return (
-                  <tr
-                    key={pred.id}
-                    style={{
-                      borderBottom: "1px solid var(--border-primary)",
-                      background: idx % 2 === 0 ? "var(--bg-surface)" : "var(--bg-elevated)",
-                    }}
-                  >
-                    {/* Predictor name (sticky) — z-20 と opaque な background で
-                        横スクロール中に右側のテーブルセルに隠されないよう強化。
-                        2026-05-25 bug: z-10 だと scroll 時に名前カラムが見えなく
-                        なる報告あり。 */}
-                    <td
-                      className="sticky left-0 z-20 px-3 py-1.5"
-                      style={{
-                        background: idx % 2 === 0 ? "var(--bg-surface)" : "var(--bg-elevated)",
-                        borderRight: "2px solid var(--border-strong)",
-                        boxShadow: "2px 0 4px -2px rgba(0,0,0,0.1)",
-                      }}
-                    >
-                      <div className="text-xs font-medium" style={{ color: "var(--text-primary)" }}>
-                        {pred.user.name}
-                      </div>
-                      {pred.user.source && (
-                        <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>
-                          {pred.user.sourceUrl ? (
-                            <a
-                              href={pred.user.sourceUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="transition-opacity hover:opacity-70"
-                              style={{ color: "var(--text-muted)" }}
-                            >
-                              {pred.user.source}
-                            </a>
-                          ) : (
-                            pred.user.source
-                          )}
-                        </div>
-                      )}
-                    </td>
-                    {/* セ 1-6 */}
-                    {[1, 2, 3, 4, 5, 6].map((rank) => {
-                      const pick = centralPicks.find((p) => p.rank === rank);
-                      return (
-                        <td key={`c-${rank}`} className="p-0.5">
-                          {pick ? <TeamBadge teamName={pick.teamName} variant="cell" /> : (
-                            <div className="flex items-center justify-center py-1 text-xs" style={{ color: "var(--text-muted)" }}>—</div>
-                          )}
-                        </td>
-                      );
-                    })}
-                    {/* Separator */}
-                    <td
-                      style={{
-                        background: "var(--bg-inset)",
-                        minWidth: "4px",
-                        maxWidth: "4px",
-                      }}
-                    />
-                    {/* パ 1-6 */}
-                    {[1, 2, 3, 4, 5, 6].map((rank) => {
-                      const pick = pacificPicks.find((p) => p.rank === rank);
-                      return (
-                        <td key={`p-${rank}`} className="p-0.5">
-                          {pick ? <TeamBadge teamName={pick.teamName} variant="cell" /> : (
-                            <div className="flex items-center justify-center py-1 text-xs" style={{ color: "var(--text-muted)" }}>—</div>
-                          )}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                );
-              })}
+              <PredictionGroupRows
+                label="解説者・評論家の予想（出典により一部リーグのみ）"
+                predictions={commentatorPredictions}
+                showEmpty={friendPredictions.length === 0}
+              />
+              <PredictionGroupRows
+                label="参加者の予想"
+                predictions={friendPredictions}
+                showEmpty={commentatorPredictions.length === 0}
+              />
             </tbody>
           </table>
         </BroadcastPanel>
@@ -359,8 +292,97 @@ export default async function PredictionsPage({
 
       {/* Stats */}
       <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-        {"\u30C7\u30FC\u30BF\u30BD\u30FC\u30B9"}: ohtashp.com — {filtered.length}{"\u4EBA\u306E\u89E3\u8AAC\u8005\u30FB\u8A55\u8AD6\u5BB6\u306E\u958B\u5E55\u524D\u4E88\u60F3"}
+        {"\u30C7\u30FC\u30BF\u30BD\u30FC\u30B9"}: 解説者・評論家は出典リンクを表示、参加者はこのサービス内の予想です。
       </p>
     </div>
+  );
+}
+
+function PredictionGroupRows({
+  label,
+  predictions,
+  showEmpty,
+}: {
+  label: string;
+  predictions: Prediction[];
+  showEmpty: boolean;
+}) {
+  if (predictions.length === 0 && !showEmpty) return null;
+
+  return (
+    <>
+      <tr>
+        <th
+          colSpan={14}
+          scope="colgroup"
+          className="px-3 py-2 text-left text-xs font-semibold"
+          style={{
+            background: "var(--bg-inset)",
+            borderBottom: "1px solid var(--border-primary)",
+            color: "var(--text-primary)",
+          }}
+        >
+          {label} {predictions.length}人
+        </th>
+      </tr>
+      {predictions.map((pred, idx) => {
+        const centralPicks = pred.rankingPicks
+          .filter((rp) => rp.league === "central")
+          .sort((a, b) => a.rank - b.rank);
+        const pacificPicks = pred.rankingPicks
+          .filter((rp) => rp.league === "pacific")
+          .sort((a, b) => a.rank - b.rank);
+        const rowBackground = idx % 2 === 0 ? "var(--bg-surface)" : "var(--bg-elevated)";
+
+        return (
+          <tr key={pred.id} style={{ borderBottom: "1px solid var(--border-primary)", background: rowBackground }}>
+            <td
+              className="sticky left-0 z-20 px-3 py-1.5"
+              style={{
+                background: rowBackground,
+                borderRight: "2px solid var(--border-strong)",
+                boxShadow: "2px 0 4px -2px rgba(0,0,0,0.1)",
+              }}
+            >
+              <div className="text-xs font-medium" style={{ color: "var(--text-primary)" }}>
+                {pred.user.name}
+              </div>
+              {pred.user.source && (
+                <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                  {pred.user.sourceUrl ? (
+                    <a href={pred.user.sourceUrl} target="_blank" rel="noopener noreferrer" className="transition-opacity hover:opacity-70" style={{ color: "var(--text-muted)" }}>
+                      {pred.user.source}
+                    </a>
+                  ) : (
+                    pred.user.source
+                  )}
+                </div>
+              )}
+            </td>
+            {[1, 2, 3, 4, 5, 6].map((rank) => {
+              const pick = centralPicks.find((p) => p.rank === rank);
+              return <PredictionCell key={`c-${rank}`} pick={pick?.teamName} />;
+            })}
+            <td style={{ background: "var(--bg-inset)", minWidth: "4px", maxWidth: "4px" }} />
+            {[1, 2, 3, 4, 5, 6].map((rank) => {
+              const pick = pacificPicks.find((p) => p.rank === rank);
+              return <PredictionCell key={`p-${rank}`} pick={pick?.teamName} />;
+            })}
+          </tr>
+        );
+      })}
+    </>
+  );
+}
+
+function PredictionCell({ pick }: { pick?: string }) {
+  return (
+    <td className="p-0.5">
+      {pick ? (
+        <TeamBadge teamName={pick} variant="cell" />
+      ) : (
+        <div className="flex items-center justify-center py-1 text-xs" style={{ color: "var(--text-muted)" }}>—</div>
+      )}
+    </td>
   );
 }

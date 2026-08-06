@@ -28,6 +28,9 @@ web/artifacts/
 .playwright-mcp/
 .serena/
 
+# LoopAndLoop runtime ledger (loop contracts and criteria remain versioned)
+.loopandloop/_state/
+
 # Drizzle
 .drizzle/
 

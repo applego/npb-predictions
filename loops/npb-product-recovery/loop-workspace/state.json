@@ -1,0 +1,14 @@
+{
+  "status": "plan_gate_passed",
+  "iteration": 1,
+  "last_gate": "plan_gate",
+  "blockers": [
+    "Public /rankings/predictions returned HTTP 503 during the first health probe.",
+    "APR has no configured NPB workflow, so GOAL.md and MONETIZATION.md remain unchanged."
+  ],
+  "consent": {
+    "cross_vendor_egress": false,
+    "affiliate_or_ad_provider_action": false
+  },
+  "next": "Root-cause the public route failure before information-architecture or monetization changes."
+}

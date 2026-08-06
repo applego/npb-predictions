@@ -112,6 +112,42 @@ test.describe("OG image generation", () => {
     });
   }
 
+  // 2026-07-15: regression guard — the App Router file-convention OG images
+  // (opengraph-image.tsx) are a separate rendering path from /api/og/* above
+  // and were NOT covered by this suite, which let a satori "multi-child div
+  // needs explicit display" crash ship to production undetected on all 4
+  // routes below (200+empty body). Each must always emit a non-empty PNG.
+  for (const route of [
+    () => `/standings/opengraph-image`,
+    () => `/seo/${new Date().getFullYear()}/opengraph-image`,
+    () => `/seo/${new Date().getFullYear()}/commentator-accuracy/opengraph-image`,
+  ] as const) {
+    test(`${route()} returns non-empty PNG`, async ({ request }) => {
+      const res = await request.get(route());
+      expect(res.status(), `${route()} must not 5xx`).toBeLessThan(500);
+      const ct = res.headers()["content-type"] ?? "";
+      expect(ct).toMatch(/image\/png/);
+      const body = await res.body();
+      expect(body.length, `${route()} body must be non-empty`).toBeGreaterThan(100);
+      expect(body[0]).toBe(0x89);
+      expect(body[1]).toBe(0x50);
+      expect(body[2]).toBe(0x4e);
+      expect(body[3]).toBe(0x47);
+    });
+  }
+
+  test("/users/[userId]/opengraph-image returns non-empty PNG", async ({ request }) => {
+    const userId = await resolveSampleUserId(request);
+    const res = await request.get(`/users/${userId}/opengraph-image`);
+    expect(res.status(), "users opengraph-image must not 5xx").toBeLessThan(500);
+    const ct = res.headers()["content-type"] ?? "";
+    expect(ct).toMatch(/image\/png/);
+    const body = await res.body();
+    expect(body.length, "users opengraph-image body must be non-empty").toBeGreaterThan(100);
+    expect(body[0]).toBe(0x89);
+    expect(body[1]).toBe(0x50);
+  });
+
   // 2026-05-23: anti-fallback guard — empty / 1x1 / NPB-only default cards
   // are < 20KB. A real card with rendered Japanese typography + ranking rows
   // is >25KB. This catches the silent "PNG returned but it's the default
