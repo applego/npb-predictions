@@ -150,7 +150,9 @@ test.describe("Predictions compare page", () => {
     await page.goto("/rankings/predictions?year=2026");
     await expect(page.getByRole("columnheader", { name: /解説者・評論家の予想/ })).toBeVisible();
     await expect(page.getByRole("columnheader", { name: /参加者の予想/ })).toBeVisible();
-    await expect(page.getByRole("columnheader", { name: /解説者・評論家の予想/ })).toHaveText(/解説者・評論家の予想 \d+人/);
+    await expect(page.getByRole("columnheader", { name: /解説者・評論家の予想/ })).toHaveText(
+      /解説者・評論家の予想（出典により一部リーグのみ） \d+人/,
+    );
     await expect(page.getByRole("columnheader", { name: /参加者の予想/ })).toHaveText(/参加者の予想 \d+人/);
   });
 });
