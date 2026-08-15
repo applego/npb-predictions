@@ -4,6 +4,10 @@
 *.db-shm
 *.db-wal
 
+# fsqlite namespace sidecar files (local-only runtime state, br 0.3.0+)
+*.db-fsqlite-ns-gate
+*.db-fsqlite-ns-use
+
 # Lock files
 *.lock
 
