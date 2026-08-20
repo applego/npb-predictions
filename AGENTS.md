@@ -92,6 +92,15 @@ npx @cloudflare/next-on-pages
 - `YOUTUBE_DATA_API_KEY` (optional, for content sync)
 - `UNSPLASH_ACCESS_KEY` (optional, for og images)
 
+### Repo-local authorization for `dev` → `main` merge
+
+`agent_main_merge: allowed`
+
+- このmarkerはこのrepo (`applego/npb-predictions`) の `dev` → `main` merge にのみ効き、他repoへは波及しない。付与日: 2026-08-21（ユーザー明示承認）。
+- `main` はCloudflare Pages productionのdeploy branchであり、mergeは `npb-predictions-ci.yml` の push トリガーにより自動デプロイを引き起こす。マージ前にCI green（required checks）・unresolved review thread=0・`mergeStateStatus: MERGEABLE`/`CLEAN` を必ず確認する。
+- マージ形式は `applego/*` 標準に従いmerge commitのみ（squash/rebaseはPRごとの明示例外がある時だけ）。
+- 本markerはmerge許可のみを与え、deploy許可を兼ねない。手動`wrangler`実行・workflow dispatch等の直接deployは、別途 `agent_production_deploy: allowed` が無い限り常に人間承認へ渡す。
+
 ---
 
 ## 6. Cloudflare Pages

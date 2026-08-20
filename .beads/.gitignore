@@ -4,6 +4,16 @@
 *.db-shm
 *.db-wal
 
+# fsqlite sidecar files (local-only runtime state, br 0.3.0+)
+*.db-fsqlite-ns-gate
+*.db-fsqlite-ns-use
+*.db-wal-cert
+*.db-wal-cert-head
+
+# One-off schema-migration vacuum backups (br doctor migrate-schema), same
+# lifecycle as .br_recovery/ but written as flat files next to the db.
+.beads.db.schema-migration-*.vacuum-*
+
 # Lock files
 *.lock
 
