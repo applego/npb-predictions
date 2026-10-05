@@ -6,9 +6,9 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 
 const PRIMARY = [
-  { href: "/", label: "答え合わせ", short: "結果", icon: "◎" },
+  { href: "/", label: "答え合わせ", short: "答え合わせ", icon: "◎" },
   { href: "/rankings/predictions", label: "予想一覧", short: "予想一覧", icon: "▤" },
-  { href: "/rankings/all-time", label: "通算成績", short: "通算成績", icon: "↗" },
+  { href: "/rankings/all-time", label: "過去成績", short: "過去成績", icon: "↗" },
 ];
 const MORE = [
   { href: "/rankings", label: "解説者の答え合わせ一覧" },

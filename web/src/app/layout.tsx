@@ -9,6 +9,7 @@ import { WebsiteJsonLd } from "@/components/StructuredData";
 import { absoluteUrl, canonicalAlternates, clampDescription, getSiteUrl, SEO_TERMS } from "@/lib/seo-meta";
 import "./globals.css";
 import "./results.css";
+import "./readability.css";
 
 const oswald = Oswald({ weight: ["400", "500", "700"], subsets: ["latin"], variable: "--font-display-default", display: "swap", preload: false, fallback: ["Arial Narrow", "system-ui", "sans-serif"] });
 const notoSansJp = Noto_Sans_JP({ weight: ["400", "500", "700"], subsets: ["latin"], variable: "--font-body-ja", display: "swap", preload: false, fallback: ["Hiragino Sans", "Yu Gothic", "system-ui", "sans-serif"] });
