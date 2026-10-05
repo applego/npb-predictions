@@ -88,7 +88,18 @@ jobs:
         run: npm run validate-data:persisted
 
       - name: E2E smoke (against built CF Pages output)
-        run: npm run test:e2e -- --workers=1 --fail-on-flaky-tests
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: test-results/results.json
+        run: npm run test:e2e -- --workers=1 --fail-on-flaky-tests --reporter=github,json
+
+      - name: Preserve PR browser evidence
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-evidence-${{ github.sha }}
+          path: web/test-results/
+          retention-days: 7
+          if-no-files-found: warn
 
       # wrangler-action v3 は `command` 入力を改行で split して各行を別コマンドとして
       # 実行する。`github.event.head_commit.message` は squash merge 時に commit body
