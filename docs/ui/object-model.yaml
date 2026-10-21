@@ -1,0 +1,23 @@
+version: 1
+objects:
+  - name: シーズン
+    collection: /rankings
+    identity: year
+    attributes: [年度, リーグ, 確定状態, 更新日時]
+    actions: [年度を選ぶ, リーグを選ぶ, 公式順位を確認する]
+  - name: 解説者の予想結果
+    collection: /rankings?year=:year&league=:league
+    detail: /rankings?year=:year&league=:league#predictor-:id
+    identity: userId
+    attributes: [名前, 出典, 一致数, 順位差合計, 同順位, 球団別予想, 実順位]
+    actions: [名前と出典で探す, 全順位一致で絞る, 内訳を開く, 出典を見る, Xで共有する, リンクをコピーする]
+    related: [シーズン, 球団]
+  - name: 球団
+    identity: slug
+    attributes: [名前, リーグ, 予想順位, 実順位, 順位差]
+  - name: 観戦ガイド
+    collection: /resources
+    attributes: [用途, 掲載元, PR表示]
+    actions: [視聴方法を調べる]
+url_state: [year, league, q, perfect, '#predictor-id']
+forbidden_terms: [的中率100パーセント保証, 歴代最高]

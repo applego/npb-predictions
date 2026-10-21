@@ -15,8 +15,9 @@ export function ResultsBoard({ data, compact = false }: { data: ResultsData; com
   return (
     <div className="results-page">
       <header className="result-intro-header">
+        <p className="result-edition"><span>SEASON REVIEW</span><span>{year} / NPB</span></p>
         <h1>{year}年 順位予想の答え合わせ</h1>
-        <p>解説者の予想と実順位を比較。出典は各人の内訳へ。</p>
+        <p>解説者の予想と実順位を、出典つきで比較。</p>
       </header>
       <div className="result-controls" id="results">
         <nav className="result-tabs" aria-label="答え合わせのリーグ">
@@ -47,8 +48,8 @@ export function ResultsBoard({ data, compact = false }: { data: ResultsData; com
       </div>}
       {stale && <div className="result-notice" role="status"><strong>順位データの更新から36時間以上経過しています。</strong><p>以下は表示日時点の比較です。現在順位・最終結果ではありません。</p></div>}
       <p className="result-summary-line">
-        <strong>{status === "final" ? "全順位的中" : "この時点で全順位一致"}：{perfect === null ? "集計待ち" : `${perfect}人`}</strong>
-        <span>対象 {summary.eligible}人・{target}球団</span>
+        <strong><a href={`${path}&perfect=1#result-list-title`}>{status === "final" ? "全順位的中" : "この時点で全順位一致"}：{perfect === null ? "集計待ち" : `${perfect}人`}</a></strong>
+        <span><a href={`${path}#result-list-title`}>対象 {summary.eligible}人</a>・{target}球団</span>
       </p>
       <details className="result-standings-fold">
         <summary>球団の順位を見る<span className="result-fold-hint">集計基準・公式リンク</span></summary>
@@ -70,6 +71,10 @@ export function ResultsBoard({ data, compact = false }: { data: ResultsData; com
         )}
       </section>
       {entries.length > 0 && <div className="result-board-share"><ResultShare path={path} title={resultShareTitle(year, summary)} /></div>}
+      <aside className="result-next-read" aria-label="次に読む">
+        <div><p>野球を、もう一歩おもしろく。</p><h2>答え合わせの次は、観戦へ。</h2><span>視聴方法や予想に役立つ本・道具をまとめました。</span></div>
+        <Link className="result-button result-button-secondary" href="/resources">観戦ガイドを見る <span aria-hidden="true">↗</span></Link>
+      </aside>
       <details className="result-method" id="method"><summary>集計ルール・出典について</summary><div>
         <p>当サイトに登録された解説者・評論家のロック済み予想が対象です。各リーグ6球団・1〜6位が重複なく揃うものを集計し、総合はセ・パ両方を必要とします。対象 {summary.eligible}人、予想が不完全などで対象外 {summary.excluded}人です。外部記事とは母集団が異なります。</p>
         <p>同じ登録者に複数の予想がある場合は通常版、登録日時、予想IDの順で採用します。成績の良い版を後付けで選びません。掲載媒体ごとに登録が分かれている場合は登録ID単位の人数です。</p>

@@ -1,0 +1,66 @@
+{
+  "schema_version": 2,
+  "goal_ref": "npb-predictions",
+  "primary_ref": "npb-predictions#contribution_profit_28d",
+  "guardrail_refs": [
+    "npb-predictions#public_result_routes"
+  ],
+  "diagnostic_refs": [
+    "npb-predictions#visitors_28d",
+    "npb-predictions#x_visits_28d",
+    "npb-predictions#affiliate_confirmed_28d",
+    "npb-predictions#result_views_28d",
+    "npb-predictions#x_share_starts_28d"
+  ],
+  "measure_command": "python3 scripts/growth/measure.py",
+  "wip": {
+    "item": "npb-predictions-3lw",
+    "due": "2026-11-18"
+  },
+  "stages": [
+    {
+      "name": "monetization",
+      "lever": "観戦意図に合う単一アフィリエイト実験",
+      "evidence": "python3 scripts/growth/measure.py evidence monetization",
+      "executor": {
+        "kind": "approval",
+        "owner": "ytsun",
+        "ask": "scripts/growth/decisions.md のASP契約・案件条件と掲載文案を確認。申請・契約・リンク公開は個別承認。"
+      }
+    }
+  ],
+  "task_executor": {
+    "kind": "agent",
+    "run": "sh scripts/growth/agent-run.sh",
+    "timeout": 2400,
+    "max_attempts": 2
+  },
+  "measure_acquire": {
+    "hint": "scripts/growth/README.md を読み、既存CLIと設定metadataから解析・ASP確定成果のread-only取得経路を探し計測を修復する。未確認数値を作らない。認証や契約が必要なときだけ needs_owner=auth または permission を具体的材料つきで出す。"
+  },
+  "diagnose": {
+    "ledger": "scripts/growth/experiments.json",
+    "stagnant_evaluations": 3,
+    "lenses": [
+      "funnel",
+      "psychology",
+      "channels",
+      "competitors"
+    ],
+    "explore_min": 1,
+    "hint": "ユーザーが自分のXで共有したくなる動機・共有開始率・X経由訪問・再訪・観戦ガイドを一次情報から調べる。運営X投稿は対象外。結果カード・共有文・共有位置を1変数ずつ実験する。未測定は成功としない。無料可逆の改善はテストとPRまで、費用・契約・本番deployは判断キューへ。"
+  },
+  "safety": [
+    {
+      "name": "owner-stop",
+      "check": "test ! -e \"$HOME/.config/npb-predictions/goal-loop.stop\""
+    }
+  ],
+  "health": [
+    {
+      "name": "measurement-entrypoint",
+      "check": "python3 scripts/growth/measure.py check"
+    }
+  ],
+  "stall_days": 2
+}

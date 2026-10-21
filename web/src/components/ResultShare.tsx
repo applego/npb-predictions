@@ -1,9 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { recordGrowth } from "@/lib/growth-events";
 
 /** A user gesture is always required. Failed copy/share is never reported as success. */
 export function ResultShare({ path, title }: { path: string; title: string }) {
+  const [shareUrl, setShareUrl] = useState("");
+  useEffect(() => {
+    const url = new URL(path, window.location.origin);
+    url.searchParams.set("utm_source", "x");
+    url.searchParams.set("utm_medium", "social");
+    url.searchParams.set("utm_campaign", "season_results");
+    setShareUrl(`https://x.com/intent/post?${new URLSearchParams({ text: title, url: url.href })}`);
+  }, [path, title]);
   const [message, setMessage] = useState("");
   const [fallback, setFallback] = useState("");
   async function share() {
@@ -31,6 +40,10 @@ export function ResultShare({ path, title }: { path: string; title: string }) {
   }
   return (
     <div className="result-share">
+      {shareUrl && <a className="result-button result-button-x" href={shareUrl} onClick={() => {
+        const params = new URL(path, window.location.origin).searchParams;
+        recordGrowth("x_share_start", Number(params.get("year")), params.get("league") ?? "central");
+      }} target="_blank" rel="noopener noreferrer" aria-label="この結果をXで共有する"><span aria-hidden="true">𝕏</span> Xで結果を共有</a>}
       <button className="result-button result-button-secondary" type="button" onClick={share}>
         <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 16V3m-5 5 5-5 5 5M5 13v7h14v-7" /></svg>
         結果をシェア

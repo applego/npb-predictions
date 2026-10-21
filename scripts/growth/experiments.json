@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "experiments": [
+    {
+      "id": "results-x-01",
+      "status": "prepared",
+      "hypothesis": "知っている解説者の予想がどこまで当たったかを画像で見せられると、ユーザーが自分のXで共有したくなる",
+      "variable": "解説者別の結果カードと共有文",
+      "prediction": "公開後7日でX由来訪問と解説者結果閲覧を観測できる。流入が無ければ内容と配信経路を見直す",
+      "window_days": 7,
+      "verdict": null,
+      "observed": null,
+      "source": "X UTMとfirst-party analytics",
+      "requires_owner": null
+    },
+    {
+      "id": "watch-offer-01",
+      "status": "prepared",
+      "hypothesis": "観戦の意図がある読者に視聴方法を示すと確定成果につながる",
+      "variable": "resourcesの承認済み視聴案件1件",
+      "prediction": "掲載後28日でASP確定成果と費用を照合する。クリックのみでは採用しない",
+      "window_days": 28,
+      "verdict": null,
+      "observed": null,
+      "requires_owner": "案件提携と広告文・リンク公開の承認"
+    }
+  ]
+}
