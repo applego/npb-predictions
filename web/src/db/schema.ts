@@ -238,3 +238,14 @@ export const players = sqliteTable("players", {
   index("players_name_idx").on(table.name),
   index("players_name_kana_idx").on(table.nameKana),
 ]);
+
+export const growthEvents = sqliteTable("growth_events", {
+  id: text("id").primaryKey(),
+  day: text("day").notNull(),
+  sessionHash: text("session_hash").notNull(),
+  event: text("event").notNull(),
+  year: integer("year").notNull(),
+  league: text("league").notNull(),
+  source: text("source").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
+}, (table) => [index("growth_events_day_event_idx").on(table.day, table.event)]);

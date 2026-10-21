@@ -1,0 +1,55 @@
+{
+  "version": 2,
+  "scenarios": [
+    {
+      "id": "result-overview",
+      "question": "誰が当てたか",
+      "role": "野球ファン",
+      "route": "/rankings?year=2026&league=central",
+      "fixture": "web/src/db/fixtures/e2e-standings.sql",
+      "test_id": "public results render observed data without login",
+      "expected_outcome": "誰が当てたかを実操作で確認する",
+      "max_operations": 6
+    },
+    {
+      "id": "result-search",
+      "question": "気になる人の結果を探せるか",
+      "role": "野球ファン",
+      "route": "/rankings?year=2026&league=central",
+      "fixture": "web/src/db/fixtures/e2e-standings.sql",
+      "test_id": "search survives reload and shared result opens its details",
+      "expected_outcome": "気になる人の結果を探せるかを実操作で確認する",
+      "max_operations": 6
+    },
+    {
+      "id": "result-share",
+      "question": "Xで自分の仲間に見せられるか",
+      "role": "野球ファン",
+      "route": "/rankings?year=2026&league=central",
+      "fixture": "web/src/db/fixtures/e2e-standings.sql",
+      "test_id": "X intent preserves commentator year league and attribution",
+      "expected_outcome": "Xで自分の仲間に見せられるかを実操作で確認する",
+      "max_operations": 6
+    },
+    {
+      "id": "mobile",
+      "question": "スマホで結果を読めるか",
+      "role": "野球ファン",
+      "route": "/rankings?year=2026&league=central",
+      "fixture": "web/src/db/fixtures/e2e-standings.sql",
+      "test_id": "readable result layout at 390px",
+      "expected_outcome": "スマホで結果を読めるかを実操作で確認する",
+      "max_operations": 6
+    },
+    {
+      "id": "result-card",
+      "question": "画像で結果を持ち帰れるか",
+      "role": "野球ファン",
+      "route": "/rankings?year=2026&league=central",
+      "fixture": "web/src/db/fixtures/e2e-standings.sql",
+      "test_id": "result card downloads a real PNG with the selected scope",
+      "expected_outcome": "画像で結果を持ち帰れるかを実操作で確認する",
+      "max_operations": 6
+    }
+  ]
+}
