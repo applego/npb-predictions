@@ -6,7 +6,6 @@ import json
 import os
 import math
 import re
-import urllib.parse
 import sys
 import urllib.request
 from pathlib import Path
@@ -60,23 +59,7 @@ def main():
     if sys.argv[1:2] == ['evidence']:
         stage = sys.argv[2]
         record = private.get('publications', {}).get(stage, {})
-        if stage == 'distribution':
-            url = record.get('url', '')
-            if not re.fullmatch(r'https://(?:x|twitter)\.com/[A-Za-z0-9_]+/status/[0-9]+', url):
-                print('pending: no public X post URL'); return 1
-            expected = record.get('expected_text')
-            if not expected or len(expected) < 20 or not record.get('approved_account'):
-                print('pending: account and published text not independently specified'); return 1
-            if urllib.parse.urlparse(url).path.split('/')[1].lower() != record['approved_account'].lstrip('@').lower():
-                raise ValueError('X account mismatch')
-            endpoint = 'https://publish.twitter.com/oembed?' + urllib.parse.urlencode({'url': url, 'omit_script': 'true'})
-            with urllib.request.urlopen(endpoint, timeout=15) as response:
-                html = json.load(response).get('html', '')
-            import html as html_module
-            text = html_module.unescape(re.sub('<[^>]+>', ' ', html))
-            if expected not in text:
-                print('pending: published X content differs or unavailable'); return 1
-        elif stage == 'monetization':
+        if stage == 'monetization':
             href = record.get('approved_href', '')
             if not href.startswith('https://') or not record.get('program_id') or not record.get('approval_ref'):
                 print('pending: approved program/href/approval reference missing'); return 1

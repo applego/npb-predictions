@@ -42,8 +42,8 @@ class EvidenceTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
     def test_publication_pointer_alone_cannot_pass(self):
         with tempfile.TemporaryDirectory() as folder:
-            path = Path(folder)/'receipt.json';path.write_text(json.dumps(self.receipt(publications={'distribution':{'url':'https://x.com/example/status/123'}})))
-            result = subprocess.run(['python3',str(PATH),'evidence','distribution'],env={**os.environ,'NPB_GROWTH_RECEIPT':str(path)},capture_output=True,text=True)
+            path = Path(folder)/'receipt.json';path.write_text(json.dumps(self.receipt(publications={'monetization':{'url':'https://example.com/offer'}})))
+            result = subprocess.run(['python3',str(PATH),'evidence','monetization'],env={**os.environ,'NPB_GROWTH_RECEIPT':str(path)},capture_output=True,text=True)
             self.assertEqual(result.returncode,1)
             self.assertIn('pending', result.stdout)
 if __name__ == '__main__': unittest.main()

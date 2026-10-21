@@ -22,8 +22,6 @@ receiptは証拠へのpointerでありsource自体の正確さの保証ではな
 無変化の通知はしない。公開障害・新しい外部成果・人間必須の判断だけ通知。
 停止: ~/.config/npb-predictions/goal-loop.stop を作る。再開: 停止ファイルをtrashへ移動。
 
-公開証拠のreceiptには publications.distribution={url, approved_account, expected_text} を置く。
-Xの公開URLのアカウントとoEmbedの実テキストを毎回読み直す。非公開/取得不能はpending。
 publications.monetization={approved_href, program_id, approval_ref} は人間の承認後だけ記録し、
 /resources の実HTML上の同一リンク・sponsored・PRを確認する。掲載完了と確定収益は別工程。
 
