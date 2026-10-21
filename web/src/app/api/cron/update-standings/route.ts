@@ -3,7 +3,7 @@ export const runtime = "edge";
 /**
  * POST /api/cron/update-standings
  *
- * Scrapes current NPB standings (Yahoo Sports Navi → npb.jp fallback),
+ * Scrapes current NPB standings (year-specific npb.jp → current-season Yahoo fallback),
  * detects rank changes vs the latest snapshot, and saves a new snapshot
  * only when something actually changed.
  *
@@ -22,54 +22,31 @@ import { withRetry, markSourceResolved, logScrapeFailure } from "@/lib/scrape-re
 import { checkCronAuth } from "@/lib/cron-auth";
 import type { DbClient } from "@/db";
 
-async function scrapeWithFallback(db: DbClient): Promise<{
-  source: "yahoo" | "npb";
-  standings: ScrapedStanding[];
-  errors: string[];
+async function scrapeWithFallback(db: DbClient, year: number): Promise<{
+  source: "yahoo" | "npb"; standings: ScrapedStanding[]; errors: string[];
   attempts: { yahoo: number; npb: number };
 }> {
-  const errors: string[] = [];
-
-  const yahooRetry = await withRetry(
-    async () => {
-      const rows = await scrapeYahooStandings();
-      if (rows.length < 12) throw new Error(`Yahoo returned only ${rows.length} rows`);
-      return rows;
-    },
-    { label: "yahoo-standings", attempts: 2, backoffMs: 300, db },
-  );
-  if (yahooRetry.ok) {
-    await markSourceResolved(db, "yahoo-standings");
-    return {
-      source: "yahoo",
-      standings: yahooRetry.value,
-      errors,
-      attempts: { yahoo: yahooRetry.attempts, npb: 0 },
-    };
-  }
-  errors.push(`Yahoo: ${String(yahooRetry.error)}`);
-
-  const npbRetry = await withRetry(() => scrapeNpbStandings(), {
-    label: "npb-standings",
-    attempts: 3,
-    backoffMs: 500,
-    db,
+  const official = await withRetry(() => scrapeNpbStandings(year), {
+    label: "npb-standings", attempts: 2, backoffMs: 500, db,
   });
-  if (!npbRetry.ok) {
-    errors.push(`npb.jp: ${String(npbRetry.error)}`);
-    await logScrapeFailure(db, "npb-standings-fallback-exhausted", npbRetry.error);
-    throw new Error(errors.join("; "));
+  if (official.ok) {
+    await markSourceResolved(db, "npb-standings");
+    await markSourceResolved(db, "yahoo-standings");
+    return { source: "npb", standings: official.value, errors: [], attempts: { npb: official.attempts, yahoo: 0 } };
   }
-  // npb.jp is the canonical fallback for standings. When it succeeds, users
-  // have fresh standings, so clear Yahoo primary-source failures from alerts.
-  await markSourceResolved(db, "yahoo-standings");
-  await markSourceResolved(db, "npb-standings");
-  return {
-    source: "npb",
-    standings: npbRetry.value,
-    errors,
-    attempts: { yahoo: yahooRetry.attempts, npb: npbRetry.attempts },
-  };
+  // The fallback is a current-season feed and cannot establish season completion.
+  if (year !== new Date().getFullYear()) throw new Error("Official historical standings unavailable");
+  const fallback = await withRetry(async () => {
+    const rows = await scrapeYahooStandings();
+    if (rows.length !== 12) throw new Error("Yahoo incomplete standings");
+    return rows.map((row) => ({ ...row, isFinal: false }));
+  }, { label: "yahoo-standings", attempts: 2, backoffMs: 300, db });
+  if (!fallback.ok) {
+    await logScrapeFailure(db, "npb-standings-fallback-exhausted", fallback.error);
+    throw new Error("Official and fallback standings unavailable");
+  }
+  return { source: "yahoo", standings: fallback.value, errors: [String(official.error)],
+    attempts: { npb: official.attempts, yahoo: fallback.attempts } };
 }
 
 export async function POST(req: Request) {
@@ -108,9 +85,10 @@ async function handlePOST(req: Request) {
     return NextResponse.json({ message: "No active seasons", scraped: [] });
   }
 
+  if (activeSeasons.length !== 1) return NextResponse.json({ error: "Exactly one active season required" }, { status: 409 });
   let scrape;
   try {
-    scrape = await scrapeWithFallback(db);
+    scrape = await scrapeWithFallback(db, activeSeasons[0].year);
   } catch (err) {
     return NextResponse.json(
       { error: `Scrape failed: ${String(err)}` },
@@ -150,12 +128,20 @@ async function handlePOST(req: Request) {
       wins: r.wins,
       losses: r.losses,
       draws: r.draws,
+      isFinal: r.isFinal,
     }));
 
+    if (prev.some((row) => row.isFinal && scrape.standings.some((incoming) => incoming.league === row.league && !incoming.isFinal))) {
+      return NextResponse.json({ error: "Refusing to replace final standings with provisional data" }, { status: 409 });
+    }
+    const latestTimestamp = latestRows[0]?.snapshotDate.getTime();
+    const latestSnapshotComplete = latestRows.filter((row) => row.snapshotDate.getTime() === latestTimestamp).length === 12;
     const diff = diffStandings(prev, scrape.standings);
 
     // Only insert a new snapshot if something changed OR this is the first snapshot
-    const shouldInsert = prev.length === 0 || diff.changed.length > 0;
+    const needsRefresh = !scrape.standings.every((row) => row.isFinal) &&
+      latestRows.length > 0 && now.getTime() - latestRows[0].snapshotDate.getTime() > 24 * 60 * 60 * 1000;
+    const shouldInsert = !latestSnapshotComplete || prev.length === 0 || diff.changed.length > 0 || needsRefresh;
 
     if (shouldInsert) {
       // D1 / SQLite has a 99-bind limit per statement. With 9 columns per row,
@@ -170,15 +156,13 @@ async function handlePOST(req: Request) {
         wins: s.wins,
         losses: s.losses,
         draws: s.draws,
-        isFinal: false,
+        isFinal: s.isFinal === true,
         snapshotDate: now,
       }));
-      for (let i = 0; i < rows.length; i += CHUNK) {
-        await db
-          .insert(actualTeamStandings)
-          .values(rows.slice(i, i + CHUNK))
-          .onConflictDoNothing();
-      }
+      await db.batch([
+        db.insert(actualTeamStandings).values(rows.slice(0, CHUNK)).onConflictDoNothing(),
+        db.insert(actualTeamStandings).values(rows.slice(CHUNK)).onConflictDoNothing(),
+      ]);
     }
 
     results.push({
