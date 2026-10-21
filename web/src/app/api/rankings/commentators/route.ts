@@ -5,6 +5,7 @@ import { getDb } from "@/db";
 import { users, seasons, predictions, rankingPicks, actualTeamStandings } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { calcRankingPointForTeam } from "@/lib/scoring";
+import { exportPublicResults } from "@/lib/public-results-export";
 
 const DEFAULT_YEAR = 2026;
 
@@ -18,10 +19,30 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const yearParam = searchParams.get("year");
   const leagueParam = searchParams.get("league") ?? "all";
+  const format = searchParams.get("format");
 
   const year = yearParam ? parseInt(yearParam, 10) : DEFAULT_YEAR;
-  if (Number.isNaN(year)) {
+  if ((yearParam !== null && !/^\d{4}$/.test(yearParam)) || !Number.isInteger(year)) {
     return NextResponse.json({ error: "Invalid year" }, { status: 400 });
+  }
+
+  if (format !== null && format !== "archive") return NextResponse.json({ error: "Invalid format" }, { status: 400 });
+  if (!["all", "central", "pacific"].includes(leagueParam) || (format === "archive" && leagueParam !== "all")) {
+    return NextResponse.json({ error: "Archive requires league=all; rankings require a valid league" }, { status: 400 });
+  }
+  if (format === "archive") {
+    const source = new URL(req.url);
+    source.search = new URLSearchParams({ year: String(year), league: "all", format: "archive" }).toString();
+    try {
+      const data = await exportPublicResults(year, source.href);
+      return NextResponse.json(data ?? { error: "Season not found" }, {
+        status: data ? 200 : 404, headers: { "Cache-Control": "no-store" },
+      });
+    } catch {
+      return NextResponse.json({ error: "Public results export unavailable; retry after source recovery" }, {
+        status: 503, headers: { "Cache-Control": "no-store" },
+      });
+    }
   }
 
   const db = getDb();

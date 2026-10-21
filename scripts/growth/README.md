@@ -30,3 +30,19 @@ publications.monetization={approved_href, program_id, approval_ref} は人間の
 日別タブ数は人数ではなく重複を含む。X intent開始は投稿完了ではない。PVを分母にした因果効果を断定せず、公開後の同一期間で比較。
 計測tableはmigrationをCIの公開工程で適用する。手動の本番DB直接書き込みはしない。
 レート制限はisolate内のbest-effort（60件/分/IP、最大1万bucket）。全体費用上限の保証ではない。日付が変わった最初の書込時に90日より古いイベントを削除する。
+
+## 保存版を補完する公開API
+
+取得契約: `GET /api/rankings/commentators?year=2026&league=all&format=archive`。
+`npb-public-results-export.v1` は、指定年度にロック済み予想を持つ解説者を対象に、片リーグのみ・不完全・順位なしの登録も含め、ロック済み候補を全件返す。
+一般参加者・system・未ロック予想・当年のロック済み予想がない人物は対象外。全登録者と呼ばない。
+`population` に候補数・採用数と各リーグの比較可能数、`predictions` に採用前の候補と `selected` を持つ。
+採用順は人物単位で予想側の通常版（null/空文字）優先→登録時刻昇順→prediction ID昇順。リーグや的中度の評価より先に選ぶ。
+`lockedAt=null` は証拠欠測を保つ。現在のDBのlockフラグから当時のlock時刻を推測しない。
+`personSource` / `personSourceUrl` は人物メタデータであり、当年・リーグ・予想variantの出典検証を代用しない。
+`provenance` は取得元URL・観測時刻とpayload hashを持つ。hashはprovenanceを除いたresponseの `JSON.stringify` をUTF-8でSHA-256化する。
+保存時はレスポンス全体をそのまま保持してhashを再計算し、母集団と候補・採用証跡を落とさない。
+このAPIはlive DBを読む。上限超過は503で返し、以前の部分保存版を完全なexportとして代用しない。
+通常の `league=all` ランキングは両リーグの比較専用であり、全対象の保存版取得元には使わない。
+既存 `data/public-results-2026.json` は当時の公開API保存分のまま。新export取得・検証前に収録範囲やlock確認済みの主張を広げない。
+再発防止: routeの実SQLをSQLiteで実行するVitestと、CF PagesのローカルD1を通る `web/e2e/public-results-export.e2e.ts`。

@@ -1,4 +1,5 @@
 import { getTeamByName } from "./teams";
+import { canonicalPredictions } from "./canonical-prediction";
 
 export type ResultLeague = "central" | "pacific";
 export type ResultScope = ResultLeague | "all";
@@ -87,12 +88,8 @@ export function summarizeResults(
   }
   // Select a user's original/earliest entry BEFORE evaluating correctness.
   // This avoids choosing the variant that happens to score best after the fact.
-  const ordered = [...grouped.values()].sort((a, b) =>
-    Number(Boolean(a[0].variant)) - Number(Boolean(b[0].variant)) ||
-    a[0].createdAt.localeCompare(b[0].createdAt) || a[0].predictionId - b[0].predictionId,
-  );
-  const firstByUser = new Map<number, PublicResultPick[]>();
-  for (const group of ordered) if (!firstByUser.has(group[0].userId)) firstByUser.set(group[0].userId, group);
+  const selected = canonicalPredictions([...grouped.values()].map((group) => group[0]));
+  const firstByUser = new Map(selected.map((row) => [row.userId, grouped.get(row.predictionId)!]));
   const entries: ResultEntry[] = [];
   let eligible = 0;
   for (const group of firstByUser.values()) {
