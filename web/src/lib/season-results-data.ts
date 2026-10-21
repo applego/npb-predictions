@@ -1,4 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
+import { getRequestContext } from "@cloudflare/next-on-pages";
+import { publishedSeasonResults } from "./public-results-archive";
 import { getDb } from "@/db";
 import { actualTeamStandings, predictions, rankingPicks, seasons, users } from "@/db/schema";
 import { summarizeResults, type PublicResultPick, type ResultScope, type ResultSummary } from "./season-results";
@@ -6,6 +8,7 @@ import { summarizeResults, type PublicResultPick, type ResultScope, type ResultS
 import { withPredictionSources } from "./result-provenance";
 
 export interface ResultsData {
+  coverage?: { kind: "public-archive"; observedAt: string; central: number; pacific: number };
   year: number;
   years: number[];
   summary: ResultSummary;
@@ -18,6 +21,10 @@ export async function loadSeasonResults(requestedYear: number | undefined, scope
   const fallbackYear = requestedYear ?? currentYear;
   let years: number[] = [];
   try {
+    // Production defaults to immutable completed-season data. Fixture journeys opt out explicitly.
+    const env = getRequestContext().env as { PUBLIC_RESULTS_ARCHIVE?: string };
+    const published = env.PUBLIC_RESULTS_ARCHIVE === "0" ? null : publishedSeasonResults(fallbackYear, scope);
+    if (published) return published;
     const db = getDb();
     const available = await db.select({ id: seasons.id, year: seasons.year }).from(seasons).orderBy(desc(seasons.year));
     years = available.map((s) => s.year);

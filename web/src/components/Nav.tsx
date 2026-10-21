@@ -45,8 +45,8 @@ export function Nav() {
     return () => { document.removeEventListener("keydown", close); document.removeEventListener("pointerdown", outside); };
   }, []);
   return <>
-    <div className="site-primary-nav">{PRIMARY.map((link) => <Link key={link.href} href={link.href} aria-current={active(link.href) ? "page" : undefined}>{link.label}</Link>)}</div>
-    <details className="site-more" ref={moreRef}><summary>メニュー <span aria-hidden="true">＋</span></summary><div className="site-more-panel">{[...MORE, ...(isAdmin ? [{ href: "/admin", label: "管理" }] : [])].map((link) => <Link key={link.href} href={link.href} onClick={() => { if (moreRef.current) moreRef.current.open = false; }}>{link.label}</Link>)}</div></details>
-    <nav className="site-mobile-nav" aria-label="よく使うページ">{PRIMARY.map((link) => <Link key={link.href} href={link.href} aria-current={active(link.href) ? "page" : undefined}><span aria-hidden="true">{link.icon}</span>{link.short}</Link>)}</nav>
+    <div className="site-primary-nav">{PRIMARY.map((link) => <Link prefetch={false} key={link.href} href={link.href} aria-current={active(link.href) ? "page" : undefined}>{link.label}</Link>)}</div>
+    <details className="site-more" ref={moreRef}><summary>メニュー <span aria-hidden="true">＋</span></summary><div className="site-more-panel">{[...MORE, ...(isAdmin ? [{ href: "/admin", label: "管理" }] : [])].map((link) => <Link prefetch={false} key={link.href} href={link.href} onClick={() => { if (moreRef.current) moreRef.current.open = false; }}>{link.label}</Link>)}</div></details>
+    <nav className="site-mobile-nav" aria-label="よく使うページ">{PRIMARY.map((link) => <Link prefetch={false} key={link.href} href={link.href} aria-current={active(link.href) ? "page" : undefined}><span aria-hidden="true">{link.icon}</span>{link.short}</Link>)}</nav>
   </>;
 }

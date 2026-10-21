@@ -29,7 +29,7 @@ export function ResultCardDownload({ entry, year, scope, target, stateLabel, obs
       text(entry.name,60,160,54,"#172d26",800);
       text("順位予想の答え合わせ",60,205,24,"#4d5f53");
       text(`${target}球団中 ${entry.exact}球団一致`,60,295,64,"#1d5838",800);
-      text(`順位差合計 ${entry.deviation} · ${entry.rank}位（登録予想内）`,60,345,28);
+      text(`順位差合計 ${entry.deviation} · ${entry.rank}位（${entry.populationLabel ?? "登録予想内"}）`,60,345,28);
       const leagues = scope === "all" ? ["central", "pacific"] as const : [scope];
       for (const [column, league] of leagues.entries()) {
         const x = 60 + column * 560;

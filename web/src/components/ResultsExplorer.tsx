@@ -86,7 +86,7 @@ export function ResultsExplorer({ entries, target, year, scope, isFinal, observa
                 </table>
               </div>
               <div className="result-person-links">
-                <Link href={`/users/${entry.userId}?year=${year}`}>この人の成績を見る →</Link>
+                <Link prefetch={false} href={`/users/${entry.userId}?year=${year}`}>この人の成績を見る →</Link>
                 {entry.sourceUrl ? <a href={entry.sourceUrl} target="_blank" rel="noopener noreferrer">予想の出典を確認 ↗</a> : <span>出典リンク未登録</span>}
               </div>
               <div className="result-share-invitation"><h3>この答え合わせ、野球仲間にも。</h3><p>{entry.name}の予想は{target}球団中{entry.exact}球団一致。「意外と当たってる？」「ここは読めなかった！」を話のきっかけに。</p><p>共有先から、この人の予想の内訳をそのまま開けます。</p></div>
@@ -96,7 +96,7 @@ export function ResultsExplorer({ entries, target, year, scope, isFinal, observa
           </details>
         ))}
       </div>
-      {compact && <Link className="result-button result-button-secondary result-all-link" href={`/rankings?year=${year}&league=${scope}`}>答え合わせ一覧をすべて見る →</Link>}
+      {compact && <Link prefetch={false} className="result-button result-button-secondary result-all-link" href={`/rankings?year=${year}&league=${scope}`}>答え合わせ一覧をすべて見る →</Link>}
     </div>
   );
 }
