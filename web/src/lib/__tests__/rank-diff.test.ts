@@ -106,3 +106,9 @@ describe("diffStandings", () => {
     expect(newEntry.prevRank).toBeNull();
   });
 });
+
+it("persists completion even when ranks and game counts do not change", () => {
+  const original = { league: "central" as const, rank: 1, teamName: "阪神タイガース", wins: 79, losses: 62, draws: 2, isFinal: false };
+  expect(diffStandings([original], [{ ...original, isFinal: true }]).changed).toHaveLength(1);
+  expect(diffStandings([{ ...original, isFinal: true }], [{ ...original, isFinal: true }]).changed).toHaveLength(0);
+});

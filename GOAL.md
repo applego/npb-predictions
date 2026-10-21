@@ -35,7 +35,7 @@ kgis:
     source_ref: npb-growth-reconciliation
     aggregation: sum
     window: 28d
-    deadline: 2026-11-18
+    due: 2026-11-18
     target:
       op: ">="
       value: 1

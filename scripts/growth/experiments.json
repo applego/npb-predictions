@@ -4,25 +4,33 @@
     {
       "id": "results-x-01",
       "status": "prepared",
-      "hypothesis": "知っている解説者の予想がどこまで当たったかを画像で見せられると、ユーザーが自分のXで共有したくなる",
       "variable": "解説者別の結果カードと共有文",
-      "prediction": "公開後7日でX由来訪問と解説者結果閲覧を観測できる。流入が無ければ内容と配信経路を見直す",
+      "prediction": {
+        "metric_ref": "npb-predictions#x_share_starts_28d"
+      },
       "window_days": 7,
       "verdict": null,
       "observed": null,
       "source": "X UTMとfirst-party analytics",
-      "requires_owner": null
+      "requires_owner": null,
+      "statement": "知っている解説者の予想がどこまで当たったかを画像で見せられると、ユーザーが自分のXで共有したくなる",
+      "success_condition": "公開後7日でX由来訪問と解説者結果閲覧を観測できる。流入が無ければ内容と配信経路を見直す",
+      "due": "2026-10-28"
     },
     {
       "id": "watch-offer-01",
       "status": "prepared",
-      "hypothesis": "観戦の意図がある読者に視聴方法を示すと確定成果につながる",
       "variable": "resourcesの承認済み視聴案件1件",
-      "prediction": "掲載後28日でASP確定成果と費用を照合する。クリックのみでは採用しない",
+      "prediction": {
+        "metric_ref": "npb-predictions#affiliate_confirmed_28d"
+      },
       "window_days": 28,
       "verdict": null,
       "observed": null,
-      "requires_owner": "案件提携と広告文・リンク公開の承認"
+      "requires_owner": "案件提携と広告文・リンク公開の承認",
+      "statement": "観戦の意図がある読者に視聴方法を示すと確定成果につながる",
+      "success_condition": "掲載後28日でASP確定成果と費用を照合する。クリックのみでは採用しない",
+      "due": "2026-11-18"
     }
   ]
 }

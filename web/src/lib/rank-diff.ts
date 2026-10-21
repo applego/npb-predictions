@@ -26,7 +26,7 @@ export interface RankDiffResult {
 
 export function diffStandings(
   prev: (Pick<ScrapedStanding, "league" | "rank" | "teamName"> &
-    Partial<Pick<ScrapedStanding, "wins" | "losses" | "draws">>)[],
+    Partial<Pick<ScrapedStanding, "wins" | "losses" | "draws" | "isFinal">>)[],
   next: ScrapedStanding[],
 ): RankDiffResult {
   const prevMap = new Map<string, (typeof prev)[number]>();
@@ -59,7 +59,7 @@ export function diffStandings(
       newRank: n.rank,
       delta,
       direction,
-      standingsChanged: direction !== "same" || statsChanged,
+      standingsChanged: direction !== "same" || statsChanged || (previous !== null && Boolean(previous.isFinal) !== Boolean(n.isFinal)),
       wins: n.wins,
       losses: n.losses,
       draws: n.draws,
