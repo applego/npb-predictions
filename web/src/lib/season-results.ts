@@ -26,6 +26,7 @@ export interface ResultDetail {
   actualRank: number; difference: number;
 }
 export interface ResultEntry {
+  populationLabel?: string;
   userId: number; predictionId: number; name: string; slug: string;
   source: string | null; sourceUrl: string | null; variant: string | null;
   rank: number; exact: number; deviation: number; details: ResultDetail[];

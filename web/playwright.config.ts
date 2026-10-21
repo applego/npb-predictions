@@ -22,13 +22,24 @@ export default defineConfig({
     trace: "retain-on-failure",
   },
 
-  webServer: {
+  projects: [
+    { name: "app", testIgnore: "**/public-archive.e2e.ts" },
+    { name: "public-archive", testMatch: "**/public-archive.e2e.ts", use: { baseURL: "http://localhost:3459" } },
+  ],
+  webServer: [{
     // Build must happen before this (via `npm run build:cf`)
-    command: `npx wrangler pages dev .vercel/output/static --port ${PORT} --compatibility-date=2025-01-01${persistArg}`,
+    command: `npx wrangler pages dev .vercel/output/static --port ${PORT} --compatibility-date=2025-01-01 --binding PUBLIC_RESULTS_ARCHIVE=0${persistArg}`,
     url: BASE_URL,
     reuseExistingServer: !process.env.CI,
     timeout: 60_000,
     stdout: "pipe",
     stderr: "pipe",
-  },
+  }, {
+    command: "npx wrangler pages dev .vercel/output/static --port 3459 --binding PUBLIC_RESULTS_ARCHIVE=1 --persist-to .wrangler/archive-e2e-empty",
+    url: "http://localhost:3459",
+    reuseExistingServer: false,
+    timeout: 60_000,
+    stdout: "pipe",
+    stderr: "pipe",
+  }],
 });

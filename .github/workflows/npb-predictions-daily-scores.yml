@@ -24,6 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+      - uses: actions/checkout@v4
       - name: Determine season year
         id: year
         run: |
@@ -44,8 +45,19 @@ jobs:
             echo "mode=live" >> $GITHUB_OUTPUT
           fi
 
+      - name: Avoid recurring reads after the official final archive is published
+        id: archive
+        env:
+          TARGET_YEAR: ${{ steps.year.outputs.year }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "schedule" ]; then
+            python3 scripts/growth/season-complete.py --year "$TARGET_YEAR" >> "$GITHUB_OUTPUT"
+          else
+            echo "completed=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Scrape NPB standings and save snapshot
-        if: ${{ github.event.inputs.skip_scrape != 'true' && steps.runtype.outputs.mode == 'daily' }}
+        if: ${{ steps.archive.outputs.completed != 'true' && github.event.inputs.skip_scrape != 'true' && steps.runtype.outputs.mode == 'daily' }}
         env:
           NPB_API_BASE: ${{ secrets.NPB_API_BASE }}
           NPB_CRON_SECRET: ${{ secrets.NPB_CRON_SECRET }}
@@ -78,7 +90,7 @@ jobs:
           fi
 
       - name: Scrape NPB title leaders (daily only)
-        if: ${{ steps.runtype.outputs.mode == 'daily' }}
+        if: ${{ steps.archive.outputs.completed != 'true' && steps.runtype.outputs.mode == 'daily' }}
         env:
           NPB_API_BASE: ${{ secrets.NPB_API_BASE }}
           NPB_CRON_SECRET: ${{ secrets.NPB_CRON_SECRET }}
@@ -100,6 +112,7 @@ jobs:
           fi
 
       - name: Scrape NPB game results (both daily and live)
+        if: ${{ steps.archive.outputs.completed != 'true' }}
         env:
           NPB_API_BASE: ${{ secrets.NPB_API_BASE }}
           NPB_CRON_SECRET: ${{ secrets.NPB_CRON_SECRET }}
@@ -122,7 +135,7 @@ jobs:
           fi
 
       - name: Recalculate scores for active season
-        if: ${{ steps.runtype.outputs.mode == 'daily' }}
+        if: ${{ steps.archive.outputs.completed != 'true' && steps.runtype.outputs.mode == 'daily' }}
         env:
           NPB_API_BASE: ${{ secrets.NPB_API_BASE }}
           NPB_CRON_SECRET: ${{ secrets.NPB_CRON_SECRET }}

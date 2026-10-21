@@ -50,6 +50,16 @@
       "test_id": "result card downloads a real PNG with the selected scope",
       "expected_outcome": "画像で結果を持ち帰れるかを実操作で確認する",
       "max_operations": 6
+    },
+    {
+      "id": "public-final-archive",
+      "question": "DBが読み取り不能でも確定結果を見て共有できるか",
+      "role": "野球ファン",
+      "route": "/?year=2026&league=central",
+      "fixture": "data/public-results-2026.json (official final + already public predictions; empty D1)",
+      "test_id": "published final results stay available without a database",
+      "expected_outcome": "空のD1でセパ確定結果と出典を表示し実PNGを保存する",
+      "max_operations": 6
     }
   ]
 }
