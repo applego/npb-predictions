@@ -3,6 +3,8 @@ import { getDb } from "@/db";
 import { actualTeamStandings, predictions, rankingPicks, seasons, users } from "@/db/schema";
 import { summarizeResults, type PublicResultPick, type ResultScope, type ResultSummary } from "./season-results";
 
+import { withPredictionSources } from "./result-provenance";
+
 export interface ResultsData {
   year: number;
   years: number[];
@@ -36,7 +38,7 @@ export async function loadSeasonResults(requestedYear: number | undefined, scope
     ]);
     const publicPicks: PublicResultPick[] = pickRows.map((row) => ({ ...row, createdAt: row.createdAt.toISOString() }));
     const standings = standingRows.map((row) => ({ ...row, snapshotDate: row.snapshotDate.toISOString() }));
-    return { year: season.year, years, summary: summarizeResults(publicPicks, standings, scope), error: null };
+    return { year: season.year, years, summary: summarizeResults(withPredictionSources(publicPicks, season.year, scope), standings, scope), error: null };
   } catch (error) {
     console.error("Public season results unavailable", error instanceof Error ? error.message : "unknown");
     return { year: fallbackYear, years, summary: summarizeResults([], [], scope), error: "unavailable" };

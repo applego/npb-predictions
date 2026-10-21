@@ -39,7 +39,7 @@ export function ResultCardDownload({ entry, year, scope, target, stateLabel, obs
           text(label,x,453+i*43,27,detail.difference === 0 ? "#1d5838" : "#172d26",500,510);
         }
       }
-      text(`出典：${entry.source ?? "出典情報なし"}（原文リンクはサイトの内訳へ）`,60,755,22,"#4d5f53");
+      text(`出典：${entry.source ?? "出典情報なし"}${entry.sourceUrl ? "（原文リンクはサイトの内訳へ）" : "（原文リンク未確認）"}`,60,755,22,"#4d5f53");
       text(`集計：${observation}`,60,798,21,"#4d5f53");
       text("NPB 予想リーグ  /  npb-predictions.pages.dev",60,857,24,"#1d5838",700);
       const blob = await new Promise<Blob>((resolve,reject) => canvas.toBlob((value) => value ? resolve(value) : reject(new Error("encode failed")), "image/png"));
