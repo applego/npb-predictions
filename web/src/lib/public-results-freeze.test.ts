@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve, join } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -38,10 +38,10 @@ function fixture(): PublicResultsExport {
   };
   return JSON.parse(signed(data)) as PublicResultsExport;
 }
-function cli(raw: string, outputContents?: string) {
+function cli(raw: string, outputContents?: string, seasonsRaw = JSON.stringify([{ year: 2026 }])) {
   const dir = mkdtempSync(join(tmpdir(), "npb-public-freeze-"));
   const input = join(dir, "export.json"); const seasons = join(dir, "seasons.json"); const output = join(dir, "archive.json");
-  writeFileSync(input, raw); writeFileSync(seasons, JSON.stringify([{ year: 2026 }]));
+  writeFileSync(input, raw); writeFileSync(seasons, seasonsRaw);
   if (outputContents !== undefined) writeFileSync(output, outputContents);
   // Only the external network boundary is replaced; unexpected requests fail closed.
   const html = (league: "central" | "pacific") => `<title>2026年度 ${league === "central" ? "セントラル" : "パシフィック"}・リーグ</title><p>全日程終了</p><h4>チーム勝敗表</h4><table>${NPB_TEAMS.filter((team) => team.league === league).map((team) => `<tr><td>${team.name}</td><td>143</td><td>70</td><td>70</td><td>3</td></tr>`).join("")}</table>`;
@@ -72,6 +72,13 @@ describe("complete public export freeze", () => {
     const valid = cli(JSON.stringify(fixture()), "existing archive");
     expect(valid.result.status).toBe(1); expect(valid.result.stderr).toContain("EEXIST");
     expect(readFileSync(valid.output, "utf8")).toBe("existing archive");
+  });
+  it.each(["public", "seasons"])("does not echo malformed %s input or create an artifact", (which) => {
+    const marker = "DUMMY";
+    const { result, output } = which === "public" ? cli(marker) : cli(JSON.stringify(fixture()), undefined, marker);
+    expect(result.status).toBe(1);
+    expect(result.stdout + result.stderr).not.toContain(marker);
+    expect(existsSync(output)).toBe(false);
   });
   it("rejects tampering and unknown private fields even with a recomputed hash", () => {
     const data = fixture(); data.predictions[0].name = "tampered";

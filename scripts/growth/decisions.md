@@ -79,3 +79,11 @@ Cloudflareブラウザは https://dash.cloudflare.com/login へ遷移し「Cloud
 内訳はvalidate-data.pyのSQLプレースホルダ個数生成2件（値は別引数でbind）、run-loop.pyの障害signature比較1件（秘密でなく失敗文の一致判定）をsourceで確認。全体PASSとはしない。
 standalone tscは変更していない既存scrape-standings-route.test.ts:52のResponse.json unknownで失敗。Next/CF buildと区別する。
 公開1102の既存P0はnpb-predictions-arr。現在のroot失敗を同項目と3lw.1に結び、古い原因候補を今回の根本原因と断定しない。
+
+
+独立レビューの指摘と処置（2026-10-22）: 既存ChatGPT Proで固定commitの1行目/12行を実測と照合後、全6ファイルと周辺sourceを読ませた。
+会話: https://chatgpt.com/c/6ad95f8b-16f8-83ec-adc6-4e14c0c49792 （manual CUA経路。モデル/versionはUIで非公開のためnull、表示Proを確認）。
+初回blocking1: 不正JSONのSyntaxError.messageが入力の断片をstderrへ出す既存経路。公開exportとseasonsの両入力で短い合成DUMMYを使い、修復前2テストFAILを確認。
+最終catchをEEXISTまたはPUBLIC_RESULTS_FREEZE_FAILEDの固定コードに限定した。修復後287unit PASS、既存tsc52以外の型エラーなし。
+実値の流出を観測した指摘ではない。修復後2ファイルを同じ会話へ戻して解消確認を依頼し、結果をPRへ反映する。
+横展開は保存producerをscripts/web全域で検索し、同じ旧形式の別producerはなし。旧入力経路は同じscript内で置換。v2本番採用と公開1102は引き続き別の未達証拠。

@@ -24,4 +24,10 @@ async function main() {
   writeFileSync(path, JSON.stringify(archive) + "\n", { flag: "wx" });
   console.log(JSON.stringify({ path, year, population: archive.population, predictionsPayloadHash: archive.provenance.predictionsPayloadHash }));
 }
-main().catch((error) => { console.error(error.message); process.exitCode = 1; });
+main().catch((error: unknown) => {
+  // Parser and schema errors can include input fragments; never echo them.
+  const code = error instanceof Error && "code" in error && error.code === "EEXIST"
+    ? "EEXIST" : "PUBLIC_RESULTS_FREEZE_FAILED";
+  console.error(code);
+  process.exitCode = 1;
+});
