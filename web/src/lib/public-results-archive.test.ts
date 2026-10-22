@@ -22,6 +22,7 @@ describe("published season review", () => {
     expect(entry.name).toBe("篠塚和典"); expect(entry.source).toBe("web Sportiva（3/27）");
     expect(entry.populationLabel).toBe("公開保存分内");
     expect(data.coverage).toMatchObject({ central: 270, pacific: 209 });
+    expect(data.coverage?.selectionEvidence).toBeUndefined();
     expect(entry.exact).toBe(4);expect(entry.deviation).toBe(2);
     expect(data.summary.snapshots[0].rows.map((row) => row.rank)).toEqual([1,2,3,4,5,6]);
     expect(publishedSeasonResults(2025, "central")).toBeNull();

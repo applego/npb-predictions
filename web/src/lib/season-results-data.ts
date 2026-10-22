@@ -8,7 +8,10 @@ import { summarizeResults, type PublicResultPick, type ResultScope, type ResultS
 import { withPredictionSources } from "./result-provenance";
 
 export interface ResultsData {
-  coverage?: { kind: "public-archive"; observedAt: string; central: number; pacific: number };
+  coverage?: {
+    kind: "public-archive"; observedAt: string; central: number; pacific: number;
+    selectionEvidence?: { registrations: number; candidates: number; missingLockedAt: number };
+  };
   year: number;
   years: number[];
   summary: ResultSummary;

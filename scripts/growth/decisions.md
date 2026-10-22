@@ -87,3 +87,25 @@ standalone tscは変更していない既存scrape-standings-route.test.ts:52の
 最終catchをEEXISTまたはPUBLIC_RESULTS_FREEZE_FAILEDの固定コードに限定した。修復後287unit PASS、既存tsc52以外の型エラーなし。
 実値の流出を観測した指摘ではない。修復後2ファイルを同じ会話へ戻して解消確認を依頼し、結果をPRへ反映する。
 横展開は保存producerをscripts/web全域で検索し、同じ旧形式の別producerはなし。旧入力経路は同じscript内で置換。v2本番採用と公開1102は引き続き別の未達証拠。
+
+## 2026-10-22 19:45 JST定期実行：再上限と全対象版表示の接続
+
+fresh main / 公開buildは `408cf07`。2026パ保存版209件の確定結果を実ブラウザでread-back。
+19:48 JST `/api/cron/feature-health` はimage-gen/commentator-ranking/standings-freshnessで再びD1日次無料row-read上限、news-feedのみhealthy。
+この後の同じ失敗の反復は停止。今回のlive release gateはquota確認前に一度起動したが終端出力を回収できず、PASSとして扱わない。全対象exportのprobeは403でデータ取得なし。
+次の回復見込みは2026-10-23 UTC 00:00 / JST 09:00。回復時に1回だけhealthを読み、健全なときだけ既存画像API/scoreboardのread-only gateを行う。
+
+PR80は新しいmainを取り込み、v2全対象保存版→結果表示を接続する。実予想ID・元登録日時を維持し、空/不完全な採用行も対象外件数へ含める。
+収録の母集団、保存候補数、採用登録数、比較対象数、ロック日時の欠測数を区別し、全登録者/当時lock確認済みとは表示しない。
+現行v1の部分保存版データとsource/hashは置換していない。合成v2のローカル表示検証を本番全対象の取得証拠にはしない。
+独立reviewの指摘（保存件数と比較件数の名称混同、確定0件時の集計待ち表示）は同じ成果に必要な修正として扱う。
+
+公開に必要な次の材料: PR80の最終head/検証と既存v1のSHA `77558b13bcf7365289510740a195b42ceec2a25c60bd42fe06c3b1114869f8a2` を照合し、オーナーが個別承認した既存PR→main公開経路でAPIを適用する。
+その後にread-onlyの `league=all&format=archive` を新規ファイルへ取得し、raw SHA/payload hash/母集団/採用ID/登録日時/lockedAt=nullを確認して新規v2生成物をレビューする。
+実データが不足していると確認できた場合だけ、既存日次workflowの一回更新を個別判断する。上限回復だけを完了としない。
+本定期実行はmerge/deploy/dispatch/本番DB操作/有料プラン変更を行わない。未判定の実験2件は追加しない。
+
+収益source: 専用設定にreceipt/ASP設定なし、envにもNPB admin bearerなし。Wrangler OAuth metadataは期限切れ、既存 `whoami --json` も未ログイン。
+既存Gmailで10/22以降のCloudflare/A8/fancs請求/確定/返金を検索して該当0、接続Driveのnpb名検索も0。不存在/0円の証明ではない。
+既存CF/A8の通常ログイン後にread-onlyのanalytics/invoice/ASP確定・取消・返金・手数料exportへ接続し、Agent/API/data/infraの期間配賦を照合する必要がある。
+認証/権限の新規付与、契約、案件掲載は未実行。主指標・ASP・流入・共有開始・日別タブはnull、暫定1円目標の達成認定なし。

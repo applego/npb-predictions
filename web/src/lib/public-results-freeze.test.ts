@@ -4,6 +4,10 @@ import { tmpdir } from "node:os";
 import { resolve, join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { ResultsBoard } from "@/components/ResultsBoard";
+import { seasonResultsFromArchive } from "./public-results-archive";
 import { NPB_TEAMS } from "./teams";
 import { PUBLIC_RESULTS_SELECTION } from "./canonical-prediction";
 import { freezePublicResults, verifyPublicResultsExport, type PublicResultsExport } from "./public-results-freeze";
@@ -51,6 +55,21 @@ function cli(raw: string, outputContents?: string, seasonsRaw = JSON.stringify([
   return { result, output };
 }
 describe("complete public export freeze", () => {
+  it("keeps a final empty scope on the saved-data path without substituting another prediction", () => {
+    const data = fixture();
+    for (const person of data.predictions) person.rankings = [];
+    data.population.eligible = { central: 0, pacific: 0, all: 0 };
+    const saved = freezePublicResults(signed(data), 2026, [2026], official, observedAt);
+    const displayed = seasonResultsFromArchive(saved, 2026, "central")!;
+    expect(displayed).not.toBeNull();
+    expect(displayed.error).toBeNull();
+    expect(displayed.summary).toMatchObject({ status: "final", eligible: 0, excluded: 4, entries: [] });
+    const html = renderToStaticMarkup(createElement(ResultsBoard, { data: displayed }));
+    expect(html).toContain("6球団が揃う予想は0件です");
+    expect(html).toContain("対象外4件");
+    expect(html).not.toContain("集計待ち");
+    expect(html).not.toContain("確認中です");
+  });
   it("retains Pacific-only, empty/incomplete entries, candidates and null lock evidence through the actual CLI", () => {
     const data = fixture(); const raw = JSON.stringify(data);
     const { result, output } = cli(raw);
@@ -64,6 +83,23 @@ describe("complete public export freeze", () => {
     expect(archive.provenance).toMatchObject({ predictionsUrl: data.provenance.sourceUrl, predictionsObservedAt: observedAt,
       predictionsPayloadHash: data.provenance.payloadHash, predictionsSha256: createHash("sha256").update(raw).digest("hex") });
     expect(archive.standings).toHaveLength(12);
+    const displayed = seasonResultsFromArchive(archive, 2026, "pacific")!;
+    expect(displayed.summary.entries.map((row) => row.predictionId).sort((a, b) => a - b)).toEqual([11, 21]);
+    expect(displayed.summary).toMatchObject({ eligible: 2, excluded: 2, status: "final" });
+    expect(displayed.coverage).toMatchObject({ central: 1, pacific: 2,
+      selectionEvidence: { registrations: 4, candidates: 5, missingLockedAt: 4 } });
+    const html = renderToStaticMarkup(createElement(ResultsBoard, { data: displayed }));
+    expect(html).toContain("パのみ");
+    expect(html).toContain("保存分の比較対象");
+    expect(html).toContain("全登録者を収録したものではありません");
+    expect(html).toContain("当時のロックを確認済みという意味ではありません");
+    expect(html).not.toContain("パのみ登録の人は含みません");
+    expect(html).not.toContain("通常版優先・最古登録の採用を保証する保存ではありません");
+    expect(html).not.toContain("元の登録日時はこの保存に含まれません");
+    expect(seasonResultsFromArchive(archive, 2025, "pacific")).toBeNull();
+    // The convenience projection must not override the observed canonical IDs.
+    archive.commentators = [];
+    expect(seasonResultsFromArchive(archive, 2026, "pacific")!.summary.eligible).toBe(2);
   });
   it("rejects a partial legacy export and never overwrites an existing artifact", () => {
     const old = JSON.stringify({ season: { year: 2026 }, totalCommentators: 1, commentators: [] });

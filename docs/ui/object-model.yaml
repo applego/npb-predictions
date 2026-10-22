@@ -3,7 +3,7 @@ objects:
   - name: シーズン
     collection: /rankings
     identity: year
-    attributes: [年度, リーグ, 確定状態, 更新日時]
+    attributes: [年度, リーグ, 確定状態, 更新日時, 収録範囲, 採用根拠, ロック日時の欠測]
     actions: [年度を選ぶ, リーグを選ぶ, 公式順位を確認する]
   - name: 解説者の予想結果
     collection: /rankings?year=:year&league=:league
