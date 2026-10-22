@@ -116,7 +116,7 @@ async function loadReleaseSurface(page: Page, path: string) {
   await page.waitForLoadState("networkidle");
   const body = (await page.textContent("body")) ?? "";
   expect(body, `${path} must not render a Next.js runtime error`).not.toMatch(
-    /Application error|Internal Server Error|NEXT_REDIRECT/i,
+    /Something Went Wrong|エラーが発生しました|Application error|Internal Server Error|NEXT_REDIRECT/i,
   );
   expect(fatalErrors, `${path} must not emit fatal JS errors`).toHaveLength(0);
 }
@@ -232,7 +232,7 @@ test.describe("release surface", () => {
         expect(
           body,
           `${route} button ${i} must not render a runtime error`,
-        ).not.toMatch(/Application error|Internal Server Error|NEXT_REDIRECT/i);
+        ).not.toMatch(/Something Went Wrong|エラーが発生しました|Application error|Internal Server Error|NEXT_REDIRECT/i);
       }
 
       expect(
