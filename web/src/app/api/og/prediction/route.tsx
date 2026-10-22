@@ -277,7 +277,7 @@ function newspaperLayout(
               color: "#DC2626",
             }}
           >
-            NPB 予想リーグ
+            みんなの順位予想対決
           </div>
           <div
             style={{
@@ -503,10 +503,10 @@ function newspaperLayout(
         }}
       >
         <div style={{ display: "flex" }}>
-          {year} NPB Predictions League
+          {year} みんなの順位予想対決
         </div>
         <div style={{ display: "flex" }}>
-          #NPB予想リーグ
+          #みんなの順位予想対決
         </div>
       </div>
     </div>
@@ -595,7 +595,7 @@ function renderFallback() {
             color: "#DC2626",
           }}
         >
-          NPB 予想リーグ
+          みんなの順位予想対決
         </div>
         <div
           style={{
@@ -606,7 +606,7 @@ function renderFallback() {
           }}
         >
           {/* ASCII only — must render even when font load fails */}
-          #NPB予想リーグ
+          #みんなの順位予想対決
         </div>
       </div>
     ),

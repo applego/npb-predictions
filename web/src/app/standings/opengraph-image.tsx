@@ -4,7 +4,7 @@ import { eq, desc } from "drizzle-orm";
 import { seasons, scoreSnapshots } from "@/db/schema";
 
 export const runtime = "edge";
-export const alt = "NPB Predictions League スコアボード";
+export const alt = "みんなの順位予想対決 スコアボード";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -86,7 +86,7 @@ async function renderFallback(): Promise<ImageResponse> {
           fontWeight: 700,
         }}
       >
-        NPB Predictions League
+        みんなの順位予想対決
       </div>
     ),
     size,

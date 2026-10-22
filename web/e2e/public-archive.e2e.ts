@@ -9,11 +9,13 @@ test("published final results stay available without a database", async ({ page 
   for (const league of ["central", "pacific"]) {
     expect((await page.goto(`/?year=2026&league=${league}`))?.status()).toBe(200);
     await expect(page.locator("main .result-status")).toHaveText("確定");
+    await page.locator("main .result-context > summary").click();
     const coverage = page.locator("main").getByLabel("収録範囲");
     await coverage.locator("summary").click();
     await expect(coverage.locator("p")).toBeVisible();
     await expect(coverage).toContainText("パのみ登録の人は含みません");
     await coverage.locator("summary").click();
+    await page.locator("main .result-context > summary").click();
     const person = page.locator("main .result-person").first();
     await expect(person).toBeVisible(); await person.locator("summary").click();
     await expect(person.locator("tbody tr")).toHaveCount(6);

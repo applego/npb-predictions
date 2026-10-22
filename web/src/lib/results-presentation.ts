@@ -36,5 +36,5 @@ export function resultDifference(entry: ResultEntry): string {
 
 export function resultShareTitle(year: number, summary: ResultSummary, entry?: ResultEntry): string {
   const subject = entry ? `${entry.name}は${summary.target}球団中${entry.exact}球団一致` : "順位予想の答え合わせ";
-  return `${year}年 ${RESULT_LABELS[summary.scope]}｜${subject}（${resultState(summary)}）｜集計基準：${resultObservation(summary)}｜NPB予想リーグ`;
+  return `${year}年 ${RESULT_LABELS[summary.scope]}｜${subject}（${resultState(summary)}）｜集計基準：${resultObservation(summary)}｜みんなの順位予想対決`;
 }

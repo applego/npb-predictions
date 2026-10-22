@@ -91,7 +91,7 @@ export function ResultsExplorer({ entries, target, year, scope, isFinal, observa
               </div>
               <div className="result-share-invitation"><h3>この答え合わせ、野球仲間にも。</h3><p>{entry.name}の予想は{target}球団中{entry.exact}球団一致。「意外と当たってる？」「ここは読めなかった！」を話のきっかけに。</p><p>共有先から、この人の予想の内訳をそのまま開けます。</p></div>
               <ResultCardDownload entry={entry} year={year} scope={scope} target={target} stateLabel={stateLabel} observation={observation} />
-              <ResultShare path={`/rankings?year=${year}&league=${scope}#predictor-${entry.userId}`} title={`${year}年 ${RESULT_LABELS[scope]}｜${entry.name}は${entry.exact}/${target}順位一致（${stateLabel}）｜集計基準：${observation}｜NPB予想リーグ`} />
+              <ResultShare path={`/rankings?year=${year}&league=${scope}#predictor-${entry.userId}`} title={`${year}年 ${RESULT_LABELS[scope]}｜${entry.name}は${entry.exact}/${target}順位一致（${stateLabel}）｜集計基準：${observation}｜みんなの順位予想対決`} />
             </div>
           </details>
         ))}

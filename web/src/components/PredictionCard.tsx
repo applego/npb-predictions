@@ -130,7 +130,7 @@ export function PredictionCard({ userName, year, league, picks }: Props) {
     ctx.fillStyle = "rgba(212,160,23,0.6)";
     ctx.font = "10px 'Noto Sans JP', sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("NPB 予想リーグ — npb-predictions.pages.dev", W / 2, H - 20);
+    ctx.fillText("みんなの順位予想対決 — npb-predictions.pages.dev", W / 2, H - 20);
 
     setGenerated(true);
   }, [userName, year, league, picks]);
@@ -151,7 +151,7 @@ export function PredictionCard({ userName, year, league, picks }: Props) {
 
   const shareX = () => {
     const leagueLabel = league === "central" ? "セ・リーグ" : "パ・リーグ";
-    const text = `${year}年${leagueLabel}順位予想\n優勝: ${picks[0]}\n\n#NPB予想リーグ #プロ野球`;
+    const text = `${year}年${leagueLabel}順位予想\n優勝: ${picks[0]}\n\n#みんなの順位予想対決 #プロ野球`;
     const url = `https://npb-predictions.pages.dev/rankings/predictions?year=${year}&league=${league}`;
     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`);
   };

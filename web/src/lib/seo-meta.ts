@@ -2,7 +2,7 @@
  * Shared SEO metadata helpers.
  *
  * Centralizes site URL resolution, canonical construction, and Japanese
- * SEO vocabulary for NPB予想リーグ.
+ * SEO vocabulary for みんなの順位予想対決.
  */
 
 import type { Metadata } from "next";
@@ -87,7 +87,7 @@ export function socialPreview(opts: {
     openGraph: {
       type: "website",
       locale: "ja_JP",
-      siteName: "NPB予想リーグ",
+      siteName: "みんなの順位予想対決",
       url,
       title: opts.title,
       description: opts.description,
@@ -107,7 +107,7 @@ export function socialPreview(opts: {
  * Keep natural, avoid keyword stuffing.
  */
 export const SEO_TERMS = {
-  site: "NPB予想リーグ",
+  site: "みんなの順位予想対決",
   tagline: "プロ野球順位予想リーグ",
   central: "セ・リーグ",
   pacific: "パ・リーグ",

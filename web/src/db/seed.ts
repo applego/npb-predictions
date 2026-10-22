@@ -1,5 +1,5 @@
 /**
- * Seed script for NPB Predictions League
+ * Seed script for みんなの順位予想対決 League
  *
  * Inserts:
  *  - 2 seasons (2025 final, 2026 active)
@@ -310,7 +310,7 @@ async function seed() {
     ? drizzleNeon({ client: neon(databaseUrl), schema })
     : drizzlePostgres({ client: pgClient!, schema });
 
-  console.log("🌱 Starting NPB Predictions seed...\n");
+  console.log("🌱 Starting みんなの順位予想対決 seed...\n");
 
   // 1. Insert seasons
   console.log("📅 Creating seasons...");

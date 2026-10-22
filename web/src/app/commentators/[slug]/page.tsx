@@ -99,11 +99,11 @@ export async function generateMetadata({
   const sp = await searchParams;
   const data = await getCommentatorData(slug, sp.year);
   if (!data) {
-    return { title: "Not Found | NPB Predictions League" };
+    return { title: "Not Found | みんなの順位予想対決" };
   }
   const yearLabel = sp.year ? `${sp.year}年` : "";
   return {
-    title: `${data.user.name} ${yearLabel} | NPB Predictions League`,
+    title: `${data.user.name} ${yearLabel} | みんなの順位予想対決`,
     description: `${data.user.name}の${yearLabel}プロ野球順位予想と成績`,
     alternates: { canonical: `/commentators/${slug}` },
   };

@@ -60,6 +60,16 @@
       "test_id": "published final results stay available without a database",
       "expected_outcome": "空のD1でセパ確定結果と出典を表示し実PNGを保存する",
       "max_operations": 6
+    },
+    {
+      "id": "brand-preview",
+      "question": "サイト名とXの共有プレビューが揃っているか",
+      "role": "結果を共有するファン",
+      "route": "/?year=2026&league=central",
+      "fixture": "web/src/db/fixtures/e2e-results.sql",
+      "test_id": "site and social previews use the same new name",
+      "expected_outcome": "新名称と共有文を確認し、1200x630のOG画像を取得できる",
+      "max_operations": 6
     }
   ]
 }

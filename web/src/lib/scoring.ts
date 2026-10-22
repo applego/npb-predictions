@@ -1,5 +1,5 @@
 /**
- * NPB Predictions League - Score calculation engine
+ * みんなの順位予想対決 League - Score calculation engine
  *
  * Ranking score: based on diff between predicted and actual rank
  * Title score: +3 per correct title pick

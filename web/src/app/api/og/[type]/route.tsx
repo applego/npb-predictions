@@ -251,7 +251,7 @@ async function renderPredictionCard(
                 marginBottom: "4px",
               }}
             >
-              NPB Predictions League {year}
+              みんなの順位予想対決 {year}
             </div>
             <div
               style={{
@@ -438,7 +438,7 @@ async function renderScoreboardCard(
               marginBottom: "8px",
             }}
           >
-            NPB Predictions League
+            みんなの順位予想対決
           </div>
           <div
             style={{
@@ -607,7 +607,7 @@ async function renderMonthlyChampionCard(
             marginBottom: "12px",
           }}
         >
-          NPB Predictions League {year}
+          みんなの順位予想対決 {year}
         </div>
 
         <div
@@ -775,7 +775,7 @@ async function renderWeeklyCard(
               marginBottom: "8px",
             }}
           >
-            NPB Predictions League {year}
+            みんなの順位予想対決 {year}
           </div>
           <div
             style={{
@@ -975,7 +975,7 @@ async function renderSeasonCard(
               marginBottom: "4px",
             }}
           >
-            NPB Predictions League
+            みんなの順位予想対決
           </div>
           <div
             style={{
@@ -1148,7 +1148,7 @@ async function renderCommentatorCard(
                 marginBottom: "4px",
               }}
             >
-              NPB Predictions League
+              みんなの順位予想対決
             </div>
             <div
               style={{
@@ -1360,7 +1360,7 @@ async function renderDefaultCard(
             fontWeight: 800,
           }}
         >
-          NPB Predictions League
+          みんなの順位予想対決
         </div>
         <div
           style={{

@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   ],
   alternates: canonicalAlternates("/rankings/live"),
   ...socialPreview({
-    title: "2026 リーグ順位 | NPB予想リーグ",
+    title: "2026 リーグ順位 | みんなの順位予想対決",
     description: "2026年シーズンのリアルタイム予想スコア。実績順位が更新されると自動計算。",
     pathname: "/rankings/live",
     ogImage: ogImageUrl("season", { year: 2026 }),

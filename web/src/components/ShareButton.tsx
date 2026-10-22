@@ -34,7 +34,7 @@ export default function ShareButton({
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
         await navigator.share({
-          title: "NPB予想リーグ",
+          title: "みんなの順位予想対決",
           text: getShareText(type, params),
           url: getShareUrl(type, params),
         });

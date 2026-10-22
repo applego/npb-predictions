@@ -19,7 +19,7 @@ type Props = { params: Promise<{ year: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { year } = await params;
-  const title = `${year}年 NPBシーズン概要 | NPB Predictions League`;
+  const title = `${year}年 NPBシーズン概要 | みんなの順位予想対決`;
   const description = `${year}年プロ野球シーズンの順位結果・タイトルホルダー・予想リーグの成績をまとめたページです。`;
   return {
     title,

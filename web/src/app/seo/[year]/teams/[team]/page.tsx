@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const team = getTeamBySlug(teamSlug);
   if (!team) return { title: "Not Found" };
   return {
-    title: `${year}年 ${team.name} 成績・順位 | NPB Predictions League`,
+    title: `${year}年 ${team.name} 成績・順位 | みんなの順位予想対決`,
     description: `${year}年${team.name}（${team.shortName}）のシーズン成績、順位推移、タイトルホルダー、予想リーグでの予想順位を掲載。`,
     alternates: {
       canonical: `/seo/${year}/teams/${teamSlug}`,

@@ -16,13 +16,13 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { date } = await params;
   return {
-    title: `${date} 試合結果 | NPB予想リーグ`,
+    title: `${date} 試合結果 | みんなの順位予想対決`,
     description: clampDescription(
       `${date} のプロ野球試合結果スコアボード。セ・パ・交流戦の勝敗・スコア・勝利チームを表示。`,
     ),
     alternates: canonicalAlternates(`/games/${date}`),
     ...socialPreview({
-      title: `${date} 試合結果 | NPB予想リーグ`,
+      title: `${date} 試合結果 | みんなの順位予想対決`,
       description: `${date} の全試合スコア`,
       pathname: `/games/${date}`,
     }),

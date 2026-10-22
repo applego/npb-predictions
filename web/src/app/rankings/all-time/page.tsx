@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   ],
   alternates: canonicalAlternates("/rankings/all-time"),
   ...socialPreview({
-    title: "通算ランキング | NPB予想リーグ",
+    title: "通算ランキング | みんなの順位予想対決",
     description:
       "プロ野球解説者の通算順位予想的中ランキング。2014年からの全年通算スコアで比較。",
     pathname: "/rankings/all-time",

@@ -87,20 +87,20 @@ describe("getShareText", () => {
     const text = getShareText("prediction", { year: 2026, userName: "テストユーザー" });
     expect(text).toContain("2026");
     expect(text).toContain("テストユーザー");
-    expect(text).toContain("#NPB予想リーグ");
+    expect(text).toContain("#みんなの順位予想対決");
   });
 
   it("uses fallback text when userName is omitted for prediction", () => {
     const text = getShareText("prediction", { year: 2026 });
     expect(text).toContain("2026");
-    expect(text).toContain("#NPB予想リーグ");
+    expect(text).toContain("#みんなの順位予想対決");
     expect(text).not.toContain("undefined");
   });
 
   it("returns scoreboard text", () => {
     const text = getShareText("scoreboard", { year: 2026 });
     expect(text).toContain("2026");
-    expect(text).toContain("#NPB予想リーグ");
+    expect(text).toContain("#みんなの順位予想対決");
   });
 
   it("returns monthly-champion text", () => {
@@ -110,13 +110,13 @@ describe("getShareText", () => {
 
   it("returns weekly text", () => {
     const text = getShareText("weekly", { year: 2026 });
-    expect(text).toContain("#NPB予想リーグ");
+    expect(text).toContain("#みんなの順位予想対決");
   });
 
   it("returns generic fallback text for unknown type", () => {
     // Covers the `default` branch in getShareText
     const text = getShareText("unknown" as OgType, { year: 2026 });
-    expect(text).toContain("#NPB予想リーグ");
+    expect(text).toContain("#みんなの順位予想対決");
   });
 });
 

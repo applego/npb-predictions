@@ -14,10 +14,19 @@ export function ResultsBoard({ data, compact = false }: { data: ResultsData; com
   const stale = snapshots.some((snapshot) => snapshot.stale);
   return (
     <div className="results-page">
-      <header className="result-intro-header">
-        <p className="result-edition"><span>SEASON REVIEW</span><span>{year} / NPB</span></p>
-        <h1>{year}年 順位予想の答え合わせ</h1>
-        <p>解説者の予想と実順位を、出典つきで比較。</p>
+      <header className="result-intro-header duel-hero">
+        <div className="duel-hero-copy">
+          <p className="duel-eyebrow"><span>順位予想の答え合わせ</span><span>{year} / プロ野球・{resultState(summary)}</span></p>
+          <h1>その予想、<br /><em>どこまで当たった？</em></h1>
+          <p>解説者の予想と実順位を、出典つきで比較。<br className="duel-desktop-break" />気になる結果を見つけて、野球仲間と答え合わせ。</p>
+          <a className="duel-hero-link" href="#result-list-title">解説者の結果を見る <span aria-hidden="true">↘</span></a>
+        </div>
+        <div className="duel-hero-score" aria-label="今回の比較対象">
+          <span>{year}年 {RESULT_LABELS[scope]}</span>
+          <strong>{summary.eligible}<small>人の予想</small></strong>
+          <p>{coverage ? "公開保存分" : "登録予想"}を{target}球団で比較</p>
+          <div className="duel-score-bars" aria-hidden="true"><i /><i /><i /><i /><i /><i /></div>
+        </div>
       </header>
       <div className="result-controls" id="results">
         <nav className="result-tabs" aria-label="答え合わせのリーグ">
@@ -33,11 +42,13 @@ export function ResultsBoard({ data, compact = false }: { data: ResultsData; com
           <input type="hidden" name="league" value={scope} /><button type="submit">表示</button>
         </form>
       </div>
+      <details className="result-context">
+        <summary><strong className={`result-status result-status-${status}`}>{resultState(summary)}</strong><span>{coverage ? "公開保存分" : "対象"} {summary.eligible}人</span><span>集計情報・出典 ⌄</span></summary>
       {coverage && <details className="result-standings-fold" aria-label="収録範囲">
         <summary>公開保存分：セ{coverage.central}人／パ{coverage.pacific}人</summary><p>セの公開一覧に掲載された{coverage.central}人を収録。パはそのうち予想がある{coverage.pacific}人が対象で、パのみ登録の人は含みません。予想の掲載確認：{resultDate(coverage.observedAt)} JST。</p>
       </details>}
       <section className="result-observation" aria-label="結果の状態と更新日時">
-        <strong className={`result-status result-status-${status}`}>{resultState(summary)}</strong>
+
         <span>{snapshots.map((snapshot, index) => (
           <span className="result-update" key={snapshot.league}>
             {index > 0 && " ／ "}{scope === "all" && `${RESULT_LABELS[snapshot.league]} `}
@@ -45,11 +56,6 @@ export function ResultsBoard({ data, compact = false }: { data: ResultsData; com
           </span>
         ))}</span>
       </section>
-      {(error || status === "unavailable") && <div className="result-notice" role="status">
-        <strong>{error === "unknown-year" ? "この年度のデータは登録されていません。" : "集計に必要なデータが揃っていません。"}</strong>
-        <p>取得失敗や順位の欠損を「的中者ゼロ」とは扱いません。</p><Link prefetch={false} href={path}>データを再確認する</Link>
-      </div>}
-      {stale && <div className="result-notice" role="status"><strong>順位データの更新から36時間以上経過しています。</strong><p>以下は表示日時点の比較です。現在順位・最終結果ではありません。</p></div>}
       <p className="result-summary-line">
         <strong><a href={`${path}&perfect=1#result-list-title`}>{status === "final" ? `${coverage ? "収録分の" : ""}全順位的中` : "この時点で全順位一致"}：{perfect === null ? "集計待ち" : `${perfect}人`}</a></strong>
         <span><a href={`${path}#result-list-title`}>対象 {summary.eligible}人</a>・{target}球団</span>
@@ -66,6 +72,12 @@ export function ResultsBoard({ data, compact = false }: { data: ResultsData; com
           </section>
         ))}</div>
       </details>
+      </details>
+      {(error || status === "unavailable") && <div className="result-notice" role="status">
+        <strong>{error === "unknown-year" ? "この年度のデータは登録されていません。" : "集計に必要なデータが揃っていません。"}</strong>
+        <p>取得失敗や順位の欠損を「的中者ゼロ」とは扱いません。</p><Link prefetch={false} href={path}>データを再確認する</Link>
+      </div>}
+      {stale && <div className="result-notice" role="status"><strong>順位データの更新から36時間以上経過しています。</strong><p>以下は表示日時点の比較です。現在順位・最終結果ではありません。</p></div>}
       <section className="result-main-section" aria-labelledby="result-list-title">
         <h2 id="result-list-title">解説者の的中ランキング</h2>
         <p className="result-sort-note">並び順：一致数↓ → 順位差合計↑（同点は同順位）</p>

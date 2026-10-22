@@ -11,12 +11,12 @@ import { getAllSeasons } from "@/lib/seo-queries";
 import { getTeamsByLeague } from "@/lib/teams";
 
 export const metadata: Metadata = {
-  title: "過去シーズン一覧 | NPB Predictions League",
+  title: "過去シーズン一覧 | みんなの順位予想対決",
   description:
-    "NPB Predictions Leagueの過去シーズン一覧。各年の順位結果・タイトルホルダー・予想リーグの成績を閲覧できます。",
+    "みんなの順位予想対決の過去シーズン一覧。各年の順位結果・タイトルホルダー・予想リーグの成績を閲覧できます。",
   openGraph: {
-    title: "過去シーズン一覧 | NPB Predictions League",
-    description: "NPB Predictions Leagueの過去シーズン一覧。各年の順位結果・タイトルホルダー・予想リーグの成績を閲覧できます。",
+    title: "過去シーズン一覧 | みんなの順位予想対決",
+    description: "みんなの順位予想対決の過去シーズン一覧。各年の順位結果・タイトルホルダー・予想リーグの成績を閲覧できます。",
     type: "website",
   },
   alternates: {
@@ -36,7 +36,7 @@ export default async function PastSeasonsPage() {
 
       <h1 className="mb-2 text-2xl font-bold">過去シーズン一覧</h1>
       <p className="mb-6 text-gray-600">
-        NPB Predictions Leagueの全シーズンデータ
+        みんなの順位予想対決の全シーズンデータ
       </p>
 
       {seasons.length === 0 ? (

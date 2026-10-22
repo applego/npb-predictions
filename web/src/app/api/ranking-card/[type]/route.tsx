@@ -142,7 +142,7 @@ export async function GET(
         >
           <div style={{ display: "flex", flexDirection: "column" }}>
             <div style={{ display: "flex", fontSize: 12, fontWeight: 700, color: accent }}>
-              NPB予想スポーツ
+              みんなの順位予想対決
             </div>
             <div style={{ display: "flex", fontSize: 20, fontWeight: 700 }}>
               {renderData.title}
