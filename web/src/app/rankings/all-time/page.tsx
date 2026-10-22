@@ -2,10 +2,10 @@ export const runtime = "edge";
 
 import type { Metadata } from "next";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { AllTimeTable } from "./AllTimeClient";
 import { BreadcrumbJsonLd } from "@/components/StructuredData";
 import {
-  absoluteUrl,
   canonicalAlternates,
   clampDescription,
   ogImageUrl,
@@ -13,7 +13,13 @@ import {
   SEO_TERMS,
 } from "@/lib/seo-meta";
 
-const SITE_URL = absoluteUrl("/").replace(/\/$/, "");
+async function getApiBase() {
+  const requestHeaders = await headers();
+  const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
+  if (!host) return process.env.NEXT_PUBLIC_SITE_URL ?? "https://npb-predictions.pages.dev";
+  const protocol = requestHeaders.get("x-forwarded-proto") ?? (host.startsWith("localhost") || host.startsWith("127.0.0.1") ? "http" : "https");
+  return `${protocol}://${host}`;
+}
 
 export const metadata: Metadata = {
   title: "通算ランキング",
@@ -69,9 +75,10 @@ interface AllTimeResponse {
 
 async function getAllTimeRankings(): Promise<AllTimeResponse | null> {
   try {
-    const res = await fetch(`${SITE_URL}/api/rankings/all-time`, { cache: "no-store" });
+    const apiBase = await getApiBase();
+    const res = await fetch(`${apiBase}/api/rankings/all-time`, { cache: "no-store" });
     if (!res.ok) return null;
-    return res.json() as Promise<AllTimeResponse>;
+    return await res.json() as AllTimeResponse;
   } catch {
     return null;
   }

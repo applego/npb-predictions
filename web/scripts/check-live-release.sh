@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Live release gate for user-facing share images and the heavy scoreboard route.
+# Live release gate for share images and ranking pages, including HTTP-200 error boundaries.
 # This runs outside the Worker so Cloudflare 1102/timeout failures are observed
 # as users and crawlers see them.
 
@@ -69,6 +69,7 @@ check_html() {
   local route="$1"
   local min_bytes="$2"
   local max_seconds="$3"
+  local expected_text="${4:-}"
   local tmp code duration content_type size metrics attempt
 
   for attempt in $(seq 1 "$ATTEMPTS"); do
@@ -88,7 +89,9 @@ check_html() {
     if [[ "$code" =~ ^2 ]] &&
       [[ "$content_type" == "text/html" ]] &&
       (( size >= min_bytes )) &&
-      duration_ok "$duration" "$max_seconds"; then
+      duration_ok "$duration" "$max_seconds" &&
+      ! grep -Eq "Something Went Wrong|エラーが発生しました|Application error|Internal Server Error|Error 1102" "$tmp" &&
+      { [[ -z "$expected_text" ]] || grep -Fq "$expected_text" "$tmp"; }; then
       printf 'OK html route=%s code=%s type=%s bytes=%s seconds=%s attempt=%s\n' \
         "$route" "$code" "$content_type" "$size" "$duration" "$attempt"
       rm -f "$tmp"
@@ -116,5 +119,8 @@ check_png "/api/og/standings" 10000 8
 check_png "/api/newspaper/hanshin-tigers" 25000 8
 check_png "/api/ranking-card/overall" 10000 8
 check_html "/rankings/scoreboard?year=2026&view=trend" 50000 8
+
+check_html "/rankings/predictions?year=2026" 10000 8 "予想一覧のページ"
+check_html "/rankings/all-time" 10000 8 "通算ランキングのページ"
 
 exit "$FAIL"
