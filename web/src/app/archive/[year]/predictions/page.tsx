@@ -20,8 +20,8 @@ type Props = { params: Promise<{ year: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { year } = await params;
   return {
-    title: `${year}年 予想比較 | NPB Predictions League`,
-    description: `${year}年NPB Predictions Leagueの全参加者の順位予想・タイトル予想を横比較。実際の結果と照合。`,
+    title: `${year}年 予想比較 | みんなの順位予想対決`,
+    description: `${year}年みんなの順位予想対決の全参加者の順位予想・タイトル予想を横比較。実際の結果と照合。`,
   };
 }
 

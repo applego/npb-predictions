@@ -23,6 +23,8 @@ import {
 
 const FALLBACK_API_BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://npb-predictions.pages.dev";
 const RANKINGS_REVALIDATE_SECONDS = 600;
+type PredictionsQuery = { year?: string | string[]; page?: string | string[]; q?: string | string[] };
+const firstValue = (value: string | string[] | undefined) => Array.isArray(value) ? value[0] : value;
 
 async function getApiBase(): Promise<string> {
   const headerList = await headers();
@@ -55,21 +57,23 @@ async function getAllSeasons(apiBase: string): Promise<Season[]> {
       next: { revalidate: RANKINGS_REVALIDATE_SECONDS },
     });
     if (!res.ok) return [];
-    return res.json() as Promise<Season[]>;
+    return await res.json() as Season[];
   } catch {
     return [];
   }
 }
 
-async function getPredictions(apiBase: string, year: number): Promise<Prediction[]> {
+async function getPredictions(apiBase: string, year: number): Promise<Prediction[] | null> {
   try {
     const res = await fetch(`${apiBase}/api/seasons/${year}/predictions`, {
       next: { revalidate: RANKINGS_REVALIDATE_SECONDS },
     });
-    if (!res.ok) return [];
-    return res.json() as Promise<Prediction[]>;
+    if (!res.ok) return null;
+    const data = await res.json() as Prediction[];
+    if (!Array.isArray(data) || data.some((p) => !p.user || typeof p.user.name !== "string" || !Array.isArray(p.rankingPicks))) return null;
+    return data;
   } catch {
-    return [];
+    return null;
   }
 }
 
@@ -78,9 +82,9 @@ export const revalidate = 600;
 export async function generateMetadata({
   searchParams,
 }: {
-  searchParams: Promise<{ year?: string }>;
+  searchParams: Promise<PredictionsQuery>;
 }): Promise<Metadata> {
-  const { year: yearParam } = await searchParams;
+  const yearParam = firstValue((await searchParams).year);
   const apiBase = await getApiBase();
   const year = yearParam ? parseInt(yearParam, 10) : await getActiveYear(apiBase);
   const title = `${year}年 順位予想マトリクス`;
@@ -109,9 +113,12 @@ export async function generateMetadata({
 export default async function PredictionsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ year?: string }>;
+  searchParams: Promise<PredictionsQuery>;
 }) {
-  const { year: yearParam } = await searchParams;
+  const query = await searchParams;
+  const yearParam = firstValue(query.year);
+  const pageParam = firstValue(query.page);
+  const q = firstValue(query.q) ?? "";
   const apiBase = await getApiBase();
   const year = yearParam ? parseInt(yearParam, 10) : await getActiveYear(apiBase);
 
@@ -120,10 +127,23 @@ export default async function PredictionsPage({
     getAllSeasons(apiBase),
   ]);
 
-  // Only show predictions that have at least some picks
-  const filtered = predictions.filter((p) => p.rankingPicks.length > 0);
-  const commentatorPredictions = filtered.filter((prediction) => prediction.user.role === "commentator");
-  const friendPredictions = filtered.filter((prediction) => prediction.user.role === "friend");
+  if (predictions === null) {
+    return <BroadcastPanel className="p-6">
+      <h1>順位予想マトリクス</h1>
+      <p role="alert">予想データの取得に失敗しました。時間をおいて再読み込みしてください。</p>
+      <Link prefetch={false} href={`/rankings/predictions?year=${year}`}>再読み込み</Link>
+    </BroadcastPanel>;
+  }
+
+  // Count and paginate only the two publicly displayed participant categories.
+  const filtered = predictions.filter((p) => p.rankingPicks.length > 0 && (p.user.role === "commentator" || p.user.role === "friend"));
+  const matches = filtered.filter((p) => p.user.name.toLocaleLowerCase().includes(q.trim().toLocaleLowerCase()));
+  const pageCount = Math.max(1, Math.ceil(matches.length / 20));
+  const page = Math.min(pageCount, Math.max(1, Number.parseInt(pageParam ?? "1", 10) || 1));
+  const visible = matches.slice((page - 1) * 20, page * 20);
+  const pageHref = (value: number) => `/rankings/predictions?${new URLSearchParams({ year: String(year), q, page: String(value) })}`;
+  const commentatorPredictions = visible.filter((prediction) => prediction.user.role === "commentator");
+  const friendPredictions = visible.filter((prediction) => prediction.user.role === "friend");
 
   const breadcrumbItems = [
     { label: "ランキング", href: "/rankings/predictions" },
@@ -137,8 +157,8 @@ export default async function PredictionsPage({
       <div className="flex items-start justify-between gap-4">
         <BroadcastHeading kicker="順位予想一覧" title="順位予想マトリクス">
           <p>
-            解説者・評論家 {commentatorPredictions.length}人と参加者 {friendPredictions.length}人の
-            順位予想を分けて比較します。出典にないリーグは「—」で表示します。
+            全 {filtered.length}件の
+            順位予想を20件ずつ表示し、解説者と参加者を分けて比較します。出典にないリーグは「—」で表示します。
           </p>
         </BroadcastHeading>
         <ShareButton type="scoreboard" year={year} />
@@ -160,11 +180,21 @@ export default async function PredictionsPage({
         </div>
       )}
 
+      <form action="/rankings/predictions" className="flex flex-wrap gap-2">
+        <input type="hidden" name="year" value={year} />
+        <input name="q" defaultValue={q} aria-label="予想者名で検索" placeholder="予想者名で検索" className="min-h-11 rounded-lg border px-3" />
+        <button className="min-h-11 rounded-lg border px-4" type="submit">検索</button>
+      </form>
+      <nav aria-label="予想一覧のページ" className="flex items-center gap-4">
+        {page > 1 && <Link prefetch={false} href={pageHref(page - 1)}>前へ</Link>}
+        <span>{matches.length}件中 {matches.length ? (page - 1) * 20 + 1 : 0}〜{Math.min(page * 20, matches.length)}件 · {page} / {pageCount}ページ</span>
+        {page < pageCount && <Link prefetch={false} href={pageHref(page + 1)}>次へ</Link>}
+      </nav>
       {/* Matrix: セ・パ横並び */}
-      {filtered.length === 0 ? (
+      {matches.length === 0 ? (
         <BroadcastPanel className="p-10 text-center">
           <p style={{ color: "var(--text-muted)" }}>
-            {year}{"\u5E74\u306E\u4E88\u60F3\u30C7\u30FC\u30BF\u306F\u3042\u308A\u307E\u305B\u3093"}
+            {q ? "一致する予想者が見つかりません。名前を変えて検索してください。" : `${year}年の予想データはありません`}
           </p>
         </BroadcastPanel>
       ) : (
@@ -278,12 +308,12 @@ export default async function PredictionsPage({
               <PredictionGroupRows
                 label="解説者・評論家の予想（出典により一部リーグのみ）"
                 predictions={commentatorPredictions}
-                showEmpty={friendPredictions.length === 0}
+                showEmpty={true}
               />
               <PredictionGroupRows
                 label="参加者の予想"
                 predictions={friendPredictions}
-                showEmpty={commentatorPredictions.length === 0}
+                showEmpty={true}
               />
             </tbody>
           </table>

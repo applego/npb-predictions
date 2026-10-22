@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { year, league } = await params;
   const leagueName = LEAGUE_LABELS[league] ?? league;
   return {
-    title: `${year}年 ${leagueName} 最終順位 | NPB Predictions League`,
+    title: `${year}年 ${leagueName} 最終順位 | みんなの順位予想対決`,
     description: `${year}年プロ野球${leagueName}の最終順位表。全チームの勝敗成績を掲載。`,
   };
 }

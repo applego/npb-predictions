@@ -5,11 +5,12 @@ test.describe("season review readability", () => {
   test("public results render observed data without login", async ({ page }, testInfo) => {
     expect((await page.goto("/?year=2026&league=central"))?.status()).toBe(200);
     await testInfo.attach("public-results-body", { body: await page.locator("main").innerText(), contentType: "text/plain" });
-    await expect(page.getByRole("heading", { name: "2026年 順位予想の答え合わせ" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /その予想、\s*どこまで当たった？/ })).toBeVisible();
     await expect(page.locator("main .result-status")).toHaveText("暫定");
     await expect(page.locator("main .result-observation time")).toHaveAttribute("datetime", /^\d{4}-\d{2}-\d{2}T/);
     await expect(page.locator("main .result-person").first()).toBeVisible();
     await expect(page.locator("body")).not.toContainText("歴代最高");
+    await page.locator("main .result-context > summary").click();
     await page.locator("main .result-standings-fold > summary").click();
     await expect(page.locator("main .result-team-strip li")).toHaveCount(6);
   });
@@ -64,6 +65,7 @@ test.describe("season review readability", () => {
         expect(await first.locator(".result-person-name strong").evaluate((el) => parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(18);
       }
       await testInfo.attach(`readable-${width}`, { body: await page.screenshot({ fullPage: true }), contentType: "image/png" });
+      await page.locator("main .result-context > summary").click();
       await page.locator("main .result-standings-fold > summary").click();
       expect(await page.locator("main .result-team-strip b").first().evaluate((el) => parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(16);
       await first.locator("summary").click();

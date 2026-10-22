@@ -10,6 +10,7 @@ import { absoluteUrl, canonicalAlternates, clampDescription, getSiteUrl, SEO_TER
 import "./globals.css";
 import "./results.css";
 import "./readability.css";
+import "./duel.css";
 
 const oswald = Oswald({ weight: ["400", "500", "700"], subsets: ["latin"], variable: "--font-display-default", display: "swap", preload: false, fallback: ["Arial Narrow", "system-ui", "sans-serif"] });
 const notoSansJp = Noto_Sans_JP({ weight: ["400", "500", "700"], subsets: ["latin"], variable: "--font-body-ja", display: "swap", preload: false, fallback: ["Hiragino Sans", "Yu Gothic", "system-ui", "sans-serif"] });
@@ -30,9 +31,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <ThemeLoader /><WebsiteJsonLd />
     <a className="site-skip" href="#main-content">本文へスキップ</a>
     <Providers>
-      <header className="site-header"><div className="site-header-inner"><Link prefetch={false} className="site-brand" href="/" aria-label="NPB予想リーグ トップ"><span className="site-brand-mark" aria-hidden="true">N</span><span>NPB <b>予想リーグ</b><small>予想を、記録に。</small></span></Link><Nav /><div className="site-account"><AuthHeader /></div></div></header>
+      <header className="site-header"><div className="site-header-inner"><Link prefetch={false} className="site-brand" href="/" aria-label="みんなの順位予想対決 トップ"><span className="site-brand-mark" aria-hidden="true">↗</span><span>みんなの<b>順位予想対決</b><small>その予想、どうなった？</small></span></Link><Nav /><div className="site-account"><AuthHeader /></div></div></header>
       <main id="main-content" tabIndex={-1} className="site-main">{children}</main>
-      <footer className="site-footer"><div><Link prefetch={false} href="/" className="site-footer-brand">NPB 予想リーグ</Link><p>春の予想も、秋の結果も。<br />予想の面白さを、出典と記録から。</p></div><nav aria-label="フッターナビゲーション"><Link prefetch={false} href="/rankings">答え合わせ一覧</Link><Link prefetch={false} href="/rankings/predictions">順位予想一覧</Link><Link prefetch={false} href="/rankings/scoreboard">ポイント制成績</Link><Link prefetch={false} href="/rankings/all-time">通算成績</Link><Link prefetch={false} href="/predictions/new">予想をつくる</Link><Link prefetch={false} href="/groups">グループ</Link><Link prefetch={false} href="/settings">表示設定</Link></nav><p className="site-footer-note">当サイトはNPBの公式サイトではありません。順位・出典・更新時点を確認してお楽しみください。</p></footer>
+      <footer className="site-footer"><div><Link prefetch={false} href="/" className="site-footer-brand">みんなの順位予想対決</Link><p>春の予想も、秋の結果も。<br />予想の面白さを、出典と記録から。</p></div><nav aria-label="フッターナビゲーション"><Link prefetch={false} href="/rankings">答え合わせ一覧</Link><Link prefetch={false} href="/rankings/predictions">順位予想一覧</Link><Link prefetch={false} href="/rankings/scoreboard">ポイント制成績</Link><Link prefetch={false} href="/rankings/all-time">通算成績</Link><Link prefetch={false} href="/predictions/new">予想をつくる</Link><Link prefetch={false} href="/groups">グループ</Link><Link prefetch={false} href="/settings">表示設定</Link></nav><p className="site-footer-note">当サイトはNPBの公式サイトではありません。順位・出典・更新時点を確認してお楽しみください。</p></footer>
     </Providers>
   </body></html>;
 }

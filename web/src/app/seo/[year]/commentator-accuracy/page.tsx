@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return { title: "Not Found" };
   }
 
-  const title = `${year}年 プロ野球解説者 順位予想 的中率ランキング | NPB Predictions League`;
+  const title = `${year}年 プロ野球解説者 順位予想 的中率ランキング | みんなの順位予想対決`;
   const description = `${year}年プロ野球解説者の順位予想的中率ランキング。セ・パ両リーグの予想精度をスコア化してトップ20を掲載。`;
 
   return {

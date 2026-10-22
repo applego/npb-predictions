@@ -74,7 +74,7 @@ function drawPredictionImage(
   ctx.font = "bold 16px 'Helvetica Neue', Arial, sans-serif";
   ctx.letterSpacing = "4px";
   ctx.textAlign = "left";
-  ctx.fillText("NPB 予想リーグ", 40, 40);
+  ctx.fillText("みんなの順位予想対決", 40, 40);
   ctx.letterSpacing = "0px";
 
   // Year badge
@@ -138,7 +138,7 @@ function drawPredictionImage(
   ctx.textAlign = "right";
   ctx.fillStyle = RED_ACCENT;
   ctx.font = "bold 13px 'Helvetica Neue', Arial, sans-serif";
-  ctx.fillText("#NPB予想リーグ", W - 40, H - 28);
+  ctx.fillText("#みんなの順位予想対決", W - 40, H - 28);
 }
 
 /**
@@ -290,7 +290,7 @@ export default function PredictionImageGenerator({
           const file = new File([blob], `npb-prediction-${userName}-${year}.png`, { type: "image/png" });
           if (navigator.canShare({ files: [file] })) {
             try {
-              await navigator.share({ files: [file], title: "NPB予想リーグ", text: `${userName}の${year}年プロ野球順位予想 #NPB予想リーグ` });
+              await navigator.share({ files: [file], title: "みんなの順位予想対決", text: `${userName}の${year}年プロ野球順位予想 #みんなの順位予想対決` });
               resolve();
               return;
             } catch {

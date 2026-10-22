@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     `${SEO_TERMS.bothLeagues} 予想`,
   ],
   openGraph: {
-    title: "プロ野球解説者 的中率ランキング | NPB Predictions League",
+    title: "プロ野球解説者 的中率ランキング | みんなの順位予想対決",
     description:
       "プロ野球解説者156人の順位予想的中率ランキング。セ・パ両リーグの予想精度を年度別に比較。",
     type: "website",

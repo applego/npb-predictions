@@ -8,10 +8,10 @@ import { loadSeasonResults } from "@/lib/season-results-data";
 import { parseResultsQuery, type ResultsQuery } from "@/lib/results-query";
 
 export const metadata: Metadata = {
-  title: "プロ野球 順位予想の答え合わせ・解説者ランキング",
+  title: "プロ野球 順位予想の答え合わせ・解説者ランキング | みんなの順位予想対決",
   description: "プロ野球の順位予想は誰が当てた？ セ・パ両リーグの解説者の予想を実順位と比較。暫定・確定、更新日時、予想の出典を確認し、的中数順に答え合わせできます。",
   alternates: { canonical: "/" },
-  openGraph: { title: "その順位予想、どこまで当たった？｜NPB予想リーグ", description: "解説者の予想と実順位を出典つきで答え合わせ。暫定・確定と更新日時がわかる。", type: "website" },
+  openGraph: { siteName: "みんなの順位予想対決", title: "その順位予想、どこまで当たった？｜みんなの順位予想対決", description: "解説者の予想と実順位を出典つきで答え合わせ。暫定・確定と更新日時がわかる。", type: "website" },
 };
 export default async function HomePage({ searchParams }: { searchParams: Promise<ResultsQuery> }) {
   const query = parseResultsQuery(await searchParams);

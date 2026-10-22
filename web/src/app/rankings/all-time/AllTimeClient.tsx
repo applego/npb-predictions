@@ -79,10 +79,13 @@ function SortHeader({
 }
 
 export function AllTimeTable({ commentators }: { commentators: Commentator[] }) {
+  const [page, setPage] = useState(1);
+  const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("total");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 
   const handleSort = (key: SortKey) => {
+    setPage(1);
     if (sortKey === key) {
       setSortDir((d) => (d === "desc" ? "asc" : "desc"));
     } else {
@@ -103,7 +106,7 @@ export function AllTimeTable({ commentators }: { commentators: Commentator[] }) 
   }, [commentators]);
 
   const sorted = useMemo(() => {
-    const arr = [...commentators];
+    const arr = commentators.filter((c) => c.name.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
     const dir = sortDir === "desc" ? -1 : 1;
     arr.sort((a, b) => {
       let va: number, vb: number;
@@ -118,7 +121,7 @@ export function AllTimeTable({ commentators }: { commentators: Commentator[] }) 
       return (va - vb) * dir;
     });
     return arr;
-  }, [commentators, sortKey, sortDir]);
+  }, [commentators, sortKey, sortDir, query]);
 
   return (
     <div className="space-y-4">
@@ -147,6 +150,14 @@ export function AllTimeTable({ commentators }: { commentators: Commentator[] }) 
         </div>
       )}
 
+      <label className="block">解説者名で検索
+        <input aria-label="解説者名で検索" value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} className="ml-2 min-h-11 rounded-lg border px-3" />
+      </label>
+      <nav aria-label="通算ランキングのページ" className="flex items-center gap-4">
+        <button className="min-h-11 px-3" disabled={page === 1} onClick={() => setPage(page - 1)}>前へ</button>
+        <span>{sorted.length}件 · {page} / {Math.max(1, Math.ceil(sorted.length / 20))}ページ</span>
+        <button className="min-h-11 px-3" disabled={page * 20 >= sorted.length} onClick={() => setPage(page + 1)}>次へ</button>
+      </nav>
       {/* Sortable table */}
       <div
         className="max-w-full overflow-x-auto rounded-xl"
@@ -170,8 +181,8 @@ export function AllTimeTable({ commentators }: { commentators: Commentator[] }) 
             </tr>
           </thead>
           <tbody>
-            {sorted.map((c, idx) => {
-              const isTop3 = idx < 3;
+            {sorted.slice((page - 1) * 20, page * 20).map((c) => {
+              const isTop3 = c.rank <= 3;
               const isBestEver = c.bestScore === allTimeBest.score && c.bestYear === allTimeBest.year;
               return (
                 <tr
@@ -182,10 +193,11 @@ export function AllTimeTable({ commentators }: { commentators: Commentator[] }) 
                   }}
                 >
                   <td className="px-3 py-2.5" style={{ fontFamily: "var(--font-display)", color: isTop3 ? "var(--dirt)" : "var(--text-muted)" }}>
-                    {sortKey === "rank" || sortKey === "total" ? getRankBadge(idx + 1) : idx + 1}
+                    {getRankBadge(c.rank)}
                   </td>
                   <td className="px-3 py-2.5">
                     <Link
+                      prefetch={false}
                       href={`/commentators/${c.slug}`}
                       className="inline-flex min-h-9 min-w-10 items-center font-medium transition-colors hover:underline"
                       style={{ color: "var(--text-primary)" }}

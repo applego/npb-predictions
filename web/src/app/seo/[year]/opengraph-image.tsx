@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 import { getSeasonByYear, getFinalStandings } from "@/lib/seo-queries";
 
 export const runtime = "edge";
-export const alt = "NPB Predictions リーグ シーズン概要";
+export const alt = "みんなの順位予想対決 リーグ シーズン概要";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -44,7 +44,7 @@ async function renderFallback(): Promise<ImageResponse> {
           fontWeight: 700,
         }}
       >
-        NPB Predictions League
+        みんなの順位予想対決
       </div>
     ),
     size,
@@ -106,7 +106,7 @@ export default async function Image({ params }: Props) {
             }}
           >
             <div style={{ display: "flex", fontSize: 18, fontWeight: 700, color: RED }}>
-              NPB予想スポーツ
+              みんなの順位予想対決
             </div>
             <div style={{ display: "flex", fontSize: 52, fontWeight: 700 }}>
               {year}年シーズン
