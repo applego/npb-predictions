@@ -1,10 +1,10 @@
 import { and, asc, eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { actualTeamStandings, predictions, rankingPicks, seasons, users } from "@/db/schema";
-import { canonicalPredictions } from "./canonical-prediction";
+import { canonicalPredictions, PUBLIC_RESULTS_SELECTION } from "./canonical-prediction";
 import { latestResultSnapshot, safeSourceUrl, summarizeResults, type PublicResultPick } from "./season-results";
 
-export const PUBLIC_RESULTS_SELECTION = "locked-commentators:original-first,createdAt-ascending,predictionId-ascending;before-league-or-score";
+export { PUBLIC_RESULTS_SELECTION } from "./canonical-prediction";
 
 /** Full locked-commentator population, including one-league and incomplete entries.
  * Explicit columns exclude private user identity and unlocked prediction drafts.

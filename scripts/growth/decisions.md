@@ -46,3 +46,36 @@ ASPは既存A8メディア会員の有無と対象サイトの契約・確定成
 ## 横展開で見つかった既存公開projection（npb-predictions-3lw.2）
 
 既存 `/api/seasons/[year]/predictions` の認証なしGETが `user:true` で私有列を制限せず返すsourceを確認。現在の実データ返却はD1上限により未確認で、私有値は取得していない。自己比較UIがfirebaseUid公開に依存するため、public列制限と認証済み自己予想取得を一緒に直す必要がある。今回の保存用APIは明示列で除外。1改善の上限を守り、既存親配下のP1 `npb-predictions-3lw.2` へowner=npb-automation、次の作業枠での優先修復として引き受けた。
+
+
+## 2026-10-22 09:49 JST: D1回復と公開表示障害の切り分け
+
+fresh main/publicは344dbfa。公開feature-healthは4source healthy、D1 quotaエラーは解消。
+既存live release gateをATTEMPTS=1で実行し、prediction/season/commentator/standings/ranking-cardのPNG5経路とscoreboardのHTMLはPASS。
+新聞画像 `/api/newspaper/hanshin-tigers` は503(text/plain、17bytes)でgate全体はFAIL。HTML/画像の形式・サイズ確認は内容の最終データ確認と別。
+実ブラウザの `/rankings/predictions?year=2026&league=pacific` はエラー画面、保存版コア `/?year=2026&league=pacific` も
+2026-10-22T00:50:56ZにCloudflare1102(resource limits)、Ray a4e482bdfb82e394を確認。D1回復だけで表示正常としない。
+最終snapshot healthは2026-10-21T09:48:53Z、追加更新が本当に必要かは未確認。更新workflowのdispatchやDB操作はしない。
+推奨: 既存公開経路の承認前に1102のroot/新聞表示をread-onlyログとlocal再現で切り分け、当該修復を同じ3lw.1で優先する。
+今回の1改善はPR80の保存工程修復に限定。全候補/パのみ/正規採用/登録時刻/lock欠測を保持し、出力前の整合性検査と既存artifact上書き拒否を実装。
+新APIは本番未適用のため、本番全対象exportの取得とv2保存版の採用は未達。現在の部分保存版のsource/hash/母集団は変更しない。
+別承認の公開適用後、公開exportのschema/hash/母集団をread-backし、生成v2とUIの収録範囲表示を照合する。通常のランキング応答や現在のlockフラグで代用しない。
+
+費用sourceの再確認: OAuth設定metadataは存在するが有効期限切れ、Wrangler whoamiは失敗。専用NPB receipt/admin/ASP設定なし、
+関連envキー名・専用config・Cloudflare/Wrangler/A8/NPBのkeychainサービス存在を確認したがread-only接続は成立せず。
+GitHub Secret名には既存CF/cron設定があるが値を取得せず、解析・費用へのアクセス証拠としない。
+既存の認証回復後にCloudflare解析/請求、ASP確定・取消・返金・手数料のexport、Agent/API/data/infra費を同期間で照合する。
+新token作成・権限付与・契約・課金は行わない。profit/first-party funnel/ASPはnullを継続。既存2実験は未判定のまま追加しない。
+
+公開export URLは00:55Zのcurlでも503。未公開PR80のschemaを返したという証拠は取得できず、反復取得は止めた。
+Cloudflareブラウザは https://dash.cloudflare.com/login へ遷移し「Cloudflare にサインイン」、A8は https://www.a8.net/ のメディア会員ログイン欄へ遷移。
+本人が既存アカウントで通常ログイン（新規登録・権限追加はしない）した後、CFの対象Pages解析/請求画面、A8の対象サイト成果レポートへread-onlyで進む。
+入力は既存ログイン情報、操作はCF「ログイン」または既存のログイン方法、A8「メディア会員」の「ログイン」。成功時はログイン欄でなく既存アカウントの管理画面が表示される。
+現時点ではどちらも未ログインのため、成果・費用は未確認のまま。新規契約ボタンは押さない。
+
+
+検証補足: 変更5コードファイルのUBSはexit0/critical0/warning5。JSON.parseはCLIの最上位catchで入力拒否し、fixtureのparseは失敗をtest failureにする。Mapのnonnullは作成直後の同一ID参照で前回から不変。
+`ubs .` はJavaScript303秒timeoutでexit2/partial、他言語23ファイルのcritical3は変更前から同一。
+内訳はvalidate-data.pyのSQLプレースホルダ個数生成2件（値は別引数でbind）、run-loop.pyの障害signature比較1件（秘密でなく失敗文の一致判定）をsourceで確認。全体PASSとはしない。
+standalone tscは変更していない既存scrape-standings-route.test.ts:52のResponse.json unknownで失敗。Next/CF buildと区別する。
+公開1102の既存P0はnpb-predictions-arr。現在のroot失敗を同項目と3lw.1に結び、古い原因候補を今回の根本原因と断定しない。

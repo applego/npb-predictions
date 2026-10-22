@@ -46,3 +46,14 @@ publications.monetization={approved_href, program_id, approval_ref} は人間の
 通常の `league=all` ランキングは両リーグの比較専用であり、全対象の保存版取得元には使わない。
 既存 `data/public-results-2026.json` は当時の公開API保存分のまま。新export取得・検証前に収録範囲やlock確認済みの主張を広げない。
 再発防止: routeの実SQLをSQLiteで実行するVitestと、CF PagesのローカルD1を通る `web/e2e/public-results-export.e2e.ts`。
+
+
+保存工程は `web/scripts/build-public-results-archive.ts YEAR PUBLIC_EXPORT SEASONS_EXPORT NEW_OUTPUT`。
+webディレクトリから既存のtsxで実行する。公開適用が承認された後に上記APIの応答全体と `/api/seasons` を取得し、
+新しい出力ファイルへ保存する。旧ランキング形式、payload hash不一致、母集団/採用ID不一致、未知の私有列を拒否する。
+公式の当該年度NPBページの全日程終了と両リーグ6球団を再確認する。出力はv2で、`publicExport` に全応答、
+`population` に定義済み母集団、`commentators` に正規採用の片リーグ・空・不完全な登録を残す。
+取得元の観測日時・raw file SHA-256・payload hashを別々に保持し、lock時刻欠測を埋めない。
+hashは整合性の証拠であり真正性や当時のlock時刻の証明ではない。既存ファイルへの上書きは拒否する。
+この生成物の本番採用は別工程。現在の部分保存版とUIの収録範囲表示を自動で置き換えない。
+全対象版を採用する際は `public-results-archive.ts` と収録範囲表示もv2の証跡を読むよう確認してから、別承認の公開経路を使う。
