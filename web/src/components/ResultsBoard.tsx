@@ -14,10 +14,19 @@ export function ResultsBoard({ data, compact = false }: { data: ResultsData; com
   const stale = snapshots.some((snapshot) => snapshot.stale);
   return (
     <div className="results-page">
-      <header className="result-intro-header">
-        <p className="result-edition"><span>SEASON REVIEW</span><span>{year} / NPB</span></p>
-        <h1>{year}年 順位予想の答え合わせ</h1>
-        <p>解説者の予想と実順位を、出典つきで比較。</p>
+      <header className="result-intro-header duel-hero">
+        <div className="duel-hero-copy">
+          <p className="duel-eyebrow"><span>順位予想の答え合わせ</span><span>{year} / プロ野球・{resultState(summary)}</span></p>
+          <h1>その予想、<br /><em>どこまで当たった？</em></h1>
+          <p>解説者の予想と実順位を、出典つきで比較。<br className="duel-desktop-break" />気になる結果を見つけて、野球仲間と答え合わせ。</p>
+          <a className="duel-hero-link" href="#result-list-title">解説者の結果を見る <span aria-hidden="true">↘</span></a>
+        </div>
+        <div className="duel-hero-score" aria-label="今回の比較対象">
+          <span>{year}年 {RESULT_LABELS[scope]}</span>
+          <strong>{summary.eligible}<small>件の登録予想</small></strong>
+          <p>{coverage ? "公開保存分" : "登録予想"}を{target}球団で比較</p>
+          <div className="duel-score-bars" aria-hidden="true"><i /><i /><i /><i /><i /><i /></div>
+        </div>
       </header>
       <div className="result-controls" id="results">
         <nav className="result-tabs" aria-label="答え合わせのリーグ">
@@ -33,11 +42,13 @@ export function ResultsBoard({ data, compact = false }: { data: ResultsData; com
           <input type="hidden" name="league" value={scope} /><button type="submit">表示</button>
         </form>
       </div>
+      <details className="result-context">
+        <summary><strong className={`result-status result-status-${status}`}>{resultState(summary)}</strong><span>{coverage ? "公開保存分" : "対象"} {summary.eligible}件</span><span>集計情報・出典 ⌄</span></summary>
       {coverage && <details className="result-standings-fold" aria-label="収録範囲">
-        <summary>公開保存分：セ{coverage.central}人／パ{coverage.pacific}人</summary><p>セの公開一覧に掲載された{coverage.central}人を収録。パはそのうち予想がある{coverage.pacific}人が対象で、パのみ登録の人は含みません。予想の掲載確認：{resultDate(coverage.observedAt)} JST。</p>
+        <summary>公開保存分：セ{coverage.central}件／パ{coverage.pacific}件</summary><p>セの公開一覧に掲載された{coverage.central}件を収録。パはそのうち予想がある{coverage.pacific}件が対象で、パのみ登録の人は含みません。予想の掲載確認：{resultDate(coverage.observedAt)} JST。</p>
       </details>}
       <section className="result-observation" aria-label="結果の状態と更新日時">
-        <strong className={`result-status result-status-${status}`}>{resultState(summary)}</strong>
+
         <span>{snapshots.map((snapshot, index) => (
           <span className="result-update" key={snapshot.league}>
             {index > 0 && " ／ "}{scope === "all" && `${RESULT_LABELS[snapshot.league]} `}
@@ -45,14 +56,9 @@ export function ResultsBoard({ data, compact = false }: { data: ResultsData; com
           </span>
         ))}</span>
       </section>
-      {(error || status === "unavailable") && <div className="result-notice" role="status">
-        <strong>{error === "unknown-year" ? "この年度のデータは登録されていません。" : "集計に必要なデータが揃っていません。"}</strong>
-        <p>取得失敗や順位の欠損を「的中者ゼロ」とは扱いません。</p><Link prefetch={false} href={path}>データを再確認する</Link>
-      </div>}
-      {stale && <div className="result-notice" role="status"><strong>順位データの更新から36時間以上経過しています。</strong><p>以下は表示日時点の比較です。現在順位・最終結果ではありません。</p></div>}
       <p className="result-summary-line">
-        <strong><a href={`${path}&perfect=1#result-list-title`}>{status === "final" ? `${coverage ? "収録分の" : ""}全順位的中` : "この時点で全順位一致"}：{perfect === null ? "集計待ち" : `${perfect}人`}</a></strong>
-        <span><a href={`${path}#result-list-title`}>対象 {summary.eligible}人</a>・{target}球団</span>
+        <strong><a href={`${path}&perfect=1#result-list-title`}>{status === "final" ? `${coverage ? "収録分の" : ""}全順位的中` : "この時点で全順位一致"}：{perfect === null ? "集計待ち" : `${perfect}件`}</a></strong>
+        <span><a href={`${path}#result-list-title`}>対象 {summary.eligible}件</a>・{target}球団</span>
       </p>
       <details className="result-standings-fold">
         <summary>球団の順位を見る<span className="result-fold-hint">集計基準・公式リンク</span></summary>
@@ -66,9 +72,15 @@ export function ResultsBoard({ data, compact = false }: { data: ResultsData; com
           </section>
         ))}</div>
       </details>
+      </details>
+      {(error || status === "unavailable") && <div className="result-notice" role="status">
+        <strong>{error === "unknown-year" ? "この年度のデータは登録されていません。" : "集計に必要なデータが揃っていません。"}</strong>
+        <p>取得失敗や順位の欠損を「的中者ゼロ」とは扱いません。</p><Link prefetch={false} href={path}>データを再確認する</Link>
+      </div>}
+      {stale && <div className="result-notice" role="status"><strong>順位データの更新から36時間以上経過しています。</strong><p>以下は表示日時点の比較です。現在順位・最終結果ではありません。</p></div>}
       <section className="result-main-section" aria-labelledby="result-list-title">
         <h2 id="result-list-title">解説者の的中ランキング</h2>
-        <p className="result-sort-note">並び順：一致数↓ → 順位差合計↑（同点は同順位）</p>
+        <p className="result-sort-note">並び順：一致数↓ → 順位差合計↑（登録単位）</p>
         {entries.length ? <ResultsExplorer key={`${year}-${scope}`} entries={entries} target={target} year={year} scope={scope} isFinal={status === "final"} compact={compact} observation={resultObservation(summary)} stateLabel={resultState(summary)} /> : (
           <div className="result-empty"><h3>比較できる予想・順位を確認中です</h3><p>ロック済み予想と、同一時点の6球団分の実順位が必要です。</p><Link prefetch={false} href={`/rankings/predictions?year=${year}`}>登録されている予想を見る</Link></div>
         )}
@@ -79,9 +91,9 @@ export function ResultsBoard({ data, compact = false }: { data: ResultsData; com
         <Link prefetch={false} className="result-button result-button-secondary" href="/resources">観戦ガイドを見る <span aria-hidden="true">↗</span></Link>
       </aside>
       <details className="result-method" id="method"><summary>集計ルール・出典について</summary><div>
-        <p>{coverage ? "公開APIに掲載されていた予想の固定保存が対象です。ロック状態・元の登録日時はこの保存に含まれません。" : "当サイトに登録された解説者・評論家のロック済み予想が対象です。"}各リーグ6球団・1〜6位が重複なく揃うものを集計し、総合はセ・パ両方を必要とします。対象 {summary.eligible}人、予想が不完全などで対象外 {summary.excluded}人です。外部記事とは母集団が異なります。</p>
-        <p>{coverage ? "公開一覧の登録者IDごとに保存された1件を比較しています。保存後に成績の良い版へ差し替えていません。通常版優先・最古登録の採用を保証する保存ではありません。" : "同じ登録者に複数の予想がある場合は通常版、登録日時、予想IDの順で採用します。成績の良い版を後付けで選びません。"}掲載媒体ごとに登録が分かれている場合は登録ID単位の人数です。</p>
-        <p>順位差合計は各球団の予想順位と実順位の差を足した数値です。この画面の並びは従来のポイント制とは異なり、ポイント計算は変更していません。日付だけで確定と判定せず、各リーグの最新の同一時点の6球団すべてに確定フラグがある場合だけ「確定」と表示します。</p>
+        <p>{coverage ? "公開APIに掲載されていた予想の固定保存が対象です。ロック状態・元の登録日時はこの保存に含まれません。" : "当サイトに登録された解説者・評論家のロック済み予想が対象です。"}各リーグ6球団・1〜6位が重複なく揃うものを集計し、総合はセ・パ両方を必要とします。対象 {summary.eligible}件、予想が不完全などで対象外 {summary.excluded}件です。外部記事とは母集団が異なります。</p>
+        <p>{coverage ? "公開一覧の登録者IDごとに保存された1件を比較しています。保存後に成績の良い版へ差し替えていません。通常版優先・最古登録の採用を保証する保存ではありません。" : "同じ登録者に複数の予想がある場合は通常版、登録日時、予想IDの順で採用します。成績の良い版を後付けで選びません。"}掲載媒体ごとに登録が分かれている場合は登録ID単位の件数です。一覧では名前・予想・出典・採点が完全に同じ登録だけをまとめて表示し、採点と順位は変えていません。</p>
+        <p>一致数が多い順、次に順位差合計の少ない順で並び、同点は同順位です。順位差合計は各球団の予想順位と実順位の差を足した数値です。この画面の並びは従来のポイント制とは異なり、ポイント計算は変更していません。日付だけで確定と判定せず、各リーグの最新の同一時点の6球団すべてに確定フラグがある場合だけ「確定」と表示します。</p>
         <p>「出典リンクあり」はリンクが登録されているという意味で、内容の検証済みを保証する表示ではありません。未登録は明示します。</p>
         <Link prefetch={false} href={`/rankings/scoreboard?year=${year}`}>ポイント制の成績を見る →</Link>
       </div></details>

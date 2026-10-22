@@ -292,7 +292,7 @@ export function buildTeamArticleFromRows(
     leagueRank,
     nextGame: nextGameText,
     quote: `データ更新: ${statusLabel}`,
-    quoteBy: "NPB予想リーグ",
+    quoteBy: "みんなの順位予想対決",
   };
 }
 

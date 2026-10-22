@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   ),
   alternates: canonicalAlternates("/rankings/titles"),
   ...socialPreview({
-    title: "タイトル予想 的中率 | NPB予想リーグ",
+    title: "タイトル予想 的中率 | みんなの順位予想対決",
     description: "個人タイトル予想の的中率を実際の結果と比較",
     pathname: "/rankings/titles",
   }),

@@ -3,7 +3,7 @@ import type React from "react";
 
 /** Shared secondary-page shell; exported API retained for existing callers. */
 export function BroadcastBand({ year }: { year?: number | string }) {
-  return <div className="result-page-band"><Link href="/">NPB 予想リーグ</Link><span>{year ?? new Date().getFullYear()} シーズン</span></div>;
+  return <div className="result-page-band"><Link href="/">みんなの順位予想対決</Link><span>{year ?? new Date().getFullYear()} シーズン</span></div>;
 }
 export function BroadcastHeading({ kicker, title, children }: { kicker: string; title: string; children?: React.ReactNode }) {
   return <div className="result-page-heading"><p>{kicker}</p><h1>{title}</h1>{children && <div>{children}</div>}</div>;

@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { year, league } = await params;
   const leagueName = LEAGUE_LABELS[league] ?? league;
   return {
-    title: `${year}年 ${leagueName} タイトルリーダー | NPB Predictions League`,
+    title: `${year}年 ${leagueName} タイトルリーダー | みんなの順位予想対決`,
     description: `${year}年プロ野球${leagueName}のタイトルホルダー（首位打者・本塁打王・最多勝など）一覧。`,
   };
 }

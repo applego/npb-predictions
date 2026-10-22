@@ -23,7 +23,7 @@ type Props = { params: Promise<{ year: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { year } = await params;
   return {
-    title: `${year}年 NPBシーズンアーカイブ | NPB Predictions League`,
+    title: `${year}年 NPBシーズンアーカイブ | みんなの順位予想対決`,
     description: `${year}年プロ野球シーズンの完全アーカイブ。最終順位・タイトル・予想リーグ結果を網羅。`,
   };
 }

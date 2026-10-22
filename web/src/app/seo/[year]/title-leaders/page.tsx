@@ -20,7 +20,7 @@ type Props = { params: Promise<{ year: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { year } = await params;
   return {
-    title: `${year}年 NPBタイトルリーダー | NPB Predictions League`,
+    title: `${year}年 NPBタイトルリーダー | みんなの順位予想対決`,
     description: `${year}年プロ野球の各タイトル（首位打者・本塁打王・最多勝など）のリーダー一覧。`,
   };
 }

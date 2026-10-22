@@ -78,16 +78,16 @@ export function getShareText(
   switch (type) {
     case "prediction":
       return params.userName
-        ? `${params.userName}の${year}年プロ野球順位予想を公開! #NPB予想リーグ`
-        : `${year}年プロ野球順位予想を公開! #NPB予想リーグ`;
+        ? `${params.userName}の${year}年プロ野球順位予想を公開! #みんなの順位予想対決`
+        : `${year}年プロ野球順位予想を公開! #みんなの順位予想対決`;
     case "scoreboard":
-      return `${year}年NPB予想リーグ 現在のスコアボード! #NPB予想リーグ`;
+      return `${year}年みんなの順位予想対決 現在のスコアボード! #みんなの順位予想対決`;
     case "monthly-champion":
-      return `${year}年NPB予想リーグ 月間チャンピオン発表! #NPB予想リーグ`;
+      return `${year}年みんなの順位予想対決 月間チャンピオン発表! #みんなの順位予想対決`;
     case "weekly":
-      return `${year}年NPB予想リーグ 今週のスコア変動! #NPB予想リーグ`;
+      return `${year}年みんなの順位予想対決 今週のスコア変動! #みんなの順位予想対決`;
     default:
-      return `NPB予想リーグ #NPB予想リーグ`;
+      return `みんなの順位予想対決 #みんなの順位予想対決`;
   }
 }
 

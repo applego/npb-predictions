@@ -14,7 +14,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   const label = `${query.year ? `${query.year}年 ` : ""}${RESULT_LABELS[query.scope]}`;
   const title = `${label} 順位予想の答え合わせ・解説者ランキング`;
   const description = `${label}の解説者・評論家の順位予想を的中数順に比較。全順位一致、各球団の予想と実順位、出典と更新日時を確認できます。`;
-  return { title, description, alternates: { canonical: query.valid && query.year ? `/rankings?year=${query.year}&league=${query.scope}` : "/rankings" }, openGraph: { title, description, type: "website" }, twitter: { card: "summary_large_image", title, description } };
+  return { title, description, alternates: { canonical: query.valid && query.year ? `/rankings?year=${query.year}&league=${query.scope}` : "/rankings" }, openGraph: { siteName: "みんなの順位予想対決", title, description, type: "website" }, twitter: { card: "summary_large_image", title, description } };
 }
 export default async function RankingsIndexPage({ searchParams }: Props) {
   const query = parseResultsQuery(await searchParams);

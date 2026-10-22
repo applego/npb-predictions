@@ -77,7 +77,7 @@ const TEMPLATES: Template[] = [
     condition: (v) => v.timing.includes("序盤") || v.timing.includes("後半") || v.timing.includes("終盤"),
     render: (v) => ({
       headline: `今さら参戦！ ${v.name}氏が順位予想を投稿`,
-      lead: `${v.timing}での投稿。${v.name}氏がようやく${v.year}年の順位予想をNPB予想リーグに提出した。`,
+      lead: `${v.timing}での投稿。${v.name}氏がようやく${v.year}年の順位予想をみんなの順位予想対決に提出した。`,
       body: [
         `${v.name}氏の予想はセ・リーグ1位${v.central[0]}、パ・リーグ1位${v.pacific[0]}。${v.timing}での投稿のため、開幕前組と比べて情報面でのアドバンテージがある反面、時期補正によるスコアペナルティを受ける。`,
         `「なぜ今？」という疑問に対し、${v.name}氏は開幕後の戦力分析を踏まえた上での予想だと主張している模様。解説者${v.totalPredictors}人の大半が開幕前に投稿する中、異色の存在だ。`,
@@ -108,7 +108,7 @@ const TEMPLATES: Template[] = [
     condition: () => true,
     render: (v) => ({
       headline: `${v.name}氏が${v.year}年順位予想を発表`,
-      lead: `${v.name}氏がNPB予想リーグに${v.year}年の順位予想を投稿した。セは${v.central[0]}、パは${v.pacific[0]}を本命に指名。${v.timing}。`,
+      lead: `${v.name}氏がみんなの順位予想対決に${v.year}年の順位予想を投稿した。セは${v.central[0]}、パは${v.pacific[0]}を本命に指名。${v.timing}。`,
       body: [
         `セ・リーグの予想は、${v.central.map((t, i) => `${i + 1}位${t}`).join("、")}。パ・リーグは${v.pacific.map((t, i) => `${i + 1}位${t}`).join("、")}とした。`,
         `${v.name}氏の予想は${v.boldness}。解説者${v.totalPredictors}人中、${v.central[0]}を1位に予想した割合は${v.samePredPct}%で、${v.consensus}の予想となっている。`,

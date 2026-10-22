@@ -67,7 +67,7 @@ async function renderFallback(): Promise<ImageResponse> {
           fontWeight: 700,
         }}
       >
-        NPB Predictions League
+        みんなの順位予想対決
       </div>
     ),
     size,
@@ -147,7 +147,7 @@ export default async function Image({
           >
             <div style={{ display: "flex", flexDirection: "column" }}>
               <div style={{ display: "flex", fontSize: 18, fontWeight: 700, color: RED }}>
-                NPB予想スポーツ {year}
+                みんなの順位予想対決 {year}
               </div>
               <div style={{ display: "flex", fontSize: 46, fontWeight: 700 }}>
                 {user.name} の順位予想
