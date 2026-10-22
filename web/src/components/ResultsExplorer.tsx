@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { getTeamByName } from "@/lib/teams";
 import { RESULT_LABELS, type ResultEntry, type ResultScope } from "@/lib/season-results";
-import { resultDifference } from "@/lib/results-presentation";
+import { groupIdenticalResults, resultDifference } from "@/lib/results-presentation";
 import { recordGrowth } from "@/lib/growth-events";
 import { ResultCardDownload } from "./ResultCardDownload";
 import { ResultShare } from "./ResultShare";
@@ -35,7 +35,8 @@ export function ResultsExplorer({ entries, target, year, scope, isFinal, observa
     function revealSharedResult() {
       const match = /^#predictor-(\d+)$/.exec(window.location.hash);
       if (!match) return;
-      const detail = document.querySelector(`main #predictor-${match[1]}`);
+      const element = document.querySelector(`main #predictor-${match[1]}`);
+      const detail = element instanceof HTMLDetailsElement ? element : element?.closest("details");
       if (detail instanceof HTMLDetailsElement) {
         detail.open = true;
         detail.scrollIntoView({ block: "start" });
@@ -45,10 +46,11 @@ export function ResultsExplorer({ entries, target, year, scope, isFinal, observa
     window.addEventListener("hashchange", revealSharedResult);
     return () => window.removeEventListener("hashchange", revealSharedResult);
   }, [entries]);
-  const shown = useMemo(() => entries.filter((entry) =>
+  const groups = useMemo(() => groupIdenticalResults(entries), [entries]);
+  const shown = useMemo(() => groups.filter(({ entry }) =>
     (!onlyPerfect || entry.exact === target) &&
     `${entry.name} ${entry.source ?? ""}`.toLocaleLowerCase("ja").includes(query.trim().toLocaleLowerCase("ja")),
-  ), [entries, target, query, onlyPerfect]);
+  ), [groups, target, query, onlyPerfect]);
   const visible = compact && !query && !onlyPerfect ? shown.slice(0, 8) : shown;
   return (
     <div className="result-explorer">
@@ -59,18 +61,18 @@ export function ResultsExplorer({ entries, target, year, scope, isFinal, observa
         </label>
         <label className="result-checkbox"><input type="checkbox" checked={onlyPerfect} onChange={(event) => updateFilters(query, event.target.checked)} />全順位一致のみ</label>
       </div>
-      <p className="result-count" role="status">{shown.length}人中 {visible.length}人を表示 </p>
+      <p className="result-count" role="status">{shown.length}件中 {visible.length}件を表示{groups.length < entries.length && "（同名・同内容をまとめて表示）"} </p>
       {!shown.length && <div className="result-empty"><h3>条件に合う予想がありません</h3><p>検索語を短くするか、「全順位一致のみ」を解除してください。</p><button className="result-button result-button-secondary" onClick={() => { updateFilters("", false); }} type="button">絞り込みを解除</button></div>}
       <div className="result-list">
-        {visible.map((entry) => (
+        {visible.map(({ entry, aliases }) => (
           <details className={`result-person${entry.exact === target ? " result-person-perfect" : ""}`} key={entry.userId} id={`predictor-${entry.userId}`}>
             <summary>
               <span className="result-position"><b>{entry.rank}</b>位</span>
-              <span className="result-person-name"><strong>{entry.name}</strong></span>
+              <span className="result-person-name"><strong>{entry.name}</strong>{aliases.map(id => <span key={id} id={`predictor-${id}`} hidden />)}</span>
               <span className="result-match">{target}球団中 <b>{entry.exact}</b>球団一致</span>
               <span className="result-deviation">順位差合計 <b>{entry.deviation}</b></span>
               <span className="result-difference">{resultDifference(entry)}</span>
-              <span className="result-source-label">{entry.source ?? "出典情報なし"} · {entry.sourceUrl ? "出典リンクあり" : "出典リンク未登録"}</span>
+              <span className="result-source-label">{entry.source ?? "出典情報なし"} · {entry.sourceUrl ? "出典リンクあり" : "出典リンク未登録"}{aliases.length > 0 && ` · 同一内容 ${aliases.length + 1}登録`}</span>
               <span className="result-expand"><span className="result-open-label">予想の内訳を見る</span><span className="result-close-label">内訳を閉じる</span><span aria-hidden="true">⌄</span></span>
             </summary>
             <div className="result-person-body">

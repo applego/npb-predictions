@@ -38,3 +38,16 @@ export function resultShareTitle(year: number, summary: ResultSummary, entry?: R
   const subject = entry ? `${entry.name}は${summary.target}球団中${entry.exact}球団一致` : "順位予想の答え合わせ";
   return `${year}年 ${RESULT_LABELS[summary.scope]}｜${subject}（${resultState(summary)}）｜集計基準：${resultObservation(summary)}｜みんなの順位予想対決`;
 }
+
+/** Collapse only identical published registrations; scoring and IDs stay intact. */
+export function groupIdenticalResults(entries: ResultEntry[]): { entry: ResultEntry; aliases: number[] }[] {
+  const groups = new Map<string, { entry: ResultEntry; aliases: number[] }>();
+  for (const entry of entries) {
+    const details = [...entry.details].sort((a, b) => a.league.localeCompare(b.league) || a.predictedRank - b.predictedRank).map(row => [row.league, row.teamName, row.predictedRank, row.actualRank, row.difference]);
+    const key = JSON.stringify([entry.name, entry.source, entry.sourceUrl, entry.variant, entry.rank, entry.exact, entry.deviation, details]);
+    const group = groups.get(key);
+    if (group) group.aliases.push(entry.userId);
+    else groups.set(key, { entry, aliases: [] });
+  }
+  return [...groups.values()];
+}

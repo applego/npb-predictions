@@ -55,3 +55,15 @@ for (const scope of ["central", "all"]) {
     expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBe(0);
   });
 }
+
+test("identical registrations collapse but an older shared ID still opens the result", async ({ page }) => {
+  await page.goto("/rankings?year=2026&league=central");
+  const person = page.locator("main .result-person").filter({ hasText: "検証用 解説者A" });
+  await expect(person).toHaveCount(1);
+  await expect(person.locator(".result-source-label")).toContainText("同一内容 2登録");
+  const alias = await person.locator(".result-person-name [id]").getAttribute("id");
+  expect(alias).toBeTruthy();
+  await page.goto(`/rankings?year=2026&league=central#${alias}`);
+  await expect(page.locator("main .result-person[open] tbody tr")).toHaveCount(6);
+  await expect(page.locator("main .result-person[open] .result-match")).toContainText("6球団一致");
+});
