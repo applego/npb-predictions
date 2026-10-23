@@ -15,7 +15,16 @@
       "requires_owner": null,
       "statement": "知っている解説者の予想がどこまで当たったかを画像で見せられると、ユーザーが自分のXで共有したくなる",
       "success_condition": "公開後7日でX由来訪問と解説者結果閲覧を観測できる。流入が無ければ内容と配信経路を見直す",
-      "due": "2026-10-28"
+      "due": "2026-10-28",
+      "surface": "results-sharing",
+      "ice": {
+        "impact": 8,
+        "confidence": 4,
+        "ease": 8
+      },
+      "published_at": null,
+      "publication_ref": null,
+      "observation_rule": "公開日時・公開SHAと同期間の一次計測が揃うまで観測開始/採否を認定しない。期日だけでは失敗判定しない。"
     },
     {
       "id": "watch-offer-01",
@@ -30,7 +39,16 @@
       "requires_owner": "案件提携と広告文・リンク公開の承認",
       "statement": "観戦の意図がある読者に視聴方法を示すと確定成果につながる",
       "success_condition": "掲載後28日でASP確定成果と費用を照合する。クリックのみでは採用しない",
-      "due": "2026-11-18"
+      "due": "2026-11-18",
+      "surface": "watch-guide",
+      "ice": {
+        "impact": 7,
+        "confidence": 3,
+        "ease": 4
+      },
+      "published_at": null,
+      "publication_ref": null,
+      "observation_rule": "公開日時・公開SHAと同期間の一次計測が揃うまで観測開始/採否を認定しない。期日だけでは失敗判定しない。"
     }
   ]
 }

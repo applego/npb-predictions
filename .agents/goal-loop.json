@@ -10,7 +10,9 @@
     "npb-predictions#x_visits_28d",
     "npb-predictions#affiliate_confirmed_28d",
     "npb-predictions#result_views_28d",
-    "npb-predictions#x_share_starts_28d"
+    "npb-predictions#x_share_starts_28d",
+    "npb-predictions#card_downloads_28d",
+    "npb-predictions#x_result_tabs_28d"
   ],
   "measure_command": "python3 scripts/growth/measure.py",
   "wip": {
@@ -36,7 +38,7 @@
     "max_attempts": 2
   },
   "measure_acquire": {
-    "hint": "scripts/growth/README.md を読み、既存CLIと設定metadataから解析・ASP確定成果のread-only取得経路を探し計測を修復する。未確認数値を作らない。認証や契約が必要なときだけ needs_owner=auth または permission を具体的材料つきで出す。"
+    "hint": "scripts/growth/README.md を読み、既存CLIと設定metadataから解析・ASP確定成果のread-only取得経路を探し計測を修復する。未確認数値を作らない。認証や契約が必要なときだけ needs_owner=auth または permission を具体的材料つきで出す。 scripts/growth/pdca.py dailyの同一receiptを利用し、既知の認証待ちを同じ回に再探索しない。held_measurementでも現在の受託Codexはbrのready仕事を実行する。"
   },
   "diagnose": {
     "ledger": "scripts/growth/experiments.json",

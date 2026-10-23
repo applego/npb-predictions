@@ -25,7 +25,7 @@ version: 3
 level: product
 entity_id: npb-predictions
 parent_ref: null
-updated_at: 2026-10-21
+updated_at: 2026-10-24
 target_status: provisional
 kgis:
   - id: contribution_profit_28d
@@ -82,4 +82,14 @@ kpis:
     role: input
     unit: 件
     source_ref: asp-confirmed-export
+  - id: card_downloads_28d
+    title: 結果カード保存開始
+    role: input
+    unit: 回
+    source_ref: first-party-growth-events
+  - id: x_result_tabs_28d
+    title: X由来の結果閲覧タブ延べ数
+    role: input
+    unit: 日別タブ
+    source_ref: first-party-growth-events-utm
 ```

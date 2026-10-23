@@ -5,12 +5,20 @@ on:
     branches: [main, dev]
     paths:
       - 'web/**'
+      - 'scripts/growth/**'
+      - '.agents/goal-tree.json'
+      - '.agents/goal-loop.json'
+      - 'GOAL.md'
       - '.github/workflows/npb-predictions-ci.yml'
       - '.github/hooks/**'
   pull_request:
     branches: [main]
     paths:
       - 'web/**'
+      - 'scripts/growth/**'
+      - '.agents/goal-tree.json'
+      - '.agents/goal-loop.json'
+      - 'GOAL.md'
       - '.github/workflows/npb-predictions-ci.yml'
       - '.github/hooks/**'
 
@@ -47,6 +55,9 @@ jobs:
 
       - name: Test
         run: npm test
+
+      - name: Growth loop boundaries
+        run: python3 -m unittest discover -s ../scripts/growth -p 'test_*.py' -v
 
       - name: Build
         run: npm run build

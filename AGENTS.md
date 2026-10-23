@@ -10,6 +10,7 @@ NPB 予想リーグプラットフォーム。Next.js + Cloudflare Pages + Drizz
 
 - KGI/KPI/KDI: `GOAL.md` を Single Source of Truth とする
 - 自律スコープ: `GOAL.md` の `autonomy:` セクション — tier1/2/3 の境界を必ず確認
+- 獲得・収益化の作業前は `docs/growth/loop.md` と `docs/growth/status.json` を読み、source/ref・選択中のtracker・引継ぎ受領を確認する。ローカル実行記録だけで共有済みとしない。
 
 ---
 
