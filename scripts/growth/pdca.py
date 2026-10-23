@@ -148,13 +148,13 @@ def cycle(raw, experiments, tasks, now, metric_ids, head, exclude=None):
                     'ranked_experiments': [exp['id'] for exp in ranked], 'blocked_surfaces': sorted(set(surfaces))},
               'D': {'tracker_item': selected, 'work_required': selected is not None,
                     'queue': rows, 'executor': 'existing npb Codex automation', 'automatic_publication': False},
-              'C': {'experiments': checks, 'profit_verified': False, 'causal_effect': None},
+              'C': {'experiments': checks, 'profit_verified': False, 'causal_effect': None,
+                    'collection_error': 'measurement_unavailable' if raw.get('collection_error') == 'measurement_unavailable' else None},
               'Adjust': {'reason': 'measurement_missing' if missing else 'compare_predeclared_hypotheses',
                          'missing': missing, 'next': 'execute_ready_tracker_work_and_restore_sources' if selected else 'wait_for_recorded_resume_trigger'},
               'handoff': {'delivery': 'not_sent', 'acknowledged_by': None}}
     fingerprint = {key: report[key] for key in ['source_digest', 'P', 'D', 'C', 'Adjust']}
-    fingerprint['metrics'] = {key: {field: value for field, value in row.items()
-                                   if key not in PUBLIC_METRICS or field != 'data_through'}
+    fingerprint['metrics'] = {key: {field: value for field, value in row.items() if field != 'data_through'}
                               for key, row in metrics.items()}
     report['fingerprint'] = digest(fingerprint)
     return report
@@ -170,6 +170,7 @@ def public_projection(report):
             'selected_tracker_item': report['D']['tracker_item'],
             'work_required': report['D']['work_required'],
             'experiments': report['C']['experiments'], 'profit_verified': False,
+            'collection_error': report['C']['collection_error'],
             'handoff': {'delivery': 'not_sent', 'acknowledged_by': None}}
 
 
@@ -222,7 +223,9 @@ def main():
         raw = read(args.measurement)
     elif args.command == 'weekly':
         # Reuse the captured daily receipt; never collect twice for P vs C.
-        raw = {'goal_ref': GOAL, 'metrics': read(args.state_dir/'latest.json')['metrics']}
+        previous = read(args.state_dir/'latest.json')
+        raw = {'goal_ref': GOAL, 'metrics': previous['metrics'],
+               'collection_error': previous['C'].get('collection_error')}
     else:
         try:
             raw = json.loads(run([sys.executable, 'scripts/growth/measure.py'], ROOT))
@@ -244,12 +247,13 @@ def main():
         report['changed'] = changed
         report['result'] = 'work_ready' if report['D']['work_required'] else 'changed' if changed else 'unchanged'
         report['cadence'] = args.command
+        # Keep the current private capture fresh even when no business delta occurred.
+        atomic(last, report)
+        atomic(args.state_dir/'graph.json', goal_graph(report))
         if changed:
-            atomic(last, report)
-            atomic(args.state_dir/'graph.json', goal_graph(report))
             with (args.state_dir/'history.jsonl').open('a') as history:
                 history.write(json.dumps(report, ensure_ascii=False, allow_nan=False)+'\n')
-        if args.public_output:
+        if args.public_output and (changed or not args.public_output.exists()):
             atomic(args.public_output, public_projection(report))
     print(json.dumps(report, ensure_ascii=False, allow_nan=False))
     return 0

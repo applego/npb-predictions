@@ -74,6 +74,20 @@ class CycleTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(json.loads(result.stdout)['result'], 'unchanged')
 
+    def test_event_capture_time_alone_is_not_a_delta_but_private_capture_stays_fresh(self):
+        self.data['metrics']['x_share_starts_28d'] = {'status': 'ok', 'value': 9,
+                                                    'data_through': '2026-10-23T14:00:00Z'}
+        self.assertEqual(self.cli(tasks=self.tasks[:1]).returncode, 0)
+        public = (self.root/'public.json').read_bytes()
+        history = (self.root/'state/history.jsonl').read_bytes()
+        self.data['metrics']['x_share_starts_28d']['data_through'] = '2026-10-23T15:00:00Z'
+        result = self.cli(tasks=self.tasks[:1])
+        self.assertEqual(json.loads(result.stdout)['result'], 'unchanged')
+        self.assertEqual((self.root/'state/history.jsonl').read_bytes(), history)
+        self.assertEqual((self.root/'public.json').read_bytes(), public)
+        private = json.loads((self.root/'state/latest.json').read_text())
+        self.assertEqual(private['metrics']['x_share_starts_28d']['data_through'], '2026-10-23T15:00:00Z')
+
     def test_projection_only_git_commit_does_not_manufacture_a_delta(self):
         experiments = pdca.read(pdca.ROOT/'scripts/growth/experiments.json')['experiments']
         args = [self.data, experiments, self.tasks, pdca.stamp(NOW), list(self.data['metrics'])]
