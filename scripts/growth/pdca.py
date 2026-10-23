@@ -34,6 +34,13 @@ def digest(value):
     return hashlib.sha256(json.dumps(value, ensure_ascii=False, sort_keys=True, allow_nan=False).encode()).hexdigest()
 
 
+def source_digest():
+    # The generated projection's own commit must not manufacture a new business delta.
+    names = ['GOAL.md', 'AGENTS.md', '.agents/goal-loop.json', '.agents/goal-tree.json',
+             'scripts/growth/pdca.py', 'scripts/growth/measure.py', 'scripts/growth/experiments.json', 'docs/growth/loop.md']
+    return digest({name: hashlib.sha256((ROOT/name).read_bytes()).hexdigest() for name in names})
+
+
 def read(path):
     return json.loads(path.read_text(), parse_constant=lambda _: (_ for _ in ()).throw(ValueError('nonfinite JSON')))
 
@@ -135,6 +142,7 @@ def cycle(raw, experiments, tasks, now, metric_ids, head, exclude=None):
     surfaces = [exp['surface'] for exp in experiments if exp.get('verdict') is None]
     missing = [key for key, value in metrics.items() if value['status'] != 'ok']
     report = {'schema': 'npb-growth-pdca.v1', 'goal_ref': GOAL, 'source_head': head,
+              'source_digest': source_digest(),
               'observed_at': now.isoformat(), 'metrics': metrics,
               'P': {'primary': PRIMARY, 'target_status': 'provisional',
                     'ranked_experiments': [exp['id'] for exp in ranked], 'blocked_surfaces': sorted(set(surfaces))},
@@ -144,7 +152,7 @@ def cycle(raw, experiments, tasks, now, metric_ids, head, exclude=None):
               'Adjust': {'reason': 'measurement_missing' if missing else 'compare_predeclared_hypotheses',
                          'missing': missing, 'next': 'execute_ready_tracker_work_and_restore_sources' if selected else 'wait_for_recorded_resume_trigger'},
               'handoff': {'delivery': 'not_sent', 'acknowledged_by': None}}
-    fingerprint = {key: report[key] for key in ['source_head', 'P', 'D', 'C', 'Adjust']}
+    fingerprint = {key: report[key] for key in ['source_digest', 'P', 'D', 'C', 'Adjust']}
     fingerprint['metrics'] = {key: {field: value for field, value in row.items()
                                    if key not in PUBLIC_METRICS or field != 'data_through'}
                               for key, row in metrics.items()}
@@ -155,6 +163,7 @@ def cycle(raw, experiments, tasks, now, metric_ids, head, exclude=None):
 def public_projection(report):
     # Explicit allowlist: never publish receipt values, source URLs, notes, tokens or private exports.
     return {'schema': report['schema'], 'goal_ref': GOAL, 'source_head': report['source_head'],
+            'source_digest': report['source_digest'],
             'observed_at': report['observed_at'], 'fingerprint': report['fingerprint'],
             'metrics': {key: {'status': row['status'], 'value': row['value'] if key in PUBLIC_METRICS else None}
                         for key, row in report['metrics'].items()},

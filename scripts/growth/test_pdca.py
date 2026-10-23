@@ -71,6 +71,14 @@ class CycleTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(json.loads(result.stdout)['result'], 'unchanged')
 
+    def test_projection_only_git_commit_does_not_manufacture_a_delta(self):
+        experiments = pdca.read(pdca.ROOT/'scripts/growth/experiments.json')['experiments']
+        args = [self.data, experiments, self.tasks, pdca.stamp(NOW), list(self.data['metrics'])]
+        first = pdca.cycle(*args, head='a'*40)
+        second = pdca.cycle(*args, head='b'*40)
+        self.assertEqual(first['fingerprint'], second['fingerprint'])
+        self.assertNotEqual(first['source_head'], second['source_head'])
+
     def test_deadline_alone_cannot_start_or_reject_an_experiment(self):
         result = self.cli('weekly')
         self.assertEqual(result.returncode, 0, result.stderr)
