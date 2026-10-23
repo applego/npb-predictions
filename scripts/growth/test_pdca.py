@@ -32,14 +32,14 @@ class CycleTests(unittest.TestCase):
                        'notes': 'growth_wait={"kind":"publication","resume":"approved PR release"}'},
                       {'id': 'npb-predictions-3lw.2', 'status': 'open', 'priority': 1}]
 
-    def cli(self, command='daily', data=None, tasks=None):
+    def cli(self, command='daily', data=None, tasks=None, publish=True):
         self.measurement.write_text(json.dumps(data if data is not None else self.data))
         self.tracker.write_text(json.dumps(tasks if tasks is not None else self.tasks))
         env = {k: v for k, v in os.environ.items() if not k.startswith('GIT_')}
-        return subprocess.run([sys.executable, str(SCRIPT), command, '--measurement', str(self.measurement),
+        args = [sys.executable, str(SCRIPT), command, '--measurement', str(self.measurement),
                                '--tracker', str(self.tracker), '--now', NOW, '--state-dir', str(self.root/'state'),
-                               '--public-output', str(self.root/'public.json')],
-                              env=env, capture_output=True, text=True)
+                               *(['--public-output', str(self.root/'public.json')] if publish else [])]
+        return subprocess.run(args, env=env, capture_output=True, text=True)
 
     def test_missing_profit_and_publication_wait_do_not_block_ready_work(self):
         result = self.cli()
@@ -87,6 +87,18 @@ class CycleTests(unittest.TestCase):
         self.assertEqual((self.root/'public.json').read_bytes(), public)
         private = json.loads((self.root/'state/latest.json').read_text())
         self.assertEqual(private['metrics']['x_share_starts_28d']['data_through'], '2026-10-23T15:00:00Z')
+
+    def test_public_projection_catches_up_without_collecting_again(self):
+        self.assertEqual(self.cli().returncode, 0)
+        self.data['metrics']['public_result_routes']['value'] = 2
+        self.assertEqual(self.cli(publish=False).returncode, 0)
+        self.assertEqual(json.loads((self.root/'public.json').read_text())['metrics']['public_result_routes']['value'], 3)
+        # publish does not read this now-invalid measurement or query any source.
+        self.measurement.write_text('not JSON')
+        result = subprocess.run([sys.executable, str(SCRIPT), 'publish', '--state-dir', str(self.root/'state'),
+                                 '--public-output', str(self.root/'public.json')], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads((self.root/'public.json').read_text())['metrics']['public_result_routes']['value'], 2)
 
     def test_projection_only_git_commit_does_not_manufacture_a_delta(self):
         experiments = pdca.read(pdca.ROOT/'scripts/growth/experiments.json')['experiments']

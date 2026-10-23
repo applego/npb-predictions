@@ -185,9 +185,17 @@ def goal_graph(report):
             'warning': 'daily anonymous tabs are not people; share/save starts are not completed posts or profit'}
 
 
+def publish_public(report, path):
+    projection = public_projection(report)
+    previous = read(path) if path.exists() else None
+    if previous is None or previous['fingerprint'] != projection['fingerprint']:
+        atomic(path, projection)
+    return projection
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command', choices=['daily', 'weekly', 'status', 'graph', 'levers', 'hypotheses'])
+    parser.add_argument('command', choices=['daily', 'weekly', 'status', 'graph', 'publish', 'levers', 'hypotheses'])
     parser.add_argument('--measurement', type=Path)
     parser.add_argument('--tracker', type=Path)
     parser.add_argument('--tracker-repo', type=Path, default=ROOT)
@@ -216,6 +224,11 @@ def main():
         return 0
     if (Path.home()/'.config/npb-predictions/goal-loop.stop').exists():
         print(json.dumps({'result': 'owner_stopped', 'work_required': False}))
+        return 0
+    if args.command == 'publish':
+        if not args.public_output:
+            raise ValueError('publish needs an explicit public destination')
+        print(json.dumps(publish_public(read(args.state_dir/'latest.json'), args.public_output), ensure_ascii=False))
         return 0
     now = stamp(args.now) if args.now else dt.datetime.now(dt.timezone.utc)
     metric_ids = re.findall(r'^  - id: ([a-z0-9_]+)$', (ROOT/'GOAL.md').read_text(), re.M)
@@ -253,8 +266,8 @@ def main():
         if changed:
             with (args.state_dir/'history.jsonl').open('a') as history:
                 history.write(json.dumps(report, ensure_ascii=False, allow_nan=False)+'\n')
-        if args.public_output and (changed or not args.public_output.exists()):
-            atomic(args.public_output, public_projection(report))
+        if args.public_output:
+            publish_public(report, args.public_output)
     print(json.dumps(report, ensure_ascii=False, allow_nan=False))
     return 0
 

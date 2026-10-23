@@ -50,6 +50,8 @@ cronではgoal-loopの現在地とこのadapterの実PDCAを読む。native loop
 
 ローカルの生receipt/history/graphは `~/.local/state/npb-predictions/growth/`（private）。
 `docs/growth/status.json` は秘密・請求値・内部source URL・notesを除いたレビュー済み共有要約。
+`pdca.py publish --public-output docs/growth/status.json` は既存のprivate captureから要約だけを作り、再計測しない。
+private更新済みでもpublicの指紋が古ければ追従し、同じ指紋なら要約の時刻・commitだけを書き換えない。
 意味のある変更時に同じPRへ反映する。GitHubは公開repoなので生ログや外部請求exportを載せない。
 既存PRのbranch/commitをどのPCからも取得できるようにし、各Agentは作業前にこの文書と共有要約を読む。
 
