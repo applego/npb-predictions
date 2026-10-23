@@ -70,6 +70,16 @@
       "test_id": "site and social previews use the same new name",
       "expected_outcome": "新名称と共有文を確認し、1200x630のOG画像を取得できる",
       "max_operations": 6
+    },
+    {
+      "id": "watch-guide",
+      "question": "見たい試合の放送・配信先を公式案内で調べられるか",
+      "role": "結果から観戦に進みたいファン",
+      "route": "/resources",
+      "fixture": "未設定の広告URL（通常リンク）",
+      "test_id": "watch guide opens the official broadcast announcement",
+      "expected_outcome": "視聴方法リンクを押すとNPB公式の中継案内を別タブで開ける",
+      "max_operations": 2
     }
   ]
 }

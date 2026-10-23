@@ -131,6 +131,28 @@ test.describe("release surface", () => {
     expect(missing).toEqual([]);
   });
 
+  test("watch guide opens the official broadcast announcement", async ({ page }) => {
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    page.on("console", (message) => {
+      if (message.type() === "error") errors.push(message.text());
+    });
+    await loadReleaseSurface(page, "/resources");
+    const link = page.getByRole("link", { name: /視聴方法を確認する/ });
+    await expect(link).toHaveAttribute("href", "https://npb.jp/news/detail/20261020_02.html");
+    // Do not navigate to or generate analytics on the real external service in CI.
+    await page.context().route("https://npb.jp/news/detail/20261020_02.html", (route) =>
+      route.fulfill({ contentType: "text/html", body: "<h1>Official broadcast announcement</h1>" }),
+    );
+    const popupPromise = page.waitForEvent("popup");
+    await link.click();
+    const popup = await popupPromise;
+    await expect(popup).toHaveURL("https://npb.jp/news/detail/20261020_02.html");
+    await expect(popup.getByRole("heading")).toHaveText("Official broadcast announcement");
+    await popup.close();
+    expect(errors).toEqual([]);
+  });
+
   for (const route of PUBLIC_ROUTES) {
     test(`${route} renders without runtime failure`, async ({ page }) => {
       await loadReleaseSurface(page, route);

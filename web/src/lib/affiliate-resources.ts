@@ -55,9 +55,9 @@ const RESOURCE_CONFIGS: ResourceConfig[] = [
     provider: "official",
     title: "試合を追うための配信・放送",
     description:
-      "毎日の順位変動を追う人向け。公式配信や放送サービスの比較ページに差し替えられる枠です。",
+      "テレビ・ネット中継を試合ごとに確認。契約前に、見たい試合の配信対象と利用条件を公式案内で確かめましょう。",
     label: "視聴方法を確認する",
-    fallbackHref: "https://npb.jp/",
+    fallbackHref: "https://npb.jp/news/detail/20261020_02.html",
     envKey: "AFFILIATE_STREAMING_URL",
   },
   {

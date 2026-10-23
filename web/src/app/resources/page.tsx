@@ -26,7 +26,6 @@ const CATEGORY_LABELS: Record<AffiliateCategory, string> = {
 
 export default function ResourcesPage() {
   const resources = getAffiliateResources();
-  const monetizedCount = resources.filter((resource) => resource.monetized).length;
 
   return (
     <div className="space-y-6">
@@ -72,7 +71,7 @@ export default function ResourcesPage() {
             className="mt-4 max-w-2xl text-sm leading-7"
             style={{ color: "var(--text-secondary)" }}
           >
-            順位予想は、試合を追うほど面白くなります。メモ、読み物、視聴環境、観戦小物をここにまとめていきます。
+            試合を見たい、予想を深めたい、球場観戦を楽しみたい。目的に合う案内や道具を探せます。
           </p>
           <p
             className="mt-4 rounded-lg px-4 py-3 text-xs leading-6"
@@ -143,10 +142,10 @@ export default function ResourcesPage() {
         }}
       >
         <p className="font-bold" style={{ color: "var(--text-primary)" }}>
-          今日の状態
+          観戦の前に、予想結果もチェック
         </p>
         <p className="mt-1">
-          収益化済みリンク: {monetizedCount}件 / {resources.length}件。未設定の枠は通常リンクとして動き、アフィリエイトURLを環境変数に入れると同じ画面のまま収益リンクへ切り替わります。
+          解説者の予想と実際の順位を見比べて、次に注目したい球団を探せます。
         </p>
         <div className="mt-3">
           <Link

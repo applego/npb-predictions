@@ -17,7 +17,7 @@ objects:
     attributes: [名前, リーグ, 予想順位, 実順位, 順位差]
   - name: 観戦ガイド
     collection: /resources
-    attributes: [用途, 掲載元, PR表示]
+    attributes: [用途, 掲載元, PR表示, 公式の中継案内]
     actions: [視聴方法を調べる]
 url_state: [year, league, q, perfect, '#predictor-id']
 forbidden_terms: [的中率100パーセント保証, 歴代最高]
