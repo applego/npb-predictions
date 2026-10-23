@@ -36,7 +36,7 @@ def digest(value):
 
 def source_digest():
     # The generated projection's own commit must not manufacture a new business delta.
-    names = ['GOAL.md', 'AGENTS.md', '.agents/goal-loop.json', '.agents/goal-tree.json',
+    names = ['GOAL.md', 'AGENTS.md', 'MONETIZATION.md', '.agents/goal-loop.json', '.agents/goal-tree.json',
              'scripts/growth/pdca.py', 'scripts/growth/measure.py', 'scripts/growth/experiments.json', 'docs/growth/loop.md']
     return digest({name: hashlib.sha256((ROOT/name).read_bytes()).hexdigest() for name in names})
 
@@ -232,6 +232,7 @@ def main():
         return 0
     now = stamp(args.now) if args.now else dt.datetime.now(dt.timezone.utc)
     metric_ids = re.findall(r'^  - id: ([a-z0-9_]+)$', (ROOT/'GOAL.md').read_text(), re.M)
+    previous = None
     if args.measurement:
         raw = read(args.measurement)
     elif args.command == 'weekly':
@@ -246,10 +247,22 @@ def main():
             # Acquisition failure is explicit missing evidence, not a ban on unrelated ready repairs.
             # Explicitly supplied corrupt/wrong-subject receipts above still fail closed.
             raw = {'goal_ref': GOAL, 'metrics': {}, 'collection_error': 'measurement_unavailable'}
-    data = read(args.tracker) if args.tracker else json.loads(run(['br', 'list', '--status', 'open', '--json'], args.tracker_repo))
+    if args.tracker:
+        data = read(args.tracker)
+    elif previous and 'tracker_snapshot' in previous:
+        data = previous['tracker_snapshot']
+    else:
+        data = json.loads(run(['br', 'list', '--status', 'open', '--status', 'in_progress', '--json'], args.tracker_repo))
     tasks = data if isinstance(data, list) else data['issues']
+    parent = read(ROOT/'.agents/goal-loop.json')['wip']['item']
+    # Resume this automation's work; never select the umbrella or take another actor's active lane.
+    tasks = [task for task in tasks if task['id'] != parent and
+             (task.get('status') != 'in_progress' or task.get('assignee') == 'npb-automation')]
     head = run(['git', 'rev-parse', 'HEAD'], ROOT).strip()
-    report = cycle(raw, exps, tasks, now, metric_ids, head, args.exclude_item)
+    exclude = args.exclude_item if args.exclude_item is not None else (previous or {}).get('excluded_item')
+    report = cycle(raw, exps, tasks, now, metric_ids, head, exclude)
+    report['tracker_snapshot'] = tasks  # Private only; public projection has an explicit allowlist.
+    report['excluded_item'] = exclude
     report['collection_error'] = raw.get('collection_error')
     args.state_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
     with (args.state_dir/'cycle.lock').open('a') as lock:

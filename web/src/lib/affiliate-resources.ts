@@ -20,6 +20,7 @@ type ResourceConfig = {
   description: string;
   label: string;
   fallbackHref: string;
+  fallbackTitle?: string;
   envKey?: string;
 };
 
@@ -58,6 +59,7 @@ const RESOURCE_CONFIGS: ResourceConfig[] = [
       "テレビ・ネット中継を試合ごとに確認。契約前に、見たい試合の配信対象と利用条件を公式案内で確かめましょう。",
     label: "視聴方法を確認する",
     fallbackHref: "https://npb.jp/news/detail/20261020_02.html",
+    fallbackTitle: "日本シリーズ2026のテレビ・ネット中継",
     envKey: "AFFILIATE_STREAMING_URL",
   },
   {
@@ -116,7 +118,7 @@ export function getAffiliateResources(): AffiliateResource[] {
       id: resource.id,
       category: resource.category,
       provider: resource.provider,
-      title: resource.title,
+      title: configured ? resource.title : (resource.fallbackTitle ?? resource.title),
       description: resource.description,
       label: resource.label,
       href,

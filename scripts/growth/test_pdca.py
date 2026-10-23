@@ -32,13 +32,15 @@ class CycleTests(unittest.TestCase):
                        'notes': 'growth_wait={"kind":"publication","resume":"approved PR release"}'},
                       {'id': 'npb-predictions-3lw.2', 'status': 'open', 'priority': 1}]
 
-    def cli(self, command='daily', data=None, tasks=None, publish=True):
+    def cli(self, command='daily', data=None, tasks=None, publish=True, exclude=None):
         self.measurement.write_text(json.dumps(data if data is not None else self.data))
         self.tracker.write_text(json.dumps(tasks if tasks is not None else self.tasks))
         env = {k: v for k, v in os.environ.items() if not k.startswith('GIT_')}
         args = [sys.executable, str(SCRIPT), command, '--measurement', str(self.measurement),
                                '--tracker', str(self.tracker), '--now', NOW, '--state-dir', str(self.root/'state'),
                                *(['--public-output', str(self.root/'public.json')] if publish else [])]
+        if exclude:
+            args += ['--exclude-item', exclude]
         return subprocess.run(args, env=env, capture_output=True, text=True)
 
     def test_missing_profit_and_publication_wait_do_not_block_ready_work(self):
@@ -135,6 +137,48 @@ class CycleTests(unittest.TestCase):
         checks = json.loads(result.stdout)['C']['experiments']
         self.assertTrue(all(row['verdict'] is None for row in checks))
         self.assertTrue(all(row['state'] == 'awaiting_publication_evidence' for row in checks))
+
+    def test_native_tracker_resumes_owned_active_work_without_taking_other_lanes(self):
+        self.measurement.write_text(json.dumps(self.data))
+        rows = [
+            {'id': 'npb-predictions-3lw', 'status': 'in_progress', 'assignee': 'npb-automation', 'priority': 0},
+            {'id': 'npb-predictions-3lw.4', 'status': 'in_progress', 'assignee': 'npb-automation', 'priority': 1},
+            {'id': 'npb-predictions-other', 'status': 'in_progress', 'assignee': 'another-actor', 'priority': 0},
+        ]
+        def external(argv, cwd):
+            if argv == ['git', 'rev-parse', 'HEAD']:
+                return 'a'*40
+            if argv[:2] == ['br', 'list']:
+                # Reproduce br's repeated status filters, including the old open-only query.
+                self.assertEqual(argv[-1], '--json')
+                statuses = [argv[i+1] for i, item in enumerate(argv) if item == '--status']
+                self.assertEqual(argv[2:-1], [part for status in statuses for part in ['--status', status]])
+                return json.dumps({'issues': [row for row in rows if row['status'] in statuses]})
+            raise AssertionError('unexpected external command')
+        args = [str(SCRIPT), 'daily', '--measurement', str(self.measurement), '--now', NOW,
+                '--state-dir', str(self.root/'state')]
+        out = io.StringIO()
+        with patch.object(sys, 'argv', args), patch.object(pdca, 'run', external), contextlib.redirect_stdout(out):
+            self.assertEqual(pdca.main(), 0)
+        report = json.loads(out.getvalue())
+        self.assertEqual(report['D']['tracker_item'], 'npb-predictions-3lw.4')
+        self.assertEqual([row['id'] for row in report['D']['queue']], ['npb-predictions-3lw.4'])
+
+    def test_weekly_reuses_daily_tracker_and_exclusion_without_requerying_sources(self):
+        self.assertEqual(self.cli(exclude='npb-predictions-3lw.2').returncode, 0)
+        before = json.loads((self.root/'state/latest.json').read_text())
+        def external(argv, cwd):
+            if argv == ['git', 'rev-parse', 'HEAD']:
+                return before['source_head']
+            raise AssertionError('weekly must not collect metrics or query another tracker')
+        out = io.StringIO()
+        args = [str(SCRIPT), 'weekly', '--state-dir', str(self.root/'state'), '--now', NOW]
+        with patch.object(sys, 'argv', args), patch.object(pdca, 'run', external), contextlib.redirect_stdout(out):
+            self.assertEqual(pdca.main(), 0)
+        report = json.loads(out.getvalue())
+        self.assertEqual(report['D'], before['D'])
+        self.assertFalse(report['changed'])
+        self.assertEqual(report['excluded_item'], 'npb-predictions-3lw.2')
 
     def test_invalid_subject_and_future_sources_fail_without_overwriting_state(self):
         self.assertEqual(self.cli().returncode, 0)

@@ -138,6 +138,7 @@ test.describe("release surface", () => {
       if (message.type() === "error") errors.push(message.text());
     });
     await loadReleaseSurface(page, "/resources");
+    await expect(page.getByRole("heading", { name: "日本シリーズ2026のテレビ・ネット中継" })).toBeVisible();
     const link = page.getByRole("link", { name: /視聴方法を確認する/ });
     await expect(link).toHaveAttribute("href", "https://npb.jp/news/detail/20261020_02.html");
     // Do not navigate to or generate analytics on the real external service in CI.
