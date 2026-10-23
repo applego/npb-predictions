@@ -49,7 +49,7 @@ describe("scheduled standings ingestion", () => {
     mocks.previous = incoming.map((row, i) => ({ ...row, snapshotDate: new Date(i < 8 ? '2026-10-20' : '2026-10-19') }));
     const response = await cronPOST(new Request('https://example.com'));
     expect(response.status).toBe(200);
-    expect((await response.json()).seasons[0]).toMatchObject({ inserted: true, changed: 0 });
+    expect(await response.json()).toMatchObject({ seasons: [{ inserted: true, changed: 0 }] });
     expect(mocks.batches).toBe(1);
     expect(mocks.saved.flat()).toHaveLength(12);
   });
