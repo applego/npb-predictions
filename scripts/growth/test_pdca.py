@@ -1,5 +1,7 @@
 import datetime as dt
 import importlib.util
+import contextlib
+import io
 import json
 import os
 from pathlib import Path
@@ -7,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 SCRIPT = Path(__file__).with_name('pdca.py')
 spec = importlib.util.spec_from_file_location('npb_pdca', SCRIPT)
@@ -78,6 +81,27 @@ class CycleTests(unittest.TestCase):
         second = pdca.cycle(*args, head='b'*40)
         self.assertEqual(first['fingerprint'], second['fingerprint'])
         self.assertNotEqual(first['source_head'], second['source_head'])
+
+    def test_failed_measurement_command_keeps_ready_work_and_explicit_nulls(self):
+        self.tracker.write_text(json.dumps(self.tasks))
+        calls = []
+        def external(argv, cwd):
+            calls.append(argv)
+            if argv == [sys.executable, 'scripts/growth/measure.py']:
+                raise ValueError('authentication or transport failed')
+            if argv == ['git', 'rev-parse', 'HEAD']:
+                return 'a'*40
+            raise AssertionError('unexpected external command')
+        out = io.StringIO()
+        args = [str(SCRIPT), 'daily', '--tracker', str(self.tracker), '--now', NOW,
+                '--state-dir', str(self.root/'state')]
+        with patch.object(sys, 'argv', args), patch.object(pdca, 'run', external), contextlib.redirect_stdout(out):
+            self.assertEqual(pdca.main(), 0)
+        report = json.loads(out.getvalue())
+        self.assertEqual(report['D']['tracker_item'], 'npb-predictions-3lw.2')
+        self.assertEqual(report['collection_error'], 'measurement_unavailable')
+        self.assertTrue(all(row['value'] is None for row in report['metrics'].values()))
+        self.assertEqual(len(calls), 2)
 
     def test_deadline_alone_cannot_start_or_reject_an_experiment(self):
         result = self.cli('weekly')

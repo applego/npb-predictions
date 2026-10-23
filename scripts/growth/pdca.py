@@ -224,11 +224,17 @@ def main():
         # Reuse the captured daily receipt; never collect twice for P vs C.
         raw = {'goal_ref': GOAL, 'metrics': read(args.state_dir/'latest.json')['metrics']}
     else:
-        raw = json.loads(run([sys.executable, 'scripts/growth/measure.py'], ROOT))
+        try:
+            raw = json.loads(run([sys.executable, 'scripts/growth/measure.py'], ROOT))
+        except (ValueError, subprocess.SubprocessError):
+            # Acquisition failure is explicit missing evidence, not a ban on unrelated ready repairs.
+            # Explicitly supplied corrupt/wrong-subject receipts above still fail closed.
+            raw = {'goal_ref': GOAL, 'metrics': {}, 'collection_error': 'measurement_unavailable'}
     data = read(args.tracker) if args.tracker else json.loads(run(['br', 'list', '--status', 'open', '--json'], args.tracker_repo))
     tasks = data if isinstance(data, list) else data['issues']
     head = run(['git', 'rev-parse', 'HEAD'], ROOT).strip()
     report = cycle(raw, exps, tasks, now, metric_ids, head, args.exclude_item)
+    report['collection_error'] = raw.get('collection_error')
     args.state_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
     with (args.state_dir/'cycle.lock').open('a') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
