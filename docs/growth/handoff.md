@@ -4,7 +4,38 @@
 実験・目標は既存台帳とGOAL。秘密や生の請求exportは載せない。
 実装は [PR #80](https://github.com/applego/npb-predictions/pull/80) のbranchにあり、mainは未反映。
 
-## 他のCodexが実際に読んだ証拠
+## 利益経路と日次変更の追加確認
+
+`npb-predictions-3lw.4` は利用者が公式の中継案内へ進む修復と、6利益経路を比較して毎日実変更へ進む契約。
+候補は配信/放送、書籍/観戦道具、正規チケット/遠征、広告、有料機能、法人/スポンサー。
+MONETIZATION.mdが比較の正本で、候補6件を同時実験にはしない。ASP/費用/利益はnull。
+既存cronの09:45は比較→実変更、19:45は確認/修復を優先する設定を保存し完全一致でread-backした。
+新設定の定時起動・本番反映・利用者成果はまだ未確認。
+
+既存の同じCodexが固定追加source `a68ceeb4f59b23db8657d61a42aeb3e51e8e5fba` を実読し、
+source_digestを再計算一致、隔離sourceのPython 23件PASS、追加P0/P1/P2なしと返した。
+先のf086667への指摘（古い共有要約、季節限定リンクの明示）は、以下の新captureと
+画面の「日本シリーズ2026」表示で対応した。設定済みの広告URLには汎用タイトルを維持する。
+
+追加修復は、自担当in_progressをopenと合わせて再開対象とし、親・他担当の進行中仕事を除外すること、
+weeklyがdailyのprivate tracker snapshotと除外条件も再利用すること。
+旧open限定・weekly別queryの2反例は回帰テストでFAIL。private snapshotを公開projectionへ出さない。
+同じ測定を使うdaily→weeklyはfingerprint一致/changed=falseを実CLIで確認した。
+
+```json
+{
+  "source_head": "a68ceeb4f59b23db8657d61a42aeb3e51e8e5fba",
+  "source_digest": "e30233b1b90656953f53c94f4065ff770e50e9084df6b16bc5054cf57d346c22",
+  "fingerprint": "0090e82e96bc08e04822b3ba22c97a6b9efb120942834c6ccf5f3d6538b629e7",
+  "selected_tracker_item": "npb-predictions-3lw.2"
+}
+```
+
+本回の手動選択3lw.4はユーザーの利益経路依頼による。次の自動readyは3lw.2。
+3lw.4はPR80の別承認公開後のresourcesと公式案内・戻り導線のread-back待ち。
+23件のPython検査はfrontend E2Eや本番反映の証拠に拡張しない。Claudeへの受領も未確認。
+
+## 前のCodexが実際に読んだ証拠
 
 既存チャット「⚾️リーグ結果UIを改善」のCodexへ、既存担当への受領と読み取り専用レビューを依頼した。
 新しいchat/Agentは作成していない。受領側は固定head
