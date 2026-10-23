@@ -1,5 +1,9 @@
 # 獲得・収益化の運用
 
+循環の実行契約は [loop.md](../../docs/growth/loop.md)、他Agentの実読・次の担当範囲は
+[handoff.md](../../docs/growth/handoff.md)、安全な実測投影は [status.json](../../docs/growth/status.json)。
+ローカルmemoryに書いたことだけで配信・受領済みとせず、これらを同じPRで共有する。
+
 正本: GOAL.md / .agents/goal-loop.json。進捗: npb-predictions-3lw。担当: このrepoの定期実行。
 毎回、現行GOALと仮説・未判定実験を読み、公開データと外部指標を再測定する。最重要の利用者成果に必要な関連修正を40分以内でまとめ、修正件数やPR作成を終了理由にしない。
 無料のコード/UI/SEO改善は検証・PRまで進める。公開・費用・契約・権限は具体的材料をdecisionsへ。
