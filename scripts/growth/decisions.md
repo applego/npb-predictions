@@ -109,3 +109,31 @@ PR80は新しいmainを取り込み、v2全対象保存版→結果表示を接�
 既存Gmailで10/22以降のCloudflare/A8/fancs請求/確定/返金を検索して該当0、接続Driveのnpb名検索も0。不存在/0円の証明ではない。
 既存CF/A8の通常ログイン後にread-onlyのanalytics/invoice/ASP確定・取消・返金・手数料exportへ接続し、Agent/API/data/infraの期間配賦を照合する必要がある。
 認証/権限の新規付与、契約、案件掲載は未実行。主指標・ASP・流入・共有開始・日別タブはnull、暫定1円目標の達成認定なし。
+
+
+## 2026-10-23 09:45 JST: D1回復後も保存結果トップのCPU上限を観測
+
+fresh main / 公開buildは408cf07。09:42 JSTの公開healthではD1上限エラーは解消し、image-gen/news-feed/commentator-rankingはhealthy。
+standings-freshnessだけが最終snapshot 2026-10-21T09:48:53Zを38時間経過と判定した。シーズン終了後の自動更新停止と整合しないため、これだけを根拠に日次更新を再実行しない。
+既存live release gateを一度・各経路1試行で実行し、season画像・新聞画像・通算一覧が503で全体FAIL。scoreboardのHTTP200は内容全体の正しさの保証にしない。
+実IABで2026パの保存結果トップがCloudflare1102（2026-10-23T00:43:39Z、Ray a4ecb5737f6bf3d2）。保存コアの正常表示は今回未確認。D1の回復を公開復旧と呼ばない。
+
+PR80の既存laneに、保存結果の年度出典を人物・variantで索引化する修復と、同一scopeの重複集計削減を追加する。順位・出典・ID・母集団を変えないことを3scopeの全JSON一致と入口テストで確認する。
+また、最新の各リーグ6球団の完全性・明示final・時刻を検証し、両リーグfinalのときだけ経過時間による警告を免除する。片リーグ欠損・未来・暫定の遅延は免除しない。
+ローカルCPU測定は計算部分の改善証拠であり、本番CPUや公開復旧を保証しない。API公開・本番全対象取得・v2採用・公開gateは引き続き未達。
+
+推奨（既定）: 最新PR80の検証結果を材料に、別承認の既存PR→main公開経路で適用後、保存結果の主要導線とlive gateをread-only再確認する。
+その後、公開archive応答を新規ファイルへ取得し、source/hash/定義された母集団/正規採用ID/登録時刻/lock=nullを照合する。現在のv1の270/209件とhashは維持する。
+代替: 現行公開版を維持する場合は1102の再発と未収録範囲が残る。無料枠拡張・DB直接操作・workflow dispatchは今回実施しない。
+更新workflowは本当に最終データ不足が確認された場合だけ個別判断。単なる38時間警告への対応として実行しない。
+
+旧記録の「1改善上限」は10/22のオーナー訂正で失効。今回も1成果に必要な関連修復としてまとめ、未判定2実験は増やさない。
+収益sourceは専用receipt/admin/ASP設定なし、Wrangler OAuth metadataは期限切れ。既存CFブラウザはログイン画面、A8は空のログイン欄。
+10/22以降の既存GmailのCF/A8/fancs請求・確定・返金関連検索は0件であり、成果/費用0の証拠ではない。
+既存通常ログイン後のCF解析/請求・ASP確定/取消/返金/手数料とAgent/API/data/infra配賦のread-only照合が必要。profit・ASP・funnelはnull、暫定1円目標は未達認定を維持する。
+
+検証結果: 325単体/Python6/Next+CF build/データ検証/性能budget/空D1の保存版E2Eが成功。セ・パ・総合の全JSONは旧版と一致。ローカル実IABでパ209件・検索・6行内訳・console警告/エラー0を確認。
+独立レビューはClaude週間上限で実行できず、既存ChatGPT Proで固定commitの1/12行を照合してから差分と6ファイル全文・周辺sourceをレビューした。
+会話: https://chatgpt.com/c/6adaaf55-d9a0-83ee-8370-65d57d530010 （01-oracleのmanual CUA経路、slug=manual-npb-20261023、実モデル/versionはUI非公開でnull、表示Proを確認）。
+初回P2の「5分以内の未来を正常扱い」は、実SQLの60秒先反例FAIL→health専用guardでPASSに修復。final/provisional×now/1秒先/300秒先の6境界も追加し、同一会話の再読でblocking0。reviewerはtest/build/browserを実行していない。
+UBS全体は既知wrapper停止のため未達。doctorも6分超で止まり自分の2processだけ終了、feedbackを残した。変更コードの直接JS検査はcritical0/warning0を出したが、最終終了statusは別に確認し、全体検査のPASSへ置き換えない。

@@ -32,8 +32,8 @@ export function seasonResultsFromArchive(saved: PublishedArchive, year: number, 
   summary.entries.forEach((entry) => { entry.populationLabel = "公開保存分内"; });
   return { year, years: saved.years, summary, error: null, coverage: {
     kind: "public-archive", observedAt: saved.provenance.predictionsObservedAt,
-    central: summarizeResults(picks, standings, "central").eligible,
-    pacific: summarizeResults(picks, standings, "pacific").eligible,
+    central: scope === "central" ? summary.eligible : summarizeResults(picks, standings, "central").eligible,
+    pacific: scope === "pacific" ? summary.eligible : summarizeResults(picks, standings, "pacific").eligible,
     ...(full ? { selectionEvidence: {
       registrations: full.population.selectedPredictions, candidates: full.population.predictions,
       missingLockedAt: full.predictions.filter((person) => person.selected && person.lockedAt === null).length,

@@ -25,8 +25,9 @@ import {
   rankingPicks,
   actualTeamStandings,
 } from "@/db/schema";
-import { desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { generateNewsFeed } from "@/lib/news-feed";
+import { latestResultSnapshot, RESULT_LEAGUES } from "@/lib/season-results";
 
 // If actual_team_standings hasn't been updated for this long, the daily-scores
 // cron is silently broken and LIVE SCOREBOARD will progressively drift from
@@ -195,21 +196,30 @@ async function checkStandingsFreshness(): Promise<FeatureStatus> {
     if (!activeSeason) {
       return { ...base, latestError: "no active season" };
     }
-    const [latest] = await db
-      .select({ snapshotDate: actualTeamStandings.snapshotDate })
-      .from(actualTeamStandings)
-      .where(eq(actualTeamStandings.seasonId, activeSeason.id))
-      .orderBy(desc(actualTeamStandings.snapshotDate))
-      .limit(1);
-    if (!latest) {
-      return { ...base, latestError: `no actual_team_standings rows for season ${activeSeason.year}` };
+    const now = Date.now();
+    const snapshots = await Promise.all(RESULT_LEAGUES.map(async (league) => {
+      // Seven rows detect an invalid extra rank as well as a partial newest
+      // snapshot. Never stitch its missing ranks from an older snapshot.
+      const rows = await db.select({
+        league: actualTeamStandings.league, rank: actualTeamStandings.rank,
+        teamName: actualTeamStandings.teamName, snapshotDate: actualTeamStandings.snapshotDate,
+        isFinal: actualTeamStandings.isFinal,
+      }).from(actualTeamStandings)
+        .where(and(eq(actualTeamStandings.seasonId, activeSeason.id), eq(actualTeamStandings.league, league)))
+        .orderBy(desc(actualTeamStandings.snapshotDate)).limit(7);
+      return latestResultSnapshot(rows.map((row) => ({ ...row, snapshotDate: row.snapshotDate.toISOString() })), league, now);
+    }));
+    // Rendering tolerates small clock skew; a health attestation must not
+    // certify a final snapshot whose observation time is still in the future.
+    if (snapshots.some((snapshot) => snapshot.status === "unavailable" ||
+      (snapshot.updatedAt !== null && Date.parse(snapshot.updatedAt) > now))) {
+      return { ...base, latestError: `incomplete or invalid latest league standings for season ${activeSeason.year}`,
+        detail: { seasonYear: activeSeason.year, status: "unavailable" } };
     }
-    const latestMs =
-      latest.snapshotDate instanceof Date
-        ? latest.snapshotDate.getTime()
-        : Number(latest.snapshotDate) * 1000;
-    const ageMs = Date.now() - latestMs;
-    const healthy = ageMs < STANDINGS_STALE_THRESHOLD_MS;
+    const oldestMs = Math.min(...snapshots.map((snapshot) => Date.parse(snapshot.updatedAt!)));
+    const ageMs = now - oldestMs;
+    const final = snapshots.every((snapshot) => snapshot.status === "final");
+    const healthy = snapshots.every((snapshot) => snapshot.status === "final" || now - Date.parse(snapshot.updatedAt!) < STANDINGS_STALE_THRESHOLD_MS);
     return {
       ...base,
       healthy,
@@ -217,9 +227,10 @@ async function checkStandingsFreshness(): Promise<FeatureStatus> {
       latestError: healthy
         ? null
         : `standings stale: latest snapshot ${Math.floor(ageMs / 3_600_000)}h old (threshold ${Math.floor(STANDINGS_STALE_THRESHOLD_MS / 3_600_000)}h). daily-scores workflow may be down.`,
-      latestAt: new Date(latestMs).toISOString(),
+      latestAt: new Date(oldestMs).toISOString(),
       detail: {
         seasonYear: activeSeason.year,
+        status: final ? "final" : "provisional",
         ageHours: Math.floor(ageMs / 3_600_000),
         thresholdHours: Math.floor(STANDINGS_STALE_THRESHOLD_MS / 3_600_000),
       },

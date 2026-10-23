@@ -24,4 +24,20 @@ describe("prediction provenance", () => {
   it("keeps missing league provenance explicit in a combined card", () => {
     expect(withPredictionSources(picks, 2026, "all")[0].source).toBe("セ：web Sportiva（3/27） ／ パ：当年出典未確認");
   });
+  it("preserves every exact citation in catalog order without repeatedly reading unrelated authors", () => {
+    let nameReads = 0;
+    const records = Array.from({ length: 300 }, (_, i) => ({
+      get name() { nameReads++; return `解説者${i}`; }, variant: null, rankings: teams, source: `媒体${i}`, date: null,
+    }));
+    const input = records.flatMap((_, i) => picks.map((row) => ({ ...row, predictionId: i + 1, userId: i + 1, name: `解説者${i}` })));
+    const data = { "2026": { central: [...records,
+      { name: "解説者0", variant: null, rankings: teams, source: "追加媒体", date: "3/20" },
+      { name: "解説者0", variant: "別版", rankings: teams, source: "採用しない媒体", date: null },
+    ] } };
+    const result = withPredictionSources(input, 2026, "central", data);
+    expect(result[0].source).toBe("媒体0・追加媒体（3/20）");
+    expect(result.at(-1)?.source).toBe("媒体299");
+    // Dataset-access budget, independent of machine speed and the indexing implementation.
+    expect(nameReads).toBeLessThanOrEqual(records.length * 3);
+  });
 });
