@@ -1,10 +1,10 @@
 {
   "schema": "npb-growth-pdca.v1",
   "goal_ref": "npb-predictions",
-  "source_head": "a68ceeb4f59b23db8657d61a42aeb3e51e8e5fba",
+  "source_head": "f5ea3e23c9f14060bb8e0f3fd01756525dd2b9e4",
   "source_digest": "e30233b1b90656953f53c94f4065ff770e50e9084df6b16bc5054cf57d346c22",
-  "observed_at": "2026-10-23T17:42:41.224072+00:00",
-  "fingerprint": "0090e82e96bc08e04822b3ba22c97a6b9efb120942834c6ccf5f3d6538b629e7",
+  "observed_at": "2026-10-24T01:05:06.694965+00:00",
+  "fingerprint": "fcf75021189b64021368a2a86616bd09a8b2c1e2efe44ed77e9d9bc481535bd0",
   "metrics": {
     "contribution_profit_28d": {
       "status": "missing",
@@ -43,8 +43,8 @@
       "value": null
     }
   },
-  "selected_tracker_item": "npb-predictions-3lw.2",
-  "work_required": true,
+  "selected_tracker_item": null,
+  "work_required": false,
   "experiments": [
     {
       "id": "results-x-01",

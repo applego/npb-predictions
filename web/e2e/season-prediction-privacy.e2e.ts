@@ -35,6 +35,10 @@ test("own prediction uses authenticated endpoint and separates errors from missi
     await linkBarrier; linked = true;
     await route.fulfill({ json: { id: 999999, name: "検証用 本人", slug: "e2e-synthetic-owner", role: "friend", firebaseUid: uid } });
   });
+  const consoleErrors: string[] = [];
+  page.on("console", message => { if (message.type() === "error") consoleErrors.push(message.text()); });
+  await page.route("**/api/settings", route => route.fulfill({ json: {} }));
+  await page.route("**/api/my-rank?*", route => route.fulfill({ json: { rank: null, score: null, delta: null } }));
   const pageErrors: string[] = [];
   page.on("pageerror", error => pageErrors.push(error.message));
   await page.route("**/api/groups/my", route => route.fulfill({ json: { groups: [] } }));
@@ -57,9 +61,20 @@ test("own prediction uses authenticated endpoint and separates errors from missi
   completeLink();
   await expect(page.getByRole("button", { name: "↓ PNG ダウンロード (1列)", exact: true })).toBeVisible();
   expect(calls).toBe(1); expect(publicFetches).toBe(0);
+  expect(consoleErrors).toEqual([]);
+  for (const width of [1400, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    await toggle.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: test.info().outputPath(`comparison-success-${width}.png`) });
+  }
   await toggle.uncheck(); status = 503; await toggle.check();
   await expect(page.getByRole("alert").filter({ hasText: "予想を取得できませんでした" })).toBeVisible();
   await expect(page.getByText("(この年の予想データなし)", { exact: true })).toHaveCount(0);
+  for (const width of [1400, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.getByRole("alert").filter({ hasText: "予想を取得できませんでした" }).scrollIntoViewIfNeeded();
+    await page.screenshot({ path: test.info().outputPath(`comparison-error-${width}.png`) });
+  }
   await toggle.uncheck(); status = 404; await toggle.check();
   await expect(page.getByText("(この年の予想データなし)", { exact: true })).toBeVisible();
   expect(calls).toBe(3); expect(publicFetches).toBe(0);
@@ -69,10 +84,13 @@ test("own prediction uses authenticated endpoint and separates errors from missi
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await page.screenshot({ path: test.info().outputPath(`comparison-${width}.png`), fullPage: false });
   }
+  consoleErrors.length = 0; // The preceding 503/404 were deliberate response fault injection.
   status = 200;
   await page.goto("/me");
   await expect(page.getByText("阪神タイガース", { exact: false })).toBeVisible();
   await expect(page.getByText("まだ予想はありません", { exact: true })).toHaveCount(0);
+  expect(consoleErrors).toEqual([]);
+  expect(pageErrors).toEqual([]);
   for (const width of [1400, 390, 320]) {
     await page.setViewportSize({ width, height: 900 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);

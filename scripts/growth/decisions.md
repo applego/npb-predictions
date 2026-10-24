@@ -143,3 +143,29 @@ PR80の既存laneに、保存結果の年度出典を人物・variantで索引�
 会話: https://chatgpt.com/c/6adaaf55-d9a0-83ee-8370-65d57d530010 （01-oracleのmanual CUA経路、slug=manual-npb-20261023、実モデル/versionはUI非公開でnull、表示Proを確認）。
 初回P2の「5分以内の未来を正常扱い」は、実SQLの60秒先反例FAIL→health専用guardでPASSに修復。final/provisional×now/1秒先/300秒先の6境界も追加し、同一会話の再読でblocking0。reviewerはtest/build/browserを実行していない。
 UBS全体は既知wrapper停止のため未達。doctorも6分超で止まり自分の2processだけ終了、feedbackを残した。変更コードの直接JS検査はcritical0/warning0を出したが、最終終了statusは別に確認し、全体検査のPASSへ置き換えない。
+
+
+## 2026-10-24: 私有データ保護と本人比較の公開判断材料
+
+推奨は、既存PR80の最新head・必須CIと未解決reviewを照合したうえで、個別承認の公開経路で適用すること。
+このautomationはmain merge・deployを実行しない。未適用のmainは408cf07であり、実データ漏洩を観測したという記録ではない。
+
+修復sourceはf5ea3e23c9f14060bb8e0f3fd01756525dd2b9e4。公開season予想2APIはユーザー列のallowlistとlocked制限、
+本人用GET /api/seasons/[year]/meは検証済みtokenのuser.idのみで取得しprivate/no-storeとする。
+自己比較とマイページは本人用へ移行し、初回アカウント連携待ち・通信失敗・未登録を区別する。
+公開profile・3種類の予想OG・SEO/news/解説者詳細/成績の取得にもlocked条件を適用した。
+列削除だけで本人比較を壊す案、全てを認証必須にして公開結果を壊す案は採用しない。
+
+検証: 旧API反例3FAIL、旧画像反例FAIL。生成SQLを実SQLiteで実行するprivacy/SEO/画像入口8件と
+既存auth10件PASS。横展開時の全331単体、型・対象lint・Next/CF build・データ・性能budget PASS。
+実localD1の公開API、実Chromiumの連携遅延→本人取得・503/404区別・マイページ、1400/390/320pxの
+横はみ出し0・成功時console/pageerror0を確認し、最終E2E2/2PASS。
+認証UIの相手と画像encoderの一部は合成境界で、実ユーザーの本番ログイン成功を意味しない。
+独立Codexが同sourceを実読し3指摘の修復と追加指摘なしを返した。最新CIはPRの現headを確認する。
+全体UBSは既知tool停止で未達を維持し、部分検査を全体PASSへ読み替えない。
+
+次owner=npb-automation。公開後に列・未lock404・認証本人比較とマイページをread-backする。
+本番healthは今回1回403で内容未確認。D1回復とは判断せず、live gateやexportの失敗を反復しなかった。
+初回dailyの同じcaptureを再利用してstatusを生成し、計測は追加しない。
+利益・ASP・funnelはnull、2実験は公開証拠待ち。NPB公式の日本シリーズ2026中継案内を今回再読したが、
+提携・販売・需要・利益の証拠にはしない。収益6候補の比較はMONETIZATION.mdを継続しprivacyを優先した。
