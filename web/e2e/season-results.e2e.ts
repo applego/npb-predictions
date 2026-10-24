@@ -5,7 +5,7 @@ test.describe("season review readability", () => {
   test("public results render observed data without login", async ({ page }, testInfo) => {
     expect((await page.goto("/?year=2026&league=central"))?.status()).toBe(200);
     await testInfo.attach("public-results-body", { body: await page.locator("main").innerText(), contentType: "text/plain" });
-    await expect(page.getByRole("heading", { name: /その予想、\s*どこまで当たった？/ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /予想の答えは、\s*結果にある。/ })).toBeVisible();
     await expect(page.locator("main .result-status")).toHaveText("暫定");
     await expect(page.locator("main .result-observation time")).toHaveAttribute("datetime", /^\d{4}-\d{2}-\d{2}T/);
     await expect(page.locator("main .result-person").first()).toBeVisible();

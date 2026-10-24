@@ -1,0 +1,68 @@
+{
+  "schema": "npb-growth-pdca.v1",
+  "goal_ref": "npb-predictions",
+  "source_head": "e2f7626a24cbefbd5d2a053fa2b9596659018795",
+  "source_digest": "e30233b1b90656953f53c94f4065ff770e50e9084df6b16bc5054cf57d346c22",
+  "observed_at": "2026-10-24T10:54:34.409130+00:00",
+  "fingerprint": "e2014e547114b9cedb23db676e1e2f388deb2aa9e422e442c76a09d745d4f819",
+  "metrics": {
+    "contribution_profit_28d": {
+      "status": "missing",
+      "value": null
+    },
+    "public_result_routes": {
+      "status": "ok",
+      "value": 3
+    },
+    "visitors_28d": {
+      "status": "missing",
+      "value": null
+    },
+    "x_visits_28d": {
+      "status": "missing",
+      "value": null
+    },
+    "result_views_28d": {
+      "status": "missing",
+      "value": null
+    },
+    "x_share_starts_28d": {
+      "status": "missing",
+      "value": null
+    },
+    "affiliate_confirmed_28d": {
+      "status": "missing",
+      "value": null
+    },
+    "card_downloads_28d": {
+      "status": "missing",
+      "value": null
+    },
+    "x_result_tabs_28d": {
+      "status": "missing",
+      "value": null
+    }
+  },
+  "selected_tracker_item": null,
+  "work_required": false,
+  "experiments": [
+    {
+      "id": "results-x-01",
+      "state": "awaiting_publication_evidence",
+      "verdict": null,
+      "reason": "actual publication time/ref and comparable measurement are required"
+    },
+    {
+      "id": "watch-offer-01",
+      "state": "awaiting_publication_evidence",
+      "verdict": null,
+      "reason": "actual publication time/ref and comparable measurement are required"
+    }
+  ],
+  "profit_verified": false,
+  "collection_error": null,
+  "handoff": {
+    "delivery": "not_sent",
+    "acknowledged_by": null
+  }
+}

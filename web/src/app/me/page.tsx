@@ -61,15 +61,19 @@ export default function MyPage() {
     Map<number, { central: string[]; pacific: string[] }>
   >(new Map());
   const [seasons, setSeasons] = useState<SeasonEntry[]>([]);
+  const [predictionError, setPredictionError] = useState(false);
   const [fetching, setFetching] = useState(true);
 
   // Fetch all data once user is loaded
   useEffect(() => {
+    setPredictions(new Map());
+    setPredictionError(false);
     if (!appUser || !firebaseUser) {
       setFetching(false);
       return;
     }
 
+    setFetching(true);
     let cancelled = false;
 
     async function fetchAll() {
@@ -107,7 +111,7 @@ export default function MyPage() {
           const seasonsData = (await seasonsRes.json()) as SeasonEntry[];
           setSeasons(seasonsData);
 
-          // Fetch predictions for each season via /api/seasons/[year]/users/[userId]
+          // Own drafts are private: resolve the caller from their verified token.
           const predMap = new Map<
             number,
             { central: string[]; pacific: string[] }
@@ -119,11 +123,11 @@ export default function MyPage() {
 
           const predResults = await Promise.all(
             seasonsData.map((s) =>
-              fetch(
-                `/api/seasons/${s.year}/users/${appUser!.id}`,
-              ).then((r) =>
-                r.ok ? (r.json() as Promise<PredictionResponse>) : null,
-              ),
+              fetchWithAuth(`/api/seasons/${s.year}/me`, { cache: "no-store" }).then((r) => {
+                if (r.status === 404) return null;
+                if (!r.ok) throw new Error("Own prediction unavailable");
+                return r.json() as Promise<PredictionResponse>;
+              }),
             ),
           );
 
@@ -140,9 +144,10 @@ export default function MyPage() {
               .map((p) => p.teamName);
             predMap.set(seasonsData[i].year, { central, pacific });
           }
-          setPredictions(predMap);
+          if (!cancelled) setPredictions(predMap);
         }
       } catch (err) {
+        if (!cancelled) setPredictionError(true);
         console.error("Failed to load my page data:", err);
       } finally {
         if (!cancelled) setFetching(false);
@@ -304,12 +309,12 @@ export default function MyPage() {
       )}
 
       {/* My Predictions */}
-      <PredictionsCard
+      {predictionError ? <p role="alert">予想を取得できませんでした。ページを再読み込みしてお試しください。</p> : <PredictionsCard
         predictions={predictions}
         seasons={seasons}
         userName={displayName}
         userId={appUser?.id ?? 0}
-      />
+      />}
 
       {/* My Groups */}
       {groups.length > 0 && <GroupsCard groups={groups} />}
@@ -713,7 +718,7 @@ function PredictionsCard({
           fontFamily: "var(--font-display)",
         }}
       >
-        MY PREDICTIONS
+        自分の予想
       </h2>
 
       {sortedSeasons.length === 0 && (
@@ -761,7 +766,7 @@ function PredictionsCard({
                 >
                   <LeagueLabel label="セ" />
                   {" "}
-                  {picks.central.join(" > ")}
+                  {picks.central.length ? picks.central.join(" > ") : "未登録"}
                 </span>
               </div>
               <div
@@ -782,7 +787,7 @@ function PredictionsCard({
                 >
                   <LeagueLabel label="パ" />
                   {" "}
-                  {picks.pacific.join(" > ")}
+                  {picks.pacific.length ? picks.pacific.join(" > ") : "未登録"}
                 </span>
               </div>
 

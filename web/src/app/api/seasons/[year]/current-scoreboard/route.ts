@@ -3,7 +3,7 @@ export const runtime = "edge";
 import { NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { users, seasons, predictions, rankingPicks, actualTeamStandings } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { calcRankingPointForTeam } from "@/lib/scoring";
 import { getTeamByName } from "@/lib/teams";
 import type { League } from "@/db/schema";
@@ -140,7 +140,7 @@ export async function GET(
   const allUsers = await db.select().from(users);
   const userMap = new Map(allUsers.map((u) => [u.id, u]));
 
-  const preds = await db.select().from(predictions).where(eq(predictions.seasonId, season.id));
+  const preds = await db.select().from(predictions).where(and(eq(predictions.seasonId, season.id), eq(predictions.isLocked, true)));
   // Show all users' scores (friends + commentators)
   const targetPreds = preds;
 

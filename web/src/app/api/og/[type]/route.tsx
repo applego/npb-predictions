@@ -202,7 +202,8 @@ async function renderPredictionCard(
   const prediction = await getDb().query.predictions.findFirst({
     where: and(
       eq(predictions.userId, userId),
-      eq(predictions.seasonId, season.id)
+      eq(predictions.seasonId, season.id),
+      eq(predictions.isLocked, true)
     ),
     with: {
       rankingPicks: true,

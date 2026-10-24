@@ -38,11 +38,12 @@ function renderPredictionCanvas(
   const CHAR_H = 15;
   const CHAR_GAP = 2;
   const FOOTER_H = 20;
+  const MIN_WIDTH = 360;       // Keep header/date/footer readable even for one prediction.
 
   const maxNameLen = Math.max(...cols.map((c) => [...c.name].length), 2);
   const NAME_H = maxNameLen * (CHAR_H + CHAR_GAP) + 10;
 
-  const W = PAD + RANK_W + cols.length * CELL_W + PAD;
+  const W = Math.max(MIN_WIDTH, PAD + RANK_W + cols.length * CELL_W + PAD);
   const H = PAD + HEADER_H + NAME_H + 6 * CELL_H + FOOTER_H + PAD;
 
   const canvas = document.createElement("canvas");
@@ -80,7 +81,7 @@ function renderPredictionCanvas(
   ctx.fillText(leagueLabel, PAD, PAD + 38);
 
   ctx.font = `10px ${MONO}`;
-  ctx.fillStyle = "rgba(255,255,255,0.35)";
+  ctx.fillStyle = "rgba(255,255,255,0.65)";
   ctx.textAlign = "right";
   ctx.fillText(`${dateStr} 作成`, W - PAD, PAD + 38);
   ctx.textAlign = "left";
@@ -95,16 +96,16 @@ function renderPredictionCanvas(
 
   const namesTop = PAD + HEADER_H;
   const gridTop = namesTop + NAME_H;
-  const gridLeft = PAD + RANK_W;
+  const gridLeft = (W - (RANK_W + cols.length * CELL_W)) / 2 + RANK_W;
 
   // ── Rank labels ──
   ctx.textAlign = "center";
   for (let r = 1; r <= 6; r++) {
     const midY = gridTop + (r - 1) * CELL_H + CELL_H / 2;
     ctx.font = `${r === 1 ? "bold" : "normal"} 11px ${JA}`;
-    ctx.fillStyle = r === 1 ? "#d4a017" : "rgba(255,255,255,0.32)";
+    ctx.fillStyle = r === 1 ? "#d4a017" : "rgba(255,255,255,0.65)";
     ctx.textBaseline = "middle";
-    ctx.fillText(`${r}位`, PAD + RANK_W / 2, midY);
+    ctx.fillText(`${r}位`, gridLeft - RANK_W / 2, midY);
   }
   ctx.textBaseline = "alphabetic";
 
@@ -163,7 +164,7 @@ function renderPredictionCanvas(
         ctx.fillStyle = "rgba(255,255,255,0.04)";
         ctx.fillRect(cx + 1, cy + 1, CELL_W - 2, CELL_H - 2);
         ctx.font = `10px ${JA}`;
-        ctx.fillStyle = "rgba(255,255,255,0.18)";
+        ctx.fillStyle = "rgba(255,255,255,0.65)";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillText("—", center, cy + CELL_H / 2);
@@ -199,7 +200,7 @@ function renderPredictionCanvas(
   // ── Footer: commentator count ──
   const footerY = gridTop + 6 * CELL_H + 14;
   ctx.font = `9px ${MONO}`;
-  ctx.fillStyle = "rgba(255,255,255,0.25)";
+  ctx.fillStyle = "rgba(255,255,255,0.65)";
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
   ctx.fillText(`npb-predictions.pages.dev — ${cols.length}人`, PAD, footerY);

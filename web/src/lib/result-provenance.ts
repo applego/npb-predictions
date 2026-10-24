@@ -12,10 +12,24 @@ export function withPredictionSources(picks: PublicResultPick[], year: number, s
   for (const pick of picks) groups.set(pick.predictionId, [...(groups.get(pick.predictionId) ?? []), pick]);
   const sources = new Map<number, string | null>();
   const leagues: ResultLeague[] = scope === "all" ? ["central", "pacific"] : [scope];
+  // Index candidates once instead of scanning the full annual catalog for every entry.
+  // Keep every candidate in publication order: multiple exact citations are meaningful.
+  const indexed = new Map<ResultLeague, Map<string, SourceRecord[]>>();
+  for (const league of leagues) {
+    const records = new Map<string, SourceRecord[]>();
+    for (const record of catalog[String(year)]?.[league] ?? []) {
+      const key = JSON.stringify([record.name, record.variant ?? ""]);
+      const candidates = records.get(key) ?? [];
+      candidates.push(record);
+      records.set(key, candidates);
+    }
+    indexed.set(league, records);
+  }
   for (const [id, group] of groups) {
     const labels = leagues.map((league) => {
       const rows = group.filter((row) => row.league === league).sort((a, b) => a.rank - b.rank);
-      const matches = (catalog[String(year)]?.[league] ?? []).filter((record) =>
+      const key = JSON.stringify([group[0].name, group[0].variant ?? ""]);
+      const matches = (indexed.get(league)?.get(key) ?? []).filter((record) =>
         rows.length === 6 && record.rankings.length === 6 && record.name === group[0].name &&
         (record.variant ?? "") === (group[0].variant ?? "") && record.source &&
         !Array.from(record.source.matchAll(/\b(20\d{2})年/g)).some((match) => Number(match[1]) !== year) &&

@@ -11,6 +11,7 @@ import {
   getSourceBadgeColors,
   getDiffLabel,
 } from "@/lib/commentator-types";
+import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import { useAuth } from "@/contexts/AuthContext";
 import { downloadPredictionPng, type PngCol } from "@/lib/prediction-png";
 
@@ -157,15 +158,16 @@ function TabButton({
     <button
       type="button"
       onClick={onClick}
+      aria-pressed={active}
       className="shrink-0 rounded px-3 py-2.5 text-xs font-medium tracking-wider transition-all"
       style={{
         fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
         letterSpacing: "0.12em",
-        background: active ? `${accentColor}12` : "var(--bg-elevated)",
+        background: active ? `color-mix(in srgb, ${accentColor} 12%, var(--bg-elevated))` : "var(--bg-elevated)",
         border: active
-          ? `1px solid ${accentColor}40`
+          ? `1px solid var(--text-primary)`
           : "1px solid var(--border-primary)",
-        color: active ? accentColor : "var(--text-secondary)",
+        color: active ? "var(--text-primary)" : "var(--text-secondary)",
       }}
     >
       {children}
@@ -771,15 +773,20 @@ export function CommentatorRankingsClient() {
   const [showDistrib, setShowDistrib] = useState(false);
 
   // PNG panel
-  const { firebaseUser } = useAuth();
+  const { firebaseUser, appUser } = useAuth();
+  const selfAccountReady = Boolean(firebaseUser && appUser?.firebaseUid === firebaseUser.uid);
   const [showPngPanel, setShowPngPanel] = useState(false);
   const [pngLeague, setPngLeague] = useState<"central" | "pacific">("central");
   const [selectedPngIds, setSelectedPngIds] = useState<Set<number>>(new Set());
+  const [selfPicksError, setSelfPicksError] = useState<string | null>(null);
   const [includeSelf, setIncludeSelf] = useState(false);
-  const [selfPrediction, setSelfPrediction] = useState<{
+  const [selfPredictionState, setSelfPrediction] = useState<{
+    uid: string;
+    year: YearOption;
     name: string;
     picks: Array<{ league: string; rank: number; teamName: string }>;
   } | null>(null);
+  const selfPrediction = includeSelf && selfPredictionState?.uid === firebaseUser?.uid && selfPredictionState?.year === year ? selfPredictionState : null;
   const [selfPicksLoading, setSelfPicksLoading] = useState(false);
 
   // 1位予想分布 (memoized from data)
@@ -812,9 +819,9 @@ export function CommentatorRankingsClient() {
   }, []);
 
   // Fetch data from API
-  const fetchData = useCallback(async (y: YearOption, l: LeagueFilter) => {
+  const fetchData = useCallback(async (y: YearOption, l: LeagueFilter, signal: AbortSignal) => {
     const fetchRanking = async (yr: number, lg: LeagueFilter) => {
-      const res = await fetch(`/api/rankings/commentators?year=${yr}&league=${lg}`);
+      const res = await fetch(`/api/rankings/commentators?year=${yr}&league=${lg}`, { signal });
       if (!res.ok) return null;
       return (await res.json()) as CommentatorRankingsResponse;
     };
@@ -828,6 +835,7 @@ export function CommentatorRankingsClient() {
             return fetchRanking(yr, l);
           })
         );
+        if (signal.aborted) return;
 
         const aggregated = new Map<number, CommentatorData>();
         for (const result of results) {
@@ -861,9 +869,10 @@ export function CommentatorRankingsClient() {
           commentators: sorted,
         });
       } catch {
+        if (signal.aborted) return;
         setError("読み込みに失敗しました。時間をおいて再度お試しください。");
       } finally {
-        setLoading(false);
+        if (!signal.aborted) setLoading(false);
       }
       return;
     }
@@ -872,6 +881,7 @@ export function CommentatorRankingsClient() {
     setError(null);
     try {
       const json = await fetchRanking(y, l);
+      if (signal.aborted) return;
       if (!json) {
         setError("読み込みに失敗しました。時間をおいて再度お試しください。");
         setData(null);
@@ -882,6 +892,7 @@ export function CommentatorRankingsClient() {
           fetchRanking(y, "central"),
           fetchRanking(y, "pacific"),
         ]);
+        if (signal.aborted) return;
         const fallback =
           (central?.commentators.length ?? 0) >= (pacific?.commentators.length ?? 0)
             ? { league: "central" as const, data: central }
@@ -895,15 +906,18 @@ export function CommentatorRankingsClient() {
       }
       setData(json);
     } catch {
+      if (signal.aborted) return;
       setError("読み込みに失敗しました。時間をおいて再度お試しください。");
       setData(null);
     } finally {
-      setLoading(false);
+      if (!signal.aborted) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchData(year, league);
+    const controller = new AbortController();
+    fetchData(year, league, controller.signal);
+    return () => controller.abort();
   }, [year, league, fetchData]);
 
   // Compute rank changes and fetch like counts when data changes
@@ -983,23 +997,29 @@ export function CommentatorRankingsClient() {
     [fingerprint, likedIds]
   );
 
-  // Fetch own prediction when includeSelf is toggled on
+  // Resolve ownership on the server; never fetch other users' Firebase identities.
   useEffect(() => {
-    if (!includeSelf || !firebaseUser || year === "all") {
-      setSelfPrediction(null);
-      return;
-    }
+    setSelfPrediction(null);
+    setSelfPicksError(null);
+    setSelfPicksLoading(false);
+    if (!includeSelf || !firebaseUser || !selfAccountReady || year === "all") return;
+    const controller = new AbortController();
     setSelfPicksLoading(true);
-    fetch(`/api/seasons/${year}/predictions`)
-      .then((r) => r.json() as Promise<Array<{ user: { firebaseUid: string | null; name: string }; rankingPicks: Array<{ league: string; rank: number; teamName: string }> }>>)
-      .then((preds) => {
-        const mine = preds.find((p) => p.user.firebaseUid === firebaseUser.uid);
-        if (!mine) { setSelfPrediction(null); return; }
-        setSelfPrediction({ name: mine.user.name, picks: mine.rankingPicks });
+    fetchWithAuth(`/api/seasons/${year}/me`, { signal: controller.signal, cache: "no-store" })
+      .then(async (response) => {
+        if (response.status === 404) return null;
+        if (!response.ok) throw new Error(response.status === 401 ? "ログインし直して再度お試しください" : "予想を取得できませんでした。再度お試しください");
+        return response.json() as Promise<{ user: { name: string }; rankingPicks: Array<{ league: string; rank: number; teamName: string }> }>;
       })
-      .catch(() => setSelfPrediction(null))
-      .finally(() => setSelfPicksLoading(false));
-  }, [includeSelf, firebaseUser, year]);
+      .then((mine) => {
+        if (!controller.signal.aborted && mine) setSelfPrediction({ uid: firebaseUser.uid, year, name: mine.user.name, picks: mine.rankingPicks });
+      })
+      .catch((error: unknown) => {
+        if (!controller.signal.aborted) setSelfPicksError(error instanceof Error ? error.message : "予想を取得できませんでした");
+      })
+      .finally(() => { if (!controller.signal.aborted) setSelfPicksLoading(false); });
+    return () => controller.abort();
+  }, [includeSelf, firebaseUser, appUser, selfAccountReady, year]);
 
   // Client-side filtering
   const filtered = data
@@ -1051,14 +1071,19 @@ export function CommentatorRankingsClient() {
         style={{ background: "var(--bg-surface)", border: "1px solid var(--border-primary)" }}
       >
         <div>
-          <div className="mb-2 text-[10px] font-medium tracking-widest" style={{ color: "var(--text-muted)", letterSpacing: "0.18em" }}>年度</div>
-          <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {YEAR_TABS.map((tab) => (
-              <TabButton key={tab.value} active={year === tab.value} onClick={() => { setYear(tab.value); setExpandedId(null); }}>
-                {tab.label}
-              </TabButton>
-            ))}
-          </div>
+          <label htmlFor="comparison-year" className="mb-2 block text-xs font-medium" style={{ color: "var(--text-secondary)" }}>年度</label>
+          <select
+            id="comparison-year"
+            value={year}
+            onChange={(event) => {
+              setYear(event.target.value === "all" ? "all" : Number(event.target.value) as YearOption);
+              setExpandedId(null);
+            }}
+            className="min-h-11 w-full rounded border px-3 text-sm sm:w-40"
+            style={{ background: "var(--bg-elevated)", borderColor: "var(--border-primary)", color: "var(--text-primary)" }}
+          >
+            {YEAR_TABS.map((tab) => <option key={tab.value} value={tab.value}>{tab.value === "all" ? "全年度" : `${tab.label}年`}</option>)}
+          </select>
         </div>
 
         <div className="flex flex-wrap items-end gap-4">
@@ -1116,7 +1141,7 @@ export function CommentatorRankingsClient() {
           )}
         </p>
         {data && !loading && (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => setShowDistrib((v) => !v)}
@@ -1126,7 +1151,7 @@ export function CommentatorRankingsClient() {
                 letterSpacing: "0.12em",
                 background: showDistrib ? "rgba(56,189,248,0.12)" : "var(--bg-elevated)",
                 border: showDistrib ? "1px solid rgba(56,189,248,0.35)" : "1px solid var(--border-primary)",
-                color: showDistrib ? "#38bdf8" : "var(--text-secondary)",
+                color: showDistrib ? "var(--text-primary)" : "var(--text-secondary)",
               }}
             >
               {showDistrib ? "▲ 分布を閉じる" : "▼ 1位予想分布"}
@@ -1166,7 +1191,7 @@ export function CommentatorRankingsClient() {
                 letterSpacing: "0.12em",
                 background: showPngPanel ? "rgba(251,191,36,0.12)" : "var(--bg-elevated)",
                 border: showPngPanel ? "1px solid rgba(251,191,36,0.35)" : "1px solid var(--border-primary)",
-                color: showPngPanel ? "#fbbf24" : "var(--text-secondary)",
+                color: showPngPanel ? "var(--text-primary)" : "var(--text-secondary)",
               }}
             >
               {showPngPanel ? "▲ PNG閉じる" : "📰 新聞PNG"}
@@ -1226,7 +1251,7 @@ export function CommentatorRankingsClient() {
         >
           <div
             className="text-xs font-medium uppercase tracking-widest"
-            style={{ fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)", color: "#fbbf24", letterSpacing: "0.2em" }}
+            style={{ fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)", color: "var(--text-primary)", letterSpacing: "0.2em" }}
           >
             📰 新聞スタイル PNG
           </div>
@@ -1240,13 +1265,14 @@ export function CommentatorRankingsClient() {
                   key={lg}
                   type="button"
                   onClick={() => setPngLeague(lg)}
+                  aria-pressed={pngLeague === lg}
                   className="rounded px-3 py-1.5 text-xs font-medium transition-all"
                   style={{
                     fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
                     letterSpacing: "0.1em",
                     background: pngLeague === lg ? (lg === "central" ? "rgba(239,68,68,0.12)" : "rgba(59,130,246,0.12)") : "var(--bg-elevated)",
                     border: pngLeague === lg ? `1px solid ${lg === "central" ? "rgba(239,68,68,0.4)" : "rgba(59,130,246,0.4)"}` : "1px solid var(--border-primary)",
-                    color: pngLeague === lg ? (lg === "central" ? "#f87171" : "#60a5fa") : "var(--text-secondary)",
+                    color: pngLeague === lg ? "var(--text-primary)" : "var(--text-secondary)",
                   }}
                 >
                   {lg === "central" ? "セ・リーグ" : "パ・リーグ"}
@@ -1266,8 +1292,10 @@ export function CommentatorRankingsClient() {
               />
               <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
                 自分の予想を先頭に追加
+                {includeSelf && !selfAccountReady && <span style={{ color: "var(--text-muted)" }}> (アカウントを確認中...)</span>}
                 {selfPicksLoading && <span style={{ color: "var(--text-muted)" }}> (読み込み中...)</span>}
-                {includeSelf && !selfPicksLoading && !selfPrediction && (
+                {includeSelf && selfPicksError && <span role="alert" style={{ color: "#fb923c" }}> ({selfPicksError})</span>}
+                {includeSelf && selfAccountReady && !selfPicksLoading && !selfPicksError && !selfPrediction && (
                   <span style={{ color: "#fb923c" }}> (この年の予想データなし)</span>
                 )}
               </span>
@@ -1300,7 +1328,7 @@ export function CommentatorRankingsClient() {
                 type="button"
                 onClick={() => setSelectedPngIds(new Set(data.commentators.slice(0, 20).map((c) => c.userId)))}
                 className="rounded px-2 py-0.5 text-[10px] transition-opacity hover:opacity-80"
-                style={{ background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.25)", color: "#fbbf24" }}
+                style={{ background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.25)", color: "var(--text-primary)" }}
               >
                 上位20
               </button>
@@ -1371,7 +1399,7 @@ export function CommentatorRankingsClient() {
               letterSpacing: "0.12em",
               background: selectedPngIds.size > 0 ? "rgba(251,191,36,0.12)" : "var(--bg-elevated)",
               border: `1px solid ${selectedPngIds.size > 0 ? "rgba(251,191,36,0.4)" : "var(--border-primary)"}`,
-              color: selectedPngIds.size > 0 ? "#fbbf24" : "var(--text-muted)",
+              color: selectedPngIds.size > 0 ? "var(--text-primary)" : "var(--text-muted)",
             }}
           >
             ↓ PNG ダウンロード ({selectedPngIds.size + (includeSelf && selfPrediction ? 1 : 0)}列)

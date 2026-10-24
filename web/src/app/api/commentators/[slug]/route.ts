@@ -46,7 +46,7 @@ export async function GET(
   const userPreds = await db
     .select()
     .from(predictions)
-    .where(eq(predictions.userId, user.id));
+    .where(and(eq(predictions.userId, user.id), eq(predictions.isLocked, true)));
 
   // Filter by year if specified
   const targetPreds = yearParam

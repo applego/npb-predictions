@@ -11,7 +11,23 @@ import urllib.request
 from pathlib import Path
 
 ORIGIN = 'https://npb-predictions.pages.dev'
-METRICS = ['contribution_profit_28d', 'visitors_28d', 'x_visits_28d', 'affiliate_confirmed_28d', 'result_views_28d', 'x_share_starts_28d']
+METRICS = ['contribution_profit_28d', 'visitors_28d', 'x_visits_28d', 'affiliate_confirmed_28d', 'result_views_28d', 'x_share_starts_28d', 'card_downloads_28d', 'x_result_tabs_28d']
+
+def growth_events(report):
+    if report.get('windowDays') != 28 or not isinstance(report.get('rows'), list):
+        raise ValueError('invalid growth event window/rows')
+    rows = report['rows']
+    result = {}
+    for key, event, field in [('result_views_28d', 'result_view', 'tabs'), ('x_share_starts_28d', 'x_share_start', 'events'), ('card_downloads_28d', 'card_download', 'events')]:
+        values = [row[field] for row in rows if row['event'] == event]
+        if any(not isinstance(v, int) or isinstance(v, bool) or v < 0 for v in values):
+            raise ValueError('invalid growth event count')
+        result[key] = {'value': sum(values), 'status': 'ok', 'data_through': report['observedAt'], 'sample_size': len(rows)}
+    values = [row['tabs'] for row in rows if row['event'] == 'result_view' and row['source'] == 'x']
+    if any(not isinstance(v, int) or isinstance(v, bool) or v < 0 for v in values):
+        raise ValueError('invalid growth tab count')
+    result['x_result_tabs_28d'] = {'value': sum(values), 'status': 'ok', 'data_through': report['observedAt'], 'sample_size': len(rows)}
+    return result
 
 def load_metrics(now):
     # Private exports stay outside Git and are bound to this product/domain/window.
@@ -87,10 +103,7 @@ def main():
         request = urllib.request.Request(ORIGIN + '/api/growth/events', headers={'Authorization': 'Bearer ' + token})
         with urllib.request.urlopen(request, timeout=15) as response:
             report = json.load(response)
-        rows = report['rows']
-        for key, event, field in [('result_views_28d', 'result_view', 'tabs'), ('x_share_starts_28d', 'x_share_start', 'events')]:
-            metrics[key] = {'value': sum(int(row[field]) for row in rows if row['event'] == event),
-                            'status': 'ok', 'data_through': report['observedAt'], 'sample_size': len(rows)}
+        metrics.update(growth_events(report))
     metrics['public_result_routes'] = probe_routes(now)
     output = json.dumps({'goal_ref': 'npb-predictions', 'metrics': metrics}, ensure_ascii=False, sort_keys=True)
     print(json.dumps({'schema': 'evidence.v1', 'id': 'npb-growth-' + now.isoformat(),

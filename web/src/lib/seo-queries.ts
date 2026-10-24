@@ -11,6 +11,8 @@ import {
   scoreSnapshots,
 } from "@/db/schema";
 
+import { publicPredictionRelations } from "@/lib/season-predictions";
+
 export type League = "central" | "pacific";
 
 export async function getAllSeasons() {
@@ -113,12 +115,8 @@ export async function getLatestStandings(seasonId: number, league: League) {
 
 export async function getSeasonPredictions(seasonId: number) {
   return getDb().query.predictions.findMany({
-    where: eq(predictions.seasonId, seasonId),
-    with: {
-      user: true,
-      rankingPicks: true,
-      titlePicks: true,
-    },
+    where: and(eq(predictions.seasonId, seasonId), eq(predictions.isLocked, true)),
+    with: publicPredictionRelations,
   });
 }
 
@@ -173,11 +171,8 @@ export async function getTeamTitlePlayers(seasonId: number, teamName: string) {
 
 export async function getTeamPredictions(seasonId: number, teamName: string) {
   const allPredictions = await getDb().query.predictions.findMany({
-    where: eq(predictions.seasonId, seasonId),
-    with: {
-      user: true,
-      rankingPicks: true,
-    },
+    where: and(eq(predictions.seasonId, seasonId), eq(predictions.isLocked, true)),
+    with: publicPredictionRelations,
   });
   return allPredictions
     .map((p) => ({

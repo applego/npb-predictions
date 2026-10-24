@@ -1,0 +1,10 @@
+{
+  "schema": "goal-tree.v1",
+  "id": "npb-predictions",
+  "parent": null,
+  "children": [],
+  "levers": {"command": "python3 scripts/growth/pdca.py levers"},
+  "watch": ["web/src/components/ResultsBoard.tsx", "web/src/app/resources/**"],
+  "records": ["scripts/growth/experiments.json", "docs/growth/status.json"],
+  "hypotheses": {"command": "python3 scripts/growth/pdca.py hypotheses"}
+}

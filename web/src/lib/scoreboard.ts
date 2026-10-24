@@ -1,6 +1,6 @@
 import { getDb } from "@/db";
 import { users, seasons, predictions, rankingPicks, actualTeamStandings } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { calcRankingPointForTeam } from "@/lib/scoring";
 import type { Season, ScoreboardResponse } from "@/lib/types";
 
@@ -63,7 +63,7 @@ export async function getScoreboardData(
   const allUsers = await db.select().from(users);
   const userMap = new Map(allUsers.map((u) => [u.id, u]));
 
-  const preds = await db.select().from(predictions).where(eq(predictions.seasonId, season.id));
+  const preds = await db.select().from(predictions).where(and(eq(predictions.seasonId, season.id), eq(predictions.isLocked, true)));
   const allPicks = await db.select().from(rankingPicks);
 
   const picksByPred = new Map<number, typeof allPicks>();

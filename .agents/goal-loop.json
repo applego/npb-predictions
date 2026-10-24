@@ -10,7 +10,9 @@
     "npb-predictions#x_visits_28d",
     "npb-predictions#affiliate_confirmed_28d",
     "npb-predictions#result_views_28d",
-    "npb-predictions#x_share_starts_28d"
+    "npb-predictions#x_share_starts_28d",
+    "npb-predictions#card_downloads_28d",
+    "npb-predictions#x_result_tabs_28d"
   ],
   "measure_command": "python3 scripts/growth/measure.py",
   "wip": {
@@ -20,7 +22,7 @@
   "stages": [
     {
       "name": "monetization",
-      "lever": "観戦意図に合う単一アフィリエイト実験",
+      "lever": "観戦意図に合う利益経路を比較し、承認済みの単一案件を検証する",
       "evidence": "python3 scripts/growth/measure.py evidence monetization",
       "executor": {
         "kind": "approval",
@@ -36,7 +38,7 @@
     "max_attempts": 2
   },
   "measure_acquire": {
-    "hint": "scripts/growth/README.md を読み、既存CLIと設定metadataから解析・ASP確定成果のread-only取得経路を探し計測を修復する。未確認数値を作らない。認証や契約が必要なときだけ needs_owner=auth または permission を具体的材料つきで出す。"
+    "hint": "scripts/growth/README.md を読み、既存CLIと設定metadataから解析・ASP確定成果のread-only取得経路を探し計測を修復する。未確認数値を作らない。認証や契約が必要なときだけ needs_owner=auth または permission を具体的材料つきで出す。 scripts/growth/pdca.py dailyの同一receiptを利用し、既知の認証待ちを同じ回に再探索しない。held_measurementでも現在の受託Codexはbrのready仕事を実行する。"
   },
   "diagnose": {
     "ledger": "scripts/growth/experiments.json",
@@ -48,7 +50,7 @@
       "competitors"
     ],
     "explore_min": 1,
-    "hint": "ユーザーが自分のXで共有したくなる動機・共有開始率・X経由訪問・再訪・観戦ガイドを一次情報から調べる。運営X投稿は対象外。結果カード・共有文・共有位置を1変数ずつ実験する。未測定は成功としない。無料可逆の改善はテストとPRまで、費用・契約・本番deployは判断キューへ。"
+    "hint": "MONETIZATION.mdの利益経路を比較し、未確認の案件・単価・需要はnull。既存の実験台帳とbrを読み、結果共有/再訪/視聴/物販/現地観戦/広告/有料機能/法人から現時点の最大の不足と無料可逆な変更を選ぶ。利用者成果と予想する指標変化、選ばなかった主要案をbrに記録し、調査だけで終えず実装・検証・同じPRへ進む。運営X投稿は対象外。未判定の同一面に重複実験を追加せず1仮説1変数。クリック/件数を利益にせず、費用・契約・本番deployは判断キューへ。"
   },
   "safety": [
     {

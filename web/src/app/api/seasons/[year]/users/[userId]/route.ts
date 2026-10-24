@@ -3,7 +3,9 @@ export const runtime = "edge";
 import { NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { predictions, seasons, users } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, asc } from "drizzle-orm";
+
+import { publicPredictionRelations, validSeasonYear } from "@/lib/season-predictions";
 
 export async function GET(
   _req: Request,
@@ -13,7 +15,7 @@ export async function GET(
   const yearNum = parseInt(year, 10);
 
   // Validate year
-  if (isNaN(yearNum)) {
+  if (!validSeasonYear(year)) {
     return NextResponse.json(
       { error: "Invalid year" },
       { status: 400 }
@@ -37,7 +39,7 @@ export async function GET(
   const userIdNum = parseInt(userId, 10);
   let targetUserId: number;
 
-  if (!isNaN(userIdNum)) {
+  if (/^[1-9]\d*$/.test(userId) && Number.isSafeInteger(Number(userId))) {
     // userId is a number
     targetUserId = userIdNum;
   } else {
@@ -61,13 +63,11 @@ export async function GET(
   const prediction = await getDb().query.predictions.findFirst({
     where: and(
       eq(predictions.seasonId, season.id),
-      eq(predictions.userId, targetUserId)
+      eq(predictions.userId, targetUserId),
+      eq(predictions.isLocked, true)
     ),
-    with: {
-      user: true,
-      rankingPicks: true,
-      titlePicks: true,
-    },
+    orderBy: [asc(predictions.createdAt), asc(predictions.id)],
+    with: publicPredictionRelations,
   });
 
   if (!prediction) {
@@ -85,5 +85,5 @@ export async function GET(
     );
   }
 
-  return NextResponse.json(prediction);
+  return NextResponse.json(prediction, { headers: { "Cache-Control": "no-store" } });
 }

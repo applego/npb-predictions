@@ -1,4 +1,6 @@
 import { getTeamByName } from "./teams";
+import { calcRankingPointForTeam } from "./scoring";
+import { canonicalPredictions } from "./canonical-prediction";
 
 export type ResultLeague = "central" | "pacific";
 export type ResultScope = ResultLeague | "all";
@@ -31,6 +33,23 @@ export interface ResultEntry {
   source: string | null; sourceUrl: string | null; variant: string | null;
   rank: number; exact: number; deviation: number; details: ResultDetail[];
 }
+/** Existing ranking-only points; player title points are a separate competition. */
+export function resultPoints(entry: Pick<ResultEntry, "details">): number {
+  return entry.details.reduce((sum, row) => sum + calcRankingPointForTeam(row.predictedRank, row.actualRank), 0);
+}
+
+export type ResultMetric = "points" | "exact" | "deviation";
+/** Rank the full registration population before collapsing identical rows or searching. */
+export function rankResultEntries(entries: ResultEntry[], metric: ResultMetric): ResultEntry[] {
+  const value = (row: ResultEntry) => metric === "points" ? resultPoints(row) : metric === "exact" ? row.exact : -row.deviation;
+  const sorted = [...entries].sort((a,b) => value(b) - value(a) || a.name.localeCompare(b.name, "ja") || a.userId - b.userId);
+  let rank = 0;
+  return sorted.map((row,index) => {
+    if (index === 0 || value(sorted[index - 1]) !== value(row)) rank = index + 1;
+    return { ...row, rank };
+  });
+}
+
 export interface ResultSummary {
   scope: ResultScope; status: "final" | "provisional" | "unavailable";
   snapshots: ResultSnapshot[]; entries: ResultEntry[]; eligible: number;
@@ -87,12 +106,8 @@ export function summarizeResults(
   }
   // Select a user's original/earliest entry BEFORE evaluating correctness.
   // This avoids choosing the variant that happens to score best after the fact.
-  const ordered = [...grouped.values()].sort((a, b) =>
-    Number(Boolean(a[0].variant)) - Number(Boolean(b[0].variant)) ||
-    a[0].createdAt.localeCompare(b[0].createdAt) || a[0].predictionId - b[0].predictionId,
-  );
-  const firstByUser = new Map<number, PublicResultPick[]>();
-  for (const group of ordered) if (!firstByUser.has(group[0].userId)) firstByUser.set(group[0].userId, group);
+  const selected = canonicalPredictions([...grouped.values()].map((group) => group[0]));
+  const firstByUser = new Map(selected.map((row) => [row.userId, grouped.get(row.predictionId)!]));
   const entries: ResultEntry[] = [];
   let eligible = 0;
   for (const group of firstByUser.values()) {
@@ -126,13 +141,9 @@ export function summarizeResults(
       details: details.sort((a, b) => a.league.localeCompare(b.league) || a.predictedRank - b.predictedRank),
     });
   }
-  entries.sort((a, b) => b.exact - a.exact || a.deviation - b.deviation || a.name.localeCompare(b.name, "ja") || a.userId - b.userId);
-  entries.forEach((entry, index) => {
-    const previous = entries[index - 1];
-    entry.rank = previous && previous.exact === entry.exact && previous.deviation === entry.deviation ? previous.rank : index + 1;
-  });
+  const ranked = rankResultEntries(entries, "points");
   return {
-    scope, status, snapshots, entries, eligible, excluded: firstByUser.size - eligible,
+    scope, status, snapshots, entries: ranked, eligible, excluded: firstByUser.size - eligible,
     perfect: status === "unavailable" || !eligible ? null : entries.filter((e) => e.exact === leagues.length * 6).length,
     target: leagues.length * 6,
   };

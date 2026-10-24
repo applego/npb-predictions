@@ -133,7 +133,7 @@ export async function getCommentatorBySlug(
     })
     .from(predictions)
     .innerJoin(seasons, eq(predictions.seasonId, seasons.id))
-    .where(eq(predictions.userId, user.id));
+    .where(and(eq(predictions.userId, user.id), eq(predictions.isLocked, true)));
 
   if (userPreds.length === 0) {
     return {
@@ -243,7 +243,7 @@ export async function getTopCommentatorsForYear(
   const seasonPreds = await db
     .select()
     .from(predictions)
-    .where(eq(predictions.seasonId, season.id));
+    .where(and(eq(predictions.seasonId, season.id), eq(predictions.isLocked, true)));
   const commentatorPreds = seasonPreds.filter((p) => userMap.has(p.userId));
 
   if (commentatorPreds.length === 0) return [];

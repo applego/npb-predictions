@@ -17,3 +17,11 @@ JOIN seasons s ON s.id=a.season_id AND s.year=2026
 JOIN predictions p ON p.season_id=s.id AND p.variant='e2e-results'
 JOIN users u ON u.id=p.user_id AND u.slug IN ('e2e-result-a','e2e-result-a-copy','e2e-result-b')
 WHERE a.snapshot_date=(SELECT max(x.snapshot_date) FROM actual_team_standings x WHERE x.season_id=a.season_id AND x.league=a.league);
+
+-- Synthetic privacy boundary fixture: never use real credentials or user data.
+INSERT OR IGNORE INTO users (name, slug, role, email, firebase_uid)
+VALUES ('検証用 非公開予想', 'e2e-private-draft', 'friend', 'draft@example.invalid', 'e2e-draft-uid'),
+       ('検証用 公開予想', 'e2e-public-locked', 'friend', 'locked@example.invalid', 'e2e-locked-uid');
+INSERT OR IGNORE INTO predictions (user_id, season_id, is_locked, variant)
+SELECT u.id, s.id, CASE WHEN u.slug='e2e-public-locked' THEN 1 ELSE 0 END, 'privacy-fixture'
+FROM users u JOIN seasons s ON s.year=2026 WHERE u.slug IN ('e2e-private-draft','e2e-public-locked');

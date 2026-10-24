@@ -19,6 +19,8 @@ import {
   SEO_TERMS,
 } from "@/lib/seo-meta";
 
+import { publicPredictionRelations } from "@/lib/season-predictions";
+
 const DEFAULT_YEAR = new Date().getFullYear();
 
 export const revalidate = 600;
@@ -89,8 +91,8 @@ async function getUserPrediction(
   if (!season) return null;
 
   const pred = await db.query.predictions.findFirst({
-    where: and(eq(predictions.seasonId, season.id), eq(predictions.userId, userId)),
-    with: { user: true, rankingPicks: true, titlePicks: true },
+    where: and(eq(predictions.seasonId, season.id), eq(predictions.userId, userId), eq(predictions.isLocked, true)),
+    with: publicPredictionRelations,
   });
   if (!pred) return null;
 
@@ -109,8 +111,6 @@ async function getUserPrediction(
       role: pred.user.role ?? undefined,
       source: pred.user.source,
       variant: pred.user.variant,
-      firebaseUid: pred.user.firebaseUid,
-      email: pred.user.email,
     },
     rankingPicks: pred.rankingPicks.map((rp) => ({
       id: rp.id,

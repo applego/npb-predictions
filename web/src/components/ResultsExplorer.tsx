@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { getTeamByName } from "@/lib/teams";
-import { RESULT_LABELS, type ResultEntry, type ResultScope } from "@/lib/season-results";
+import { RESULT_LABELS, resultPoints, rankResultEntries, type ResultEntry, type ResultScope } from "@/lib/season-results";
 import { groupIdenticalResults, resultDifference } from "@/lib/results-presentation";
 import { recordGrowth } from "@/lib/growth-events";
 import { ResultCardDownload } from "./ResultCardDownload";
@@ -13,6 +13,8 @@ export function ResultsExplorer({ entries, target, year, scope, isFinal, observa
   entries: ResultEntry[]; target: number; year: number; scope: ResultScope; isFinal: boolean; observation: string; stateLabel: string; compact?: boolean;
 }) {
   useEffect(() => { recordGrowth("result_view", year, scope); }, [year, scope]);
+  const [sort, setSort] = useState<"points" | "exact" | "deviation">("points");
+  const rankingLabel = sort === "points" ? "得点順位" : sort === "exact" ? "一致数順位" : "順位差順位";
   const [query, setQuery] = useState("");
   const [onlyPerfect, setOnlyPerfect] = useState(false);
   function updateFilters(nextQuery: string, nextPerfect: boolean) {
@@ -26,6 +28,7 @@ export function ResultsExplorer({ entries, target, year, scope, isFinal, observa
     function restoreFilters() {
       const params = new URLSearchParams(window.location.search);
       setQuery(params.get("q") ?? ""); setOnlyPerfect(params.get("perfect") === "1");
+      const value = params.get("sort"); setSort(value === "exact" || value === "deviation" ? value : "points");
     }
     restoreFilters();
     window.addEventListener("popstate", restoreFilters);
@@ -51,9 +54,20 @@ export function ResultsExplorer({ entries, target, year, scope, isFinal, observa
     (!onlyPerfect || entry.exact === target) &&
     `${entry.name} ${entry.source ?? ""}`.toLocaleLowerCase("ja").includes(query.trim().toLocaleLowerCase("ja")),
   ), [groups, target, query, onlyPerfect]);
-  const visible = compact && !query && !onlyPerfect ? shown.slice(0, 8) : shown;
+  const ordered = useMemo(() => {
+    const ranked = new Map(rankResultEntries(entries, sort).map(entry => [entry.userId, entry]));
+    return groups.map(row => ({ ...row, entry: ranked.get(row.entry.userId)! }))
+      .sort((a,b) => a.entry.rank - b.entry.rank || a.entry.name.localeCompare(b.entry.name, "ja"))
+      .filter(row => shown.some(item => item.entry.userId === row.entry.userId));
+  }, [entries, groups, shown, sort]);
+  const visible = compact && !query && !onlyPerfect ? ordered.slice(0, 8) : ordered;
   return (
     <div className="result-explorer">
+      <div className="result-sort-tabs" role="group" aria-label="ランキングの評価指標">
+        {([['points', '順位予想点'], ['exact', '一致数'], ['deviation', '順位差']] as const).map(([value, label]) => <button key={value} type="button" aria-pressed={sort === value} onClick={() => {
+          setSort(value); const url = new URL(window.location.href); url.searchParams.set("sort", value); window.history.replaceState(window.history.state, "", url);
+        }}>{label}<span>{value === 'deviation' ? '少ない順' : '多い順'}</span></button>)}
+      </div>
       <div className="result-tools">
         <label className="result-search">
           <span className="result-sr-only">解説者・出典を検索</span>
@@ -67,8 +81,9 @@ export function ResultsExplorer({ entries, target, year, scope, isFinal, observa
         {visible.map(({ entry, aliases }) => (
           <details className={`result-person${entry.exact === target ? " result-person-perfect" : ""}`} key={entry.userId} id={`predictor-${entry.userId}`}>
             <summary>
-              <span className="result-position"><b>{entry.rank}</b>位</span>
+              <span className="result-position" aria-label={`${rankingLabel} ${entry.rank}位`}><b>{entry.rank}</b>位</span>
               <span className="result-person-name"><strong>{entry.name}</strong>{aliases.map(id => <span key={id} id={`predictor-${id}`} hidden />)}</span>
+              <span className="result-points"><small>順位予想点</small><b>{resultPoints(entry)}<i>pt</i></b></span>
               <span className="result-match">{target}球団中 <b>{entry.exact}</b>球団一致</span>
               <span className="result-deviation">順位差合計 <b>{entry.deviation}</b></span>
               <span className="result-difference">{resultDifference(entry)}</span>
@@ -92,8 +107,8 @@ export function ResultsExplorer({ entries, target, year, scope, isFinal, observa
                 {entry.sourceUrl ? <a href={entry.sourceUrl} target="_blank" rel="noopener noreferrer">予想の出典を確認 ↗</a> : <span>出典リンク未登録</span>}
               </div>
               <div className="result-share-invitation"><h3>この答え合わせ、野球仲間にも。</h3><p>{entry.name}の予想は{target}球団中{entry.exact}球団一致。「意外と当たってる？」「ここは読めなかった！」を話のきっかけに。</p><p>共有先から、この人の予想の内訳をそのまま開けます。</p></div>
-              <ResultCardDownload entry={entry} year={year} scope={scope} target={target} stateLabel={stateLabel} observation={observation} />
-              <ResultShare path={`/rankings?year=${year}&league=${scope}#predictor-${entry.userId}`} title={`${year}年 ${RESULT_LABELS[scope]}｜${entry.name}は${entry.exact}/${target}順位一致（${stateLabel}）｜集計基準：${observation}｜みんなの順位予想対決`} />
+              <ResultCardDownload entry={entry} year={year} scope={scope} target={target} rankingLabel={rankingLabel} stateLabel={stateLabel} observation={observation} />
+              <ResultShare path={`/rankings?year=${year}&league=${scope}&sort=${sort}#predictor-${entry.userId}`} title={`${year}年 ${RESULT_LABELS[scope]}｜${entry.name}は順位予想 ${resultPoints(entry)}点・${entry.exact}/${target}順位一致（${stateLabel}）｜集計基準：${observation}｜みんなの順位予想対決`} />
             </div>
           </details>
         ))}

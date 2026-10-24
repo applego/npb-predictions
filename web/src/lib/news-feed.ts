@@ -57,7 +57,7 @@ export async function generateNewsFeed(limit = 50): Promise<NewsItem[]> {
       db.select().from(seasons).orderBy(desc(seasons.year)),
       db.select().from(users),
       db.select().from(actualTeamStandings).orderBy(desc(actualTeamStandings.snapshotDate)),
-      db.select().from(predictions).orderBy(desc(predictions.createdAt)),
+      db.select().from(predictions).where(eq(predictions.isLocked, true)).orderBy(desc(predictions.createdAt)),
       db.select().from(rankingPicks),
       db.select().from(scoreSnapshots).orderBy(desc(scoreSnapshots.totalScore)),
     ]);

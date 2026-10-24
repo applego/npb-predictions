@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { NPB_TEAMS } from "./teams";
-import { latestResultSnapshot, safeSourceUrl, summarizeResults, type PublicResultPick, type ResultLeague, type ResultStanding } from "./season-results";
+import { rankResultEntries, resultPoints, latestResultSnapshot, safeSourceUrl, summarizeResults, type PublicResultPick, type ResultLeague, type ResultStanding } from "./season-results";
 import { parseResultsQuery } from "./results-query";
 
 const now = Date.parse("2026-10-05T00:00:00Z");
@@ -12,6 +12,18 @@ function picks(userId = 1, league: ResultLeague = "central", ranks = [1, 2, 3, 4
   return standings(league).map((row, index) => ({ league, rank: ranks[index], teamName: row.teamName, predictionId: userId, userId, name: `テスト予想者${userId}`, slug: `test-${userId}`, source: "検証用", sourceUrl: "https://example.com", variant: null, createdAt: "2026-03-01T00:00:00Z" }));
 }
 describe("public season result integrity", () => {
+  it("ranks overall accuracy above the count of exact hits using existing points", () => {
+    const summary = summarizeResults([...picks(1, "central", [1,2,6,5,4,3]), ...picks(2, "central", [2,1,4,3,6,5])], standings(), "central", now);
+    expect(summary.entries.map(row => [row.userId, row.rank, row.exact, resultPoints(row)])).toEqual([[2,1,0,18],[1,2,2,14]]);
+  });
+
+  it("keeps registration ranks before display deduplication and searching for every metric", () => {
+    const summary = summarizeResults([...picks(1), ...picks(2), ...picks(3, "central", [2,1,3,4,5,6])], standings(), "central", now);
+    for (const metric of ["points", "exact", "deviation"] as const) {
+      const ranked = rankResultEntries(summary.entries, metric);
+      expect(ranked.map(row => [row.userId, row.rank])).toEqual([[1,1],[2,1],[3,3]]);
+    }
+  });
   it("never derives final status from the calendar", () => {
     const summary = summarizeResults(picks(), standings(), "central", Date.parse("2027-01-01T00:00:00Z"));
     expect(summary.status).toBe("provisional"); expect(summary.perfect).toBe(1);
