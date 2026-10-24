@@ -169,3 +169,13 @@ UBS全体は既知wrapper停止のため未達。doctorも6分超で止まり自
 初回dailyの同じcaptureを再利用してstatusを生成し、計測は追加しない。
 利益・ASP・funnelはnull、2実験は公開証拠待ち。NPB公式の日本シリーズ2026中継案内を今回再読したが、
 提携・販売・需要・利益の証拠にはしない。収益6候補の比較はMONETIZATION.mdを継続しprivacyを優先した。
+
+## 2026-10-24 同日2回目: 比較・画像の公開材料（3lw.5）
+
+product source e2f7626a24cbefbd5d2a053fa2b9596659018795。年度/リーグの選択と実データを一致させ、
+320/390pxの選択年度・active文字・1列PNGの文字切れを修復。独立実読で今回scope blocking 0。
+資料と受領はdocs/growth/handoff.md、最新必須CIはPR80のcheck、公開後の確認条件はbr3lw.5。
+推奨は既存PR80の別承認公開経路で適用し、公開後に同じ導線と本人認証をread-backすること。
+未承認時は本automationは公開せず、既存の限定保存版と欠測nullを維持する。
+同日の視聴案内修復と6利益経路比較を再利用し、次の契約/広告を追加する材料が無い間は重複実験を増やさない。
+今回の正しいhealth経路はHTTP200でもD1 quota 3source。回復・全対象archive取得・売上/利益の証拠にはしない。

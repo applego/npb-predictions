@@ -1,10 +1,10 @@
 {
   "schema": "npb-growth-pdca.v1",
   "goal_ref": "npb-predictions",
-  "source_head": "f5ea3e23c9f14060bb8e0f3fd01756525dd2b9e4",
+  "source_head": "e2f7626a24cbefbd5d2a053fa2b9596659018795",
   "source_digest": "e30233b1b90656953f53c94f4065ff770e50e9084df6b16bc5054cf57d346c22",
-  "observed_at": "2026-10-24T01:05:06.694965+00:00",
-  "fingerprint": "fcf75021189b64021368a2a86616bd09a8b2c1e2efe44ed77e9d9bc481535bd0",
+  "observed_at": "2026-10-24T10:54:34.409130+00:00",
+  "fingerprint": "e2014e547114b9cedb23db676e1e2f388deb2aa9e422e442c76a09d745d4f819",
   "metrics": {
     "contribution_profit_28d": {
       "status": "missing",

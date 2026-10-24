@@ -1,69 +1,72 @@
 # NPB獲得・収益化の引継ぎ（2026-10-24）
 
-この文書はbrと固定sourceの投影。現在の仕事・担当・待ちはrepo-local brが正本。
-過去の「次のreadyは3lw.2」という引継ぎを置換する。本回でその修復コードをPR80へ反映した。
-到達は2/4: PR。本番main408cf07へ未反映で、merge/deployは実行していない。
+仕事・担当・待ち条件の正本はrepo-local br。本書は固定sourceの投影。
+到達は2/4: PR。本番main 408cf075033852911137bd672e7e1a0d85f052cbは未変更。
+本automationはmerge/deploy・外部投稿・契約・有料API・権限/秘密変更・本番DB操作を行っていない。
 
-## 固定sourceと共有capture
+## 現在の固定sourceとcapture
 
-- 修復code source: f5ea3e23c9f14060bb8e0f3fd01756525dd2b9e4
+- product source: e2f7626a24cbefbd5d2a053fa2b9596659018795
+- privacy修復source（上記の祖先）: f5ea3e23c9f14060bb8e0f3fd01756525dd2b9e4
 - PR: https://github.com/applego/npb-predictions/pull/80
-- tracker: npb-predictions-3lw.2 / owner: npb-automation
-- status source_head: f5ea3e23c9f14060bb8e0f3fd01756525dd2b9e4
+- 今回tracker: npb-predictions-3lw.5 / owner: npb-automation
+- status source_head: e2f7626a24cbefbd5d2a053fa2b9596659018795
 - source_digest: e30233b1b90656953f53c94f4065ff770e50e9084df6b16bc5054cf57d346c22
-- fingerprint: fcf75021189b64021368a2a86616bd09a8b2c1e2efe44ed77e9d9bc481535bd0
+- fingerprint: e2014e547114b9cedb23db676e1e2f388deb2aa9e422e442c76a09d745d4f819
 
-mainに入口が無いため、既存bootstrap laneを利用した。origin/branch/9dddab1祖先/実行sourceとcommitted HEADの一致を確認。
-main適用後はmain由来の場へ移しbootstrap依存を外す。共有rootの既存dirtyは取り込んでいない。
-dailyの一次計測1回→weekly→graphを実行し、終了時のtracker変化は同captureの再評価からpublishした。
-source_digestは契約の指紋であり、API全コードのhashではない。修復実体は上の固定code sourceを参照する。
+mainに新入口が無いため既存bootstrap laneを再利用。origin/branch/9dddab1祖先と実行sourceのcommitted HEAD一致を確認した。
+main適用後はmain由来の実行場へ移しbootstrap依存を外す。既存rootのdirtyは吸収していない。
+10:43:29Zの一次計測1回→同stateのweekly→graphを実行。修復後のtracker変化はそのmetricsを再利用しpublishした。
+source_digestは契約の指紋であり全product codeのhashではない。実体はproduct sourceを参照する。
+source_headはその再評価の実行source、observed_atは再評価時刻であり公開・新規計測の時刻ではない。
 
-## 今回修復した利用者成果
+## 今回の利用者成果（3lw.5）
 
-公開予想でメール・Firebase UID・未ロック予想を返さず、本人は自分の予想を比較・閲覧できる。
-公開season API2つはユーザー列のallowlistとlocked条件。本人GET /api/seasons/[year]/meは検証済みtokenのuser.id限定、private/no-store。
-自己比較とマイページを本人GETへ移行し、初回連携待ち・401/503・404・取消を区別する。
-公開profile/予想OG3経路、SEO/news/解説者詳細/公開成績の取得にもlocked条件を適用した。
-実ユーザーの私有値は取得していない。実データ漏洩を観測したという記録ではない。
+比較中の年度がスマホでも見え、選択中の操作を読め、1人の予想も文字切れのないPNGにできる。
+昇順14年度の横scrollをlabel付き年度選択へ置換。activeはthemeのprimary文字・枠・aria-pressedで区別する。
+CSS変数へhex alphaを連結する無効な指定をcolor-mixへ修復。関連するPNG/分布操作の淡色文字にも適用した。
+年度/リーグ変更は前の取得を中断し、古い応答・error/finallyで現在の結果を上書きしない。
+新聞PNGは1列でも最小幅360pxと中央gridを持ち、タイトル・リーグ・作成日・footerを読める。
+観測する変化は比較/保存開始やその後の流入であり、利用者・保存完了・利益への効果は未確認。
+
+同日初回の6利益経路比較と公式一次証拠を再利用し、今回は前回の目視残差を優先した。
+視聴案内は3lw.4で修復済みの公開待ち。物販/遠征は需要・案件条件未確認、広告/有料/法人は需要と承認が不足する。
+新しい未判定実験は追加していない。prepared 2件は公開時刻/SHA・比較条件・同期間データが揃うまで判定しない。
 
 ## 検証と独立受領
 
-旧公開APIへ戻した反例3FAIL、旧画像へ戻した反例FAIL。生成SQLを実SQLiteで実行する入口8件と既存auth10件PASS。
-横展開時の全331単体、型・対象lint・Next/CF build・データ・性能budget PASS。
-実localD1の2公開API/401と実Chromiumの連携遅延→取得0→連携完了後1列、503/404区別、マイページを操作し2/2PASS。
-1400/390/320pxの横はみ出し0、成功時console/pageerror0。認証相手は合成境界で、本番ログイン成功ではない。
-初回E2Eの初期選択人数期待ミス、次の30秒timeoutは失敗として保存し、最終再検証だけをPASSにしている。
+固定sourceで型/Next+CF build/333単体テストPASS。実Chromiumで新比較3幅と既存privacy2件の5件PASS。
+320/390/1400pxで年度変更→当該年度API/表示→選択状態contrast 4.5以上→PNG操作→実PNGを確認。
+実canvasに描いたタイトル/footerの範囲と同じ行のリーグ/日付の非重複も確認。横overflow 0、console/pageerror 0。
+本人比較は合成Firebase/レスポンス境界で連携待ち→認証付き本人GET→503/404区別→マイページを確認。本番ログインの証明ではない。
+旧年度UIでは3幅FAIL、旧PNGでは描画文字の範囲がcanvas幅を超えてFAIL。
+abort cleanupを外したbuilt mutantでは逆順の2025応答で2026表示が失われてFAIL。固定sourceへ復元し再build/5件再検証もPASS。
+初期fixtureのlikes未定義によるconsole 500と、build同時実行による不適切なrace予備検証は失敗として保持し、反例成功に数えない。
 
-既存チャット「⚾️リーグ結果UIを改善」のCodexがa1b5576/ab40310/f5ea3e2を実読。
-旧マイページconsumer・追加OG2経路・初回連携401の3指摘を修復し、f5ea3e2に追加指摘なしと受領を返した。
-受領時のfingerprintは0090e82e96bc08e04822b3ba22c97a6b9efb120942834c6ccf5f3d6538b629e7、tracker3lw.2、担当read-only review。
-現captureも同Codexがstatus実ファイルを読み、f5ea3e2/digest e30233b1/fingerprint fcf75021189b64021368a2a86616bd09a8b2c1e2efe44ed77e9d9bc481535bd0、
-selected_tracker_item=null、tracker3lw.2/read-only review担当を返す受領を確認した。送信だけを受領にしていない。
-Claude Code担当の実在/受領は未確認、既知の利用制限を再試行していない。新Agent/chatは作成していない。
+既存チャット「⚾️リーグ結果UIを改善」のCodexがe2f7626の5file差分と合成画像7枚を実読し、今回scopeにblocking 0と回答。
+年度・操作・今回の1列PNGに限るDesigner Gateであり、サイト全体の品質や本番反映の判定ではない。
+同Codexの受領はtracker npb-predictions-3lw.5/read-only review。編集・merge・deployを頼んでいない。
+同Codexはstatus実ファイルを読み、source_head e2f7626a24cbefbd5d2a053fa2b9596659018795、
+source_digest e30233b1b90656953f53c94f4065ff770e50e9084df6b16bc5054cf57d346c22、
+fingerprint e2014e547114b9cedb23db676e1e2f388deb2aa9e422e442c76a09d745d4f819、selected=null/work_required=falseを返した。
+2026-10-24T10:55:47Zにtracker3lw.5/read-only reviewの受領を確認。次owner=npb-automation、別承認公開後read-back。
+送信を受領とは扱っていない。Claude Code担当の現在の実在/受領は未確認、既知の利用制限は再試行していない。
+Agent/chatの新設は行っていない。
 
-6枚の独立目視では認証差分の明確な表示崩れなし。ただし全体Designer Gateは保留。
-既存の年度tab選択位置・淡いfilter文字・部分予想の空パlabelを親npb-predictions-3lwへ戻した。
-追加の成功/503エラー6枚も独立目視。320/390pxのエラーは枠内、1400pxの本人1列操作は確認。
-スマホのダウンロード操作は画像の画面外で目視未確認、画像共有物そのものの品質や本番反映も未確証。
-これらの残差を新規改善完了とはせず、全体Designer Gateの保留を維持する。
-全体UBSは既知tool停止で未達。部分検査を全体PASSにしていない。CIはPR最新headを照合し、過去greenを流用しない。
+変更3fileのUBSはexit 0/critical 0/warning 122。主に既存hooks検出等でありwarningを0件とはしない。
+全体UBSは既知のtool停止で未達を維持し、部分検査を全体PASSとしない。必須CIはPR最新headのcheckを正本とする。
+前回privacy APIの実SQL/auth検証と独立指摘の修復はf5ea3e2に保持し、今回の変更で同じブラウザ入口を回帰確認した。
 
 ## 次ownerとresume
 
-owner=npb-automation。3lw.2/3lw.1/arr/3lw.4は別承認のPR80公開後read-back待ち。
-3lw.2: 公開APIの列・未lock404、認証本人比較/マイページを実環境で確認する。
-3lw.1/arr: healthを1回確認し、健全な時だけ既存read-only live gate。全対象exportのsource/hash/母集団/正規ID/登録日時/lock欠測を確認する。
-今回healthは403で内容未確認、quota回復と判断せずgate/export反復なし。部分保存版を全登録者/当時lock確認済みにしない。
-3lw.4: resources公式案内・戻り導線の本番read-back、実在するASP/費用sourceが接続できた時だけ同期間照合する。
-全体UIの残差は親3lw、最終CI/レビューと品質制限はPRで確認する。既存認証待ちは設定/session変化まで再探索しない。
+owner=npb-automation。3lw.5/3lw.2/3lw.1/arr/3lw.4は別承認によるPR80公開後のread-back待ち。
+最新CI失敗は先に同sourceで修復する。この定期実行から本番merge/deployをしない。
+3lw.5: 実公開の320/390/1400pxで年度/リーグとデータ一致、本人比較、PNGタイトル/日付/footerを確認する。
+3lw.2: 公開2APIの列/未lock404と本人比較・マイページを実環境で確認する。
+3lw.1/arr: healthを次の回復条件で1回読み、健全なときだけ既存live gateをread-only実行する。
+今回の正しいhealth経路はHTTP200でも3sourceがD1 quotaのまま。画像/scoreboard/export/gateの同じ失敗を再試行していない。
+全対象archive/hash/母集団/正規variant/登録時刻/lock欠測の実取得・照合は未達。
+3lw.4: 公式中継案内と戻り導線を公開実体で確認する。
 
-## 主指標と運用の境界
-
-利益・ASP・人数・共有/保存・X由来閲覧はnull。HTTP応答3は表示の意味・人数・利益ではない。
-2実験は公開時刻/SHA/比較条件待ち、開始/成功を認定せず新実験なし。1円/28日の目標は暫定。
-結果閲覧は日別匿名タブ延べ数、共有/保存は開始、X投稿完了/OS保存完了/再訪人数へ読み替えない。
-6利益経路と共有/再訪を比較し、今回NPB公式2026中継案内を再読した。契約/需要/売上の証拠ではない。
-
-native dry-runはmain408cf07のheld_measurement。今回は更新済みCodex automationから実PDCAとready修復を実行した。
-新native executorやschedulerを足していない。native main契約の適用・本番稼働の完了とは別。
-PR/受領/検証/通知は利益ではない。本番deploy/main merge/外部投稿/契約/支出/秘密権限/本番DB操作は実行していない。
+利益・ASP確定成果・費用照合・共有/流入指標はnull。1円/28日はオーナー未確定の暫定値。
+HTTPの3経路応答をsemantic health・人数・利益に読み替えない。収益認証待ちは設定/セッションの変化まで再探索しない。
