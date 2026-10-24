@@ -11,6 +11,7 @@ import {
   getSourceBadgeColors,
   getDiffLabel,
 } from "@/lib/commentator-types";
+import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import { useAuth } from "@/contexts/AuthContext";
 import { downloadPredictionPng, type PngCol } from "@/lib/prediction-png";
 
@@ -775,11 +776,15 @@ export function CommentatorRankingsClient() {
   const [showPngPanel, setShowPngPanel] = useState(false);
   const [pngLeague, setPngLeague] = useState<"central" | "pacific">("central");
   const [selectedPngIds, setSelectedPngIds] = useState<Set<number>>(new Set());
+  const [selfPicksError, setSelfPicksError] = useState<string | null>(null);
   const [includeSelf, setIncludeSelf] = useState(false);
-  const [selfPrediction, setSelfPrediction] = useState<{
+  const [selfPredictionState, setSelfPrediction] = useState<{
+    uid: string;
+    year: YearOption;
     name: string;
     picks: Array<{ league: string; rank: number; teamName: string }>;
   } | null>(null);
+  const selfPrediction = includeSelf && selfPredictionState?.uid === firebaseUser?.uid && selfPredictionState?.year === year ? selfPredictionState : null;
   const [selfPicksLoading, setSelfPicksLoading] = useState(false);
 
   // 1位予想分布 (memoized from data)
@@ -983,22 +988,28 @@ export function CommentatorRankingsClient() {
     [fingerprint, likedIds]
   );
 
-  // Fetch own prediction when includeSelf is toggled on
+  // Resolve ownership on the server; never fetch other users' Firebase identities.
   useEffect(() => {
-    if (!includeSelf || !firebaseUser || year === "all") {
-      setSelfPrediction(null);
-      return;
-    }
+    setSelfPrediction(null);
+    setSelfPicksError(null);
+    setSelfPicksLoading(false);
+    if (!includeSelf || !firebaseUser || year === "all") return;
+    const controller = new AbortController();
     setSelfPicksLoading(true);
-    fetch(`/api/seasons/${year}/predictions`)
-      .then((r) => r.json() as Promise<Array<{ user: { firebaseUid: string | null; name: string }; rankingPicks: Array<{ league: string; rank: number; teamName: string }> }>>)
-      .then((preds) => {
-        const mine = preds.find((p) => p.user.firebaseUid === firebaseUser.uid);
-        if (!mine) { setSelfPrediction(null); return; }
-        setSelfPrediction({ name: mine.user.name, picks: mine.rankingPicks });
+    fetchWithAuth(`/api/seasons/${year}/me`, { signal: controller.signal, cache: "no-store" })
+      .then(async (response) => {
+        if (response.status === 404) return null;
+        if (!response.ok) throw new Error(response.status === 401 ? "ログインし直して再度お試しください" : "予想を取得できませんでした。再度お試しください");
+        return response.json() as Promise<{ user: { name: string }; rankingPicks: Array<{ league: string; rank: number; teamName: string }> }>;
       })
-      .catch(() => setSelfPrediction(null))
-      .finally(() => setSelfPicksLoading(false));
+      .then((mine) => {
+        if (!controller.signal.aborted && mine) setSelfPrediction({ uid: firebaseUser.uid, year, name: mine.user.name, picks: mine.rankingPicks });
+      })
+      .catch((error: unknown) => {
+        if (!controller.signal.aborted) setSelfPicksError(error instanceof Error ? error.message : "予想を取得できませんでした");
+      })
+      .finally(() => { if (!controller.signal.aborted) setSelfPicksLoading(false); });
+    return () => controller.abort();
   }, [includeSelf, firebaseUser, year]);
 
   // Client-side filtering
@@ -1267,7 +1278,8 @@ export function CommentatorRankingsClient() {
               <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
                 自分の予想を先頭に追加
                 {selfPicksLoading && <span style={{ color: "var(--text-muted)" }}> (読み込み中...)</span>}
-                {includeSelf && !selfPicksLoading && !selfPrediction && (
+                {includeSelf && selfPicksError && <span role="alert" style={{ color: "#fb923c" }}> ({selfPicksError})</span>}
+                {includeSelf && !selfPicksLoading && !selfPicksError && !selfPrediction && (
                   <span style={{ color: "#fb923c" }}> (この年の予想データなし)</span>
                 )}
               </span>

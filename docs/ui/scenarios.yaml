@@ -80,6 +80,16 @@
       "test_id": "watch guide opens the official broadcast announcement",
       "expected_outcome": "視聴方法リンクを押すとNPB公式の中継案内を別タブで開ける",
       "max_operations": 2
+    },
+    {
+      "id": "self-prediction-privacy",
+      "question": "私有識別子を公開せず自分の予想を比較できるか",
+      "role": "ログイン済み参加者",
+      "route": "/rankings/commentators?year=2026",
+      "fixture": "synthetic Firebase user + authenticated response boundary",
+      "test_id": "own prediction uses authenticated endpoint and separates errors from missing data",
+      "expected_outcome": "認証付き本人取得で先頭へ追加し、失敗を未登録と混同しない",
+      "max_operations": 6
     }
   ]
 }
