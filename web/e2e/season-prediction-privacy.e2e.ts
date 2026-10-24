@@ -28,6 +28,9 @@ test("own prediction uses authenticated endpoint and separates errors from missi
   }, { apiKey, uid });
   await page.route("https://identitytoolkit.googleapis.com/**", route => route.fulfill({ json: { users: [{ localId: uid, email: "fixture@example.invalid", emailVerified: true, displayName: "検証用 本人", providerUserInfo: [] }] } }));
   await page.route("**/api/auth/link-user", route => route.fulfill({ json: { id: 999999, name: "検証用 本人", slug: "e2e-synthetic-owner", role: "friend", firebaseUid: uid } }));
+  const pageErrors: string[] = [];
+  page.on("pageerror", error => pageErrors.push(error.message));
+  await page.route("**/api/groups/my", route => route.fulfill({ json: { groups: [] } }));
   let status = 200;
   let calls = 0;
   await page.route("**/api/seasons/2026/me", async route => {
@@ -48,6 +51,16 @@ test("own prediction uses authenticated endpoint and separates errors from missi
   await toggle.uncheck(); status = 404; await toggle.check();
   await expect(page.getByText("(この年の予想データなし)", { exact: true })).toBeVisible();
   expect(calls).toBe(3); expect(publicFetches).toBe(0);
+  expect(pageErrors).toEqual([]);
+  for (const width of [1400, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await page.screenshot({ path: test.info().outputPath(`comparison-${width}.png`), fullPage: true });
+  }
+  status = 200;
+  await page.goto("/me");
+  await expect(page.getByText("阪神タイガース", { exact: false })).toBeVisible();
+  await expect(page.getByText("まだ予想はありません", { exact: true })).toHaveCount(0);
   for (const width of [1400, 390, 320]) {
     await page.setViewportSize({ width, height: 900 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
