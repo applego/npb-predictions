@@ -18,17 +18,11 @@ export function ResultsBoard({ data, compact = false }: { data: ResultsData; com
     <div className="results-page">
       <header className="result-intro-header duel-hero">
         <div className="duel-hero-copy">
-          <p className="duel-eyebrow"><span>順位予想の答え合わせ</span><span>{year} / プロ野球・{resultState(summary)}</span></p>
-          <h1>その予想、<br /><em>どこまで当たった？</em></h1>
-          <p>解説者の予想と実順位を、出典つきで比較。<br className="duel-desktop-break" />気になる結果を見つけて、野球仲間と答え合わせ。</p>
-          <a className="duel-hero-link" href="#result-list-title">解説者の結果を見る <span aria-hidden="true">↘</span></a>
+          <p className="duel-eyebrow">SEASON REVIEW <span>{year} / {resultState(summary)}</span></p>
+          <h1>予想の答えは、<em>結果にある。</em></h1>
+          <p>誰が、どこまで読めていた？ 解説者の予想を得点と球団別の内訳で比較。</p>
         </div>
-        <div className="duel-hero-score" aria-label="今回の比較対象">
-          <span>{year}年 {RESULT_LABELS[scope]}</span>
-          <strong>{summary.eligible}<small>件の登録予想</small></strong>
-          <p>{coverage ? "公開保存分" : "登録予想"}を{target}球団で比較</p>
-          <div className="duel-score-bars" aria-hidden="true"><i /><i /><i /><i /><i /><i /></div>
-        </div>
+        <a className="duel-hero-score" href="#result-list-title"><span>{RESULT_LABELS[scope]} / 比較対象</span><strong>{summary.eligible}<small>件</small></strong><p>{target}球団の予想を比較 ↘</p></a>
       </header>
       <div className="result-controls" id="results">
         <nav className="result-tabs" aria-label="答え合わせのリーグ">
@@ -82,8 +76,8 @@ export function ResultsBoard({ data, compact = false }: { data: ResultsData; com
       </div>}
       {stale && <div className="result-notice" role="status"><strong>順位データの更新から36時間以上経過しています。</strong><p>以下は表示日時点の比較です。現在順位・最終結果ではありません。</p></div>}
       <section className="result-main-section" aria-labelledby="result-list-title">
-        <h2 id="result-list-title">解説者の的中ランキング</h2>
-        <p className="result-sort-note">並び順：一致数↓ → 順位差合計↑（登録単位）</p>
+        <h2 id="result-list-title">解説者の予想ランキング</h2>
+        <p className="result-sort-note">既定は順位予想点。評価指標を切り替えて比較できます。同点は同順位。</p>
         {entries.length ? <ResultsExplorer key={`${year}-${scope}`} entries={entries} target={target} year={year} scope={scope} isFinal={status === "final"} compact={compact} observation={resultObservation(summary)} stateLabel={resultState(summary)} /> : (
           <div className="result-empty"><h3>{emptyFinal ? "6球団が揃う予想は0件です" : "比較できる予想・順位を確認中です"}</h3><p>{emptyFinal ? `この保存分では対象外${summary.excluded}件です。別リーグの比較対象は「収録範囲」で確認できます。` : "ロック済み予想と、同一時点の6球団分の実順位が必要です。"}</p><Link prefetch={false} href={`/rankings/predictions?year=${year}`}>登録されている予想を見る</Link></div>
         )}
@@ -96,7 +90,7 @@ export function ResultsBoard({ data, compact = false }: { data: ResultsData; com
       <details className="result-method" id="method"><summary>集計ルール・出典について</summary><div>
         <p>{evidence ? `公開API観測時のロック済みフラグと元の登録日時を保存しています。採用した${evidence.registrations}件中、ロック日時が未記録なのは${evidence.missingLockedAt}件です。当時のロックを確認済みという意味ではありません。` : coverage ? "公開APIに掲載されていた予想の固定保存が対象です。ロック状態・元の登録日時はこの保存に含まれません。" : "当サイトに登録された解説者・評論家のロック済み予想が対象です。"}各リーグ6球団・1〜6位が重複なく揃うものを集計し、総合はセ・パ両方を必要とします。対象 {summary.eligible}件、予想が不完全などで対象外 {summary.excluded}件です。外部記事とは母集団が異なります。</p>
         <p>{coverage && !evidence ? "公開一覧の登録者IDごとに保存された1件を比較しています。保存後に成績の良い版へ差し替えていません。通常版優先・最古登録の採用を保証する保存ではありません。" : "同じ登録者に複数の予想がある場合は通常版、登録日時、予想IDの順で採用します。成績の良い版を後付けで選びません。"}掲載媒体ごとに登録が分かれている場合は登録ID単位の件数です。一覧では名前・予想・出典・採点が完全に同じ登録だけをまとめて表示し、採点と順位は変えていません。</p>
-        <p>一致数が多い順、次に順位差合計の少ない順で並び、同点は同順位です。順位差合計は各球団の予想順位と実順位の差を足した数値です。この画面の並びは従来のポイント制とは異なり、ポイント計算は変更していません。日付だけで確定と判定せず、各リーグの最新の同一時点の6球団すべてに確定フラグがある場合だけ「確定」と表示します。</p>
+        <p>既定は順位予想点の高い順です。一致数の多い順・順位差合計の少ない順にも切り替えられ、各指標で同点は同順位です。球団ごとの順位差が0/1/2/3/4/5のとき、+5/+3/+1/−1/−3/−5点を加算します。個人タイトル点は含みません。順位差合計は各球団の予想順位と実順位の差を足した数値です。従来の順位予想のポイント計算を使用しています。日付だけで確定と判定せず、各リーグの最新の同一時点の6球団すべてに確定フラグがある場合だけ「確定」と表示します。</p>
         <p>「出典リンクあり」はリンクが登録されているという意味で、内容の検証済みを保証する表示ではありません。未登録は明示します。</p>
         <Link prefetch={false} href={`/rankings/scoreboard?year=${year}`}>ポイント制の成績を見る →</Link>
       </div></details>

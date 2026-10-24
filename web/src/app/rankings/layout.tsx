@@ -46,6 +46,9 @@ const TABS = [
 export default function RankingsLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
+  // The result explorer has its own league/year navigation and shared site navigation.
+  if (pathname === "/rankings") return <>{children}</>;
+
   return (
     <div className="space-y-5">
       <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">

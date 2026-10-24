@@ -100,6 +100,16 @@
       "test_id": "comparison year and PNG controls remain usable at 320px",
       "expected_outcome": "年度変更に応じた予想と読みやすい選択状態を確認し実PNGを取得する",
       "max_operations": 6
+    },
+    {
+      "id": "results-metric-switch",
+      "question": "複数指標で予想を比較し、その評価の画像を保存できるか",
+      "role": "結果を比較するファン",
+      "route": "/rankings?year=2026&league=central",
+      "fixture": "published public archive, no private database",
+      "test_id": "result metrics and actual share card work at 320px",
+      "expected_outcome": "得点・一致数・順位差の並びとURLを切り替え、出典付きPNGを保存する",
+      "max_operations": 10
     }
   ]
 }

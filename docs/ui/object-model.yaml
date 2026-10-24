@@ -9,8 +9,8 @@ objects:
     collection: /rankings?year=:year&league=:league
     detail: /rankings?year=:year&league=:league#predictor-:id
     identity: userId
-    attributes: [名前, 出典, 一致数, 順位差合計, 同順位, 球団別予想, 実順位]
-    actions: [名前と出典で探す, 全順位一致で絞る, 内訳を開く, 出典を見る, Xで共有する, リンクをコピーする, 結果カードを保存する]
+    attributes: [名前, 出典, 順位予想点, 一致数, 順位差合計, 同順位, 球団別予想, 実順位]
+    actions: [名前と出典で探す, 全順位一致で絞る, 評価指標を切り替える, 内訳を開く, 出典を見る, Xで共有する, リンクをコピーする, 結果カードを保存する]
     related: [シーズン, 球団]
   - name: 球団
     identity: slug
@@ -31,6 +31,6 @@ objects:
     attributes: [選択年度, 対象リーグ, 並び順, 比較する解説者, 画像の列数]
     actions: [年度を選ぶ, リーグで絞る, 並べ替える, 比較画像を保存する]
     related: [シーズン, 解説者の予想結果, 自分の予想]
-url_state: [year, league, q, perfect, '#predictor-id']
+url_state: [year, league, q, perfect, sort, '#predictor-id']
 forbidden_terms: [的中率100パーセント保証, 歴代最高]
   # 結果カードは解説者の予想結果の画像projection。端末内で生成し、外部送信しない。
