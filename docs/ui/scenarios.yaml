@@ -90,6 +90,16 @@
       "test_id": "own prediction uses authenticated endpoint and separates errors from missing data",
       "expected_outcome": "認証付き本人取得で先頭へ追加し、失敗を未登録と混同しない",
       "max_operations": 6
+    },
+    {
+      "id": "comparison-mobile-controls",
+      "question": "スマホで選択年度を確認し比較画像を保存できるか",
+      "role": "予想を比較するファン",
+      "route": "/rankings/commentators",
+      "fixture": "synthetic public ranking response boundary",
+      "test_id": "comparison year and PNG controls remain usable at 320px",
+      "expected_outcome": "年度変更に応じた予想と読みやすい選択状態を確認し実PNGを取得する",
+      "max_operations": 6
     }
   ]
 }

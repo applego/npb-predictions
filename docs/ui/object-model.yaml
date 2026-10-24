@@ -25,6 +25,12 @@ objects:
     attributes: [名前, 球団別予想, 読み込み状態, 未登録, 取得失敗]
     actions: [比較へ追加する, 再取得する]
     related: [シーズン, 解説者の予想結果]
+  - name: 解説者の予想比較
+    collection: /rankings/commentators
+    identity: yearとleague
+    attributes: [選択年度, 対象リーグ, 並び順, 比較する解説者, 画像の列数]
+    actions: [年度を選ぶ, リーグで絞る, 並べ替える, 比較画像を保存する]
+    related: [シーズン, 解説者の予想結果, 自分の予想]
 url_state: [year, league, q, perfect, '#predictor-id']
 forbidden_terms: [的中率100パーセント保証, 歴代最高]
   # 結果カードは解説者の予想結果の画像projection。端末内で生成し、外部送信しない。
