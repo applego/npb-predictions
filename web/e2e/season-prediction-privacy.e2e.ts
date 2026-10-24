@@ -16,6 +16,7 @@ test("public season APIs omit private fields and drafts on real local D1", async
 });
 
 test("own prediction uses authenticated endpoint and separates errors from missing data", async ({ page }) => {
+  test.setTimeout(60_000); // Two journeys and six viewport screenshots include browser I/O.
   const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
   if (!apiKey) throw new Error("Firebase public build configuration is required for this auth UI scenario");
   const uid = "e2e-synthetic-owner";
@@ -27,13 +28,20 @@ test("own prediction uses authenticated endpoint and separates errors from missi
     }));
   }, { apiKey, uid });
   await page.route("https://identitytoolkit.googleapis.com/**", route => route.fulfill({ json: { users: [{ localId: uid, email: "fixture@example.invalid", emailVerified: true, displayName: "検証用 本人", providerUserInfo: [] }] } }));
-  await page.route("**/api/auth/link-user", route => route.fulfill({ json: { id: 999999, name: "検証用 本人", slug: "e2e-synthetic-owner", role: "friend", firebaseUid: uid } }));
+  let completeLink!: () => void;
+  const linkBarrier = new Promise<void>(resolve => { completeLink = resolve; });
+  let linked = false;
+  await page.route("**/api/auth/link-user", async route => {
+    await linkBarrier; linked = true;
+    await route.fulfill({ json: { id: 999999, name: "検証用 本人", slug: "e2e-synthetic-owner", role: "friend", firebaseUid: uid } });
+  });
   const pageErrors: string[] = [];
   page.on("pageerror", error => pageErrors.push(error.message));
   await page.route("**/api/groups/my", route => route.fulfill({ json: { groups: [] } }));
   let status = 200;
   let calls = 0;
   await page.route("**/api/seasons/2026/me", async route => {
+    expect(linked, "owner reads must wait for account linking").toBe(true);
     expect(route.request().headers().authorization).toBe("Bearer synthetic-id-token"); calls++;
     await route.fulfill({ status, json: status === 200 ? { user: { name: "検証用 本人" }, rankingPicks: [{ league: "central", rank: 1, teamName: "阪神タイガース" }] } : { error: "fixture boundary" } });
   });
@@ -44,6 +52,9 @@ test("own prediction uses authenticated endpoint and separates errors from missi
   await page.getByRole("button", { name: "全解除", exact: true }).click();
   const toggle = page.getByRole("checkbox", { name: "自分の予想を先頭に追加" });
   await toggle.check();
+  await expect(page.getByText("(アカウントを確認中...)", { exact: true })).toBeVisible();
+  expect(calls).toBe(0);
+  completeLink();
   await expect(page.getByRole("button", { name: "↓ PNG ダウンロード (1列)", exact: true })).toBeVisible();
   expect(calls).toBe(1); expect(publicFetches).toBe(0);
   await toggle.uncheck(); status = 503; await toggle.check();
@@ -56,7 +67,7 @@ test("own prediction uses authenticated endpoint and separates errors from missi
   for (const width of [1400, 390, 320]) {
     await page.setViewportSize({ width, height: 900 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-    await page.screenshot({ path: test.info().outputPath(`comparison-${width}.png`), fullPage: true });
+    await page.screenshot({ path: test.info().outputPath(`comparison-${width}.png`), fullPage: false });
   }
   status = 200;
   await page.goto("/me");
@@ -65,6 +76,6 @@ test("own prediction uses authenticated endpoint and separates errors from missi
   for (const width of [1400, 390, 320]) {
     await page.setViewportSize({ width, height: 900 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-    await page.screenshot({ path: test.info().outputPath(`self-prediction-${width}.png`), fullPage: true });
+    await page.screenshot({ path: test.info().outputPath(`self-prediction-${width}.png`), fullPage: false });
   }
 });

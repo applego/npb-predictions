@@ -772,7 +772,8 @@ export function CommentatorRankingsClient() {
   const [showDistrib, setShowDistrib] = useState(false);
 
   // PNG panel
-  const { firebaseUser } = useAuth();
+  const { firebaseUser, appUser } = useAuth();
+  const selfAccountReady = Boolean(firebaseUser && appUser?.firebaseUid === firebaseUser.uid);
   const [showPngPanel, setShowPngPanel] = useState(false);
   const [pngLeague, setPngLeague] = useState<"central" | "pacific">("central");
   const [selectedPngIds, setSelectedPngIds] = useState<Set<number>>(new Set());
@@ -993,7 +994,7 @@ export function CommentatorRankingsClient() {
     setSelfPrediction(null);
     setSelfPicksError(null);
     setSelfPicksLoading(false);
-    if (!includeSelf || !firebaseUser || year === "all") return;
+    if (!includeSelf || !firebaseUser || !selfAccountReady || year === "all") return;
     const controller = new AbortController();
     setSelfPicksLoading(true);
     fetchWithAuth(`/api/seasons/${year}/me`, { signal: controller.signal, cache: "no-store" })
@@ -1010,7 +1011,7 @@ export function CommentatorRankingsClient() {
       })
       .finally(() => { if (!controller.signal.aborted) setSelfPicksLoading(false); });
     return () => controller.abort();
-  }, [includeSelf, firebaseUser, year]);
+  }, [includeSelf, firebaseUser, appUser, selfAccountReady, year]);
 
   // Client-side filtering
   const filtered = data
@@ -1277,9 +1278,10 @@ export function CommentatorRankingsClient() {
               />
               <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
                 自分の予想を先頭に追加
+                {includeSelf && !selfAccountReady && <span style={{ color: "var(--text-muted)" }}> (アカウントを確認中...)</span>}
                 {selfPicksLoading && <span style={{ color: "var(--text-muted)" }}> (読み込み中...)</span>}
                 {includeSelf && selfPicksError && <span role="alert" style={{ color: "#fb923c" }}> ({selfPicksError})</span>}
-                {includeSelf && !selfPicksLoading && !selfPicksError && !selfPrediction && (
+                {includeSelf && selfAccountReady && !selfPicksLoading && !selfPicksError && !selfPrediction && (
                   <span style={{ color: "#fb923c" }}> (この年の予想データなし)</span>
                 )}
               </span>
