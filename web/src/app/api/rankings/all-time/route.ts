@@ -3,7 +3,7 @@ export const runtime = "edge";
 import { NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { users, seasons, predictions, rankingPicks, actualTeamStandings } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { calcRankingPointForTeam } from "@/lib/scoring";
 
 /**
@@ -32,7 +32,7 @@ export async function GET() {
   const allUsers = await db.select().from(users);
   const userMap = new Map(allUsers.map((u) => [u.id, u]));
 
-  const allPreds = await db.select().from(predictions);
+  const allPreds = await db.select().from(predictions).where(eq(predictions.isLocked, true));
   const allPicks = await db.select().from(rankingPicks);
 
   const picksByPred = new Map<number, typeof allPicks>();

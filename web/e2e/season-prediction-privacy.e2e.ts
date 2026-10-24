@@ -41,6 +41,7 @@ test("own prediction uses authenticated endpoint and separates errors from missi
   page.on("request", req => { if (/\/api\/seasons\/2026\/predictions(?:\?|$)/.test(req.url())) publicFetches++; });
   await page.goto("/rankings/commentators?year=2026");
   await page.getByRole("button", { name: "📰 新聞PNG", exact: true }).click();
+  await page.getByRole("button", { name: "全解除", exact: true }).click();
   const toggle = page.getByRole("checkbox", { name: "自分の予想を先頭に追加" });
   await toggle.check();
   await expect(page.getByRole("button", { name: "↓ PNG ダウンロード (1列)", exact: true })).toBeVisible();

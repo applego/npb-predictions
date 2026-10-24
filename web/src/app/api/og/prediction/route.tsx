@@ -178,6 +178,7 @@ async function fetchPredictionData(
     where: and(
       eq(predictions.userId, userId),
       eq(predictions.seasonId, season.id),
+      eq(predictions.isLocked, true),
     ),
     with: { rankingPicks: true },
   });
@@ -192,7 +193,7 @@ async function fetchPredictionData(
 
   // Fetch all 1st picks for boldness / consensus calculations
   const allPredictions = await db.query.predictions.findMany({
-    where: eq(predictions.seasonId, season.id),
+    where: and(eq(predictions.seasonId, season.id), eq(predictions.isLocked, true)),
     with: { rankingPicks: true },
   });
 

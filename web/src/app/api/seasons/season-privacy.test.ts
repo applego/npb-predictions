@@ -1,10 +1,22 @@
 import { DatabaseSync } from "node:sqlite";
 import { drizzle } from "drizzle-orm/sqlite-proxy";
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
+import type { ReactNode } from "react";
+import { NextRequest } from "next/server";
 import * as schema from "@/db/schema";
 const boundary = vi.hoisted(() => ({ getDb: vi.fn(), requireAuth: vi.fn() }));
 vi.mock("@/db", () => ({ getDb: boundary.getDb }));
 vi.mock("@/lib/auth-server", () => ({ requireAuth: boundary.requireAuth }));
+vi.mock("next/og", async () => {
+  const { renderToStaticMarkup } = await import("react-dom/server");
+  return { ImageResponse: class extends Response {
+    constructor(element: ReactNode) { super(renderToStaticMarkup(element)); }
+  } };
+});
+import { GET as dedicatedImage } from "../og/prediction/route";
+import { GET as dynamicImage } from "../og/[type]/route";
+import profileImage from "../../users/[userId]/opengraph-image";
+import { getSeasonPredictions, getTeamPredictions } from "@/lib/seo-queries";
 import { GET as list } from "./[year]/predictions/route";
 import { GET as detail } from "./[year]/users/[userId]/route";
 import { GET as own } from "./[year]/me/route";
@@ -34,7 +46,7 @@ beforeEach(() => {
   boundary.getDb.mockReset().mockReturnValue(db);
   boundary.requireAuth.mockReset().mockResolvedValue({ user: { id: 1 } });
 });
-afterEach(() => sqlite.close());
+afterEach(() => { sqlite.close(); vi.unstubAllGlobals(); vi.useRealTimers(); });
 function safe(data: unknown) {
   const text = JSON.stringify(data);
   for (const value of ['"email"','"firebaseUid"','@example.com','private-owner-uid','private-other-uid']) expect(text).not.toContain(value);
@@ -79,5 +91,31 @@ describe("season prediction privacy boundary", () => {
     boundary.getDb.mockImplementation(() => { throw Error("quota"); });
     const response = await own(req(), params()); expect(response.status).toBe(503);
     expect(response.headers.get("Cache-Control")).toBe("private, no-store");
+  });
+});
+
+describe("adjacent public prediction readers", () => {
+  it("SEO season/team reads omit private fields and drafts", async () => {
+    const rows = await getSeasonPredictions(1); safe(rows);
+    expect(rows.map(p => p.id)).toEqual([12]);
+    expect(await getTeamPredictions(1, "非公開球団")).toEqual([]);
+    expect((await getTeamPredictions(1, "公開球団"))[0].user.name).toBe("別人");
+  });
+  it("all three public prediction image entries render locked picks but never drafts", async () => {
+    vi.useFakeTimers(); vi.setSystemTime(new Date("2026-10-24T00:00:00Z"));
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(new Uint8Array(1001))));
+    for (const userId of [1, 2]) {
+      const request = new NextRequest(`https://example.com/api/og/prediction?year=2026&userId=${userId}`);
+      const responses = [
+        await dedicatedImage(request),
+        await dynamicImage(request, { params: Promise.resolve({ type: "prediction" }) }),
+        await profileImage({ params: Promise.resolve({ userId: String(userId) }) }),
+      ];
+      for (const response of responses) {
+        const text = await response.text();
+        expect(text).not.toContain("非公開球団");
+        if (userId === 2) expect(text).toContain("公開球団");
+      }
+    }
   });
 });

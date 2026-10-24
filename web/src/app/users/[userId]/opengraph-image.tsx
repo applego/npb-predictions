@@ -104,6 +104,7 @@ export default async function Image({
       where: and(
         eq(predictions.userId, userId),
         eq(predictions.seasonId, season.id),
+        eq(predictions.isLocked, true),
       ),
       with: { rankingPicks: true },
     });
