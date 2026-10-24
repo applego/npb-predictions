@@ -718,7 +718,7 @@ function PredictionsCard({
           fontFamily: "var(--font-display)",
         }}
       >
-        MY PREDICTIONS
+        自分の予想
       </h2>
 
       {sortedSeasons.length === 0 && (
@@ -766,7 +766,7 @@ function PredictionsCard({
                 >
                   <LeagueLabel label="セ" />
                   {" "}
-                  {picks.central.join(" > ")}
+                  {picks.central.length ? picks.central.join(" > ") : "未登録"}
                 </span>
               </div>
               <div
@@ -787,7 +787,7 @@ function PredictionsCard({
                 >
                   <LeagueLabel label="パ" />
                   {" "}
-                  {picks.pacific.join(" > ")}
+                  {picks.pacific.length ? picks.pacific.join(" > ") : "未登録"}
                 </span>
               </div>
 

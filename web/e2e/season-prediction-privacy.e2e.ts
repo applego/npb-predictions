@@ -88,6 +88,7 @@ test("own prediction uses authenticated endpoint and separates errors from missi
   status = 200;
   await page.goto("/me");
   await expect(page.getByText("阪神タイガース", { exact: false })).toBeVisible();
+  await expect(page.getByText("未登録", { exact: false })).toBeVisible();
   await expect(page.getByText("まだ予想はありません", { exact: true })).toHaveCount(0);
   expect(consoleErrors).toEqual([]);
   expect(pageErrors).toEqual([]);
