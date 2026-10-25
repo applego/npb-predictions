@@ -31,7 +31,11 @@ publications.monetization={approved_href, program_id, approval_ref} は人間の
 
 自前の一次計測: /api/growth/events（GETは既存admin認証必須）。result_view / x_share_start / card_download を年度・リーグ・日別で集計。
 識別はtab限定ランダム値を日付とhash化。氏名・メール・IP・永続fingerprintをDBへ保存しない。DNT=1は送信しない。
-日別タブ数は人数ではなく重複を含む。X intent開始は投稿完了ではない。PVを分母にした因果効果を断定せず、公開後の同一期間で比較。
+日別タブ数は人数ではなく日を跨ぐ重複を含む。日付はUTCでサーバーと揃える。
+GETの `rows` は年度/リーグ/source別内訳、`dailyTotals` は日別・event別のscope横断distinctとX由来distinct。
+日別タブの28日合計は `dailyTotals` から取得し、内訳のdistinctを足さない。旧reportにdailyTotalsが無ければタブ合計はnull。
+X由来は同じタブのsessionStorageにだけ保持し、内部遷移でUTMが消えても維持する。タブを閉じると失われる。
+公開前の過去分について翌日未送信を後から復元したり、再訪人数へ変換しない。X intent開始は投稿完了ではない。PVを分母にした因果効果を断定せず、公開後の同一期間で比較。
 計測tableはmigrationをCIの公開工程で適用する。手動の本番DB直接書き込みはしない。
 レート制限はisolate内のbest-effort（60件/分/IP、最大1万bucket）。全体費用上限の保証ではない。日付が変わった最初の書込時に90日より古いイベントを削除する。
 
