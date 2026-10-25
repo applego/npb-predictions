@@ -1,6 +1,9 @@
 import { expect, test } from "@playwright/test";
 
 test("X result attribution survives navigation and an open tab counts again next UTC day", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
   const events: Array<{ event: string; source: string; session: string }> = [];
   await page.route("**/api/growth/events", async (route) => {
     events.push(route.request().postDataJSON());
@@ -20,4 +23,5 @@ test("X result attribution survives navigation and an open tab counts again next
   await page.reload();
   await page.waitForLoadState("networkidle");
   expect(events).toHaveLength(3);
+  expect(errors).toEqual([]);
 });
