@@ -133,3 +133,8 @@ fingerprint `b6ce123cf074d3d27af892150af741a0554e878de697217f1e7b14a2567a550f`�
 既存Codexは2026-10-25T00:58:04Zに最終実ファイルの4値とselected=null/work=falseを返し、
 npb-predictions-3lw.6/read-only担当として受領した。上の0644途中受領と区別する。
 実Chromiumの最終追加assertionでconsole/pageerror0もPASS。
+
+push前data gateは、E2E専用の合成人物を入れたlocal DBのsource coverage 3/27で一度FAIL。
+CIと同じ順序に分け、checked-in migrations+SQL production seedだけから別のpristine local DBを生成し、
+既存NPB_VALIDATE_DB_PATHでそのDBを指定してpre-pushを再実行、ALL CHECKS PASSED/98 slug coverageを確認。
+E2E fixtureは独立した自分のlocal DBに保持し、gateの閾値・実装を変更したりskipしていない。
