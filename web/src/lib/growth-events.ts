@@ -7,8 +7,14 @@ export function recordGrowth(event: GrowthEvent, year: number, league: string) {
   try {
     let session = sessionStorage.getItem("npb_growth_tab");
     if (!session) { session = crypto.randomUUID(); sessionStorage.setItem("npb_growth_tab", session); }
-    const source = new URLSearchParams(window.location.search).get("utm_source") === "x" ? "x" : "other";
-    const key = `npb_growth:${event}:${year}:${league}:${source}`;
+    // Keep attribution only for this tab; internal links need not carry UTM.
+    if (new URLSearchParams(window.location.search).get("utm_source") === "x") {
+      sessionStorage.setItem("npb_growth_source", "x");
+    }
+    const source = sessionStorage.getItem("npb_growth_source") === "x" ? "x" : "other";
+    // Match the server's UTC day, including when an open tab returns tomorrow.
+    const day = new Date().toISOString().slice(0, 10);
+    const key = `npb_growth:${day}:${event}:${year}:${league}:${source}`;
     if (event === "result_view" && sessionStorage.getItem(key)) return;
     const payload = JSON.stringify({ id: crypto.randomUUID(), session, event, year, league, source });
     const blob = new Blob([payload], { type: "application/json" });

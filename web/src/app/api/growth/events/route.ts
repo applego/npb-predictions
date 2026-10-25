@@ -45,6 +45,10 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   const auth = await requireAdmin(req);
   if (auth instanceof Response) return auth;
-  const rows = await getDb().all(sql`SELECT day, event, source, year, league, count(*) AS events, count(DISTINCT session_hash) AS tabs FROM growth_events WHERE day >= date('now', '-27 days') GROUP BY day, event, source, year, league ORDER BY day DESC`);
-  return NextResponse.json({ windowDays: 28, unit: "daily anonymous tabs; not unique people", rows, observedAt: new Date().toISOString() }, { headers: { "Cache-Control": "no-store" } });
+  const db = getDb();
+  const rows = await db.all(sql`SELECT day, event, source, year, league, count(*) AS events, count(DISTINCT session_hash) AS tabs FROM growth_events WHERE day BETWEEN date('now', '-27 days') AND date('now') GROUP BY day, event, source, year, league ORDER BY day DESC`);
+  // Scope rows are useful for breakdowns but their distinct counts cannot be
+  // summed: one tab can view several leagues/years or change source in a day.
+  const dailyTotals = await db.all(sql`SELECT day, event, count(*) AS events, count(DISTINCT session_hash) AS tabs, count(DISTINCT CASE WHEN source = 'x' THEN session_hash END) AS xTabs FROM growth_events WHERE day BETWEEN date('now', '-27 days') AND date('now') GROUP BY day, event ORDER BY day DESC`);
+  return NextResponse.json({ dailyTotals, windowDays: 28, unit: "daily anonymous tabs; not unique people", rows, observedAt: new Date().toISOString() }, { headers: { "Cache-Control": "no-store" } });
 }

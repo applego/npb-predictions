@@ -18,15 +18,30 @@ def growth_events(report):
         raise ValueError('invalid growth event window/rows')
     rows = report['rows']
     result = {}
-    for key, event, field in [('result_views_28d', 'result_view', 'tabs'), ('x_share_starts_28d', 'x_share_start', 'events'), ('card_downloads_28d', 'card_download', 'events')]:
-        values = [row[field] for row in rows if row['event'] == event]
+    # Event counts are additive across dimensions; distinct tabs are not.
+    for key, event in [('x_share_starts_28d', 'x_share_start'), ('card_downloads_28d', 'card_download')]:
+        values = [row['events'] for row in rows if row['event'] == event]
         if any(not isinstance(v, int) or isinstance(v, bool) or v < 0 for v in values):
             raise ValueError('invalid growth event count')
         result[key] = {'value': sum(values), 'status': 'ok', 'data_through': report['observedAt'], 'sample_size': len(rows)}
-    values = [row['tabs'] for row in rows if row['event'] == 'result_view' and row['source'] == 'x']
-    if any(not isinstance(v, int) or isinstance(v, bool) or v < 0 for v in values):
-        raise ValueError('invalid growth tab count')
-    result['x_result_tabs_28d'] = {'value': sum(values), 'status': 'ok', 'data_through': report['observedAt'], 'sample_size': len(rows)}
+    totals = report.get('dailyTotals')
+    for key, field in [('result_views_28d', 'tabs'), ('x_result_tabs_28d', 'xTabs')]:
+        if totals is None:
+            # Old reports cannot recover scope overlap. Do not invent a total.
+            result[key] = {'value': None, 'status': 'missing', 'data_through': report['observedAt'], 'sample_size': 0}
+            continue
+        if not isinstance(totals, list):
+            raise ValueError('invalid growth daily totals')
+        views = [row for row in totals if row['event'] == 'result_view']
+        days = [row['day'] for row in views]
+        if len(days) != len(set(days)):
+            raise ValueError('duplicate growth daily total')
+        values = [row[field] for row in views]
+        if any(not isinstance(v, int) or isinstance(v, bool) or v < 0 for v in values):
+            raise ValueError('invalid growth tab count')
+        if any(row['xTabs'] > row['tabs'] for row in views):
+            raise ValueError('X tabs exceed total tabs')
+        result[key] = {'value': sum(values), 'status': 'ok', 'data_through': report['observedAt'], 'sample_size': len(views)}
     return result
 
 def load_metrics(now):

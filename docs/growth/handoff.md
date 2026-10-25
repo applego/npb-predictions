@@ -70,3 +70,71 @@ owner=npb-automation。3lw.5/3lw.2/3lw.1/arr/3lw.4は別承認によるPR80公�
 
 利益・ASP確定成果・費用照合・共有/流入指標はnull。1円/28日はオーナー未確定の暫定値。
 HTTPの3経路応答をsemantic health・人数・利益に読み替えない。収益認証待ちは設定/セッションの変化まで再探索しない。
+
+
+## 2026-10-25: main移行と共有由来・日別タブ計測（npb-predictions-3lw.6）
+
+PR80はmain `e7cfe6e2bc86b0d5b896f8d393bd8584a658496d` に統合済み。
+この回の実行場はmain由来の `fix/growth-final-season-20261025`。旧bootstrap依存を外した。
+本番 `/api/build-info` は `408cf075033852911137bd672e7e1a0d85f052cb`。
+デザイン合意待ちで公開run40109419828はcancel、main統合を公開済みと扱わない。
+このautomationはmerge/deploy/DB直接操作/外部投稿/契約/有料APIを実行していない。
+
+実行入口はcommitted mainとbyte一致を確認。native dry-runはheld_measurement。
+一次計測は2026-10-25T00:47:55Zのdaily1回、weekly/graphは同captureを再利用。
+tracker変更後の再評価も同metricsを明示入力し、外部計測し直していない。
+利益・funnel・ASP確定成果・費用照合はnull。2実験はprepared/公開証拠待ちのまま。
+1円目標は暫定で、HTTP3経路やPRを達成としない。
+
+新しい一次情報は[U-NEXT公式告知](https://help.unext.jp/info-video/detail/info166c)。
+日本シリーズの対象は5試合、追いかけ再生非対応、10月25日17:45配信開始という条件を確認した。
+需要実績・提携・単価の証拠ではない。視聴の公式案内はPR80で修復済みだが公開待ち。
+物販/チケットは需要・条件、広告/有料/法人は需要・承認が未確認。
+未合意のデザインに重ねず、共有と再訪の既知の計測誤りを今回の修復に選んだ。
+
+### 修復と証拠
+
+製品source `fac7d3d710800e1ee6101cfba47dccc7ae71c8ed`。日付のないview重複抑止をUTC日別へ直し、
+同じタブ内のX由来をsessionStorageに保持。内部移動後にも維持し、タブを跨ぐ識別は増やさない。
+APIにscope横断の `dailyTotals` を追加し、同日・同タブが複数リーグ/年度/sourceに現れても重複を除く。
+日付窓は当日を含む28UTC日で未来日を除外。旧reportから復元不能なタブ合計はnull。
+共有/保存開始の回数を人数・X投稿完了・OS保存完了へ読み替えない。
+過去の翌日未送信分は復元できず、公開後からの修復となる。
+
+全340unit/Python25/tsc/Next build/CF再build PASS。
+旧client/API/measureの各実装では対応した新テストがFAILし、修正版へ戻してPASS。
+CF初回のfont取得TypeError、未生成WorkerでのE2E起動timeout、local D1 namespace差による
+fixture未投入の0件表示は失敗として保持。CI同schema/seedを自分のlocal D1へ投入し、
+実ChromiumのX閲覧→内部リーグ移動→UTC翌日再訪→同日再読込抑止を確認した。
+未公開APIの本番応答を読んだ証拠ではない。
+
+変更製品3fileのUBSはexit0/critical0/warning3（Python2/JS1）。
+全体UBSは今回完走しexit1/critical18/warning977でPASSではない。
+既存auth/query/OG/validation/旧loopのtracked8fileはfresh mainと同一。
+生成support.jsと誤検知を含むため18件を実脆弱性数としない。親3lwへ発見・次のsecurity review機会を記録。
+
+### 独立実読・受領
+
+既存Codexチャット「⚾️リーグ結果UIを改善」が固定sourceの8file差分を実読しblocking0、
+TS5/Python25を別途再実行してPASS。担当はnpb-predictions-3lw.6のread-only review。
+実ファイルのsource_head `fac7d3d710800e1ee6101cfba47dccc7ae71c8ed`、source_digest `27a9e7d4f1420cc9a029fd43b849731234f37ac3520a4f3a0d10cee2e29648ff`、
+fingerprint `064408e4c3fe571b1b64f161e86130cf3438a12c5b3f95c97e1795ef2ea2bad0`、selected_tracker_item=npb-predictions-3lw.6の4値一致を返した。
+送信を受領と扱わず実返答を確認。Claude Codeの現在の実在/受領は未確認、既知の認証/利用制限を再試行しない。
+全340unit・CF/E2Eを独立者自身が再実行したとは主張しない。正確なprovider/model versionはnull。
+
+次owner=npb-automation。CI/PRの終端証拠を確認し、別承認の公開後に本番の同導線と
+admin aggregate/UTC日別集計をread-backする。公開は既存チャットのデザイン合意待ちを維持。
+3lw.1/arr/.2/.4/.5はruntime公開待ち、.3はmain新契約と本09:45実行を確認済みだがruntime未達。
+health1回でD1上限は回復、image-gen/news/commentatorはhealthy。ただし順位86h staleのため
+全健全とせずlive release gate/archive取得は行っていない。mainのfinal鮮度修復は既存のまま追加しない。
+
+最終captureは3lw.6を公開待ちに戻した同metrics再評価。source_head/digestは上記のまま、
+fingerprint `b6ce123cf074d3d27af892150af741a0554e878de697217f1e7b14a2567a550f`、selected=null/work_required=false。
+既存Codexは2026-10-25T00:58:04Zに最終実ファイルの4値とselected=null/work=falseを返し、
+npb-predictions-3lw.6/read-only担当として受領した。上の0644途中受領と区別する。
+実Chromiumの最終追加assertionでconsole/pageerror0もPASS。
+
+push前data gateは、E2E専用の合成人物を入れたlocal DBのsource coverage 3/27で一度FAIL。
+CIと同じ順序に分け、checked-in migrations+SQL production seedだけから別のpristine local DBを生成し、
+既存NPB_VALIDATE_DB_PATHでそのDBを指定してpre-pushを再実行、ALL CHECKS PASSED/98 slug coverageを確認。
+E2E fixtureは独立した自分のlocal DBに保持し、gateの閾値・実装を変更したりskipしていない。
