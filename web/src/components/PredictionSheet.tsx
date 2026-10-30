@@ -13,8 +13,8 @@ export interface SheetCommentator { userId: number; name: string; source: string
 
 // Rows entered here live only in the URL and carry no trustworthy date (a timestamp in the URL
 // could be edited). Once results exist they are reference only: labelled, and kept out of the ranking.
-const REFERENCE_LABEL = "参考・入力日の記録なし";
-const REFERENCE_NOTE = `${REFERENCE_LABEL}（順位の対象外）`;
+const REFERENCE_LABEL = "参考・順位の対象外";
+const REFERENCE_NOTE = "参考：入力日の記録なし・順位の対象外";
 /** A display name in the share text must not notify a real X account. */
 const noMention = (value: string) => value.replace(/@/g, "＠");
 
@@ -178,7 +178,7 @@ export function PredictionSheet({ year, years, league, status, actualOrder, comm
           )}
           {rows.map((row) => (
             <li key={row.key} className={`sheet-row${row.isMine ? " sheet-row-mine" : ""}${row.key === "shared" ? " sheet-row-shared" : ""}`}>
-              <span className="sheet-name">{row.key === "shared" ? `${row.name}さん` : row.name}{row.isMine && row.name !== "あなた" && <small>あなた</small>}{isEntered(row) && hasResult && <em className="sheet-after">{REFERENCE_NOTE}</em>}{duplicateNames.has(row.name) && row.source && <em className="sheet-source">{row.source}</em>}</span>
+              <span className="sheet-name">{row.key === "shared" ? `${row.name}さん` : row.name}{row.isMine && row.name !== "あなた" && <small>あなた</small>}{isEntered(row) && hasResult && <em className="sheet-after">{REFERENCE_LABEL}</em>}{duplicateNames.has(row.name) && row.source && <em className="sheet-source">{row.source}</em>}</span>
               <span className="sheet-picks">
                 {row.order.map((t, i) => {
                   const actual = row.result?.actualRanks[i];
@@ -198,7 +198,13 @@ export function PredictionSheet({ year, years, league, status, actualOrder, comm
           {rows.length === 0 && <li className="sheet-empty">{order.length > 0 ? `あと${6 - order.length}球団であなたの予想が入ります。` : "あなたの予想を入れるか、「並べる解説者を入れ替える」から解説者を選んでください。"}</li>}
         </ol>
         <p className="sheet-legend">{hasResult ? "赤枠＝的中、1差〜5差＝実際の順位とのずれ（3差以上は減点）。点数は的中5点・1差3点・2差1点・3差−1点・4差−3点・5差−5点。ここで入れた予想は入力日を記録していないため、解説者の後ろに参考として並びます。" : "結果が出ると、的中とずれがここに入ります。"}</p>
-        {sharedRow && <button type="button" className="sheet-link-button" onClick={() => setShared(null)}>{sharedRow.name}さんの予想を外す</button>}
+        {sharedRow && (
+          <p className="sheet-help">
+            {myRow ? `共有リンクにはあなたの予想だけが入ります（${sharedRow.name}さんの予想は入りません）。` : ""}
+            <button type="button" className="sheet-link-button" onClick={() => { setName(sharedRow.name); setOrder(sharedRow.order); setShared(null); }}>自分の予想として直す</button>
+            <button type="button" className="sheet-link-button" onClick={() => setShared(null)}>{sharedRow.name}さんの予想を外す</button>
+          </p>
+        )}
       </section>
 
       <div className="sheet-actions">

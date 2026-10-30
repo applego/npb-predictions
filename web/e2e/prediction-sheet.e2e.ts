@@ -34,7 +34,7 @@ for (const width of [320, 390, 1400]) {
     const mine = board.locator(".sheet-row-mine");
     await expect(mine.locator(".sheet-name")).toContainText("@e2e_fan");
     // Entered with no recorded date: reference only, never ranked above a commentator even with a perfect score.
-    await expect(mine.locator(".sheet-name")).toContainText("参考・入力日の記録なし（順位の対象外）");
+    await expect(mine.locator(".sheet-name")).toContainText("参考・順位の対象外");
     await expect(mine.locator(".sheet-metrics")).toContainText("6的中0ずれ30点");
     const ranked = board.locator(".sheet-row:not(.sheet-row-header):not(.sheet-row-actual)");
     for (const sort of ["点数順", "的中数順", "ずれ合計順"]) {
@@ -54,7 +54,7 @@ for (const width of [320, 390, 1400]) {
     await page.getByRole("button", { name: "Xで共有する" }).click();
     const intent = new URL((await popup).url());
     // The display name never becomes a mention of a real X account.
-    expect(intent.searchParams.get("text")).toContain("＠e2e_fan 的中6・ずれ0・30点（参考・入力日の記録なし（順位の対象外））");
+    expect(intent.searchParams.get("text")).toContain("＠e2e_fan 的中6・ずれ0・30点（参考：入力日の記録なし・順位の対象外）");
     expect(intent.searchParams.get("text")).not.toContain("@");
     expect(intent.searchParams.get("url")).toContain("order=");
 
@@ -72,6 +72,11 @@ for (const width of [320, 390, 1400]) {
     await expect(page.getByLabel("表示名")).toHaveValue("");
     await expect(page.locator(".sheet-added")).toHaveCount(0);
     await expect(board.locator(".sheet-row-mine")).toHaveCount(0);
+    // The sender reopening their own link can take the row back to edit it.
+    await page.getByRole("button", { name: "自分の予想として直す" }).click();
+    await expect(page.getByLabel("表示名")).toHaveValue("@e2e_fan");
+    await expect(board.locator(".sheet-row-mine .sheet-metrics")).toContainText("6的中0ずれ30点");
+    await expect(board.locator(".sheet-row-shared")).toHaveCount(0);
     expect(errors).toEqual([]);
   });
 }
