@@ -11,9 +11,12 @@ import {
 
 export interface SheetCommentator { userId: number; name: string; source: string | null; order: string[]; result: SheetRow["result"] }
 
-// The own row lives only in the URL and has no recorded date. Once results exist it may
-// have been entered with hindsight, so it is always labelled instead of presented as a forecast.
-const AFTER_LABEL = { final: "結果確定後に入力", provisional: "開幕後に入力", none: "" } as const;
+// Rows entered here live only in the URL and carry no trustworthy date (a timestamp in the URL
+// could be edited). Once results exist they are reference only: labelled, and kept out of the ranking.
+const REFERENCE_LABEL = "参考・入力日の記録なし";
+const REFERENCE_NOTE = `${REFERENCE_LABEL}（順位の対象外）`;
+/** A display name in the share text must not notify a real X account. */
+const noMention = (value: string) => value.replace(/@/g, "＠");
 
 const SORTS: { key: SheetSort; label: string }[] = [
   { key: "points", label: "点数" }, { key: "exact", label: "的中数" }, { key: "deviation", label: "ずれ合計" },
@@ -27,8 +30,10 @@ export function PredictionSheet({ year, years, league, status, actualOrder, comm
   const teams = getTeamsByLeague(league);
   const hasResult = actualOrder !== null;
   const [picks, setPicks] = useState<number[]>(initialQuery.picks ?? defaultPicks);
-  const [name, setName] = useState(initialQuery.me?.name ?? initialQuery.name ?? "");
-  const [order, setOrder] = useState<string[]>(initialQuery.me?.order ?? []);
+  // Someone else's row arrives through a shared link; the form stays empty for the visitor's own.
+  const [shared, setShared] = useState(initialQuery.me);
+  const [name, setName] = useState(initialQuery.me ? "" : initialQuery.name ?? "");
+  const [order, setOrder] = useState<string[]>([]);
   const [sort, setSort] = useState<SheetSort>(initialQuery.sort);
   const [filter, setFilter] = useState("");
   const [message, setMessage] = useState("");
@@ -36,20 +41,25 @@ export function PredictionSheet({ year, years, league, status, actualOrder, comm
   const myRow: SheetRow | null = order.length === 6
     ? { key: "me", name: name.trim() || "あなた", isMine: true, order, result: hasResult ? scoreOrder(order, snapshotFrom(actualOrder!, league)) : null }
     : null;
+  const sharedRow: SheetRow | null = shared
+    ? { key: "shared", name: shared.name, isMine: false, order: shared.order, result: hasResult ? scoreOrder(shared.order, snapshotFrom(actualOrder!, league)) : null }
+    : null;
   const rows = useMemo(() => {
     const chosen = picks.map((id) => commentators.find((c) => c.userId === id)).filter((c): c is SheetCommentator => !!c)
       .map((c): SheetRow => ({ key: `c${c.userId}`, name: c.name, source: c.source, isMine: false, order: c.order, result: c.result }));
-    const all = myRow ? [myRow, ...chosen] : chosen;
-    return hasResult ? sortRows(all, sort) : all;
-  }, [picks, commentators, myRow?.name, myRow?.order.join(), sort, hasResult]); // eslint-disable-line react-hooks/exhaustive-deps
+    const entered = [sharedRow, myRow].filter((r): r is SheetRow => !!r);
+    // Entered rows may have been made after seeing the standings, so they never outrank a commentator.
+    return hasResult ? [...sortRows(chosen, sort), ...entered] : [...entered, ...chosen];
+  }, [picks, commentators, myRow?.name, myRow?.order.join(), sharedRow?.order.join(), sort, hasResult]); // eslint-disable-line react-hooks/exhaustive-deps
+  const isEntered = (row: SheetRow) => row.key === "me" || row.key === "shared";
 
   const duplicateNames = new Set(rows.map((r) => r.name).filter((n, i, all) => all.indexOf(n) !== i));
-  const query: SheetQuery = { league, sort, picks, me: myRow ? { name: myRow.name, order } : null };
+  const query: SheetQuery = { league, sort, picks, me: myRow ? { name: myRow.name, order } : shared };
   // Keep the address shareable without a server round trip.
   useEffect(() => {
     const url = sheetUrl(window.location.origin, year, query);
     window.history.replaceState(null, "", url.slice(window.location.origin.length));
-  }, [year, league, sort, picks.join(), name, order.join()]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [year, league, sort, picks.join(), name, order.join(), shared]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function tapTeam(team: string) {
     setOrder((current) => current.includes(team) ? current.filter((t) => t !== team) : current.length < 6 ? [...current, team] : current);
@@ -60,8 +70,9 @@ export function PredictionSheet({ year, years, league, status, actualOrder, comm
   function shareHref() {
     const url = sheetUrl(window.location.origin, year, query) + "&utm_source=x";
     const head = `${year}年 ${RESULT_LABELS[league]} 順位予想`;
-    const text = myRow
-      ? `${head}、解説者と並べてみた｜${myRow.name}${myRow.result ? ` 的中${myRow.result.exact}・ずれ${myRow.result.deviation}・${myRow.result.points}点（${AFTER_LABEL[status]}）` : ""}`
+    const entered = myRow ?? sharedRow;
+    const text = entered
+      ? `${head}、解説者と並べてみた｜${noMention(entered.name)}${entered.result ? ` 的中${entered.result.exact}・ずれ${entered.result.deviation}・${entered.result.points}点（${REFERENCE_NOTE}）` : ""}`
       : `${head}　解説者の予想一覧`;
     return `https://x.com/intent/post?${new URLSearchParams({ text: `${text}\n#みんなの順位予想対決`, url })}`;
   }
@@ -76,6 +87,7 @@ export function PredictionSheet({ year, years, league, status, actualOrder, comm
 
   // Picks belong to one league; the display name follows the visitor across leagues and years.
   const switchHref = (y: number, l: ResultLeague) => `/sheet?${new URLSearchParams({ year: String(y), league: l, ...(name.trim() ? { me: name.trim() } : {}) })}`;
+  const short = (team: string) => teams.find((t) => t.name === team)?.shortName ?? team;
   const statusLabel = status === "final" ? "確定" : status === "provisional" ? "暫定" : "結果前";
   const visibleCommentators = commentators.filter((c) => !filter || c.name.includes(filter) || (c.source ?? "").includes(filter));
 
@@ -103,8 +115,9 @@ export function PredictionSheet({ year, years, league, status, actualOrder, comm
         <h2 id="sheet-mine-title">あなたの予想を入れる</h2>
         <label className="sheet-field">
           <span>表示名</span>
-          <input value={name} maxLength={SHEET_NAME_MAX} placeholder="例：@アカウント名、ニックネーム" onChange={(e) => setName(e.target.value)} />
+          <input value={name} maxLength={SHEET_NAME_MAX} aria-describedby="sheet-name-help" onChange={(e) => setName(e.target.value)} />
         </label>
+        <p className="sheet-help" id="sheet-name-help">ニックネームやXのアカウント名。共有しても相手に通知は届きません。</p>
         <p className="sheet-help">1位から順に球団を押してください（{order.length}/6）。もう一度押すと外せます。</p>
         <div className="sheet-teams" role="group" aria-label="球団を順位の順に選ぶ">
           {teams.map((team) => {
@@ -117,9 +130,10 @@ export function PredictionSheet({ year, years, league, status, actualOrder, comm
             );
           })}
         </div>
+        {order.length > 0 && <p className="sheet-chosen">選んだ順：{order.map((t, i) => `${i + 1}位 ${short(t)}`).join("・")}</p>}
         {myRow ? (
           <p className="sheet-added" role="status">
-            一覧に入りました{myRow.result ? `：的中${myRow.result.exact}・ずれ${myRow.result.deviation}・${myRow.result.points}点（${AFTER_LABEL[status]}）` : ""}
+            一覧に入りました{myRow.result ? `：的中${myRow.result.exact}・ずれ${myRow.result.deviation}・${myRow.result.points}点（${REFERENCE_NOTE}）` : ""}
             <a href="#sheet-board-title" onClick={(e) => { e.preventDefault(); document.querySelector(".sheet-row-mine")?.scrollIntoView({ behavior: "smooth", block: "center" }); }}>一覧で見る ↓</a>
           </p>
         ) : order.length > 0 && <p className="sheet-help" role="status">あと{6 - order.length}球団で一覧に入ります。</p>}
@@ -163,8 +177,8 @@ export function PredictionSheet({ year, years, league, status, actualOrder, comm
             </li>
           )}
           {rows.map((row) => (
-            <li key={row.key} className={`sheet-row${row.isMine ? " sheet-row-mine" : ""}`}>
-              <span className="sheet-name">{row.name}{row.isMine && row.name !== "あなた" && <small>あなた</small>}{row.isMine && status !== "none" && <em className="sheet-after">{AFTER_LABEL[status]}</em>}{duplicateNames.has(row.name) && row.source && <em className="sheet-source">{row.source}</em>}</span>
+            <li key={row.key} className={`sheet-row${row.isMine ? " sheet-row-mine" : ""}${row.key === "shared" ? " sheet-row-shared" : ""}`}>
+              <span className="sheet-name">{row.key === "shared" ? `${row.name}さん` : row.name}{row.isMine && row.name !== "あなた" && <small>あなた</small>}{isEntered(row) && hasResult && <em className="sheet-after">{REFERENCE_NOTE}</em>}{duplicateNames.has(row.name) && row.source && <em className="sheet-source">{row.source}</em>}</span>
               <span className="sheet-picks">
                 {row.order.map((t, i) => {
                   const actual = row.result?.actualRanks[i];
@@ -183,7 +197,8 @@ export function PredictionSheet({ year, years, league, status, actualOrder, comm
           ))}
           {rows.length === 0 && <li className="sheet-empty">{order.length > 0 ? `あと${6 - order.length}球団であなたの予想が入ります。` : "あなたの予想を入れるか、「並べる解説者を入れ替える」から解説者を選んでください。"}</li>}
         </ol>
-        <p className="sheet-legend">{hasResult ? "赤枠＝的中、1差〜5差＝実際の順位とのずれ（3差以上は減点）。点数は的中5点・1差3点・2差1点・3差−1点・4差−3点・5差−5点。" : "結果が出ると、的中とずれがここに入ります。"}</p>
+        <p className="sheet-legend">{hasResult ? "赤枠＝的中、1差〜5差＝実際の順位とのずれ（3差以上は減点）。点数は的中5点・1差3点・2差1点・3差−1点・4差−3点・5差−5点。ここで入れた予想は入力日を記録していないため、解説者の後ろに参考として並びます。" : "結果が出ると、的中とずれがここに入ります。"}</p>
+        {sharedRow && <button type="button" className="sheet-link-button" onClick={() => setShared(null)}>{sharedRow.name}さんの予想を外す</button>}
       </section>
 
       <div className="sheet-actions">
@@ -221,6 +236,7 @@ async function drawSheet({ year, league, status, actualOrder, rows }: {
   await document.fonts.ready;
   const hasResult = actualOrder !== null;
   const W = 1200, top = 268, rowH = 96, list = actualOrder ? [{ name: status === "final" ? "実際の順位" : "現在の順位", order: actualOrder, actual: true, row: null as SheetRow | null }] : [];
+  const entered = (row: SheetRow) => row.key === "me" || row.key === "shared";
   for (const row of rows) list.push({ name: row.isMine && row.name === "あなた" ? "わたし" : row.name, order: row.order, actual: false, row });
   const H = top + list.length * rowH + 110;
   const canvas = document.createElement("canvas"); canvas.width = W; canvas.height = H;
@@ -235,7 +251,8 @@ async function drawSheet({ year, league, status, actualOrder, rows }: {
   };
   const name = (row: SheetRow) => row.name === "あなた" ? "わたし" : `${row.name}さん`;
   // Wrap long names onto two lines instead of shrinking them below a readable size.
-  const nameLines = (value: string, y: number, actual: boolean, isMine: boolean) => {
+  // The image is seen by other people, so it marks entered rows as reference instead of "you".
+  const nameLines = (value: string, y: number, actual: boolean, isEntered: boolean) => {
     const maxW = 206, size = 26;
     ctx.font = `800 ${size}px ${font}`;
     const lines: string[] = [];
@@ -248,17 +265,16 @@ async function drawSheet({ year, league, status, actualOrder, rows }: {
     if (lines.length > 2) shown[1] = shown[1].slice(0, -1) + "…";
     const startY = shown.length === 1 ? y + 44 : y + 30;
     shown.forEach((l, i) => text(l, 52, startY + i * 30, size, ink, actual ? 700 : 800, maxW));
-    if (isMine && value !== "わたし") { ctx.beginPath(); ctx.roundRect(52, y + 62, 64, 24, 5); ctx.fillStyle = "#ffe08a"; ctx.fill(); text("あなた", 84, y + 80, 15, "#7a4d00", 800, 60, "center"); }
-    if (isMine && status !== "none") text(AFTER_LABEL[status], value !== "わたし" ? 126 : 52, y + 80, 15, "#7a4d00", 700, 150);
+    if (isEntered && hasResult) text(REFERENCE_LABEL, 52, y + 80, 15, "#7a4d00", 700, maxW);
   };
   ctx.fillStyle = paper; ctx.fillRect(0, 0, W, H);
   ctx.fillStyle = rule; ctx.fillRect(40, 36, W - 80, 6); ctx.fillRect(40, 48, W - 80, 2);
   text("みんなの順位予想対決", 40, 92, 24, muted, 700, 500);
   text(`${year}年 ${RESULT_LABELS[league]}　順位予想一覧`, 40, 146, 46, ink, 900, 1120);
-  const mine = rows.find((r) => r.isMine);
-  const others = rows.filter((r) => !r.isMine).length;
+  const mine = rows.find((r) => r.isMine) ?? rows.find(entered);
+  const others = rows.filter((r) => !entered(r)).length;
   const who = mine ? (name(mine) + (others > 0 ? "と解説者の予想" : "の予想")) : "解説者の予想";
-  const sub = [who, hasResult ? (status === "final" ? "確定順位で答え合わせ" : "暫定順位で答え合わせ") : "", mine && status !== "none" ? `自分の予想は${AFTER_LABEL[status]}` : ""].filter(Boolean).join("　／　");
+  const sub = [who, hasResult ? (status === "final" ? "確定順位で答え合わせ" : "暫定順位で答え合わせ") : "", mine && hasResult ? "解説者以外は入力日の記録がない参考" : ""].filter(Boolean).join("　／　");
   text(sub, 40, 190, 24, muted, 700, 1120);
   const nameW = 230, chipX = 40 + nameW, chipW = hasResult ? 108 : 140, metricsX = chipX + chipW * 6 + 16;
   ctx.fillStyle = rule; ctx.fillRect(40, top - 30, W - 80, 2);
@@ -266,9 +282,9 @@ async function drawSheet({ year, league, status, actualOrder, rows }: {
   if (hasResult) ["的中", "ずれ", "点"].forEach((label, i) => text(label, metricsX + i * 72 + 36, top - 40, 20, muted, 700, 72, "center"));
   list.forEach((item, index) => {
     const y = top + index * rowH;
-    if (item.row?.isMine) { ctx.fillStyle = "#fff4d6"; ctx.fillRect(40, y - 8, W - 80, rowH); }
+    if (item.row && entered(item.row)) { ctx.fillStyle = "#fff4d6"; ctx.fillRect(40, y - 8, W - 80, rowH); }
     if (item.actual) { ctx.fillStyle = "#ecebe3"; ctx.fillRect(40, y - 8, W - 80, rowH); }
-    nameLines(item.name, y, item.actual, item.row?.isMine ?? false);
+    nameLines(item.name, y, item.actual, item.row ? entered(item.row) : false);
     item.order.forEach((team, i) => {
       const t = getTeamByName(team), cx = chipX + chipW * i + chipW / 2, cy = y + 34;
       const actual = item.row?.result?.actualRanks[i], gap = actual === undefined ? null : Math.abs(actual - (i + 1));

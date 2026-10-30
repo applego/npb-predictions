@@ -26,7 +26,7 @@
 .sheet-board { list-style:none; margin:0; padding:0; border-top:2px solid var(--sheet-rule); }
 /* Mobile: name + metrics on one line, six teams below. */
 .sheet-row { display:grid; grid-template-columns:minmax(0,1fr) auto; grid-template-areas:"name metrics" "picks picks"; gap:8px 10px; padding:12px 4px; border-bottom:1px solid var(--border-primary); background:var(--bg-surface); }
-.sheet-row-mine { background:#fff4d6; }
+.sheet-row-mine, .sheet-row-shared { background:#fff4d6; }
 .sheet-row-actual { background:var(--bg-inset); }
 .sheet-row-header { display:grid; grid-template-areas:"picks picks"; padding:6px 4px 2px; background:transparent; border-bottom:0; font-size:12px; font-weight:700; color:var(--text-muted); }
 .sheet-row-header .sheet-name, .sheet-row-header .sheet-metrics { display:none; }
@@ -76,3 +76,4 @@
 .sheet-actions .result-button:disabled { opacity:.45; cursor:not-allowed; }
 .sheet-picker { margin-bottom:10px; }
 .sheet-after { display:block; font-style:normal; font-size:12px; font-weight:700; color:#7a4d00; margin-top:2px; }
+.sheet-chosen { margin:0; font-size:14px; font-weight:700; }

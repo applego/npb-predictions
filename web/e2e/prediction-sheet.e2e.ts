@@ -24,26 +24,26 @@ for (const width of [320, 390, 1400]) {
     // Enter the actual standings as "my" prediction: expected 6 hits, 0 gap, 6×5 points.
     const actual = await board.locator(".sheet-row-actual .sheet-chip").evaluateAll((chips) => chips.map((c) => c.getAttribute("aria-label")!));
     expect(actual).toHaveLength(6);
-    await page.getByPlaceholder("例：@アカウント名、ニックネーム").fill("@e2e_fan");
+    await page.getByLabel("表示名").fill("@e2e_fan");
     const shortNames: Record<string, string> = { 阪神タイガース: "阪神", 読売ジャイアンツ: "巨人", 横浜DeNAベイスターズ: "DeNA", 広島東洋カープ: "広島", 中日ドラゴンズ: "中日", 東京ヤクルトスワローズ: "ヤクルト" };
     const teamButtons = page.getByRole("group", { name: "球団を順位の順に選ぶ" });
     for (const team of actual) await teamButtons.getByRole("button", { name: new RegExp(shortNames[team]) }).click();
 
+    await expect(page.locator(".sheet-chosen")).toContainText("1位 " + shortNames[actual[0]]);
     await expect(page.locator(".sheet-added")).toContainText("一覧に入りました：的中6・ずれ0・30点");
     const mine = board.locator(".sheet-row-mine");
     await expect(mine.locator(".sheet-name")).toContainText("@e2e_fan");
-    // Entered after the results: never presented as a pre-season forecast.
-    await expect(mine.locator(".sheet-name")).toContainText("結果確定後に入力");
+    // Entered with no recorded date: reference only, never ranked above a commentator even with a perfect score.
+    await expect(mine.locator(".sheet-name")).toContainText("参考・入力日の記録なし（順位の対象外）");
     await expect(mine.locator(".sheet-metrics")).toContainText("6的中0ずれ30点");
-    await page.getByRole("button", { name: "ずれ合計順" }).click();
-    await expect(board.locator(".sheet-row:not(.sheet-row-header):not(.sheet-row-actual)").first()).toHaveClass(/sheet-row-mine/);
+    const ranked = board.locator(".sheet-row:not(.sheet-row-header):not(.sheet-row-actual)");
+    for (const sort of ["点数順", "的中数順", "ずれ合計順"]) {
+      await page.getByRole("button", { name: sort }).click();
+      await expect(ranked.last()).toHaveClass(/sheet-row-mine/);
+    }
     expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBe(0);
     await page.screenshot({ path: info.outputPath(`sheet-${width}.png`), fullPage: true });
 
-    // A shared link reproduces the same sheet.
-    await expect(page).toHaveURL(/me=%40e2e_fan/);
-    await page.reload();
-    await expect(board.locator(".sheet-row-mine .sheet-metrics")).toContainText("6的中0ずれ30点");
 
     const download = page.waitForEvent("download");
     await page.getByRole("button", { name: "一覧を画像で保存 ↓" }).click();
@@ -53,13 +53,25 @@ for (const width of [320, 390, 1400]) {
     const popup = context.waitForEvent("page");
     await page.getByRole("button", { name: "Xで共有する" }).click();
     const intent = new URL((await popup).url());
-    expect(intent.searchParams.get("text")).toContain("@e2e_fan 的中6・ずれ0・30点（結果確定後に入力）");
+    // The display name never becomes a mention of a real X account.
+    expect(intent.searchParams.get("text")).toContain("＠e2e_fan 的中6・ずれ0・30点（参考・入力日の記録なし（順位の対象外））");
+    expect(intent.searchParams.get("text")).not.toContain("@");
     expect(intent.searchParams.get("url")).toContain("order=");
 
     // The display name follows the visitor to the other league; picks start over.
+    const sharedUrl = page.url();
     await page.getByRole("link", { name: "パ・リーグ" }).click();
-    await expect(page.getByPlaceholder("例：@アカウント名、ニックネーム")).toHaveValue("@e2e_fan");
+    await expect(page.getByLabel("表示名")).toHaveValue("@e2e_fan");
     await expect(page.locator(".sheet-row-mine")).toHaveCount(0);
+
+    // Someone opening the shared link sees that person's row, not a row labelled as their own.
+    await page.goto(sharedUrl);
+    const sharedRow = board.locator(".sheet-row-shared");
+    await expect(sharedRow.locator(".sheet-name")).toContainText("@e2e_fanさん");
+    await expect(sharedRow.locator(".sheet-metrics")).toContainText("6的中0ずれ30点");
+    await expect(page.getByLabel("表示名")).toHaveValue("");
+    await expect(page.locator(".sheet-added")).toHaveCount(0);
+    await expect(board.locator(".sheet-row-mine")).toHaveCount(0);
     expect(errors).toEqual([]);
   });
 }

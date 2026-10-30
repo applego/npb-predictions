@@ -118,7 +118,7 @@
       "route": "/sheet?year=2026&league=central",
       "fixture": "web/src/lib/public-results-archive.ts",
       "test_id": "own prediction joins the commentator sheet and is shareable at 390px",
-      "expected_outcome": "表示名と6球団を入れると解説者と並び、的中・ずれ・点数で並べ替え、画像保存とX共有ができる",
+      "expected_outcome": "表示名と6球団を入れると参考として解説者の後ろに並び、画像保存とX共有ができ、共有リンクを開いた人にはその人の行として見える",
       "max_operations": 10
     }
   ]
