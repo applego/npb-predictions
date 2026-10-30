@@ -11,6 +11,7 @@ import "./globals.css";
 import "./results.css";
 import "./readability.css";
 import "./duel.css";
+import "./sheet.css";
 
 const oswald = Oswald({ weight: ["400", "500", "700"], subsets: ["latin"], variable: "--font-display-default", display: "swap", preload: false, fallback: ["Arial Narrow", "system-ui", "sans-serif"] });
 const notoSansJp = Noto_Sans_JP({ weight: ["400", "500", "700"], subsets: ["latin"], variable: "--font-body-ja", display: "swap", preload: false, fallback: ["Hiragino Sans", "Yu Gothic", "system-ui", "sans-serif"] });

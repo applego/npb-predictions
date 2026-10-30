@@ -12,6 +12,8 @@ const PUBLIC_ROUTES = [
   "/predictions",
   "/predictions/new",
   "/resources",
+  "/sheet",
+  "/sheet?year=2026&league=pacific",
   "/rankings",
   "/rankings/predictions",
   "/rankings/predictions?year=2026",

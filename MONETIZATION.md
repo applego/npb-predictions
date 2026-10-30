@@ -48,6 +48,23 @@
 需要の時期とこのサイトの来訪時期が一致する。配信サービスはシーズン中に向く。
 売上・料率・確定成果は未確認でnullのまま。PVやクリックを利益と呼ばない。
 
+## 2027年の中心: 開幕前に記録した予想の答え合わせ（2026-10-30 調査・推奨）
+
+解説者予想の一覧表だけでは差別化にならない。解説者126人分を新聞型の表にした個人サイトが
+2018年から続き、A8・楽天・もしもの広告で収益化している（下記ohtashp）。
+検索した範囲で見つからなかったのは「ファンが自分の予想を日時の証明つきで残し、
+シーズン後に解説者と点数で比べる場」で、2027年はこれを中心にする。
+
+- 日時の証明: 予想を登録した時刻をサーバーが記録し、開幕（`seasons.lockDate`）後は変更できない。
+  既存の `predictions.lockedAt` / `isLocked` を使う。Xへの開幕前投稿も投稿者が時刻を変えられない外部証拠になる。
+- 証明にならないもの: 写真の撮影日時（EXIF）は写真アプリで変更でき、スクショは日時を持たないことが多い。
+  Xは投稿時にEXIFを消すと複数の第三者が説明している（公式記載は未確認）。
+- `/sheet` の自分の行はURLだけに持ち日時の証明がないため、結果が出た後は「結果確定後に入力」と必ず表示する（PR #114）。
+- OpenTimestamps（運営を信用せず第三者が検証できる無料の刻印）は、規模が育つまで採用しない候補として残す。
+- 収益の順: 2〜3月の選手名鑑の紹介リンク → シーズン中の配信サービス紹介 → 結果ページのAdSense。
+  本の紹介料は3%前後（第三者情報、名鑑1冊約1,500円で約45円）で、収益は来訪数でほぼ決まる。
+  DAZN・スカパーのアフィリエイト条件は検索で確認できず未確認。グループリーグはこの上に乗せる次段階。
+
 ## 毎日の選択と変更
 
 既存の09:45/19:45 JST cronが1つの実行主体。手順は `docs/growth/loop.md`。
@@ -86,4 +103,9 @@ source接続は設定存在・専用CLI metadata・既存ログインをread-onl
 - [A8.net: 始め方](https://www.a8.net/howto/entry.html) — 個別案件の存在/単価の証拠ではない。Xへの広告掲載は禁止されているため、共有カードからサイトに来る経路と広告掲載を分ける。
 - [Amazon: アカウント審査](https://affiliate.amazon.co.jp/help/node/topic/G7MJTPEP9NC3YKMG) — 申請後180日以内の適格販売3件等の審査。申請/承認済みとはしない。
 - [楽天アフィリエイト](https://affiliate.rakuten.co.jp/) — 個別条件/アカウントの利用可否は未確認。
+- [ohtashp: 解説者のプロ野球順位予想一覧](https://www.ohtashp.com/topics/baseball_yosou/index_sort.html) — 2026-10-30確認。既存の解説者一覧表サイト（競合）。
+- [iGeeksBlog: iPhoneで写真の日時を変更](https://www.igeeksblog.com/change-date-time-iphone-photos-videos/) — 2026-10-30確認。撮影日時は利用者が変更できる。
+- [exifscrub: SNSのEXIF削除](https://exifscrub.pages.dev/does-social-media-strip-exif) — 2026-10-30確認。第三者情報でX公式の記載ではない。
+- [OpenTimestamps発表](https://petertodd.org/2016/opentimestamps-announcement) — 無料の時刻証明。採用は保留。
+- [リベシティ: Amazonアソシエイト紹介料](https://library.libecity.com/articles/01K93J25GPHKRJMD7QWXFVY2XX) — 第三者情報。料率は申請時に公式表で再確認する。
 - [AdSense: 初心者向けポリシー](https://support.google.com/adsense/answer/23921?hl=ja) — 独自コンテンツとポリシーの確認。審査承認/収益を保証しない。
