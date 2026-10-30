@@ -11,6 +11,10 @@ import {
 
 export interface SheetCommentator { userId: number; name: string; source: string | null; order: string[]; result: SheetRow["result"] }
 
+// The own row lives only in the URL and has no recorded date. Once results exist it may
+// have been entered with hindsight, so it is always labelled instead of presented as a forecast.
+const AFTER_LABEL = { final: "結果確定後に入力", provisional: "開幕後に入力", none: "" } as const;
+
 const SORTS: { key: SheetSort; label: string }[] = [
   { key: "points", label: "点数" }, { key: "exact", label: "的中数" }, { key: "deviation", label: "ずれ合計" },
 ];
@@ -57,7 +61,7 @@ export function PredictionSheet({ year, years, league, status, actualOrder, comm
     const url = sheetUrl(window.location.origin, year, query) + "&utm_source=x";
     const head = `${year}年 ${RESULT_LABELS[league]} 順位予想`;
     const text = myRow
-      ? `${head}、解説者と並べてみた｜${myRow.name}${myRow.result ? ` 的中${myRow.result.exact}・ずれ${myRow.result.deviation}・${myRow.result.points}点` : ""}`
+      ? `${head}、解説者と並べてみた｜${myRow.name}${myRow.result ? ` 的中${myRow.result.exact}・ずれ${myRow.result.deviation}・${myRow.result.points}点（${AFTER_LABEL[status]}）` : ""}`
       : `${head}　解説者の予想一覧`;
     return `https://x.com/intent/post?${new URLSearchParams({ text: `${text}\n#みんなの順位予想対決`, url })}`;
   }
@@ -115,7 +119,7 @@ export function PredictionSheet({ year, years, league, status, actualOrder, comm
         </div>
         {myRow ? (
           <p className="sheet-added" role="status">
-            一覧に入りました{myRow.result ? `：的中${myRow.result.exact}・ずれ${myRow.result.deviation}・${myRow.result.points}点` : ""}
+            一覧に入りました{myRow.result ? `：的中${myRow.result.exact}・ずれ${myRow.result.deviation}・${myRow.result.points}点（${AFTER_LABEL[status]}）` : ""}
             <a href="#sheet-board-title" onClick={(e) => { e.preventDefault(); document.querySelector(".sheet-row-mine")?.scrollIntoView({ behavior: "smooth", block: "center" }); }}>一覧で見る ↓</a>
           </p>
         ) : order.length > 0 && <p className="sheet-help" role="status">あと{6 - order.length}球団で一覧に入ります。</p>}
@@ -160,7 +164,7 @@ export function PredictionSheet({ year, years, league, status, actualOrder, comm
           )}
           {rows.map((row) => (
             <li key={row.key} className={`sheet-row${row.isMine ? " sheet-row-mine" : ""}`}>
-              <span className="sheet-name">{row.name}{row.isMine && row.name !== "あなた" && <small>あなた</small>}{duplicateNames.has(row.name) && row.source && <em className="sheet-source">{row.source}</em>}</span>
+              <span className="sheet-name">{row.name}{row.isMine && row.name !== "あなた" && <small>あなた</small>}{row.isMine && status !== "none" && <em className="sheet-after">{AFTER_LABEL[status]}</em>}{duplicateNames.has(row.name) && row.source && <em className="sheet-source">{row.source}</em>}</span>
               <span className="sheet-picks">
                 {row.order.map((t, i) => {
                   const actual = row.result?.actualRanks[i];
@@ -245,6 +249,7 @@ async function drawSheet({ year, league, status, actualOrder, rows }: {
     const startY = shown.length === 1 ? y + 44 : y + 30;
     shown.forEach((l, i) => text(l, 52, startY + i * 30, size, ink, actual ? 700 : 800, maxW));
     if (isMine && value !== "わたし") { ctx.beginPath(); ctx.roundRect(52, y + 62, 64, 24, 5); ctx.fillStyle = "#ffe08a"; ctx.fill(); text("あなた", 84, y + 80, 15, "#7a4d00", 800, 60, "center"); }
+    if (isMine && status !== "none") text(AFTER_LABEL[status], value !== "わたし" ? 126 : 52, y + 80, 15, "#7a4d00", 700, 150);
   };
   ctx.fillStyle = paper; ctx.fillRect(0, 0, W, H);
   ctx.fillStyle = rule; ctx.fillRect(40, 36, W - 80, 6); ctx.fillRect(40, 48, W - 80, 2);
@@ -253,7 +258,7 @@ async function drawSheet({ year, league, status, actualOrder, rows }: {
   const mine = rows.find((r) => r.isMine);
   const others = rows.filter((r) => !r.isMine).length;
   const who = mine ? (name(mine) + (others > 0 ? "と解説者の予想" : "の予想")) : "解説者の予想";
-  const sub = [who, hasResult ? (status === "final" ? "確定順位で答え合わせ" : "暫定順位で答え合わせ") : ""].filter(Boolean).join("　／　");
+  const sub = [who, hasResult ? (status === "final" ? "確定順位で答え合わせ" : "暫定順位で答え合わせ") : "", mine && status !== "none" ? `自分の予想は${AFTER_LABEL[status]}` : ""].filter(Boolean).join("　／　");
   text(sub, 40, 190, 24, muted, 700, 1120);
   const nameW = 230, chipX = 40 + nameW, chipW = hasResult ? 108 : 140, metricsX = chipX + chipW * 6 + 16;
   ctx.fillStyle = rule; ctx.fillRect(40, top - 30, W - 80, 2);

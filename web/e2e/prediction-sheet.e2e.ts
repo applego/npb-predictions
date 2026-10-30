@@ -30,6 +30,8 @@ for (const width of [320, 390, 1400]) {
     await expect(page.locator(".sheet-added")).toContainText("一覧に入りました：的中6・ずれ0・30点");
     const mine = board.locator(".sheet-row-mine");
     await expect(mine.locator(".sheet-name")).toContainText("@e2e_fan");
+    // Entered after the results: never presented as a pre-season forecast.
+    await expect(mine.locator(".sheet-name")).toContainText("結果確定後に入力");
     await expect(mine.locator(".sheet-metrics")).toContainText("6的中0ずれ30点");
     await page.getByRole("button", { name: "ずれ合計順" }).click();
     await expect(board.locator(".sheet-row:not(.sheet-row-header):not(.sheet-row-actual)").first()).toHaveClass(/sheet-row-mine/);
@@ -49,7 +51,7 @@ for (const width of [320, 390, 1400]) {
     const popup = context.waitForEvent("page");
     await page.getByRole("button", { name: "Xで共有する" }).click();
     const intent = new URL((await popup).url());
-    expect(intent.searchParams.get("text")).toContain("@e2e_fan 的中6・ずれ0・30点");
+    expect(intent.searchParams.get("text")).toContain("@e2e_fan 的中6・ずれ0・30点（結果確定後に入力）");
     expect(intent.searchParams.get("url")).toContain("order=");
 
     // The display name follows the visitor to the other league; picks start over.
