@@ -19,7 +19,7 @@ export function TeamBadge({ teamName, variant = "cell", className = "" }: TeamBa
     return (
       <span
         className={`inline-block rounded px-2 py-1 text-xs ${className}`}
-        style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)" }}
+        style={{ background: "var(--bg-surface)", color: "var(--text-muted)" }}
       >
         {teamName}
       </span>

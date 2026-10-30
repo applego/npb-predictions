@@ -277,3 +277,19 @@ export function calcMonthlyChampions(
 
   return results;
 }
+
+type StandingRow = { league: string; teamName: string; rank: number; snapshotDate: Date | number };
+
+/** Rank of each team in the newest snapshot of each league; older snapshots are ignored. */
+export function latestRankMap(rows: StandingRow[]): Map<string, Map<string, number>> {
+  const time = (d: Date | number) => (d instanceof Date ? d.getTime() : d);
+  const newest = new Map<string, number>();
+  for (const row of rows) newest.set(row.league, Math.max(newest.get(row.league) ?? -Infinity, time(row.snapshotDate)));
+  const rankMap = new Map<string, Map<string, number>>();
+  for (const row of rows) {
+    if (time(row.snapshotDate) !== newest.get(row.league)) continue;
+    if (!rankMap.has(row.league)) rankMap.set(row.league, new Map());
+    rankMap.get(row.league)!.set(row.teamName, row.rank);
+  }
+  return rankMap;
+}

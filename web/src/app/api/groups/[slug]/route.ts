@@ -11,7 +11,7 @@ import {
   rankingPicks,
   actualTeamStandings,
 } from "@/db/schema";
-import { and, eq, desc } from "drizzle-orm";
+import { and, eq, desc, inArray } from "drizzle-orm";
 import { calcRankingPointForTeam } from "@/lib/scoring";
 import { requireAuth } from "@/lib/auth-server";
 
@@ -154,7 +154,10 @@ export async function GET(
 
   // 6. Fetch ranking picks for those predictions
   const predIdSet = new Set(memberPredictions.map((p) => p.id));
-  const allPicks = await db.select().from(rankingPicks);
+  const allPicks = await db
+    .select()
+    .from(rankingPicks)
+    .where(inArray(rankingPicks.predictionId, db.select({ id: predictions.id }).from(predictions).where(eq(predictions.seasonId, season.id))));
   const relevantPicks = allPicks.filter((rp) => predIdSet.has(rp.predictionId));
 
   const picksByPred = new Map<number, (typeof relevantPicks)>();
