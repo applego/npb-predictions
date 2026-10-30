@@ -9,7 +9,7 @@ import {
   rankingPicks,
   actualTeamStandings,
 } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, inArray } from "drizzle-orm";
 import { calcRankingPointForTeam } from "@/lib/scoring";
 
 /**
@@ -77,7 +77,10 @@ export async function GET(req: Request) {
     .from(predictions)
     .where(eq(predictions.seasonId, season.id));
 
-  const allPicks = await db.select().from(rankingPicks);
+  const allPicks = await db
+    .select()
+    .from(rankingPicks)
+    .where(inArray(rankingPicks.predictionId, db.select({ id: predictions.id }).from(predictions).where(eq(predictions.seasonId, season.id))));
   const picksByPred = new Map<number, typeof allPicks>();
   for (const rp of allPicks) {
     const arr = picksByPred.get(rp.predictionId) ?? [];

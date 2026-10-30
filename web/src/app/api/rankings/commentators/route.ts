@@ -3,7 +3,7 @@ export const runtime = "edge";
 import { NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { users, seasons, predictions, rankingPicks, actualTeamStandings } from "@/db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, inArray } from "drizzle-orm";
 import { calcRankingPointForTeam } from "@/lib/scoring";
 import { exportPublicResults } from "@/lib/public-results-export";
 
@@ -96,7 +96,10 @@ export async function GET(req: Request) {
   }
 
   // 4. Fetch all ranking picks
-  const allPicks = await db.select().from(rankingPicks);
+  const allPicks = await db
+    .select()
+    .from(rankingPicks)
+    .where(inArray(rankingPicks.predictionId, db.select({ id: predictions.id }).from(predictions).where(and(eq(predictions.seasonId, season.id), eq(predictions.isLocked, true)))));
   const predIdSet = new Set(commentatorPreds.map((p) => p.id));
   const relevantPicks = allPicks.filter((rp) => predIdSet.has(rp.predictionId));
 
