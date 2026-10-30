@@ -5,6 +5,7 @@ import { getDb } from "@/db";
 import { users, seasons, predictions, rankingPicks, actualTeamStandings } from "@/db/schema";
 import { eq, and, desc, inArray } from "drizzle-orm";
 import { calcRankingPointForTeam } from "@/lib/scoring";
+import { getOrCompute, PUBLIC_CACHE_HEADERS } from "@/lib/computed-cache";
 import { getTeamByName } from "@/lib/teams";
 import type { League } from "@/db/schema";
 
@@ -38,12 +39,17 @@ export async function GET(
 ) {
   const { year: yearStr } = await params;
   const yearNum = parseInt(yearStr, 10);
-
-  const db = getDb();
-  const [season] = await db.select().from(seasons).where(eq(seasons.year, yearNum));
-  if (!season) {
+  const body = await getOrCompute(getDb(), `current-scoreboard:${yearNum}`, () => computeCurrentScoreboard(yearNum));
+  if (!body) {
     return NextResponse.json({ error: "Season not found" }, { status: 404 });
   }
+  return NextResponse.json(body, { headers: PUBLIC_CACHE_HEADERS });
+}
+
+async function computeCurrentScoreboard(yearNum: number) {
+  const db = getDb();
+  const [season] = await db.select().from(seasons).where(eq(seasons.year, yearNum));
+  if (!season) return null;
 
   // Actual standings (ordered by snapshotDate desc)
   const allStandings = await db
@@ -133,7 +139,7 @@ export async function GET(
   }
 
   if (rankMap.size === 0) {
-    return NextResponse.json({ season, scores: [], standings: [], changes: [] });
+    return { season, scores: [], standings: [], changes: [] };
   }
 
   // All predictions for this season (friends only, not commentators)
@@ -192,5 +198,5 @@ export async function GET(
 
   scores.sort((a, b) => b!.totalScore - a!.totalScore);
 
-  return NextResponse.json({ season, scores, standings: latestStandings, changes });
+  return { season, scores, standings: latestStandings, changes };
 }

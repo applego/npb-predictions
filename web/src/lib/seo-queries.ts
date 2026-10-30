@@ -12,6 +12,7 @@ import {
 } from "@/db/schema";
 
 import { publicPredictionRelations } from "@/lib/season-predictions";
+import { getOrCompute } from "@/lib/computed-cache";
 
 export type League = "central" | "pacific";
 
@@ -113,19 +114,31 @@ export async function getLatestStandings(seasonId: number, league: League) {
   return deduped.sort((a, b) => a.rank - b.rank);
 }
 
+// Archive pages: cached per season (rebuilt only after data changes). Date
+// columns are dropped so the cached JSON has the same shape as the live rows.
 export async function getSeasonPredictions(seasonId: number) {
-  return getDb().query.predictions.findMany({
-    where: and(eq(predictions.seasonId, seasonId), eq(predictions.isLocked, true)),
-    with: publicPredictionRelations,
+  const db = getDb();
+  return getOrCompute(db, `archive-predictions:${seasonId}`, async () => {
+    const rows = await db.query.predictions.findMany({
+      where: and(eq(predictions.seasonId, seasonId), eq(predictions.isLocked, true)),
+      with: publicPredictionRelations,
+    });
+    return rows.map(({ createdAt: _c, updatedAt: _u, lockedAt: _l, ...row }) => row);
   });
 }
 
-export async function getLatestScores(seasonId: number) {
-  return getDb()
-    .select()
-    .from(scoreSnapshots)
-    .where(eq(scoreSnapshots.seasonId, seasonId))
-    .orderBy(desc(scoreSnapshots.snapshotDate));
+/** Newest snapshots of the season, first `limit` rows. */
+export async function getLatestScores(seasonId: number, limit: number) {
+  const db = getDb();
+  return getOrCompute(db, `archive-latest-scores:${seasonId}:${limit}`, async () => {
+    const rows = await db
+      .select({ id: scoreSnapshots.id, userId: scoreSnapshots.userId, totalScore: scoreSnapshots.totalScore })
+      .from(scoreSnapshots)
+      .where(eq(scoreSnapshots.seasonId, seasonId))
+      .orderBy(desc(scoreSnapshots.snapshotDate))
+      .limit(limit);
+    return rows;
+  });
 }
 
 export const LEAGUE_LABELS: Record<string, string> = {

@@ -4,6 +4,7 @@ import type { ReactElement } from "react";
 import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
 import { getDb } from "@/db";
+import { getOrCompute } from "@/lib/computed-cache";
 import { eq, and, desc } from "drizzle-orm";
 import {
   users,
@@ -389,21 +390,33 @@ async function renderScoreboardCard(
 
   if (!season) return await renderDefaultCard(dims);
 
-  // Get latest score snapshots
-  const scores = await getDb().query.scoreSnapshots.findMany({
-    where: eq(scoreSnapshots.seasonId, season.id),
-    orderBy: [desc(scoreSnapshots.totalScore)],
-    with: {
-      user: true,
-    },
-  });
+  // Top 5 users by best snapshot: one cached aggregate per season instead of
+  // every daily snapshot of the season per rendered image.
+  const uniqueScores = await getOrCompute(getDb(), `og-weekly-top5:${season.id}`, async () => {
+    const scores = await getDb().query.scoreSnapshots.findMany({
+      where: eq(scoreSnapshots.seasonId, season.id),
+      orderBy: [desc(scoreSnapshots.totalScore)],
+      with: {
+        user: true,
+      },
+    });
 
-  // Deduplicate by userId (keep highest totalScore)
-  const seen = new Set<number>();
-  const uniqueScores = scores.filter((s) => {
-    if (seen.has(s.userId)) return false;
-    seen.add(s.userId);
-    return true;
+    // Deduplicate by userId (keep highest totalScore)
+    const seen = new Set<number>();
+    return scores
+      .filter((s) => {
+        if (seen.has(s.userId)) return false;
+        seen.add(s.userId);
+        return true;
+      })
+      .slice(0, 5)
+      .map((s) => ({
+        userId: s.userId,
+        user: { name: s.user.name },
+        totalScore: s.totalScore,
+        rankingScore: s.rankingScore,
+        titleScore: s.titleScore,
+      }));
   });
 
   const isPortrait = dims.height > dims.width;

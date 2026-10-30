@@ -27,6 +27,7 @@ import {
 } from "@/db/schema";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { generateNewsFeed } from "@/lib/news-feed";
+import { getOrCompute } from "@/lib/computed-cache";
 import { latestResultSnapshot, RESULT_LEAGUES } from "@/lib/season-results";
 
 // If actual_team_standings hasn't been updated for this long, the daily-scores
@@ -107,7 +108,9 @@ async function checkNewsFeed(): Promise<FeatureStatus> {
     latestHttpStatus: null,
   };
   try {
-    const items = await generateNewsFeed(5);
+    // Same cached path as /api/news: recomputed (and so re-verified) after any
+    // data change, without reading a whole season on every hourly check.
+    const items = await getOrCompute(getDb(), "news:5", () => generateNewsFeed(5));
     if (!Array.isArray(items) || items.length === 0) {
       return { ...base, latestError: "generateNewsFeed() returned 0 items" };
     }

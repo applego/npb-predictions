@@ -3,6 +3,7 @@ export const runtime = "edge";
 import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
 import { getDb } from "@/db";
+import { getOrCompute } from "@/lib/computed-cache";
 import { eq, and } from "drizzle-orm";
 import {
   users,
@@ -191,22 +192,25 @@ async function fetchPredictionData(
     .filter((p) => p.league === "pacific")
     .sort((a, b) => a.rank - b.rank);
 
-  // Fetch all 1st picks for boldness / consensus calculations
-  const allPredictions = await db.query.predictions.findMany({
-    where: and(eq(predictions.seasonId, season.id), eq(predictions.isLocked, true)),
-    with: { rankingPicks: true },
-  });
-
-  const allCentral1s: string[] = [];
-  const allPacific1s: string[] = [];
-  for (const pred of allPredictions) {
-    for (const pick of pred.rankingPicks) {
-      if (pick.rank === 1 && pick.league === "central")
-        allCentral1s.push(pick.teamName);
-      if (pick.rank === 1 && pick.league === "pacific")
-        allPacific1s.push(pick.teamName);
+  // All 1st picks of the season for boldness / consensus: one cached
+  // aggregate, not every prediction of the season per rendered image.
+  const { allCentral1s, allPacific1s } = await getOrCompute(db, `first-picks:${season.id}`, async () => {
+    const allPredictions = await db.query.predictions.findMany({
+      where: and(eq(predictions.seasonId, season.id), eq(predictions.isLocked, true)),
+      with: { rankingPicks: true },
+    });
+    const allCentral1s: string[] = [];
+    const allPacific1s: string[] = [];
+    for (const pred of allPredictions) {
+      for (const pick of pred.rankingPicks) {
+        if (pick.rank === 1 && pick.league === "central")
+          allCentral1s.push(pick.teamName);
+        if (pick.rank === 1 && pick.league === "pacific")
+          allPacific1s.push(pick.teamName);
+      }
     }
-  }
+    return { allCentral1s, allPacific1s };
+  });
 
   return {
     user: { name: user.name },

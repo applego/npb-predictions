@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { fetchWithAuth } from "@/lib/fetch-with-auth";
 
 interface MyRankResponse {
   userId: number;
@@ -35,9 +36,7 @@ export function RankChangeNotifier({ year }: { year?: number }) {
     const targetYear = year ?? new Date().getFullYear();
 
     try {
-      const res = await fetch(
-        `/api/my-rank?uid=${encodeURIComponent(firebaseUser.uid)}&year=${targetYear}`,
-      );
+      const res = await fetchWithAuth(`/api/my-rank?year=${targetYear}`);
       if (!res.ok) return;
       const data = (await res.json()) as MyRankResponse;
       if (!data.rank || data.totalUsers === 0) return;

@@ -69,10 +69,14 @@ export async function GET(
     .where(eq(battleGroupMembers.groupId, group.id));
 
   const memberUserIds = memberships.map((m) => m.userId);
+  // Every read below is scoped to this group's members, never whole tables.
+  const memberIdsQuery = db
+    .select({ id: battleGroupMembers.userId })
+    .from(battleGroupMembers)
+    .where(eq(battleGroupMembers.groupId, group.id));
 
   // Fetch member user data
-  const allUsers = await db.select().from(users);
-  const memberUsers = allUsers.filter((u) => memberUserIds.includes(u.id));
+  const memberUsers = await db.select().from(users).where(inArray(users.id, memberIdsQuery)).orderBy(users.id);
   const userMap = new Map(memberUsers.map((u) => [u.id, u]));
 
   // 3. Determine the season year
@@ -143,21 +147,20 @@ export async function GET(
   const hasActual = centralRankMap.size > 0 || pacificRankMap.size > 0;
 
   // 5. Fetch predictions for members in this season
-  const allPredictions = await db
+  const memberSeasonPreds = and(eq(predictions.seasonId, season.id), inArray(predictions.userId, memberIdsQuery));
+  const memberPredictions = await db
     .select()
     .from(predictions)
-    .where(eq(predictions.seasonId, season.id));
-
-  const memberPredictions = allPredictions.filter((p) =>
-    memberUserIds.includes(p.userId),
-  );
+    .where(memberSeasonPreds)
+    .orderBy(predictions.id);
 
   // 6. Fetch ranking picks for those predictions
   const predIdSet = new Set(memberPredictions.map((p) => p.id));
   const allPicks = await db
     .select()
     .from(rankingPicks)
-    .where(inArray(rankingPicks.predictionId, db.select({ id: predictions.id }).from(predictions).where(eq(predictions.seasonId, season.id))));
+    .where(inArray(rankingPicks.predictionId, db.select({ id: predictions.id }).from(predictions).where(memberSeasonPreds)))
+    .orderBy(rankingPicks.id);
   const relevantPicks = allPicks.filter((rp) => predIdSet.has(rp.predictionId));
 
   const picksByPred = new Map<number, (typeof relevantPicks)>();

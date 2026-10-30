@@ -256,9 +256,19 @@ export const growthEvents = sqliteTable("growth_events", {
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
 }, (table) => [index("growth_events_day_event_idx").on(table.day, table.event)]);
 
-// Whole-table aggregates (all-time ranking, news feed, …) computed at most once per TTL.
+// Public aggregates (scoreboards, rankings, news) stored as one row per key;
+// see lib/computed-cache.ts.
 export const computedCache = sqliteTable("computed_cache", {
   key: text("key").primaryKey(),
   value: text("value").notNull(),
   computedAt: integer("computed_at").notNull(),
+  basis: integer("basis").notNull(),
+  claimedAt: integer("claimed_at"),
+});
+
+// Single row (id = 1): triggers set changed_at (epoch ms) on every write to
+// scored data; a computed_cache row is fresh only while its basis equals it.
+export const dataChanges = sqliteTable("data_changes", {
+  id: integer("id").primaryKey(),
+  changedAt: integer("changed_at").notNull(),
 });

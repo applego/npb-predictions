@@ -42,7 +42,7 @@ export default async function SeasonArchivePage({ params }: Props) {
       getFinalStandings(season.id, "pacific"),
       getTitleLeaders(season.id),
       getSeasonPredictions(season.id),
-      getLatestScores(season.id),
+      getLatestScores(season.id, 10),
     ]);
 
   const breadcrumbItems = [

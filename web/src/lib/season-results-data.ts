@@ -2,6 +2,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { getRequestContext } from "@cloudflare/next-on-pages";
 import { publishedSeasonResults } from "./public-results-archive";
 import { getDb } from "@/db";
+import { getOrCompute } from "@/lib/computed-cache";
 import { actualTeamStandings, predictions, rankingPicks, seasons, users } from "@/db/schema";
 import { summarizeResults, type PublicResultPick, type ResultScope, type ResultSummary } from "./season-results";
 
@@ -35,6 +36,9 @@ export async function loadSeasonResults(requestedYear: number | undefined, scope
       ? available.find((s) => s.year === currentYear) ?? available.find((s) => s.year <= currentYear)
       : available.find((s) => s.year === requestedYear);
     if (!season) return { year: fallbackYear, years, summary: summarizeResults([], [], scope), error: requestedYear === undefined ? "unavailable" : "unknown-year" };
+    // Home and /rankings: one cached result per season and scope, rebuilt only
+    // after standings or predictions change.
+    return await getOrCompute(db, `season-results:${season.year}:${scope}`, async (): Promise<ResultsData> => {
     const [standingRows, pickRows] = await Promise.all([
       db.select().from(actualTeamStandings).where(eq(actualTeamStandings.seasonId, season.id)),
       db.select({
@@ -49,6 +53,7 @@ export async function loadSeasonResults(requestedYear: number | undefined, scope
     const publicPicks: PublicResultPick[] = pickRows.map((row) => ({ ...row, createdAt: row.createdAt.toISOString() }));
     const standings = standingRows.map((row) => ({ ...row, snapshotDate: row.snapshotDate.toISOString() }));
     return { year: season.year, years, summary: summarizeResults(withPredictionSources(publicPicks, season.year, scope), standings, scope), error: null };
+    });
   } catch (error) {
     console.error("Public season results unavailable", error instanceof Error ? error.message : "unknown");
     return { year: fallbackYear, years, summary: summarizeResults([], [], scope), error: "unavailable" };

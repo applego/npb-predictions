@@ -5,7 +5,7 @@ import { getDb, type DbClient } from "@/db";
 import { users, seasons, predictions, rankingPicks, actualTeamStandings } from "@/db/schema";
 import { eq, and, desc, inArray } from "drizzle-orm";
 import { calcRankingPointForTeam } from "@/lib/scoring";
-import { getOrCompute } from "@/lib/computed-cache";
+import { getOrCompute, PUBLIC_CACHE_HEADERS } from "@/lib/computed-cache";
 
 /**
  * GET /api/rankings/all-time
@@ -16,8 +16,7 @@ import { getOrCompute } from "@/lib/computed-cache";
  */
 export async function GET() {
   const db = getDb();
-  // Multi-season aggregate over every locked pick: recompute at most every 6h.
-  return NextResponse.json(await getOrCompute(db, "rankings:all-time", () => computeAllTimeRankings(db), 6 * 3600));
+  return NextResponse.json(await getOrCompute(db, "rankings:all-time", () => computeAllTimeRankings(db)), { headers: PUBLIC_CACHE_HEADERS });
 }
 
 async function computeAllTimeRankings(db: DbClient) {

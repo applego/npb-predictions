@@ -16,6 +16,7 @@ import { GET as allTime } from "@/app/api/rankings/all-time/route";
 import { GET as newsApi } from "@/app/api/news/route";
 import { getTopCommentatorsForYear } from "@/lib/commentator-queries";
 import { generateNewsFeed } from "@/lib/news-feed";
+import { getOrCompute } from "@/lib/computed-cache";
 
 const MIGRATIONS = resolve(__dirname, "../../drizzle");
 const HEAVY_TABLES = /^SCAN (ranking_picks|title_picks|score_snapshots|ss|predictions)\b/;
@@ -112,7 +113,7 @@ describe("D1 read paths stay index-bounded", () => {
 
     log = [];
     expect(await getTopCommentatorsForYear(2026, 3)).toEqual(top);
-    expect(log.map((s) => s.sql)).toEqual([expect.stringContaining('from "computed_cache"')]);
+    expect(log.map((s) => s.sql)).toEqual([expect.stringContaining('"computed_cache"')]);
   });
 
   it("news feed stops at the newest season that fills the limit", async () => {
@@ -136,12 +137,12 @@ describe("D1 read paths stay index-bounded", () => {
     expect(spotlight?.body).toBe("複数の予想パターンを提出して最高+102点。");
   });
 
-  it("all-time ranking and news API recompute once per TTL", async () => {
-    const first = await (await allTime()).json();
+  it("all-time ranking and news API are served from one stored result", async () => {
+    const first = await (await allTime()).json() as { totalCommentators: number };
     expect(first.totalCommentators).toBe(6);
     log = [];
     expect(await (await allTime()).json()).toEqual(first);
-    expect(log.map((s) => s.sql)).toEqual([expect.stringContaining('from "computed_cache"')]);
+    expect(log.map((s) => s.sql)).toEqual([expect.stringContaining('"computed_cache"')]);
 
     const news = await (await newsApi(new Request("https://x/api/news?limit=5"))).json();
     log = [];
@@ -151,7 +152,53 @@ describe("D1 read paths stay index-bounded", () => {
 
   it("still serves data before the computed_cache migration is applied", async () => {
     sqlite.exec("DROP TABLE computed_cache");
-    const body = await (await allTime()).json();
+    const body = await (await allTime()).json() as { totalCommentators: number };
     expect(body.totalCommentators).toBe(6);
+  });
+});
+
+describe("computed_cache freshness", () => {
+  const db = () => boundary.getDb();
+
+  it("a write to scored data makes the next request recompute", async () => {
+    let computes = 0;
+    const compute = async () => ({ n: ++computes });
+    expect(await getOrCompute(db(), "k", compute)).toEqual({ n: 1 });
+    expect(await getOrCompute(db(), "k", compute)).toEqual({ n: 1 });
+    sqlite.exec("UPDATE actual_team_standings SET rank = rank WHERE id = (SELECT min(id) FROM actual_team_standings)");
+    expect(await getOrCompute(db(), "k", compute)).toEqual({ n: 2 });
+    expect(await getOrCompute(db(), "k", compute)).toEqual({ n: 2 });
+  });
+
+  it("after a change, concurrent requests recompute once and the rest get the previous result", async () => {
+    let computes = 0;
+    await getOrCompute(db(), "k", async () => ({ n: ++computes }));
+    sqlite.exec("INSERT INTO score_snapshots (user_id, season_id, total_score) VALUES (1000, 103, 1)");
+    let release!: () => void;
+    const gate = new Promise<void>((r) => { release = r; });
+    const slow = getOrCompute(db(), "k", async () => { await gate; return { n: ++computes }; });
+    await new Promise((r) => setTimeout(r, 10));
+    const others = await Promise.all([1, 2, 3].map(() => getOrCompute(db(), "k", async () => ({ n: ++computes }))));
+    expect(others).toEqual([{ n: 1 }, { n: 1 }, { n: 1 }]);
+    release();
+    expect(await slow).toEqual({ n: 2 });
+    expect(computes).toBe(2);
+  });
+
+  it("a write during the compute leaves the new result stale", async () => {
+    let computes = 0;
+    await getOrCompute(db(), "k", async () => {
+      computes++;
+      await new Promise((r) => setTimeout(r, 5));
+      sqlite.exec("UPDATE users SET name = name WHERE id = 1000");
+      return computes;
+    });
+    await getOrCompute(db(), "k", async () => ++computes);
+    expect(computes).toBe(2);
+  });
+
+  it("does not store null results, so unknown keys cannot grow the table", async () => {
+    await getOrCompute(db(), "missing", async () => null);
+    expect(sqlite.prepare("SELECT count(*) AS n FROM computed_cache").get()).toEqual({ n: 0 });
   });
 });

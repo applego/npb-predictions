@@ -2,7 +2,7 @@ export const runtime = "edge";
 
 import { NextResponse } from "next/server";
 import { getDb } from "@/db";
-import { getOrCompute } from "@/lib/computed-cache";
+import { getOrCompute, PUBLIC_CACHE_HEADERS } from "@/lib/computed-cache";
 import { generateNewsFeed } from "@/lib/news-feed";
 
 export async function GET(req: Request) {
@@ -10,5 +10,5 @@ export async function GET(req: Request) {
   const limit = Math.min(parseInt(searchParams.get("limit") ?? "30", 10), 100);
 
   const items = await getOrCompute(getDb(), `news:${limit}`, () => generateNewsFeed(limit));
-  return NextResponse.json(items);
+  return NextResponse.json(items, { headers: PUBLIC_CACHE_HEADERS });
 }

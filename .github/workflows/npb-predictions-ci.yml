@@ -175,6 +175,7 @@ jobs:
           command: pages deploy .vercel/output/static --project-name=npb-predictions --commit-dirty=true --commit-message="${{ steps.commit_msg.outputs.msg }}"
           workingDirectory: web
 
+
       - name: Deploy to Cloudflare Pages (production)
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: cloudflare/wrangler-action@v3
@@ -183,6 +184,7 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy .vercel/output/static --project-name=npb-predictions --branch=main --commit-dirty=true --commit-message="${{ steps.commit_msg.outputs.msg }}"
           workingDirectory: web
+
 
       - name: Live release gate (share images + scoreboard)
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
