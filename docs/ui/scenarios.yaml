@@ -110,6 +110,16 @@
       "test_id": "result metrics and actual share card work at 320px",
       "expected_outcome": "得点・一致数・順位差の並びとURLを切り替え、出典付きPNGを保存する",
       "max_operations": 10
+    },
+    {
+      "id": "own-sheet",
+      "question": "自分の予想を解説者と並べて画像で共有できるか",
+      "role": "野球ファン",
+      "route": "/sheet?year=2026&league=central",
+      "fixture": "web/src/lib/public-results-archive.ts",
+      "test_id": "own prediction joins the commentator sheet and is shareable at 390px",
+      "expected_outcome": "表示名と6球団を入れると参考として解説者の後ろに並び、画像保存とX共有ができ、共有リンクを開いた人にはその人の行として見える",
+      "max_operations": 10
     }
   ]
 }
