@@ -1,10 +1,11 @@
 export const runtime = "edge";
 
 import { NextResponse } from "next/server";
-import { getDb } from "@/db";
+import { getDb, type DbClient } from "@/db";
 import { users, seasons, predictions, rankingPicks, actualTeamStandings } from "@/db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, inArray } from "drizzle-orm";
 import { calcRankingPointForTeam } from "@/lib/scoring";
+import { getOrCompute, PUBLIC_CACHE_HEADERS } from "@/lib/computed-cache";
 
 /**
  * GET /api/rankings/all-time
@@ -15,6 +16,10 @@ import { calcRankingPointForTeam } from "@/lib/scoring";
  */
 export async function GET() {
   const db = getDb();
+  return NextResponse.json(await getOrCompute(db, "rankings:all-time", () => computeAllTimeRankings(db)), { headers: PUBLIC_CACHE_HEADERS });
+}
+
+async function computeAllTimeRankings(db: DbClient) {
 
   const allSeasons = await db.select().from(seasons).orderBy(desc(seasons.year));
   const allStandings = await db.select().from(actualTeamStandings);
@@ -33,7 +38,11 @@ export async function GET() {
   const userMap = new Map(allUsers.map((u) => [u.id, u]));
 
   const allPreds = await db.select().from(predictions).where(eq(predictions.isLocked, true));
-  const allPicks = await db.select().from(rankingPicks);
+  const allPicks = await db
+    .select()
+    .from(rankingPicks)
+    .where(inArray(rankingPicks.predictionId, db.select({ id: predictions.id }).from(predictions).where(eq(predictions.isLocked, true))))
+    .orderBy(rankingPicks.id);
 
   const picksByPred = new Map<number, typeof allPicks>();
   for (const rp of allPicks) {
@@ -171,10 +180,10 @@ export async function GET() {
     .sort((a, b) => b.avgPerYear - a.avgPerYear) // Sort by AVERAGE, not total
     .map((c, idx) => ({ ...c, rank: idx + 1 }));
 
-  return NextResponse.json({
+  return {
     totalCommentators: ranked.length,
     availableYears: allSeasons.map((s) => s.year).sort((a, b) => a - b),
     yearStats: Object.fromEntries([...yearStats].map(([y, s]) => [y, { mean: Math.round(s.mean * 10) / 10, stddev: Math.round(s.stddev * 10) / 10 }])),
     commentators: ranked,
-  });
+  };
 }

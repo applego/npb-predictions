@@ -41,8 +41,8 @@ export default async function SeasonArchivePage({ params }: Props) {
       getFinalStandings(season.id, "central"),
       getFinalStandings(season.id, "pacific"),
       getTitleLeaders(season.id),
-      getSeasonPredictions(season.id),
-      getLatestScores(season.id),
+      getSeasonPredictions(season.id, season.year),
+      getLatestScores(season.id, season.year, 10),
     ]);
 
   const breadcrumbItems = [

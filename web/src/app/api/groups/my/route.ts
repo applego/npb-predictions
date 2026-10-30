@@ -3,7 +3,7 @@ export const runtime = "edge";
 import { NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { battleGroups, battleGroupMembers } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { count, eq, inArray } from "drizzle-orm";
 import { requireAuth } from "@/lib/auth-server";
 
 /**
@@ -27,19 +27,18 @@ export async function GET(req: Request) {
     return NextResponse.json({ groups: [] });
   }
 
-  // Fetch group details
-  const allGroups = await db.select().from(battleGroups);
-  const groupIdSet = new Set(memberships.map((m) => m.groupId));
-  const myGroups = allGroups.filter((g) => groupIdSet.has(g.id));
-
-  // Count members per group
-  const allMembers = await db.select().from(battleGroupMembers);
-  const memberCountMap = new Map<number, number>();
-  for (const m of allMembers) {
-    if (groupIdSet.has(m.groupId)) {
-      memberCountMap.set(m.groupId, (memberCountMap.get(m.groupId) ?? 0) + 1);
-    }
-  }
+  // Only this user's groups and their member counts — never whole tables.
+  const myGroupIds = db
+    .select({ id: battleGroupMembers.groupId })
+    .from(battleGroupMembers)
+    .where(eq(battleGroupMembers.userId, auth.user.id));
+  const myGroups = await db.select().from(battleGroups).where(inArray(battleGroups.id, myGroupIds)).orderBy(battleGroups.id);
+  const counts = await db
+    .select({ groupId: battleGroupMembers.groupId, n: count() })
+    .from(battleGroupMembers)
+    .where(inArray(battleGroupMembers.groupId, myGroupIds))
+    .groupBy(battleGroupMembers.groupId);
+  const memberCountMap = new Map(counts.map((c) => [c.groupId, c.n]));
 
   const groups = myGroups.map((g) => ({
     id: g.id,

@@ -1,7 +1,7 @@
 // Database queries for commentator detail pages
 // Computes scores directly from ranking_picks + actual_team_standings
 // (no dependency on scoreSnapshots which has no data)
-import { getDb } from "@/db";
+import { getDb, type DbClient } from "@/db";
 import {
   users,
   seasons,
@@ -9,7 +9,8 @@ import {
   rankingPicks,
   actualTeamStandings,
 } from "@/db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, inArray } from "drizzle-orm";
+import { getOrCompute } from "@/lib/computed-cache";
 import { calcRankingPointForTeam } from "@/lib/scoring";
 
 // Available years with prediction data
@@ -200,14 +201,25 @@ export async function getTopCommentatorsForYear(
   limit: number = 20
 ): Promise<TopCommentator[]> {
   const db = getDb();
+  // The SEO page and its OG image both call this on every crawl of every year.
+  // An unknown year yields null, which is not cached, so arbitrary years
+  // requested by crawlers cannot add rows.
+  const top = await getOrCompute(db, `top-commentators:${year}:${limit}`, () => computeTopCommentatorsForYear(db, year, limit), { year });
+  return top ?? [];
+}
 
+async function computeTopCommentatorsForYear(
+  db: DbClient,
+  year: number,
+  limit: number
+): Promise<TopCommentator[] | null> {
   // 1. Find season by year
   const [season] = await db
     .select()
     .from(seasons)
     .where(eq(seasons.year, year));
 
-  if (!season) return [];
+  if (!season) return null;
 
   // 2. Fetch actual standings for this season
   const allStandings = await db
@@ -249,7 +261,11 @@ export async function getTopCommentatorsForYear(
   if (commentatorPreds.length === 0) return [];
 
   // 4. Fetch all ranking picks for these predictions
-  const allPicks = await db.select().from(rankingPicks);
+  const allPicks = await db
+    .select()
+    .from(rankingPicks)
+    .where(inArray(rankingPicks.predictionId, db.select({ id: predictions.id }).from(predictions).where(and(eq(predictions.seasonId, season.id), eq(predictions.isLocked, true)))))
+    .orderBy(rankingPicks.id);
   const predIdSet = new Set(commentatorPreds.map((p) => p.id));
   const relevantPicks = allPicks.filter((rp) => predIdSet.has(rp.predictionId));
 

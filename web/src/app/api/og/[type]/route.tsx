@@ -4,6 +4,7 @@ import type { ReactElement } from "react";
 import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
 import { getDb } from "@/db";
+import { getOrCompute } from "@/lib/computed-cache";
 import { eq, and, desc } from "drizzle-orm";
 import {
   users,
@@ -389,22 +390,34 @@ async function renderScoreboardCard(
 
   if (!season) return await renderDefaultCard(dims);
 
-  // Get latest score snapshots
-  const scores = await getDb().query.scoreSnapshots.findMany({
-    where: eq(scoreSnapshots.seasonId, season.id),
-    orderBy: [desc(scoreSnapshots.totalScore)],
-    with: {
-      user: true,
-    },
-  });
+  // Top 5 users by best snapshot: one cached aggregate per season instead of
+  // every daily snapshot of the season per rendered image.
+  const uniqueScores = await getOrCompute(getDb(), `og-weekly-top5:${season.id}`, async () => {
+    const scores = await getDb().query.scoreSnapshots.findMany({
+      where: eq(scoreSnapshots.seasonId, season.id),
+      orderBy: [desc(scoreSnapshots.totalScore)],
+      with: {
+        user: true,
+      },
+    });
 
-  // Deduplicate by userId (keep highest totalScore)
-  const seen = new Set<number>();
-  const uniqueScores = scores.filter((s) => {
-    if (seen.has(s.userId)) return false;
-    seen.add(s.userId);
-    return true;
-  });
+    // Deduplicate by userId (keep highest totalScore)
+    const seen = new Set<number>();
+    return scores
+      .filter((s) => {
+        if (seen.has(s.userId)) return false;
+        seen.add(s.userId);
+        return true;
+      })
+      .slice(0, 5)
+      .map((s) => ({
+        userId: s.userId,
+        user: { name: s.user.name },
+        totalScore: s.totalScore,
+        rankingScore: s.rankingScore,
+        titleScore: s.titleScore,
+      }));
+  }, { year: season.year });
 
   const isPortrait = dims.height > dims.width;
 
@@ -700,46 +713,57 @@ async function renderWeeklyCard(
 
   if (!season) return await renderDefaultCard(dims);
 
-  // Get all score snapshots, sorted by date descending
-  const allScores = await getDb().query.scoreSnapshots.findMany({
-    where: eq(scoreSnapshots.seasonId, season.id),
-    orderBy: [desc(scoreSnapshots.snapshotDate)],
-    with: { user: true },
-  });
+  // Top 5 weekly gains: one cached aggregate per season instead of every
+  // snapshot of the season per rendered image.
+  const weekly = await getOrCompute(getDb(), `og-weekly-changes:${season.id}`, async () => {
+    // Get all score snapshots, sorted by date descending
+    const allScores = await getDb().query.scoreSnapshots.findMany({
+      where: eq(scoreSnapshots.seasonId, season.id),
+      orderBy: [desc(scoreSnapshots.snapshotDate)],
+      with: { user: true },
+    });
 
-  if (allScores.length === 0) return await renderDefaultCard(dims);
+    if (allScores.length === 0) return null;
 
-  // Find latest snapshot date and 7 days prior
-  const latestDate = allScores[0].snapshotDate;
-  const weekAgo = new Date(latestDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+    // Find latest snapshot date and 7 days prior
+    const latestDate = allScores[0].snapshotDate;
+    const weekAgo = new Date(latestDate.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-  // Get latest score per user
-  const latestByUser = new Map<number, typeof allScores[0]>();
-  for (const s of allScores) {
-    if (!latestByUser.has(s.userId)) latestByUser.set(s.userId, s);
-  }
-
-  // Get score from ~1 week ago per user
-  const prevByUser = new Map<number, typeof allScores[0]>();
-  for (const s of allScores) {
-    if (s.snapshotDate <= weekAgo && !prevByUser.has(s.userId)) {
-      prevByUser.set(s.userId, s);
+    // Get latest score per user
+    const latestByUser = new Map<number, typeof allScores[0]>();
+    for (const s of allScores) {
+      if (!latestByUser.has(s.userId)) latestByUser.set(s.userId, s);
     }
-  }
 
-  // Build change entries
-  const changes = [...latestByUser.entries()]
-    .map(([userId, latest]) => {
-      const prev = prevByUser.get(userId);
-      const prevTotal = prev?.totalScore ?? 0;
-      const delta = latest.totalScore - prevTotal;
-      return {
-        userName: latest.user.name,
-        currentScore: latest.totalScore,
-        delta,
-      };
-    })
-    .sort((a, b) => b.delta - a.delta); // sort by biggest gain
+    // Get score from ~1 week ago per user
+    const prevByUser = new Map<number, typeof allScores[0]>();
+    for (const s of allScores) {
+      if (s.snapshotDate <= weekAgo && !prevByUser.has(s.userId)) {
+        prevByUser.set(s.userId, s);
+      }
+    }
+
+    // Build change entries
+    const changes = [...latestByUser.entries()]
+      .map(([userId, latest]) => {
+        const prev = prevByUser.get(userId);
+        const prevTotal = prev?.totalScore ?? 0;
+        const delta = latest.totalScore - prevTotal;
+        return {
+          userName: latest.user.name,
+          currentScore: latest.totalScore,
+          delta,
+        };
+      })
+      .sort((a, b) => b.delta - a.delta) // sort by biggest gain
+      .slice(0, 5);
+    return { latestMs: latestDate.getTime(), weekAgoMs: weekAgo.getTime(), changes };
+  }, { year: season.year });
+
+  if (!weekly) return await renderDefaultCard(dims);
+  const latestDate = new Date(weekly.latestMs);
+  const weekAgo = new Date(weekly.weekAgoMs);
+  const { changes } = weekly;
 
   const isPortrait = dims.height > dims.width;
 

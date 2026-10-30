@@ -96,7 +96,7 @@ describe("season prediction privacy boundary", () => {
 
 describe("adjacent public prediction readers", () => {
   it("SEO season/team reads omit private fields and drafts", async () => {
-    const rows = await getSeasonPredictions(1); safe(rows);
+    const rows = await getSeasonPredictions(1, 2026); safe(rows);
     expect(rows.map(p => p.id)).toEqual([12]);
     expect(await getTeamPredictions(1, "非公開球団")).toEqual([]);
     expect((await getTeamPredictions(1, "公開球団"))[0].user.name).toBe("別人");

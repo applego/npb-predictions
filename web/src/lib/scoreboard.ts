@@ -3,6 +3,7 @@ import { users, seasons, predictions, rankingPicks, actualTeamStandings } from "
 import { eq, and, desc, inArray, sql } from "drizzle-orm";
 import { calcRankingPointForTeam, latestRankMap } from "@/lib/scoring";
 import type { Season, ScoreboardResponse } from "@/lib/types";
+import { getOrCompute } from "@/lib/computed-cache";
 
 const toStr = (d: Date | number | null | undefined): string | null =>
   d === null || d === undefined ? null : d instanceof Date ? d.toISOString() : String(d);
@@ -26,6 +27,12 @@ export async function getSeasons(): Promise<Season[]> {
  * Shows ALL users (friends + commentators).
  */
 export async function getScoreboardData(
+  year: number
+): Promise<ScoreboardResponse | null> {
+  return getOrCompute(getDb(), `scoreboard:${year}`, () => computeScoreboardData(year), { year });
+}
+
+async function computeScoreboardData(
   year: number
 ): Promise<ScoreboardResponse | null> {
   const db = getDb();

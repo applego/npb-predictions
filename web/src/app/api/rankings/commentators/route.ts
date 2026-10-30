@@ -1,7 +1,8 @@
 export const runtime = "edge";
 
 import { NextResponse } from "next/server";
-import { getDb } from "@/db";
+import { getDb, type DbClient } from "@/db";
+import { getOrCompute, PUBLIC_CACHE_HEADERS } from "@/lib/computed-cache";
 import { users, seasons, predictions, rankingPicks, actualTeamStandings } from "@/db/schema";
 import { eq, and, desc, inArray } from "drizzle-orm";
 import { calcRankingPointForTeam } from "@/lib/scoring";
@@ -46,12 +47,17 @@ export async function GET(req: Request) {
   }
 
   const db = getDb();
-
-  // 1. Find season
-  const [season] = await db.select().from(seasons).where(eq(seasons.year, year));
-  if (!season) {
+  const body = await getOrCompute(db, `rankings:commentators:${year}:${leagueParam}`, () => computeCommentatorRankings(db, year, leagueParam), { year });
+  if (!body) {
     return NextResponse.json({ error: "Season not found" }, { status: 404 });
   }
+  return NextResponse.json(body, { headers: PUBLIC_CACHE_HEADERS });
+}
+
+async function computeCommentatorRankings(db: DbClient, year: number, leagueParam: string) {
+  // 1. Find season
+  const [season] = await db.select().from(seasons).where(eq(seasons.year, year));
+  if (!season) return null;
 
   // 2. Fetch actual standings
   const allStandings = await db
@@ -85,14 +91,14 @@ export async function GET(req: Request) {
   const commentatorPreds = seasonPreds.filter((p) => userMap.has(p.userId));
 
   if (commentatorPreds.length === 0) {
-    return NextResponse.json({
+    return {
       season: { id: season.id, year: season.year },
       league: leagueParam,
       actualCentral,
       actualPacific,
       totalCommentators: 0,
       commentators: [],
-    });
+    };
   }
 
   // 4. Fetch all ranking picks
@@ -209,12 +215,12 @@ export async function GET(req: Request) {
 
   const ranked = filtered.map((c, idx) => ({ ...c, rank: idx + 1 }));
 
-  return NextResponse.json({
+  return {
     season: { id: season.id, year: season.year },
     league: leagueParam,
     actualCentral,
     actualPacific,
     totalCommentators: ranked.length,
     commentators: ranked,
-  });
+  };
 }

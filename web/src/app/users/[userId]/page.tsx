@@ -8,7 +8,8 @@ import { LEAGUE_LABELS, TITLE_CATEGORY_LABELS } from "@/lib/types";
 import ShareButton from "@/components/ShareButton";
 import { ScoreHistoryChart, type ScoreHistoryEntry } from "@/components/ScoreHistoryChart";
 import { BreadcrumbJsonLd } from "@/components/StructuredData";
-import { getDb } from "@/db";
+import { getDb, type DbClient } from "@/db";
+import { getOrCompute } from "@/lib/computed-cache";
 import { users, seasons, predictions, rankingPicks, titlePicks, scoreSnapshots } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import {
@@ -132,6 +133,12 @@ async function getUserPrediction(
 
 async function getScoreboard(year: number): Promise<ScoreboardResponse | null> {
   const db = getDb();
+  // Same for every profile page of the year: one cached result, not every
+  // snapshot and user per visit.
+  return getOrCompute(db, `user-page-scoreboard:${year}`, () => computeScoreboard(db, year), { year });
+}
+
+async function computeScoreboard(db: DbClient, year: number): Promise<ScoreboardResponse | null> {
 
   const [season] = await db.select().from(seasons).where(eq(seasons.year, year));
   if (!season) return null;

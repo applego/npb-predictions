@@ -53,7 +53,10 @@ export const predictions = sqliteTable("predictions", {
   lockedAt: integer("locked_at", { mode: "timestamp" }),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
-}, (table) => [uniqueIndex("predictions_user_season_variant_idx").on(table.userId, table.seasonId, table.variant)]);
+}, (table) => [
+  uniqueIndex("predictions_user_season_variant_idx").on(table.userId, table.seasonId, table.variant),
+  index("predictions_season_locked_idx").on(table.seasonId, table.isLocked),
+]);
 
 export const rankingPicks = sqliteTable("ranking_picks", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -106,7 +109,10 @@ export const scoreSnapshots = sqliteTable("score_snapshots", {
   totalScore: integer("total_score").default(0).notNull(),
   rank: integer("rank"),
   snapshotDate: integer("snapshot_date", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
-}, (table) => [uniqueIndex("score_user_season_date_idx").on(table.userId, table.seasonId, table.snapshotDate)]);
+}, (table) => [
+  uniqueIndex("score_user_season_date_idx").on(table.userId, table.seasonId, table.snapshotDate),
+  index("score_snapshots_season_user_total_idx").on(table.seasonId, table.userId, table.totalScore),
+]);
 
 export const awards = sqliteTable("awards", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -116,7 +122,7 @@ export const awards = sqliteTable("awards", {
   label: text("label").notNull(),
   month: integer("month"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
-});
+}, (table) => [index("awards_season_type_month_idx").on(table.seasonId, table.type, table.month)]);
 
 // Battle groups
 export const battleGroups = sqliteTable("battle_groups", {
@@ -134,7 +140,10 @@ export const battleGroupMembers = sqliteTable("battle_group_members", {
   groupId: integer("group_id").notNull().references(() => battleGroups.id),
   userId: integer("user_id").notNull().references(() => users.id),
   joinedAt: integer("joined_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
-}, (table) => [uniqueIndex("bgm_group_user_idx").on(table.groupId, table.userId)]);
+}, (table) => [
+  uniqueIndex("bgm_group_user_idx").on(table.groupId, table.userId),
+  index("battle_group_members_user_idx").on(table.userId),
+]);
 
 export const userSettings = sqliteTable("user_settings", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -249,3 +258,26 @@ export const growthEvents = sqliteTable("growth_events", {
   source: text("source").notNull(),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
 }, (table) => [index("growth_events_day_event_idx").on(table.day, table.event)]);
+
+// Public aggregates (scoreboards, rankings, news) stored as one row per key;
+// see lib/computed-cache.ts.
+export const computedCache = sqliteTable("computed_cache", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+  computedAt: integer("computed_at").notNull(),
+  basis: integer("basis").notNull(),
+  claimedAt: integer("claimed_at"),
+  /** Token of the request currently recomputing this key. */
+  lease: text("lease"),
+  /** >1 when the value is split across rows `${key}#${gen}#${i}`. */
+  parts: integer("parts").notNull().default(1),
+  /** Lease token of the request that published the current value. */
+  gen: text("gen"),
+}, (table) => [index("computed_cache_computed_at_idx").on(table.computedAt)]);
+
+// Change counters advanced by triggers: id = season year (locked data),
+// -year (drafts), 0 (seasons/users). See drizzle/0016, lib/computed-cache.ts.
+export const dataChanges = sqliteTable("data_changes", {
+  id: integer("id").primaryKey(),
+  changedAt: integer("changed_at").notNull(),
+});

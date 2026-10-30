@@ -47,7 +47,7 @@ export default async function TeamPage({ params }: Props) {
   const [standings, titlePlayers, predictions] = await Promise.all([
     getTeamStandings(season.id, team.shortName),
     getTeamTitlePlayers(season.id, team.shortName),
-    getTeamPredictions(season.id, team.shortName),
+    getTeamPredictions(season.id, team.shortName, season.year),
   ]);
 
   const leagueName = LEAGUE_LABELS[team.league];

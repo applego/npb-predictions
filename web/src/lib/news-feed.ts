@@ -7,7 +7,7 @@ import {
   scoreSnapshots,
   actualTeamStandings,
 } from "@/db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, inArray, sql } from "drizzle-orm";
 import { calcRankingPointForTeam } from "@/lib/scoring";
 import { generateFullArticle, buildArticleVars } from "@/lib/article-templates-v3";
 
@@ -48,66 +48,57 @@ export async function generateNewsFeed(limit = 50): Promise<NewsItem[]> {
   const db = getDb();
   const newsItems: NewsItem[] = [];
 
-  // ── Prefetch everything ONCE to stay under CF Workers subrequest limit ──
-  // Previously this function ran ~6 queries per season × 13 seasons + spotlight
-  // queries per variant ⇒ 80+ subrequests, hitting "Too many API requests by
-  // single Worker invocation". Now 6 fixed queries, group in memory.
-  const [allSeasons, allUsers, allStandings, allPredictions, allPicks, allScores] =
-    await Promise.all([
-      db.select().from(seasons).orderBy(desc(seasons.year)),
-      db.select().from(users),
-      db.select().from(actualTeamStandings).orderBy(desc(actualTeamStandings.snapshotDate)),
-      db.select().from(predictions).where(eq(predictions.isLocked, true)).orderBy(desc(predictions.createdAt)),
-      db.select().from(rankingPicks),
-      db.select().from(scoreSnapshots).orderBy(desc(scoreSnapshots.totalScore)),
-    ]);
+  // Seasons are walked newest-first and each one is loaded on demand: every
+  // item's timestamp is `year * 10_000_000 + …`, so once `limit` items exist,
+  // no older season can reach the result. Reading every season's picks and
+  // score snapshots per request used to burn ~60k D1 rows. Each season's four
+  // queries go out as one batch to stay under the Workers subrequest limit.
+  const [allSeasons, allUsers] = await Promise.all([
+    db.select().from(seasons).orderBy(desc(seasons.year)),
+    db.select().from(users),
+  ]);
 
   const userMap = new Map(allUsers.map((u) => [u.id, u]));
-
-  // Group lookups by seasonId / predictionId
-  const standingsBySeason = new Map<number, typeof allStandings>();
-  for (const r of allStandings) {
-    const arr = standingsBySeason.get(r.seasonId) ?? [];
-    arr.push(r);
-    standingsBySeason.set(r.seasonId, arr);
-  }
-  const predictionsBySeason = new Map<number, typeof allPredictions>();
-  for (const p of allPredictions) {
-    const arr = predictionsBySeason.get(p.seasonId) ?? [];
-    arr.push(p);
-    predictionsBySeason.set(p.seasonId, arr);
-  }
-  const picksByPredId = new Map<number, typeof allPicks>();
-  for (const rp of allPicks) {
-    const arr = picksByPredId.get(rp.predictionId) ?? [];
-    arr.push(rp);
-    picksByPredId.set(rp.predictionId, arr);
-  }
-  const scoresBySeason = new Map<number, typeof allScores>();
-  for (const s of allScores) {
-    const arr = scoresBySeason.get(s.seasonId) ?? [];
-    arr.push(s);
-    scoresBySeason.set(s.seasonId, arr);
-  }
-
-  // Helper: best score for (userId, year) using prefetched scores+seasons
-  const seasonByYear = new Map<number, typeof allSeasons[number]>();
-  for (const s of allSeasons) seasonByYear.set(s.year, s);
-  function bestScoreFor(userId: number, year: number): number {
-    const season = seasonByYear.get(year);
-    if (!season) return -Infinity;
-    const scores = scoresBySeason.get(season.id) ?? [];
-    let best = -Infinity;
-    for (const row of scores) {
-      if (row.userId === userId && row.totalScore > best) best = row.totalScore;
-    }
-    return best;
-  }
+  const seenIds = new Set<string>();
+  const spotlightItems: NewsItem[] = [];
 
   for (const season of allSeasons) {
-    // ── 1. 的中速報 (hit) ──
-    const seasonStandings = standingsBySeason.get(season.id) ?? [];
+    if (seenIds.size >= limit) break;
+    const seasonStart = newsItems.length;
+    const spotlightStart = spotlightItems.length;
+    const lockedInSeason = and(eq(predictions.seasonId, season.id), eq(predictions.isLocked, true));
+    const [seasonStandings, seasonPredictions, allPicks, seasonBestScores] = await db.batch([
+      db.select().from(actualTeamStandings).where(eq(actualTeamStandings.seasonId, season.id)).orderBy(desc(actualTeamStandings.snapshotDate)),
+      db.select().from(predictions).where(lockedInSeason).orderBy(desc(predictions.createdAt), predictions.id),
+      db.select().from(rankingPicks)
+        .where(inArray(rankingPicks.predictionId, db.select({ id: predictions.id }).from(predictions).where(lockedInSeason)))
+        .orderBy(rankingPicks.id),
+      // Every snapshot owner's best total score in this season. The recursive
+      // CTE hops user ids through score_snapshots_season_user_total_idx and the
+      // correlated MAX is one probe per user, instead of reading every daily
+      // snapshot. Aliases are explicit because drizzle drops table qualifiers
+      // inside sql``, which would turn the correlation into `user_id = user_id`.
+      db.select({
+        userId: sql<number>`u.id`,
+        best: sql<number | null>`(select max(ss.total_score) from score_snapshots ss where ss.season_id = ${season.id} and ss.user_id = u.id)`,
+      }).from(sql`(with recursive u(id) as (
+          select (select min(ss.user_id) from score_snapshots ss where ss.season_id = ${season.id})
+          union all
+          select (select min(ss.user_id) from score_snapshots ss where ss.season_id = ${season.id} and ss.user_id > u.id) from u where u.id is not null
+        ) select id from u where id is not null) u`),
+    ]);
 
+    const picksByPredId = new Map<number, typeof allPicks>();
+    for (const rp of allPicks) {
+      const arr = picksByPredId.get(rp.predictionId) ?? [];
+      arr.push(rp);
+      picksByPredId.set(rp.predictionId, arr);
+    }
+    const bestByUser = new Map<number, number>();
+    for (const row of seasonBestScores) if (row.best !== null) bestByUser.set(row.userId, Number(row.best));
+    const bestScoreFor = (userId: number) => bestByUser.get(userId) ?? -Infinity;
+
+    // ── 1. 的中速報 (hit) ──
     const standingsMap = new Map<string, { league: string; rank: number; teamName: string }>();
     for (const row of seasonStandings) {
       const key = `${row.league}:${row.rank}`;
@@ -123,8 +114,6 @@ export async function generateNewsFeed(limit = 50): Promise<NewsItem[]> {
     }
 
     if (standingsMap.size > 0) {
-      const seasonPredictions = predictionsBySeason.get(season.id) ?? [];
-
       const predIds = seasonPredictions.map((p) => p.id);
 
       if (predIds.length > 0) {
@@ -163,19 +152,10 @@ export async function generateNewsFeed(limit = 50): Promise<NewsItem[]> {
     }
 
     // ── 2. ランキング変動 (ranking) ──
-    const seasonScores = (scoresBySeason.get(season.id) ?? [])
-      .map((r) => ({
-        userId: r.userId,
-        totalScore: r.totalScore,
-        snapshotDate: r.snapshotDate,
-      }));
-
-    const seenScoreUsers = new Set<number>();
-    const topScores = seasonScores.filter((row) => {
-      if (seenScoreUsers.has(row.userId)) return false;
-      seenScoreUsers.add(row.userId);
-      return true;
-    });
+    // Users ordered by their best total score of the season (ties: lower id).
+    const topScores = [...bestByUser]
+      .map(([userId, totalScore]) => ({ userId, totalScore }))
+      .sort((a, b) => b.totalScore - a.totalScore || a.userId - b.userId);
 
     topScores.slice(0, 3).forEach((row, idx) => {
       const user = userMap.get(row.userId);
@@ -197,12 +177,10 @@ export async function generateNewsFeed(limit = 50): Promise<NewsItem[]> {
     });
 
     // ── 3. 新規予想 (prediction) — newspaper article style ──
-    const seasonPreds = predictionsBySeason.get(season.id) ?? [];
-
     // Collect all 1st picks for boldness calculation
     const allC1s: string[] = [];
     const allP1s: string[] = [];
-    for (const sp of seasonPreds) {
+    for (const sp of seasonPredictions) {
       const picks = picksByPredId.get(sp.id) ?? [];
       const c1 = picks.find((p) => p.league === "central" && p.rank === 1);
       const p1 = picks.find((p) => p.league === "pacific" && p.rank === 1);
@@ -210,7 +188,7 @@ export async function generateNewsFeed(limit = 50): Promise<NewsItem[]> {
       if (p1) allP1s.push(p1.teamName);
     }
 
-    for (const pred of seasonPreds) {
+    for (const pred of seasonPredictions) {
       const user = userMap.get(pred.userId);
       if (!user) continue;
 
@@ -252,58 +230,52 @@ export async function generateNewsFeed(limit = 50): Promise<NewsItem[]> {
         pacificPicks,
       });
     }
-  }
 
-  // ── 4. 解説者注目 (spotlight) ──
-  const usersByBaseName = new Map<string, { userId: number; name: string; variant: string | null; source: string | null; year: number }[]>();
-
-  for (const season of allSeasons) {
-    const seasonPreds = predictionsBySeason.get(season.id) ?? [];
-    const predUserIds = new Set(seasonPreds.map((p) => p.userId));
-
-    for (const userId of predUserIds) {
+    // ── 4. 解説者注目 (spotlight) ──
+    const usersByBaseName = new Map<string, { userId: number; name: string; variant: string | null; source: string | null }[]>();
+    for (const userId of new Set(seasonPredictions.map((p) => p.userId))) {
       const user = userMap.get(userId);
       if (!user) continue;
 
       const baseName = user.name.replace(/[①②③④⑤⑥⑦⑧⑨⑩\d]+$/, "").trim();
-      const key = `${baseName}-${season.year}`;
-
-      if (!usersByBaseName.has(key)) usersByBaseName.set(key, []);
-      usersByBaseName.get(key)!.push({
+      if (!usersByBaseName.has(baseName)) usersByBaseName.set(baseName, []);
+      usersByBaseName.get(baseName)!.push({
         userId: user.id,
         name: user.name,
         variant: user.variant,
         source: user.source,
-        year: season.year,
       });
     }
-  }
 
-  for (const [key, variants] of usersByBaseName) {
-    if (variants.length < 2) continue;
+    for (const [baseName, variants] of usersByBaseName) {
+      if (variants.length < 2) continue;
 
-    const baseName = key.split("-").slice(0, -1).join("-");
-    const year = variants[0].year;
+      const year = season.year;
+      let bestScore = -Infinity;
+      for (const v of variants) {
+        const s = bestScoreFor(v.userId);
+        if (s > bestScore) bestScore = s;
+      }
 
-    let bestScore = -Infinity;
-    for (const v of variants) {
-      const s = bestScoreFor(v.userId, year);
-      if (s > bestScore) bestScore = s;
+      const scoreText = bestScore > -Infinity ? `最高${fmtScore(bestScore)}点` : "";
+
+      spotlightItems.push({
+        id: `spotlight-${year}-${baseName}`,
+        type: "spotlight",
+        title: `${baseName}、${year}年は${variants.length}パターン予想`,
+        body: scoreText ? `複数の予想パターンを提出して${scoreText}。` : `${variants.length}通りの順位予想を提出。`,
+        commentator: baseName,
+        year,
+        timestamp: year * 10000000 + 1000,
+        icon: "🔍",
+      });
     }
 
-    const scoreText = bestScore > -Infinity ? `最高${fmtScore(bestScore)}点` : "";
-
-    newsItems.push({
-      id: `spotlight-${year}-${baseName}`,
-      type: "spotlight",
-      title: `${baseName}、${year}年は${variants.length}パターン予想`,
-      body: scoreText ? `複数の予想パターンを提出して${scoreText}。` : `${variants.length}通りの順位予想を提出。`,
-      commentator: baseName,
-      year,
-      timestamp: year * 10000000 + 1000,
-      icon: "🔍",
-    });
+    for (const item of [...newsItems.slice(seasonStart), ...spotlightItems.slice(spotlightStart)]) seenIds.add(item.id);
   }
+
+  // Spotlights were appended after every per-season item before; keep that order.
+  newsItems.push(...spotlightItems);
 
   // Sort by timestamp descending
   newsItems.sort((a, b) => b.timestamp - a.timestamp);
