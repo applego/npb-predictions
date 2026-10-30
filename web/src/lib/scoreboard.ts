@@ -1,7 +1,7 @@
 import { getDb } from "@/db";
 import { users, seasons, predictions, rankingPicks, actualTeamStandings } from "@/db/schema";
-import { eq, and, desc } from "drizzle-orm";
-import { calcRankingPointForTeam } from "@/lib/scoring";
+import { eq, and, desc, inArray, sql } from "drizzle-orm";
+import { calcRankingPointForTeam, latestRankMap } from "@/lib/scoring";
 import type { Season, ScoreboardResponse } from "@/lib/types";
 
 const toStr = (d: Date | number | null | undefined): string | null =>
@@ -42,29 +42,35 @@ export async function getScoreboardData(
     createdAt: toStr(season.createdAt) ?? "",
   };
 
-  // Actual standings
+  // Actual standings: only the newest snapshot of each league.
   const standings = await db
     .select()
     .from(actualTeamStandings)
-    .where(eq(actualTeamStandings.seasonId, season.id));
+    .where(
+      and(
+        eq(actualTeamStandings.seasonId, season.id),
+        sql`${actualTeamStandings.snapshotDate} = (SELECT max(x.snapshot_date) FROM actual_team_standings x WHERE x.season_id = ${season.id} AND x.league = ${actualTeamStandings.league})`,
+      ),
+    );
 
-  const rankMap = new Map<string, Map<string, number>>();
-  for (const row of standings) {
-    if (!rankMap.has(row.league)) rankMap.set(row.league, new Map());
-    const m = rankMap.get(row.league)!;
-    if (!m.has(row.teamName)) m.set(row.teamName, row.rank);
-  }
+  const rankMap = latestRankMap(standings);
 
   if (rankMap.size === 0) {
     return { season: seasonInfo, scores: [] };
   }
 
-  // All users + predictions
-  const allUsers = await db.select().from(users);
+  // Users, predictions and picks of this season only (not every season).
+  const seasonPreds = and(eq(predictions.seasonId, season.id), eq(predictions.isLocked, true));
+  const preds = await db.select().from(predictions).where(seasonPreds);
+  const allUsers = await db
+    .select()
+    .from(users)
+    .where(inArray(users.id, db.select({ id: predictions.userId }).from(predictions).where(seasonPreds)));
   const userMap = new Map(allUsers.map((u) => [u.id, u]));
-
-  const preds = await db.select().from(predictions).where(and(eq(predictions.seasonId, season.id), eq(predictions.isLocked, true)));
-  const allPicks = await db.select().from(rankingPicks);
+  const allPicks = await db
+    .select()
+    .from(rankingPicks)
+    .where(inArray(rankingPicks.predictionId, db.select({ id: predictions.id }).from(predictions).where(seasonPreds)));
 
   const picksByPred = new Map<number, typeof allPicks>();
   for (const rp of allPicks) {

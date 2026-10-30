@@ -377,7 +377,7 @@ export default async function UserDetailPage({
                         className="px-4 py-3 text-sm"
                         style={{
                           fontFamily: "var(--font-display, 'Bebas Neue', Impact, sans-serif)",
-                          color: "rgba(229,57,53,0.6)",
+                          color: "var(--stitch)",
                           letterSpacing: "0.05em",
                         }}
                       >
@@ -385,7 +385,7 @@ export default async function UserDetailPage({
                       </td>
                       <td
                         className="px-4 py-3"
-                        style={{ color: "rgba(255,255,255,0.75)" }}
+                        style={{ color: "var(--text-primary)" }}
                       >
                         {pick.teamName}
                       </td>
@@ -463,14 +463,14 @@ export default async function UserDetailPage({
           className="text-sm transition-colors hover:text-amber-400"
           style={{ color: "var(--text-secondary)" }}
         >
-          ← Standings
+          ← スコアボード
         </Link>
         <Link
           href={`/predictions?year=${year}`}
           className="text-sm transition-colors hover:text-amber-400"
           style={{ color: "var(--text-secondary)" }}
         >
-          Predictions Compare
+          予想を比べる
         </Link>
       </div>
     </div>
@@ -509,7 +509,7 @@ function ScoreCard({
       <p
         className="text-xs font-medium uppercase"
         style={{
-          color: highlight ? "rgba(229,57,53,0.6)" : "var(--text-muted)",
+          color: highlight ? "var(--stitch)" : "var(--text-muted)",
           letterSpacing: "0.14em",
         }}
       >

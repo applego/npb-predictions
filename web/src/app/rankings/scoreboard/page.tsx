@@ -101,8 +101,8 @@ function getRankCellStyle(
   if (rank === 3) return { color: "#b45309", bg: "rgba(180,83,9,0.08)" };
   const pct = rank / total;
   if (pct <= 0.2) return { color: "#4ade80", bg: "rgba(74,222,128,0.06)" };
-  if (pct <= 0.5) return { color: "rgba(255,255,255,0.55)", bg: "transparent" };
-  return { color: "rgba(255,255,255,0.22)", bg: "transparent" };
+  if (pct <= 0.5) return { color: "var(--text-secondary)", bg: "transparent" };
+  return { color: "var(--text-muted)", bg: "transparent" };
 }
 
 function buildUserHistory(
@@ -171,7 +171,7 @@ function Sparkline({
   const valid = years.filter((y) => byYear.has(y));
   if (valid.length < 2)
     return (
-      <span style={{ color: "rgba(255,255,255,0.12)", fontSize: "9px" }}>
+      <span style={{ color: "var(--text-muted)", fontSize: "9px" }}>
         —
       </span>
     );
@@ -548,7 +548,7 @@ export default async function StandingsPage({
                               key={y}
                               className="px-2 py-2 text-center"
                               style={{
-                                color: "rgba(255,255,255,0.07)",
+                                color: "var(--text-muted)",
                                 borderLeft: "1px solid var(--border-primary)",
                               }}
                             >
