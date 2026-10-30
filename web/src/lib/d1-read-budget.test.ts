@@ -139,7 +139,10 @@ describe(`D1 rows_read per warm request stays under ${BUDGET} with ${PREDICTIONS
     await call();
     const warm = await rowsRead();
     // D1_BUDGET_REPORT=<file> records the numbers quoted in the PR estimate.
-    if (process.env.D1_BUDGET_REPORT) appendFileSync(process.env.D1_BUDGET_REPORT, `${label}\tcold=${cold}\twarm=${warm}\n`);
+    if (process.env.D1_BUDGET_REPORT) {
+      const largest = await real.prepare("SELECT key, length(value) AS size FROM computed_cache ORDER BY size DESC LIMIT 1").first<{ key: string; size: number }>();
+      appendFileSync(process.env.D1_BUDGET_REPORT, `${label}\tcold=${cold}\twarm=${warm}\tlargest=${largest?.key}:${largest?.size}\n`);
+    }
     expect(warm).toBeLessThanOrEqual(BUDGET);
   }, 120_000);
 

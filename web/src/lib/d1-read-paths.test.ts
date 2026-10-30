@@ -164,9 +164,7 @@ describe("computed_cache freshness", () => {
   const later = () => { clock += 1_801_000; };
   beforeEach(() => {
     vi.spyOn(Date, "now").mockImplementation(() => clock);
-    // The change clock has millisecond resolution; start from a known value so
-    // a write in the same millisecond as the seed still moves it.
-    sqlite.exec("UPDATE data_changes SET changed_at = 0");
+
   });
   afterEach(() => { vi.restoreAllMocks(); });
 
@@ -202,8 +200,7 @@ describe("computed_cache freshness", () => {
     let computes = 0;
     await getOrCompute(db(), "k", async () => {
       computes++;
-      await new Promise((r) => setTimeout(r, 5));
-      sqlite.exec("UPDATE users SET name = name WHERE id = 1000");
+      sqlite.exec("UPDATE users SET name = name WHERE id = 1000"); // same millisecond is fine: counters, not clocks
       return computes;
     });
     later();
@@ -240,6 +237,53 @@ describe("computed_cache freshness", () => {
     sqlite.exec("UPDATE users SET name = '改名' WHERE id = 1001"); // global: every season
     later();
     expect(await getOrCompute(db(), "y2026", counted(), { year: 2026 })).toBe(6);
+  });
+
+  it("a cold key is computed once while concurrent requests wait for it", async () => {
+    let computes = 0;
+    let release!: () => void;
+    const gate = new Promise<void>((r) => { release = r; });
+    const compute = async () => { computes++; await gate; return { n: computes }; };
+    const all = Promise.all(Array.from({ length: 10 }, () => getOrCompute(db(), "cold", compute)));
+    await new Promise((r) => setTimeout(r, 20));
+    release();
+    expect(await all).toEqual(Array(10).fill({ n: 1 }));
+    expect(computes).toBe(1);
+  });
+
+  it("a result that becomes null is removed, not served again", async () => {
+    let exists = true;
+    const compute = async () => (exists ? { season: "2026" } : null);
+    expect(await getOrCompute(db(), "gone", compute, { year: 2026 })).toEqual({ season: "2026" });
+    exists = false;
+    sqlite.exec("DELETE FROM actual_team_standings WHERE season_id = 103");
+    later();
+    expect(await getOrCompute(db(), "gone", compute, { year: 2026 })).toBeNull();
+    expect(await getOrCompute(db(), "gone", compute, { year: 2026 })).toBeNull();
+    expect(sqlite.prepare("SELECT count(*) AS n FROM computed_cache").get()).toEqual({ n: 0 });
+  });
+
+  it("my-rank style results that include drafts are invalidated by draft writes", async () => {
+    let computes = 0;
+    await getOrCompute(db(), "with-drafts", async () => ++computes, { year: 2026, includeDrafts: true });
+    sqlite.exec("INSERT INTO predictions (id, user_id, season_id, is_locked) VALUES (9100, 1001, 103, 0)");
+    later();
+    expect(await getOrCompute(db(), "with-drafts", async () => ++computes, { year: 2026, includeDrafts: true })).toBe(2);
+  });
+
+  it("results above the D1 value limit are split into parts and joined on read", async () => {
+    const big = { text: "野".repeat(1_200_000) }; // ~3.6 MB as UTF-8
+    let computes = 0;
+    expect(await getOrCompute(db(), "big", async () => { computes++; return big; })).toEqual(big);
+    const longest = sqlite.prepare("SELECT max(length(value)) AS n, count(*) AS rows FROM computed_cache").get() as { n: number; rows: number };
+    expect(longest.n).toBeLessThanOrEqual(500_000);
+    expect(longest.rows).toBe(3);
+    expect(await getOrCompute(db(), "big", async () => { computes++; return big; })).toEqual(big);
+    expect(computes).toBe(1);
+    sqlite.exec("UPDATE users SET name = name WHERE id = 1000");
+    later();
+    await getOrCompute(db(), "big", async () => { computes++; return { text: "短い" }; });
+    expect(sqlite.prepare("SELECT count(*) AS rows FROM computed_cache").get()).toEqual({ rows: 1 }); // old parts removed
   });
 
   it("does not store null results, so unknown keys cannot grow the table", async () => {

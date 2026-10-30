@@ -182,15 +182,20 @@ export async function getTeamTitlePlayers(seasonId: number, teamName: string) {
     .orderBy(actualTitleSnapshots.category);
 }
 
-export async function getTeamPredictions(seasonId: number, teamName: string) {
-  const allPredictions = await getDb().query.predictions.findMany({
-    where: and(eq(predictions.seasonId, seasonId), eq(predictions.isLocked, true)),
-    with: publicPredictionRelations,
-  });
-  return allPredictions
-    .map((p) => ({
-      user: p.user,
-      picks: p.rankingPicks.filter((rp) => rp.teamName === teamName),
-    }))
-    .filter((p) => p.picks.length > 0);
+export async function getTeamPredictions(seasonId: number, teamName: string, year?: number) {
+  const db = getDb();
+  // Team pages: cached per season and team (12 teams), not every prediction
+  // of the season per crawl.
+  return getOrCompute(db, `team-predictions:${seasonId}:${teamName}`, async () => {
+    const allPredictions = await db.query.predictions.findMany({
+      where: and(eq(predictions.seasonId, seasonId), eq(predictions.isLocked, true)),
+      with: publicPredictionRelations,
+    });
+    return allPredictions
+      .map((p) => ({
+        user: p.user,
+        picks: p.rankingPicks.filter((rp) => rp.teamName === teamName),
+      }))
+      .filter((p) => p.picks.length > 0);
+  }, { year });
 }

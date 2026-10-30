@@ -3,6 +3,7 @@ export const runtime = "edge";
 import type { Metadata } from "next";
 import { BroadcastBand, BroadcastHeading, BroadcastPanel, BroadcastChip } from "@/components/BroadcastShell";
 import { getDb } from "@/db";
+import { getOrCompute } from "@/lib/computed-cache";
 import {
   seasons,
   predictions,
@@ -112,8 +113,9 @@ export default async function TitlesPage() {
   }
 
   // Friend predictors + their title picks. Keep the season/user-role filter in
-  // SQLite so edge rendering does not scan every historical title pick.
-  const friendRows = await db
+  // SQLite so edge rendering does not scan every historical title pick, and
+  // cache the rows per season (they include drafts, hence includeDrafts).
+  const friendRows = await getOrCompute(db, `title-friend-picks:${activeSeason.id}`, () => db
     .select({
       predictionId: predictions.id,
       userName: users.name,
@@ -126,7 +128,8 @@ export default async function TitlesPage() {
     .from(predictions)
     .innerJoin(users, eq(predictions.userId, users.id))
     .leftJoin(titlePicks, eq(titlePicks.predictionId, predictions.id))
-    .where(and(eq(predictions.seasonId, activeSeason.id), eq(users.role, "friend")));
+    .where(and(eq(predictions.seasonId, activeSeason.id), eq(users.role, "friend"))),
+  { year: activeSeason.year, includeDrafts: true });
 
   const picksByPred = new Map<number, Map<string, { playerName: string; teamName: string | null }>>();
   const predictorMeta = new Map<number, { name: string; source: string | null }>();

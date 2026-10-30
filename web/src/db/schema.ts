@@ -264,10 +264,12 @@ export const computedCache = sqliteTable("computed_cache", {
   computedAt: integer("computed_at").notNull(),
   basis: integer("basis").notNull(),
   claimedAt: integer("claimed_at"),
-});
+  /** >1 when the value is split across rows `${key}#${computedAt}#${i}`. */
+  parts: integer("parts").notNull().default(1),
+}, (table) => [index("computed_cache_computed_at_idx").on(table.computedAt)]);
 
-// Change clocks set by triggers (epoch ms): id = season year, or 0 for writes
-// affecting every season. See drizzle/0016 and lib/computed-cache.ts.
+// Change counters advanced by triggers: id = season year (locked data),
+// -year (drafts), 0 (seasons/users). See drizzle/0016, lib/computed-cache.ts.
 export const dataChanges = sqliteTable("data_changes", {
   id: integer("id").primaryKey(),
   changedAt: integer("changed_at").notNull(),

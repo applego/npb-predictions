@@ -37,7 +37,7 @@ export async function GET(req: Request) {
   }
 
   const db = getDb();
-  const ranking = await getOrCompute(db, `my-rank:${year}`, () => computeSeasonRanking(db, year), { year });
+  const ranking = await getOrCompute(db, `my-rank:${year}`, () => computeSeasonRanking(db, year), { year, includeDrafts: true });
   if (!ranking) {
     return NextResponse.json({ error: "Season not found" }, { status: 404 });
   }

@@ -3,6 +3,7 @@ export const runtime = "edge";
 import type { MetadataRoute } from "next";
 import { eq, desc } from "drizzle-orm";
 import { getDb } from "@/db";
+import { getOrCompute } from "@/lib/computed-cache";
 import {
   users,
   seasons as seasonsTable,
@@ -102,10 +103,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const commentatorRows = await safeCall(
     async () => {
       const db = getDb();
-      return db
+      // Sitemap inputs are cached (crawlers fetch this often; users only grow).
+      return getOrCompute(db, "sitemap:commentators", () => db
         .select({ slug: users.slug, createdAt: users.createdAt })
         .from(users)
-        .where(eq(users.role, "commentator"));
+        .where(eq(users.role, "commentator")));
     },
     [] as Array<{ slug: string; createdAt: unknown }>,
   );
@@ -120,6 +122,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const userRows = await safeCall(
     async () => {
       const db = getDb();
+      return getOrCompute(db, "sitemap:users", async () => {
       // Users who have any prediction recorded → good signal to include in sitemap
       const predictors = await db
         .select({
@@ -133,6 +136,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         .from(predictionsTable);
       const withPred = new Set(predictedUserIds.map((p) => p.userId));
       return predictors.filter((u) => u.role === "friend" && withPred.has(u.id));
+      });
     },
     [] as Array<{ id: number; createdAt: unknown; role: string }>,
   );
@@ -147,6 +151,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const latestSnapshotTs = await safeCall(
     async () => {
       const db = getDb();
+      const latestMs = await getOrCompute(db, "sitemap:latest-snapshot", async () => {
       const [latestStanding] = await db
         .select({ d: actualTeamStandings.snapshotDate })
         .from(actualTeamStandings)
@@ -160,8 +165,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       const candidates = [toDate(latestStanding?.d), toDate(latestScore?.d)].filter(
         (x): x is Date => x instanceof Date,
       );
-      if (candidates.length === 0) return undefined;
-      return new Date(Math.max(...candidates.map((c) => c.getTime())));
+      if (candidates.length === 0) return null;
+      return Math.max(...candidates.map((c) => c.getTime()));
+      });
+      return latestMs === null ? undefined : new Date(latestMs);
     },
     undefined as Date | undefined,
   );

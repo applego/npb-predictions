@@ -202,21 +202,24 @@ export async function getTopCommentatorsForYear(
 ): Promise<TopCommentator[]> {
   const db = getDb();
   // The SEO page and its OG image both call this on every crawl of every year.
-  return getOrCompute(db, `top-commentators:${year}:${limit}`, () => computeTopCommentatorsForYear(db, year, limit), { year });
+  // An unknown year yields null, which is not cached, so arbitrary years
+  // requested by crawlers cannot add rows.
+  const top = await getOrCompute(db, `top-commentators:${year}:${limit}`, () => computeTopCommentatorsForYear(db, year, limit), { year });
+  return top ?? [];
 }
 
 async function computeTopCommentatorsForYear(
   db: DbClient,
   year: number,
   limit: number
-): Promise<TopCommentator[]> {
+): Promise<TopCommentator[] | null> {
   // 1. Find season by year
   const [season] = await db
     .select()
     .from(seasons)
     .where(eq(seasons.year, year));
 
-  if (!season) return [];
+  if (!season) return null;
 
   // 2. Fetch actual standings for this season
   const allStandings = await db

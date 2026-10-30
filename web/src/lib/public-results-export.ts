@@ -1,5 +1,6 @@
 import { and, asc, eq } from "drizzle-orm";
-import { getDb } from "@/db";
+import { getDb, type DbClient } from "@/db";
+import { getOrCompute } from "@/lib/computed-cache";
 import { actualTeamStandings, predictions, rankingPicks, seasons, users } from "@/db/schema";
 import { canonicalPredictions, PUBLIC_RESULTS_SELECTION } from "./canonical-prediction";
 import { latestResultSnapshot, safeSourceUrl, summarizeResults, type PublicResultPick } from "./season-results";
@@ -12,6 +13,19 @@ export { PUBLIC_RESULTS_SELECTION } from "./canonical-prediction";
  */
 export async function exportPublicResults(year: number, sourceUrl: string) {
   const db = getDb();
+  // The population query is cached per season (rebuilt after data changes);
+  // only the request-specific provenance is added per request.
+  const observation = await getOrCompute(db, `public-results-export:${year}`, () => buildExportPayload(db, year), { year });
+  if (!observation) return null;
+  const { payload, observedAt } = observation;
+  const bytes = new TextEncoder().encode(JSON.stringify(payload));
+  const hash = [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))]
+    .map((value) => value.toString(16).padStart(2, "0")).join("");
+  return { ...payload, provenance: { sourceUrl, observedAt,
+    payloadHash: `sha256:${hash}`, hashScope: "JSON.stringify(response without provenance), UTF-8" } };
+}
+
+async function buildExportPayload(db: DbClient, year: number) {
   const [season] = await db.select({ id: seasons.id, year: seasons.year, lockDate: seasons.lockDate })
     .from(seasons).where(eq(seasons.year, year));
   if (!season) return null;
@@ -74,9 +88,6 @@ export async function exportPublicResults(year: number, sourceUrl: string) {
     ],
     predictions: exported, snapshots,
   };
-  const bytes = new TextEncoder().encode(JSON.stringify(payload));
-  const hash = [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))]
-    .map((value) => value.toString(16).padStart(2, "0")).join("");
-  return { ...payload, provenance: { sourceUrl, observedAt: new Date().toISOString(),
-    payloadHash: `sha256:${hash}`, hashScope: "JSON.stringify(response without provenance), UTF-8" } };
+  // observedAt is when the database was read, not when the response is sent.
+  return { payload, observedAt: new Date().toISOString() };
 }

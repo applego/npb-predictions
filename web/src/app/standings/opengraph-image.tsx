@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import { getDb } from "@/db";
+import { getOrCompute } from "@/lib/computed-cache";
 import { eq, desc } from "drizzle-orm";
 import { seasons, scoreSnapshots } from "@/db/schema";
 
@@ -103,6 +104,8 @@ export default async function Image() {
   let entries: { name: string; totalScore: number; rankingScore: number; titleScore: number }[] = [];
 
   if (season) {
+    // Top 5 by best snapshot, cached per season (not every snapshot per image).
+    entries = await getOrCompute(getDb(), `standings-og-top5:${season.id}`, async () => {
     const scores = await getDb().query.scoreSnapshots.findMany({
       where: eq(scoreSnapshots.seasonId, season.id),
       orderBy: [desc(scoreSnapshots.totalScore)],
@@ -110,7 +113,7 @@ export default async function Image() {
     });
 
     const seen = new Set<number>();
-    entries = scores
+    return scores
       .filter((s) => {
         if (seen.has(s.userId)) return false;
         seen.add(s.userId);
@@ -123,6 +126,7 @@ export default async function Image() {
         rankingScore: s.rankingScore,
         titleScore: s.titleScore,
       }));
+    }, { year: season.year });
   }
 
   const fonts = await loadFonts().catch(() => []);

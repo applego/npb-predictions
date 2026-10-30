@@ -1,5 +1,6 @@
 import { and, desc, eq, or, sql } from "drizzle-orm";
-import { getDb } from "@/db";
+import { getDb, type DbClient } from "@/db";
+import { getOrCompute } from "@/lib/computed-cache";
 import {
   actualTeamStandings,
   gameResults,
@@ -383,7 +384,15 @@ export async function getRankingCardData(): Promise<RankingCardData | null> {
     .where(eq(seasons.isActive, true))
     .limit(1);
   if (!activeSeason) return null;
+  // Ranking share cards: one cached result per season, not every user and
+  // snapshot of the season per rendered image.
+  return getOrCompute(db, `ranking-card:${activeSeason.id}`, () => computeRankingCardData(db, activeSeason), { year: activeSeason.year });
+}
 
+async function computeRankingCardData(
+  db: DbClient,
+  activeSeason: { id: number; year: number },
+): Promise<RankingCardData | null> {
   const [allUsers, allScores] = await Promise.all([
     db.select().from(users),
     db.all<RawScoreRow>(sql`
