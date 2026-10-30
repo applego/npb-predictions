@@ -252,14 +252,25 @@ export async function getOrCompute<T>(
   const release = () => db.update(computedCache).set({ claimedAt: null, lease: null }).where(mine).then(() => undefined, () => undefined);
 
   if (state.value === null) {
-    // New key: clear rows no deploy has refreshed for a week (indexed range;
-    // live placeholders carry their creation time, so they are not in it).
+    // New key: clear results no deploy has refreshed for a week (indexed
+    // range; live placeholders carry their creation time, so they are not in
+    // it), then parts whose result row is gone or has moved to another
+    // generation. Parts of a kept result survive even while it is refreshed.
     const expired = now - GARBAGE_AFTER_SECONDS;
     await db
       .delete(computedCache)
       .where(and(
         lt(computedCache.computedAt, expired),
+        sql`${computedCache.basis} <> -2`,
         or(isNull(computedCache.claimedAt), lt(computedCache.claimedAt, expired)),
+      ))
+      .catch(() => undefined);
+    await db
+      .delete(computedCache)
+      .where(and(
+        lt(computedCache.computedAt, expired),
+        sql`${computedCache.basis} = -2`,
+        sql`not exists (select 1 from computed_cache p where p.gen is not null and substr(${computedCache.key}, 1, length(p.key) + length(p.gen) + 2) = p.key || '#' || p.gen || '#')`,
       ))
       .catch(() => undefined);
   }
@@ -294,15 +305,16 @@ export async function getOrCompute<T>(
       .where(mine)
       .returning({ key: computedCache.key });
     // Retire only the generation this request replaced, or its own parts if
-    // its lease was lost meanwhile.
+    // its lease was lost meanwhile (then its successor's result stands, in D1
+    // and at the edge alike).
     await deleteParts(published.length > 0 ? state.gen : token);
+    if (published.length > 0) await edgePut(key, json);
   } catch (error) {
     // Say so instead of silently falling back to recomputing every request.
     console.error(`computed_cache: failed to store ${key} (${json.length} chars)`, error instanceof Error ? error.message : error);
     await deleteParts(token);
     await release();
   }
-  await edgePut(key, json);
   return value;
 }
 

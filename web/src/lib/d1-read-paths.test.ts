@@ -339,6 +339,42 @@ describe("computed_cache freshness", () => {
     expect(computes).toBe(1);
   });
 
+  it("a request whose lease expired does not overwrite the edge copy either", async () => {
+    const store = new Map<string, string>();
+    vi.stubGlobal("caches", { default: {
+      match: async (url: string) => (store.has(url) ? new Response(store.get(url)) : undefined),
+      put: async (url: string, response: Response) => { store.set(url, await response.text()); },
+    } });
+    try {
+      let releaseA!: () => void;
+      const gateA = new Promise<void>((r) => { releaseA = r; });
+      const a = getOrCompute(db(), "edge-race", async () => { await gateA; return "older"; });
+      await new Promise((r) => setTimeout(r, 10));
+      clock += 121_000;
+      store.clear();
+      expect(await getOrCompute(db(), "edge-race", async () => "newer")).toBe("newer");
+      releaseA();
+      await a;
+      expect(await getOrCompute(db(), "edge-race", async () => "third")).toBe("newer");
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("garbage collection keeps the parts of a result that is being refreshed", async () => {
+    const big = { text: "野".repeat(1_100_000) };
+    await getOrCompute(db(), "kept", async () => big);
+    clock += 8 * 24 * 3600 * 1000; // older than the GC window
+    let release!: () => void;
+    const gate = new Promise<void>((r) => { release = r; });
+    const refresh = getOrCompute(db(), "kept", async () => { await gate; return big; });
+    await new Promise((r) => setTimeout(r, 10));
+    await getOrCompute(db(), "another-new-key", async () => 1); // runs GC
+    expect(await getOrCompute(db(), "kept", async () => ({ text: "should not compute" }))).toEqual(big);
+    release();
+    await refresh;
+  });
+
   it("does not store null results, so unknown keys cannot grow the table", async () => {
     await getOrCompute(db(), "missing", async () => null);
     expect(sqlite.prepare("SELECT count(*) AS n FROM computed_cache").get()).toEqual({ n: 0 });
