@@ -49,6 +49,31 @@
       "published_at": null,
       "publication_ref": null,
       "observation_rule": "公開日時・公開SHAと同期間の一次計測が揃うまで観測開始/採否を認定しない。期日だけでは失敗判定しない。"
+    },
+    {
+      "id": "own-sheet-01",
+      "status": "prepared",
+      "variable": "新聞の解説者予想一覧の形で、自分の予想を解説者と並べて画像化しXへ投稿できる導線",
+      "prediction": {
+        "metric_ref": "npb-predictions#x_share_starts_28d"
+      },
+      "window_days": 28,
+      "verdict": null,
+      "observed": null,
+      "requires_owner": null,
+      "statement": "スポーツ紙の解説者予想一覧に自分の名前（入力名またはアカウント名）が並ぶ画像は、自分のXで見せたくなる。グループの予想一覧画像と、結果確定後のスコア付き結果発表画像も同じ形で共有される",
+      "success_condition": "2027年予想期（2〜3月）に、画像保存・X共有開始・X経由訪問を一次計測で観測する。投稿完了や拡散は別に確認し、観測できなければ形式と共有位置を見直す",
+      "due": "2027-03-31",
+      "source": "利用者提案2026-10-30。参考: FAプロテクト予想画像がXで投稿されまとめブログに集約された事例",
+      "ice": {
+        "impact": 8,
+        "confidence": 4,
+        "ease": 5
+      },
+      "observation_rule": "公開日時・公開SHAと同期間の一次計測が揃うまで観測開始/採否を認定しない。期日だけでは失敗判定しない。",
+      "publication_ref": null,
+      "published_at": null,
+      "surface": "own-prediction-sheet"
     }
   ]
 }
