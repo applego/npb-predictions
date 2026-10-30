@@ -56,13 +56,13 @@ async function edgePut(key: string, json: string): Promise<void> {
 
 /** Losers of a cold-key lease poll this often for the winner's result. */
 const LEASE_POLL_MS = 250;
-const LEASE_POLLS = 8;
+const LEASE_POLLS = 40;
 /** A placeholder row: the key is being computed for the first time. */
 const PENDING = "";
 /**
  * D1 caps a value at 2 MB; JSON characters can take 3 bytes (Japanese), so a
- * larger result is split into rows `${key}#${computedAt}#${i}`. Reading it
- * costs one row per part — bounded by result size, not by traffic.
+ * larger result is split into rows `${key}#${gen}#${i}` (gen = the lease
+ * token of the request that published it). Reading it costs one row per part.
  */
 const PART_CHARS = 500_000;
 
@@ -73,7 +73,22 @@ type CacheState = {
   basis: number | null;
   claimedAt: number | null;
   parts: number | null;
+  gen: string | null;
 };
+
+/** Split without separating a UTF-16 surrogate pair (emoji etc.). */
+function splitJson(json: string): string[] {
+  const chunks: string[] = [];
+  let start = 0;
+  while (start < json.length) {
+    let end = Math.min(start + PART_CHARS, json.length);
+    const last = json.charCodeAt(end - 1);
+    if (end < json.length && last >= 0xd800 && last <= 0xdbff) end -= 1;
+    chunks.push(json.slice(start, end));
+    start = end;
+  }
+  return chunks.length > 0 ? chunks : [""];
+}
 
 /**
  * Serve a public aggregate (scoreboards, rankings, news) as one stored result
@@ -82,12 +97,14 @@ type CacheState = {
  * exhausted the account-wide daily quota.
  *
  * - fresh row (no relevant data change since it was computed, within TTL):
- *   one query, 2-3 rows read
- * - stale row: one request wins a lease (conditioned on the row it saw) and
+ *   one query, a few rows (plus one per extra part of a split value)
+ * - stale row: one request takes a lease (conditioned on the row it saw) and
  *   recomputes; the rest get the previous result. At most one recompute per
  *   MIN_RECOMPUTE_SECONDS per key, however many writes or visits
  * - missing key: one request inserts a pending row and computes; the rest
- *   poll briefly for its result instead of all computing at once
+ *   poll for its result instead of all computing at once
+ * - every publish, release and delete is conditioned on the lease token, so a
+ *   request whose lease expired cannot overwrite or delete its successor's work
  * - `null` results (unknown season, …) are not stored and delete any
  *   previous result, so input cannot grow the table or resurrect old data
  * - cache table missing (migration not applied): compute directly
@@ -99,25 +116,31 @@ export async function getOrCompute<T>(
   {
     year,
     includeDrafts = false,
+    scope,
   }: {
     /** Season the result is built from; omit for results spanning every season. */
     year?: number;
-    /** The result also depends on unlocked predictions (my-rank). */
+    /** The result also depends on unlocked predictions (my-rank, title picks). */
     includeDrafts?: boolean;
+    /** "everything": also new sign-ups and drafts of every season (sitemap). */
+    scope?: "everything";
   } = {},
 ): Promise<T> {
   key = KEY_PREFIX + key;
   const edge = await edgeGet<T>(key);
   if (edge !== undefined) return edge;
 
-  // Change counters this result depends on: its season's (id = year; drafts
-  // id = -year) and the global one (id 0), or every non-draft counter for
-  // cross-season results. Counters only grow, so their sum changes whenever one does.
-  const seasonScoped = year !== undefined && Number.isInteger(year);
+  // Change counters this result depends on (see drizzle/0016): its season's
+  // (id = year; drafts id = -year) and the global one (id 0); every non-draft
+  // counter for cross-season results; or all of them. Counters only grow, so
+  // their sum changes whenever one of them does.
+  const seasonScoped = year !== undefined && Number.isInteger(year) && scope !== "everything";
   const clockIds = seasonScoped ? (includeDrafts ? [0, year, -year] : [0, year]) : [];
   const clocks = seasonScoped
     ? sql`(select coalesce(sum(changed_at), 0) from data_changes where id in (${sql.join(clockIds.map((id) => sql`${id}`), sql`, `)}))`
-    : sql`(select coalesce(sum(changed_at), 0) from data_changes where id >= 0)`;
+    : scope === "everything"
+      ? sql`(select coalesce(sum(changed_at), 0) from data_changes)`
+      : sql`(select coalesce(sum(changed_at), 0) from data_changes where id >= 0)`;
   const readState = async (): Promise<CacheState | undefined> => {
     const [row] = await db
       .select({
@@ -127,24 +150,29 @@ export async function getOrCompute<T>(
         basis: computedCache.basis,
         claimedAt: computedCache.claimedAt,
         parts: computedCache.parts,
+        gen: computedCache.gen,
       })
       .from(sql`(select 1) as one`)
       .leftJoin(computedCache, eq(computedCache.key, key));
     return row;
   };
-
-  const partKey = (computedAt: number, i: number) => `${key}#${computedAt}#${i}`;
+  const partKey = (gen: string, i: number) => `${key}#${gen}#${i}`;
+  const deleteParts = (gen: string | null) => gen === null
+    ? Promise.resolve()
+    // PK range: every part of that generation ("$" sorts right after "#").
+    : db.delete(computedCache)
+      .where(and(gt(computedCache.key, `${key}#${gen}#`), lt(computedCache.key, `${key}#${gen}$`)))
+      .then(() => undefined, () => undefined);
   /** The stored JSON, joined from its parts when it was split. */
   const load = async (row: CacheState): Promise<string> => {
     const parts = row.parts ?? 1;
     if (parts <= 1) return row.value!;
-    const keys = Array.from({ length: parts - 1 }, (_, i) => partKey(row.computedAt ?? 0, i + 1));
+    const keys = Array.from({ length: parts - 1 }, (_, i) => partKey(row.gen ?? "", i + 1));
     const rest = await db.select({ key: computedCache.key, value: computedCache.value }).from(computedCache).where(inArray(computedCache.key, keys));
     const byKey = new Map(rest.map((r) => [r.key, r.value]));
     if (byKey.size !== keys.length) throw new Error(`computed_cache: ${key} has missing parts`);
     return row.value! + keys.map((k) => byKey.get(k)).join("");
   };
-  const parsed = async (row: CacheState): Promise<T> => JSON.parse(await load(row)) as T;
 
   let state: CacheState | undefined;
   try {
@@ -155,39 +183,39 @@ export async function getOrCompute<T>(
   if (!state) return compute();
 
   const now = Math.floor(Date.now() / 1000);
-  const hasValue = state.value !== null && state.value !== PENDING;
+  let hasValue = state.value !== null && state.value !== PENDING;
   const leaseLive = state.claimedAt !== null && state.claimedAt >= now - CLAIM_TIMEOUT_SECONDS;
+  let stored: string | undefined;
 
   if (hasValue) {
-    const fresh = state.basis === state.changedAt && now - (state.computedAt ?? 0) < COMPUTED_CACHE_TTL_SECONDS;
     try {
-      if (fresh) {
-        const json = await load(state);
-        await edgePut(key, json);
-        return JSON.parse(json) as T;
-      }
-      if (leaseLive || now - (state.computedAt ?? 0) < MIN_RECOMPUTE_SECONDS) return await parsed(state);
+      stored = await load(state);
     } catch {
-      // Parts replaced by a concurrent refresh: serve a direct computation.
-      return compute();
+      hasValue = false; // parts lost: repair under a lease below
     }
   }
+  if (stored !== undefined) {
+    const fresh = state.basis === state.changedAt && now - (state.computedAt ?? 0) < COMPUTED_CACHE_TTL_SECONDS;
+    if (fresh) await edgePut(key, stored);
+    if (fresh || leaseLive || now - (state.computedAt ?? 0) < MIN_RECOMPUTE_SECONDS) return JSON.parse(stored) as T;
+  }
 
-  // Win the lease: insert a pending row for a new key, or take over the row
+  // Take the lease: insert a pending row for a new key, or take over the row
   // exactly as we saw it (so a request that read before another finished
   // cannot recompute the result that was just refreshed).
+  const token = crypto.randomUUID();
   let won = false;
-  if (!(state.value === PENDING && leaseLive)) {
+  if (!(leaseLive && stored === undefined)) {
     try {
       const rows = state.value === null
         ? await db
           .insert(computedCache)
-          .values({ key, value: PENDING, computedAt: 0, basis: -1, claimedAt: now })
+          .values({ key, value: PENDING, computedAt: now, basis: -1, claimedAt: now, lease: token })
           .onConflictDoNothing()
           .returning({ key: computedCache.key })
         : await db
           .update(computedCache)
-          .set({ claimedAt: now })
+          .set({ claimedAt: now, lease: token })
           .where(and(
             eq(computedCache.key, key),
             eq(computedCache.computedAt, state.computedAt ?? 0),
@@ -202,19 +230,30 @@ export async function getOrCompute<T>(
   }
 
   if (!won) {
-    if (hasValue) return parsed(state).catch(() => compute());
-    // Another request is computing this key for the first time: wait for it.
+    if (stored !== undefined) return JSON.parse(stored) as T;
+    // Another request is computing this key: wait for it rather than
+    // stampeding (bounded; a computation outliving this falls back).
     for (let i = 0; i < LEASE_POLLS; i++) {
       await new Promise((resolve) => setTimeout(resolve, LEASE_POLL_MS));
       const next = await readState().catch(() => undefined);
-      if (next?.value) return parsed(next).catch(() => compute());
       if (!next || next.value === null) break; // winner found nothing to store
+      if (next.value !== PENDING && next.gen !== state.gen) {
+        try {
+          return JSON.parse(await load(next)) as T;
+        } catch {
+          break;
+        }
+      }
     }
     return compute();
   }
 
+  const mine = and(eq(computedCache.key, key), eq(computedCache.lease, token));
+  const release = () => db.update(computedCache).set({ claimedAt: null, lease: null }).where(mine).then(() => undefined, () => undefined);
+
   if (state.value === null) {
-    // New key: clear rows no deploy has refreshed for a week (indexed range).
+    // New key: clear rows no deploy has refreshed for a week (indexed range;
+    // live placeholders carry their creation time, so they are not in it).
     const expired = now - GARBAGE_AFTER_SECONDS;
     await db
       .delete(computedCache)
@@ -229,11 +268,12 @@ export async function getOrCompute<T>(
   try {
     value = await compute();
   } catch (error) {
-    await db.update(computedCache).set({ claimedAt: null }).where(eq(computedCache.key, key)).catch(() => undefined);
+    await release();
     throw error;
   }
   if (value === null || value === undefined) {
-    await db.delete(computedCache).where(eq(computedCache.key, key)).catch(() => undefined);
+    const removed = await db.delete(computedCache).where(mine).returning({ key: computedCache.key }).catch(() => []);
+    if (removed.length > 0) await deleteParts(state.gen);
     return value;
   }
   const json = JSON.stringify(value);
@@ -241,30 +281,26 @@ export async function getOrCompute<T>(
     // basis is the counter sum seen BEFORE computing: a write that lands
     // during the compute advances it, so this result is born stale.
     const basis = state.changedAt;
-    const chunks: string[] = [];
-    for (let i = 0; i < json.length; i += PART_CHARS) chunks.push(json.slice(i, i + PART_CHARS));
+    const chunks = splitJson(json);
     for (let i = 1; i < chunks.length; i++) {
       await db
         .insert(computedCache)
-        .values({ key: partKey(now, i), value: chunks[i], computedAt: now, basis: -2, claimedAt: null })
-        .onConflictDoUpdate({ target: computedCache.key, set: { value: chunks[i], computedAt: now } });
+        .values({ key: partKey(token, i), value: chunks[i], computedAt: now, basis: -2, claimedAt: null })
+        .onConflictDoNothing();
     }
-    await db
+    const published = await db
       .update(computedCache)
-      .set({ value: chunks[0] ?? "", computedAt: now, basis, claimedAt: null, parts: Math.max(chunks.length, 1) })
-      .where(eq(computedCache.key, key));
-    // Parts of earlier results of this key: PK ranges ("$" sorts right after "#").
-    await db
-      .delete(computedCache)
-      .where(and(
-        gt(computedCache.key, `${key}#`),
-        lt(computedCache.key, `${key}$`),
-        or(lt(computedCache.key, `${key}#${now}#`), gt(computedCache.key, `${key}#${now}$`)),
-      ));
+      .set({ value: chunks[0], computedAt: now, basis, claimedAt: null, lease: null, parts: chunks.length, gen: token })
+      .where(mine)
+      .returning({ key: computedCache.key });
+    // Retire only the generation this request replaced, or its own parts if
+    // its lease was lost meanwhile.
+    await deleteParts(published.length > 0 ? state.gen : token);
   } catch (error) {
     // Say so instead of silently falling back to recomputing every request.
     console.error(`computed_cache: failed to store ${key} (${json.length} chars)`, error instanceof Error ? error.message : error);
-    await db.update(computedCache).set({ claimedAt: null }).where(eq(computedCache.key, key)).catch(() => undefined);
+    await deleteParts(token);
+    await release();
   }
   await edgePut(key, json);
   return value;

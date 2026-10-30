@@ -122,7 +122,7 @@ export const awards = sqliteTable("awards", {
   label: text("label").notNull(),
   month: integer("month"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
-});
+}, (table) => [index("awards_season_type_month_idx").on(table.seasonId, table.type, table.month)]);
 
 // Battle groups
 export const battleGroups = sqliteTable("battle_groups", {
@@ -140,7 +140,10 @@ export const battleGroupMembers = sqliteTable("battle_group_members", {
   groupId: integer("group_id").notNull().references(() => battleGroups.id),
   userId: integer("user_id").notNull().references(() => users.id),
   joinedAt: integer("joined_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
-}, (table) => [uniqueIndex("bgm_group_user_idx").on(table.groupId, table.userId)]);
+}, (table) => [
+  uniqueIndex("bgm_group_user_idx").on(table.groupId, table.userId),
+  index("battle_group_members_user_idx").on(table.userId),
+]);
 
 export const userSettings = sqliteTable("user_settings", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -264,8 +267,12 @@ export const computedCache = sqliteTable("computed_cache", {
   computedAt: integer("computed_at").notNull(),
   basis: integer("basis").notNull(),
   claimedAt: integer("claimed_at"),
-  /** >1 when the value is split across rows `${key}#${computedAt}#${i}`. */
+  /** Token of the request currently recomputing this key. */
+  lease: text("lease"),
+  /** >1 when the value is split across rows `${key}#${gen}#${i}`. */
   parts: integer("parts").notNull().default(1),
+  /** Lease token of the request that published the current value. */
+  gen: text("gen"),
 }, (table) => [index("computed_cache_computed_at_idx").on(table.computedAt)]);
 
 // Change counters advanced by triggers: id = season year (locked data),

@@ -286,6 +286,59 @@ describe("computed_cache freshness", () => {
     expect(sqlite.prepare("SELECT count(*) AS rows FROM computed_cache").get()).toEqual({ rows: 1 }); // old parts removed
   });
 
+  it("a request whose lease expired cannot overwrite or delete its successor's result", async () => {
+    sqlite.exec("UPDATE users SET name = name WHERE id = 1000");
+    let releaseA!: () => void;
+    const gateA = new Promise<void>((r) => { releaseA = r; });
+    const big = (tag: string) => ({ tag, text: "野".repeat(1_100_000) });
+    const a = getOrCompute(db(), "race", async () => { await gateA; return big("older"); });
+    await new Promise((r) => setTimeout(r, 10));
+    clock += 121_000; // A's lease expires; B takes over and publishes
+    expect((await getOrCompute(db(), "race", async () => big("newer"))).tag).toBe("newer");
+    releaseA();
+    expect((await a).tag).toBe("older"); // A still answers its own request…
+    // …but the stored result and all its parts are B's.
+    expect((await getOrCompute(db(), "race", async () => big("third"))).tag).toBe("newer");
+    expect(sqlite.prepare("SELECT count(*) AS rows FROM computed_cache").get()).toEqual({ rows: 3 });
+  });
+
+  it("splitting never separates a surrogate pair", async () => {
+    const value = { text: "a".repeat(499_990) + "😀" + "b".repeat(500_000) };
+    await getOrCompute(db(), "emoji", async () => value);
+    expect(await getOrCompute(db(), "emoji", async () => ({ text: "recomputed" }))).toEqual(value);
+  });
+
+  it("deleting a draft with its picks advances only that season's draft counter", async () => {
+    sqlite.exec("PRAGMA foreign_keys = ON");
+    sqlite.exec("INSERT INTO predictions (id, user_id, season_id, is_locked) VALUES (9200, 1001, 103, 0)");
+    sqlite.exec("INSERT INTO ranking_picks (prediction_id, league, rank, team_name) VALUES (9200, 'central', 1, '阪神'), (9200, 'central', 2, '巨人')");
+    const before = new Map((sqlite.prepare("SELECT id, changed_at AS c FROM data_changes").all() as { id: number; c: number }[]).map((r) => [r.id, r.c]));
+    sqlite.exec("DELETE FROM predictions WHERE id = 9200");
+    const after = new Map((sqlite.prepare("SELECT id, changed_at AS c FROM data_changes").all() as { id: number; c: number }[]).map((r) => [r.id, r.c]));
+    expect(after.get(-2026)).toBe((before.get(-2026) ?? 0) + 1);
+    expect(after.get(0)).toBe(before.get(0));
+    expect(after.get(2026)).toBe(before.get(2026));
+  });
+
+  it("sign-ups and drafts refresh 'everything' results (sitemap) but not season results", async () => {
+    let computes = 0;
+    await getOrCompute(db(), "sitemap", async () => ++computes, { scope: "everything" });
+    await getOrCompute(db(), "season", async () => ++computes, { year: 2026 });
+    sqlite.exec("INSERT INTO users (id, name, slug) VALUES (6000, '新規', 'signup')");
+    later();
+    expect(await getOrCompute(db(), "sitemap", async () => ++computes, { scope: "everything" })).toBe(3);
+    expect(await getOrCompute(db(), "season", async () => ++computes, { year: 2026 })).toBe(2);
+  });
+
+  it("a slow first computation is not repeated by concurrent requests", async () => {
+    vi.restoreAllMocks(); // real clock for the poll interval
+    let computes = 0;
+    const compute = async () => { computes++; await new Promise((r) => setTimeout(r, 1200)); return { n: computes }; };
+    const all = await Promise.all(Array.from({ length: 5 }, () => getOrCompute(db(), "slow", compute)));
+    expect(all).toEqual(Array(5).fill({ n: 1 }));
+    expect(computes).toBe(1);
+  });
+
   it("does not store null results, so unknown keys cannot grow the table", async () => {
     await getOrCompute(db(), "missing", async () => null);
     expect(sqlite.prepare("SELECT count(*) AS n FROM computed_cache").get()).toEqual({ n: 0 });

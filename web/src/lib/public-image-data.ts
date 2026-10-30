@@ -393,9 +393,9 @@ async function computeRankingCardData(
   db: DbClient,
   activeSeason: { id: number; year: number },
 ): Promise<RankingCardData | null> {
-  const [allUsers, allScores] = await Promise.all([
-    db.select().from(users),
-    db.all<RawScoreRow>(sql`
+  // Scores first: with no snapshots there is nothing to render, and the
+  // (uncached) null result must not cost a read of every user.
+  const allScores = await db.all<RawScoreRow>(sql`
       SELECT
         ss.id,
         ss.user_id AS userId,
@@ -416,9 +416,9 @@ async function computeRankingCardData(
        AND latest.snapshot_date = ss.snapshot_date
       WHERE ss.season_id = ${activeSeason.id}
       ORDER BY ss.total_score DESC
-    `),
-  ]);
+    `);
   if (allScores.length === 0) return null;
+  const allUsers = await db.select().from(users);
 
   const userMap = new Map(allUsers.map((user) => [user.id, user]));
   const latestScores = allScores.map((row) => ({

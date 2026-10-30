@@ -107,7 +107,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       return getOrCompute(db, "sitemap:commentators", () => db
         .select({ slug: users.slug, createdAt: users.createdAt })
         .from(users)
-        .where(eq(users.role, "commentator")));
+        .where(eq(users.role, "commentator")), { scope: "everything" });
     },
     [] as Array<{ slug: string; createdAt: unknown }>,
   );
@@ -136,7 +136,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         .from(predictionsTable);
       const withPred = new Set(predictedUserIds.map((p) => p.userId));
       return predictors.filter((u) => u.role === "friend" && withPred.has(u.id));
-      });
+      }, { scope: "everything" });
     },
     [] as Array<{ id: number; createdAt: unknown; role: string }>,
   );
