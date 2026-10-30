@@ -39,7 +39,7 @@ export async function GET(
 ) {
   const { year: yearStr } = await params;
   const yearNum = parseInt(yearStr, 10);
-  const body = await getOrCompute(getDb(), `current-scoreboard:${yearNum}`, () => computeCurrentScoreboard(yearNum));
+  const body = await getOrCompute(getDb(), `current-scoreboard:${yearNum}`, () => computeCurrentScoreboard(yearNum), { year: yearNum });
   if (!body) {
     return NextResponse.json({ error: "Season not found" }, { status: 404 });
   }

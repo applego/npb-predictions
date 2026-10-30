@@ -53,7 +53,7 @@ export async function loadSeasonResults(requestedYear: number | undefined, scope
     const publicPicks: PublicResultPick[] = pickRows.map((row) => ({ ...row, createdAt: row.createdAt.toISOString() }));
     const standings = standingRows.map((row) => ({ ...row, snapshotDate: row.snapshotDate.toISOString() }));
     return { year: season.year, years, summary: summarizeResults(withPredictionSources(publicPicks, season.year, scope), standings, scope), error: null };
-    });
+    }, { year: season.year });
   } catch (error) {
     console.error("Public season results unavailable", error instanceof Error ? error.message : "unknown");
     return { year: fallbackYear, years, summary: summarizeResults([], [], scope), error: "unavailable" };

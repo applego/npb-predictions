@@ -1,6 +1,6 @@
-import { and, eq, isNull, lt, or } from "drizzle-orm";
+import { and, eq, isNull, lt, or, sql } from "drizzle-orm";
 import type { DbClient } from "@/db";
-import { computedCache, dataChanges } from "@/db/schema";
+import { computedCache } from "@/db/schema";
 
 /**
  * Safety net only: SQLite triggers (drizzle/0016) mark every cached result
@@ -74,27 +74,32 @@ export async function getOrCompute<T>(
   db: DbClient,
   key: string,
   compute: () => Promise<T>,
-  ttlSeconds = COMPUTED_CACHE_TTL_SECONDS,
+  /** Season the result is built from; omit for results spanning every season. */
+  { year }: { year?: number } = {},
 ): Promise<T> {
+  const ttlSeconds = COMPUTED_CACHE_TTL_SECONDS;
   key = KEY_PREFIX + key;
   const edge = await edgeGet<T>(key);
   if (edge !== undefined) return edge;
 
   const now = Math.floor(Date.now() / 1000);
-  // data_changes always has its one row, so this returns the change clock
-  // even when the key has no cached result yet.
+  // The change clocks this result depends on: its season's and the global
+  // one (id 0), or every clock for cross-season results. Each clock only
+  // moves forward, so their sum changes whenever any of them does.
+  const clocks = year === undefined || !Number.isInteger(year)
+    ? sql`(select coalesce(sum(changed_at), 0) from data_changes)`
+    : sql`(select coalesce(sum(changed_at), 0) from data_changes where id in (0, ${year}))`;
   let state: { changedAt: number; value: string | null; computedAt: number | null; basis: number | null } | undefined;
   try {
     [state] = await db
       .select({
-        changedAt: dataChanges.changedAt,
+        changedAt: sql<number>`${clocks}`.mapWith(Number),
         value: computedCache.value,
         computedAt: computedCache.computedAt,
         basis: computedCache.basis,
       })
-      .from(dataChanges)
-      .leftJoin(computedCache, eq(computedCache.key, key))
-      .where(eq(dataChanges.id, 1));
+      .from(sql`(select 1) as one`)
+      .leftJoin(computedCache, eq(computedCache.key, key));
   } catch {
     state = undefined;
   }

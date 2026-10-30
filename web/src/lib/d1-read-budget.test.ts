@@ -126,7 +126,7 @@ const endpoints: [string, () => Promise<unknown>][] = [
   ["scoreboard page data", async () => (await import("@/lib/scoreboard")).getScoreboardData(2026)],
   ["home / rankings results", async () => (await import("@/lib/season-results-data")).loadSeasonResults(2026, "all")],
   ["SEO top commentators", async () => (await import("@/lib/commentator-queries")).getTopCommentatorsForYear(2026, 20)],
-  ["archive predictions", async () => (await import("@/lib/seo-queries")).getSeasonPredictions(3)],
+  ["archive predictions", async () => (await import("@/lib/seo-queries")).getSeasonPredictions(3, 2026)],
 ];
 
 describe(`D1 rows_read per warm request stays under ${BUDGET} with ${PREDICTIONS_PER_SEASON} predictions/season`, () => {

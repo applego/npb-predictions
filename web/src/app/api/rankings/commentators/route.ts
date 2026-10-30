@@ -47,7 +47,7 @@ export async function GET(req: Request) {
   }
 
   const db = getDb();
-  const body = await getOrCompute(db, `rankings:commentators:${year}:${leagueParam}`, () => computeCommentatorRankings(db, year, leagueParam));
+  const body = await getOrCompute(db, `rankings:commentators:${year}:${leagueParam}`, () => computeCommentatorRankings(db, year, leagueParam), { year });
   if (!body) {
     return NextResponse.json({ error: "Season not found" }, { status: 404 });
   }

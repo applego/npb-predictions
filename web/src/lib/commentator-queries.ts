@@ -202,7 +202,7 @@ export async function getTopCommentatorsForYear(
 ): Promise<TopCommentator[]> {
   const db = getDb();
   // The SEO page and its OG image both call this on every crawl of every year.
-  return getOrCompute(db, `top-commentators:${year}:${limit}`, () => computeTopCommentatorsForYear(db, year, limit));
+  return getOrCompute(db, `top-commentators:${year}:${limit}`, () => computeTopCommentatorsForYear(db, year, limit), { year });
 }
 
 async function computeTopCommentatorsForYear(

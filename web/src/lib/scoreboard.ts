@@ -29,7 +29,7 @@ export async function getSeasons(): Promise<Season[]> {
 export async function getScoreboardData(
   year: number
 ): Promise<ScoreboardResponse | null> {
-  return getOrCompute(getDb(), `scoreboard:${year}`, () => computeScoreboardData(year));
+  return getOrCompute(getDb(), `scoreboard:${year}`, () => computeScoreboardData(year), { year });
 }
 
 async function computeScoreboardData(

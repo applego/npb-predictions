@@ -25,7 +25,7 @@ export async function GET(
       where: and(eq(predictions.seasonId, season.id), eq(predictions.isLocked, true)),
       with: publicPredictionRelations,
     });
-  });
+  }, { year: parseInt(year, 10) });
   if (!rows) {
     return NextResponse.json({ error: "Season not found" }, { status: 404 });
   }

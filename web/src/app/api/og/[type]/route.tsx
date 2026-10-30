@@ -417,7 +417,7 @@ async function renderScoreboardCard(
         rankingScore: s.rankingScore,
         titleScore: s.titleScore,
       }));
-  });
+  }, { year: season.year });
 
   const isPortrait = dims.height > dims.width;
 

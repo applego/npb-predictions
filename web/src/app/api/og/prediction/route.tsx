@@ -210,7 +210,7 @@ async function fetchPredictionData(
       }
     }
     return { allCentral1s, allPacific1s };
-  });
+  }, { year: season.year });
 
   return {
     user: { name: user.name },

@@ -34,7 +34,7 @@ export default async function PredictionsArchivePage({ params }: Props) {
   if (!season) notFound();
 
   const [predictions, centralActual, pacificActual] = await Promise.all([
-    getSeasonPredictions(season.id),
+    getSeasonPredictions(season.id, season.year),
     getFinalStandings(season.id, "central"),
     getFinalStandings(season.id, "pacific"),
   ]);

@@ -266,8 +266,8 @@ export const computedCache = sqliteTable("computed_cache", {
   claimedAt: integer("claimed_at"),
 });
 
-// Single row (id = 1): triggers set changed_at (epoch ms) on every write to
-// scored data; a computed_cache row is fresh only while its basis equals it.
+// Change clocks set by triggers (epoch ms): id = season year, or 0 for writes
+// affecting every season. See drizzle/0016 and lib/computed-cache.ts.
 export const dataChanges = sqliteTable("data_changes", {
   id: integer("id").primaryKey(),
   changedAt: integer("changed_at").notNull(),

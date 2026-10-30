@@ -116,7 +116,7 @@ export async function getLatestStandings(seasonId: number, league: League) {
 
 // Archive pages: cached per season (rebuilt only after data changes). Date
 // columns are dropped so the cached JSON has the same shape as the live rows.
-export async function getSeasonPredictions(seasonId: number) {
+export async function getSeasonPredictions(seasonId: number, year: number) {
   const db = getDb();
   return getOrCompute(db, `archive-predictions:${seasonId}`, async () => {
     const rows = await db.query.predictions.findMany({
@@ -124,11 +124,11 @@ export async function getSeasonPredictions(seasonId: number) {
       with: publicPredictionRelations,
     });
     return rows.map(({ createdAt: _c, updatedAt: _u, lockedAt: _l, ...row }) => row);
-  });
+  }, { year });
 }
 
 /** Newest snapshots of the season, first `limit` rows. */
-export async function getLatestScores(seasonId: number, limit: number) {
+export async function getLatestScores(seasonId: number, year: number, limit: number) {
   const db = getDb();
   return getOrCompute(db, `archive-latest-scores:${seasonId}:${limit}`, async () => {
     const rows = await db
@@ -138,7 +138,7 @@ export async function getLatestScores(seasonId: number, limit: number) {
       .orderBy(desc(scoreSnapshots.snapshotDate))
       .limit(limit);
     return rows;
-  });
+  }, { year });
 }
 
 export const LEAGUE_LABELS: Record<string, string> = {

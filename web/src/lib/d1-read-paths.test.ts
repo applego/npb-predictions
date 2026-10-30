@@ -226,6 +226,22 @@ describe("computed_cache freshness", () => {
     expect(computes).toBe(2);
   });
 
+  it("a change to one season recomputes that season's results and cross-season ones only", async () => {
+    let computes = 0;
+    const counted = () => async () => ++computes;
+    await getOrCompute(db(), "y2026", counted(), { year: 2026 });
+    await getOrCompute(db(), "y2025", counted(), { year: 2025 });
+    await getOrCompute(db(), "all", counted());
+    sqlite.exec("INSERT INTO actual_team_standings (season_id, league, rank, team_name, snapshot_date) VALUES (102, 'central', 1, '阪神', 1800000000)");
+    later();
+    expect(await getOrCompute(db(), "y2026", counted(), { year: 2026 })).toBe(1);
+    expect(await getOrCompute(db(), "y2025", counted(), { year: 2025 })).toBe(4);
+    expect(await getOrCompute(db(), "all", counted())).toBe(5);
+    sqlite.exec("UPDATE users SET name = '改名' WHERE id = 1001"); // global: every season
+    later();
+    expect(await getOrCompute(db(), "y2026", counted(), { year: 2026 })).toBe(6);
+  });
+
   it("does not store null results, so unknown keys cannot grow the table", async () => {
     await getOrCompute(db(), "missing", async () => null);
     expect(sqlite.prepare("SELECT count(*) AS n FROM computed_cache").get()).toEqual({ n: 0 });
