@@ -83,6 +83,12 @@ export function ResultsBoard({ data, compact = false }: { data: ResultsData; com
         )}
       </section>
       {entries.length > 0 && <div className="result-board-share"><ResultShare path={path} title={resultShareTitle(year, summary)} /></div>}
+      {scope !== "all" && entries.length > 0 && (
+        <aside className="result-next-read" aria-label="自分の予想を並べる">
+          <div><p>あなたなら何位と読んだ？</p><h2>解説者の予想と、あなたの予想を一覧に。</h2><span>新聞の予想一覧のように並べて、点数と的中を画像で保存・共有できます。</span></div>
+          <Link prefetch={false} className="result-button result-button-secondary" href={`/sheet?year=${year}&league=${scope}`}>予想一覧をつくる <span aria-hidden="true">→</span></Link>
+        </aside>
+      )}
       <aside className="result-next-read" aria-label="次に読む">
         <div><p>野球を、もう一歩おもしろく。</p><h2>答え合わせの次は、観戦へ。</h2><span>視聴方法や予想に役立つ本・道具をまとめました。</span></div>
         <Link prefetch={false} className="result-button result-button-secondary" href="/resources">観戦ガイドを見る <span aria-hidden="true">↗</span></Link>

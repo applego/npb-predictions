@@ -31,6 +31,13 @@ objects:
     attributes: [選択年度, 対象リーグ, 並び順, 比較する解説者, 画像の列数]
     actions: [年度を選ぶ, リーグで絞る, 並べ替える, 比較画像を保存する]
     related: [シーズン, 解説者の予想結果, 自分の予想]
-url_state: [year, league, q, perfect, sort, '#predictor-id']
+  - name: 予想一覧
+    collection: /sheet?year=:year&league=:league
+    identity: yearとleagueと選んだ予想者と自分の予想
+    attributes: [年度, リーグ, 確定状態, 実際の順位, 予想者, 表示名, 球団別予想, 的中数, ずれ合計, 点数, 並び順]
+    actions: [自分の予想を入れる, 並べる解説者を選ぶ, 並べ替える, 一覧を画像で保存する, Xで共有する]
+    related: [シーズン, 解説者の予想結果, 球団]
+    # 自分の予想と表示名はURLにだけ持ち、サーバーへ保存しない。画像は端末内で生成する。
+url_state: [year, league, q, perfect, sort, '#predictor-id', picks, me, order]
 forbidden_terms: [的中率100パーセント保証, 歴代最高]
   # 結果カードは解説者の予想結果の画像projection。端末内で生成し、外部送信しない。
