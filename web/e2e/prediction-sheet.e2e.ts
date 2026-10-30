@@ -14,7 +14,9 @@ for (const width of [320, 390, 1400]) {
 
     await page.goto("/sheet?year=2026&league=central");
     await expect(page.getByRole("heading", { name: "順位予想一覧" })).toBeVisible();
-    const board = page.locator(".sheet-board");
+    // While the root loading boundary streams in, React briefly keeps a hidden copy of the page
+    // (<div hidden id="S:0">); only the visible board is what a visitor sees.
+    const board = page.locator(".sheet-board:visible");
     // Same person + same picks is one row.
     const names = await board.locator(".sheet-row:not(.sheet-row-header):not(.sheet-row-actual) .sheet-name").allTextContents();
     expect(new Set(names).size).toBe(names.length);
