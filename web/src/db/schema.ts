@@ -53,7 +53,10 @@ export const predictions = sqliteTable("predictions", {
   lockedAt: integer("locked_at", { mode: "timestamp" }),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
-}, (table) => [uniqueIndex("predictions_user_season_variant_idx").on(table.userId, table.seasonId, table.variant)]);
+}, (table) => [
+  uniqueIndex("predictions_user_season_variant_idx").on(table.userId, table.seasonId, table.variant),
+  index("predictions_season_locked_idx").on(table.seasonId, table.isLocked),
+]);
 
 export const rankingPicks = sqliteTable("ranking_picks", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -106,7 +109,10 @@ export const scoreSnapshots = sqliteTable("score_snapshots", {
   totalScore: integer("total_score").default(0).notNull(),
   rank: integer("rank"),
   snapshotDate: integer("snapshot_date", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
-}, (table) => [uniqueIndex("score_user_season_date_idx").on(table.userId, table.seasonId, table.snapshotDate)]);
+}, (table) => [
+  uniqueIndex("score_user_season_date_idx").on(table.userId, table.seasonId, table.snapshotDate),
+  index("score_snapshots_season_user_total_idx").on(table.seasonId, table.userId, table.totalScore),
+]);
 
 export const awards = sqliteTable("awards", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -249,3 +255,10 @@ export const growthEvents = sqliteTable("growth_events", {
   source: text("source").notNull(),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
 }, (table) => [index("growth_events_day_event_idx").on(table.day, table.event)]);
+
+// Whole-table aggregates (all-time ranking, news feed, …) computed at most once per TTL.
+export const computedCache = sqliteTable("computed_cache", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+  computedAt: integer("computed_at").notNull(),
+});

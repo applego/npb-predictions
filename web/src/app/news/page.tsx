@@ -3,6 +3,8 @@ export const runtime = "edge";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { NewsClient } from "./NewsClient";
+import { getDb } from "@/db";
+import { getOrCompute } from "@/lib/computed-cache";
 import { generateNewsFeed } from "@/lib/news-feed";
 import { BreadcrumbJsonLd } from "@/components/StructuredData";
 import {
@@ -38,7 +40,7 @@ export const metadata: Metadata = {
 };
 
 export default async function NewsPage() {
-  const news = await generateNewsFeed(100);
+  const news = await getOrCompute(getDb(), "news:100", () => generateNewsFeed(100));
 
   const breadcrumbItems = [{ label: "ニュース" }];
 

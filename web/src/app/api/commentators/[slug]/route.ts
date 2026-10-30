@@ -11,7 +11,7 @@ import {
   actualTeamStandings,
   actualTitleSnapshots,
 } from "@/db/schema";
-import { and, eq, desc } from "drizzle-orm";
+import { and, eq, desc, inArray } from "drizzle-orm";
 import { calcRankingPointForTeam } from "@/lib/scoring";
 
 /**
@@ -67,8 +67,15 @@ export async function GET(
 
   // Get all ranking & title picks for target predictions
   const predIds = targetPreds.map((p) => p.id);
-  const allRankingPicks = await db.select().from(rankingPicks);
-  const allTitlePicks = await db.select().from(titlePicks);
+  // Only this commentator's locked predictions — never the whole pick tables.
+  const userPredIds = db
+    .select({ id: predictions.id })
+    .from(predictions)
+    .where(and(eq(predictions.userId, user.id), eq(predictions.isLocked, true)));
+  const [allRankingPicks, allTitlePicks] = await Promise.all([
+    db.select().from(rankingPicks).where(inArray(rankingPicks.predictionId, userPredIds)).orderBy(rankingPicks.id),
+    db.select().from(titlePicks).where(inArray(titlePicks.predictionId, userPredIds)).orderBy(titlePicks.id),
+  ]);
 
   const picksByPred = new Map<
     number,
