@@ -147,11 +147,14 @@ describe(`D1 rows_read per warm request stays under ${BUDGET} with ${PREDICTIONS
     const call = endpoints[3][1];
     await call();
     await real.prepare("UPDATE actual_team_standings SET rank = rank WHERE season_id = 3 AND rank = 1").run();
+    const now = Date.now();
+    vi.spyOn(Date, "now").mockReturnValue(now + 301_000); // past the per-key recompute window
     log = [];
     await call(); // the request that claims the stale row recomputes
     expect(await rowsRead()).toBeGreaterThan(BUDGET);
     log = [];
     await call();
     expect(await rowsRead()).toBeLessThanOrEqual(BUDGET);
+    vi.restoreAllMocks();
   }, 120_000);
 });

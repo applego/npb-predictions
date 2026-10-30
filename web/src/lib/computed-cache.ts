@@ -10,6 +10,12 @@ import { computedCache, dataChanges } from "@/db/schema";
 export const COMPUTED_CACHE_TTL_SECONDS = 24 * 3600;
 /** Per-colo edge copy: 1000 hits within this window cost no D1 reads. */
 export const EDGE_CACHE_SECONDS = 300;
+/**
+ * After a data change a key is recomputed at most this often, so a burst of
+ * writes (an import, a scraper run) costs one recompute per window, not one
+ * per write. Public results lag a change by at most this long.
+ */
+const MIN_RECOMPUTE_SECONDS = 300;
 /** A recompute that has not finished by then may be retried by another request. */
 const CLAIM_TIMEOUT_SECONDS = 120;
 const EDGE_ORIGIN = "https://computed-cache.internal/";
@@ -58,7 +64,8 @@ async function edgePut(key: string, json: string): Promise<void> {
  * - fresh row (no data change since it was computed, within TTL): 2 rows read
  * - stale row: exactly one request claims the recompute, the rest get the
  *   previous result (stale-while-revalidate), so a traffic spike right after
- *   an update still recomputes once
+ *   an update still recomputes once; and never more than once per
+ *   MIN_RECOMPUTE_SECONDS per key
  * - no row yet / cache table missing: compute directly
  * `null` results (e.g. unknown season) are never stored, so arbitrary keys
  * from user input cannot grow the table.
@@ -100,6 +107,7 @@ export async function getOrCompute<T>(
       await edgePut(key, cached);
       return JSON.parse(cached) as T;
     }
+    if (now - (state.computedAt ?? 0) < MIN_RECOMPUTE_SECONDS) return JSON.parse(cached) as T;
     let claimed = false;
     try {
       const won = await db

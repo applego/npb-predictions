@@ -159,6 +159,16 @@ describe("D1 read paths stay index-bounded", () => {
 
 describe("computed_cache freshness", () => {
   const db = () => boundary.getDb();
+  // Recomputes are rate-limited per key; move the clock past that window.
+  let clock = Date.now();
+  const later = () => { clock += 301_000; };
+  beforeEach(() => {
+    vi.spyOn(Date, "now").mockImplementation(() => clock);
+    // The change clock has millisecond resolution; start from a known value so
+    // a write in the same millisecond as the seed still moves it.
+    sqlite.exec("UPDATE data_changes SET changed_at = 0");
+  });
+  afterEach(() => { vi.restoreAllMocks(); });
 
   it("a write to scored data makes the next request recompute", async () => {
     let computes = 0;
@@ -166,6 +176,8 @@ describe("computed_cache freshness", () => {
     expect(await getOrCompute(db(), "k", compute)).toEqual({ n: 1 });
     expect(await getOrCompute(db(), "k", compute)).toEqual({ n: 1 });
     sqlite.exec("UPDATE actual_team_standings SET rank = rank WHERE id = (SELECT min(id) FROM actual_team_standings)");
+    expect(await getOrCompute(db(), "k", compute)).toEqual({ n: 1 }); // within the window: previous result
+    later();
     expect(await getOrCompute(db(), "k", compute)).toEqual({ n: 2 });
     expect(await getOrCompute(db(), "k", compute)).toEqual({ n: 2 });
   });
@@ -174,6 +186,7 @@ describe("computed_cache freshness", () => {
     let computes = 0;
     await getOrCompute(db(), "k", async () => ({ n: ++computes }));
     sqlite.exec("INSERT INTO score_snapshots (user_id, season_id, total_score) VALUES (1000, 103, 1)");
+    later();
     let release!: () => void;
     const gate = new Promise<void>((r) => { release = r; });
     const slow = getOrCompute(db(), "k", async () => { await gate; return { n: ++computes }; });
@@ -193,6 +206,22 @@ describe("computed_cache freshness", () => {
       sqlite.exec("UPDATE users SET name = name WHERE id = 1000");
       return computes;
     });
+    later();
+    await getOrCompute(db(), "k", async () => ++computes);
+    expect(computes).toBe(2);
+  });
+
+  it("drafts and new sign-ups do not invalidate public aggregates", async () => {
+    let computes = 0;
+    await getOrCompute(db(), "k", async () => ++computes);
+    sqlite.exec("INSERT INTO users (id, name, slug) VALUES (5000, '新規', 'new-user')");
+    sqlite.exec("INSERT INTO predictions (id, user_id, season_id, is_locked) VALUES (9000, 5000, 103, 0)");
+    sqlite.exec("INSERT INTO ranking_picks (prediction_id, league, rank, team_name) VALUES (9000, 'central', 1, '阪神')");
+    later();
+    await getOrCompute(db(), "k", async () => ++computes);
+    expect(computes).toBe(1);
+    sqlite.exec("UPDATE predictions SET is_locked = 1 WHERE id = 9000");
+    later();
     await getOrCompute(db(), "k", async () => ++computes);
     expect(computes).toBe(2);
   });
