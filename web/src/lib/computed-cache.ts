@@ -15,7 +15,7 @@ export const EDGE_CACHE_SECONDS = 300;
  * writes (an import, a scraper run) costs one recompute per window, not one
  * per write. Public results lag a change by at most this long.
  */
-const MIN_RECOMPUTE_SECONDS = 300;
+const MIN_RECOMPUTE_SECONDS = 1800;
 /** A recompute that has not finished by then may be retried by another request. */
 const CLAIM_TIMEOUT_SECONDS = 120;
 const EDGE_ORIGIN = "https://computed-cache.internal/";

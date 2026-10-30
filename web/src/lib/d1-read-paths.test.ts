@@ -159,9 +159,9 @@ describe("D1 read paths stay index-bounded", () => {
 
 describe("computed_cache freshness", () => {
   const db = () => boundary.getDb();
-  // Recomputes are rate-limited per key; move the clock past that window.
+  // Recomputes are rate-limited per key; move the clock past that window (30 min).
   let clock = Date.now();
-  const later = () => { clock += 301_000; };
+  const later = () => { clock += 1_801_000; };
   beforeEach(() => {
     vi.spyOn(Date, "now").mockImplementation(() => clock);
     // The change clock has millisecond resolution; start from a known value so
