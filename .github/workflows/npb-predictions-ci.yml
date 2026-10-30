@@ -31,7 +31,9 @@ jobs:
     # 2026-05-17: self-hosted runner (mac-2016-intel) が長期停止し CI/Deploy が
     # 24時間タイムアウト連発したため ubuntu-latest に切替。durability の代替策は
     # GitHub Hosted Runners の billing 監視 + 別途 cloudflare 側 git 連携を検討。
-    runs-on: ubuntu-latest
+    # 2026-10-30: ubuntu-latest が 26.04 になり Playwright 1.59 が chromium を
+    # インストールできず失敗したため、対応OSの 24.04 に固定。
+    runs-on: ubuntu-24.04
     # 2026-05-20: NEXT_PUBLIC_FIREBASE_* は next build 時に bundle へ焼き込まれる
     # ため job-level env で全 step に注入。値は GitHub Repository Secrets に保管。
     # (Firebase Web API key は Firebase 仕様上 public で安全、ドメイン制限で保護)
