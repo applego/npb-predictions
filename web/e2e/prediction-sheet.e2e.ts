@@ -17,6 +17,7 @@ for (const width of [320, 390, 1400]) {
     // While the root loading boundary streams in, React briefly keeps a hidden copy of the page
     // (<div hidden id="S:0">); only the visible board is what a visitor sees.
     const board = page.locator(".sheet-board:visible");
+    const nameInput = page.getByLabel("表示名").filter({ visible: true });
     // Same person + same picks is one row.
     const names = await board.locator(".sheet-row:not(.sheet-row-header):not(.sheet-row-actual) .sheet-name").allTextContents();
     expect(new Set(names).size).toBe(names.length);
@@ -24,13 +25,13 @@ for (const width of [320, 390, 1400]) {
     // Enter the actual standings as "my" prediction: expected 6 hits, 0 gap, 6×5 points.
     const actual = await board.locator(".sheet-row-actual .sheet-chip").evaluateAll((chips) => chips.map((c) => c.getAttribute("aria-label")!));
     expect(actual).toHaveLength(6);
-    await page.getByLabel("表示名").fill("@e2e_fan");
+    await nameInput.fill("@e2e_fan");
     const shortNames: Record<string, string> = { 阪神タイガース: "阪神", 読売ジャイアンツ: "巨人", 横浜DeNAベイスターズ: "DeNA", 広島東洋カープ: "広島", 中日ドラゴンズ: "中日", 東京ヤクルトスワローズ: "ヤクルト" };
     const teamButtons = page.getByRole("group", { name: "球団を順位の順に選ぶ" });
     for (const team of actual) await teamButtons.getByRole("button", { name: new RegExp(shortNames[team]) }).click();
 
-    await expect(page.locator(".sheet-chosen")).toContainText("1位 " + shortNames[actual[0]]);
-    await expect(page.locator(".sheet-added")).toContainText("一覧に入りました：的中6・ずれ0・30点");
+    await expect(page.locator(".sheet-chosen:visible")).toContainText("1位 " + shortNames[actual[0]]);
+    await expect(page.locator(".sheet-added:visible")).toContainText("一覧に入りました：的中6・ずれ0・30点");
     const mine = board.locator(".sheet-row-mine");
     await expect(mine.locator(".sheet-name")).toContainText("@e2e_fan");
     // Entered with no recorded date: reference only, never ranked above a commentator even with a perfect score.
@@ -61,20 +62,20 @@ for (const width of [320, 390, 1400]) {
     // The display name follows the visitor to the other league; picks start over.
     const sharedUrl = page.url();
     await page.getByRole("link", { name: "パ・リーグ" }).click();
-    await expect(page.getByLabel("表示名")).toHaveValue("@e2e_fan");
-    await expect(page.locator(".sheet-row-mine")).toHaveCount(0);
+    await expect(nameInput).toHaveValue("@e2e_fan");
+    await expect(board.locator(".sheet-row-mine")).toHaveCount(0);
 
     // Someone opening the shared link sees that person's row, not a row labelled as their own.
     await page.goto(sharedUrl);
     const sharedRow = board.locator(".sheet-row-shared");
     await expect(sharedRow.locator(".sheet-name")).toContainText("@e2e_fanさん");
     await expect(sharedRow.locator(".sheet-metrics")).toContainText("6的中0ずれ30点");
-    await expect(page.getByLabel("表示名")).toHaveValue("");
-    await expect(page.locator(".sheet-added")).toHaveCount(0);
+    await expect(nameInput).toHaveValue("");
+    await expect(page.locator(".sheet-added:visible")).toHaveCount(0);
     await expect(board.locator(".sheet-row-mine")).toHaveCount(0);
     // The sender reopening their own link can take the row back to edit it.
     await page.getByRole("button", { name: "自分の予想として直す" }).click();
-    await expect(page.getByLabel("表示名")).toHaveValue("@e2e_fan");
+    await expect(nameInput).toHaveValue("@e2e_fan");
     await expect(board.locator(".sheet-row-mine .sheet-metrics")).toContainText("6的中0ずれ30点");
     await expect(board.locator(".sheet-row-shared")).toHaveCount(0);
     expect(errors).toEqual([]);

@@ -56,7 +56,9 @@ async function computeScoreboardData(
     .where(
       and(
         eq(actualTeamStandings.seasonId, season.id),
-        sql`${actualTeamStandings.snapshotDate} = (SELECT max(x.snapshot_date) FROM actual_team_standings x WHERE x.season_id = ${season.id} AND x.league = ${actualTeamStandings.league})`,
+        // Uncorrelated: the latest date per league is computed once. The correlated form re-scanned the
+        // season for every row (232k rows read per call on 804 rows in production; this form reads ~2.4k).
+        sql`(${actualTeamStandings.league}, ${actualTeamStandings.snapshotDate}) IN (SELECT league, max(snapshot_date) FROM actual_team_standings WHERE season_id = ${season.id} GROUP BY league)`,
       ),
     );
 

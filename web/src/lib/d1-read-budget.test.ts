@@ -160,4 +160,29 @@ describe(`D1 rows_read per warm request stays under ${BUDGET} with ${PREDICTIONS
     expect(await rowsRead()).toBeLessThanOrEqual(BUDGET);
     vi.restoreAllMocks();
   }, 120_000);
+
+  it("a scoreboard recompute reads the season's standings about once, not once per standings row", async () => {
+    const call = endpoints.find(([label]) => label === "scoreboard page data")![1];
+    await call();
+    // A season of daily snapshots (production 2026: 804 rows), all older than the latest one.
+    const history: D1PreparedStatement[] = [];
+    for (let day = 1; day <= 60; day++) {
+      for (const league of ["central", "pacific"]) {
+        for (let rank = 1; rank <= 6; rank++) {
+          history.push(real.prepare("INSERT INTO actual_team_standings (season_id, league, rank, team_name, snapshot_date) VALUES (3, ?, ?, ?, ?)").bind(league, rank, `old-${rank}`, 1_700_000_000 - day * 86_400));
+        }
+      }
+    }
+    await real.batch(history);
+    vi.spyOn(Date, "now").mockReturnValue(Date.now() + 1_801_000);
+    log = [];
+    await call();
+    vi.restoreAllMocks();
+    const standingsReads = log.filter((s) => /^\s*select/i.test(s.sql) && s.sql.includes('from "actual_team_standings"'));
+    expect(standingsReads.length).toBeGreaterThan(0);
+    let read = 0;
+    for (const s of standingsReads) read += (await real.prepare(s.sql).bind(...s.params).all()).meta.rows_read ?? 0;
+    const rows = (await real.prepare("SELECT count(*) AS n FROM actual_team_standings WHERE season_id = 3").first<{ n: number }>())!.n;
+    expect(read).toBeLessThanOrEqual(4 * rows);
+  }, 120_000);
 });
