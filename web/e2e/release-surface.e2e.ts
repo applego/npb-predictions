@@ -208,6 +208,32 @@ test.describe("release surface", () => {
     expect(page.url()).toContain("view=trend");
   });
 
+  test("scoreboard trend shows 50 people per page and the next page continues the order", async ({
+    page,
+    request,
+  }) => {
+    // Rendering every multi-year predictor at once (4.1MB, 411 rows) hit the Worker resource limit (1102).
+    const trendUrl = "/rankings/scoreboard?year=2026&view=trend";
+    const html = await (await request.get(trendUrl)).text();
+    expect(html.length, "trend HTML must stay small enough to render inside the Worker limit").toBeLessThan(1_500_000);
+
+    await loadReleaseSurface(page, trendUrl);
+    const total = Number(
+      (await page.getByText(/人 \/ \d+シーズンの時系列推移/).textContent())!.match(/^(\d+)人/)![1],
+    );
+    const rows = page.locator("table tbody tr");
+    await expect(rows).toHaveCount(Math.min(total, 50));
+    const pager = page.getByRole("navigation", { name: "時系列のページ" });
+    await expect(pager.getByRole("link")).toHaveCount(total > 50 ? Math.ceil(total / 50) : 0);
+    if (total <= 50) return;
+
+    await pager.getByRole("link", { name: "2", exact: true }).click();
+    await expect(page).toHaveURL(/view=trend&page=2/);
+    await expect(pager.getByRole("link", { name: "2", exact: true })).toHaveAttribute("aria-current", "page");
+    await expect(pager).toContainText(`51〜${Math.min(total, 100)}人目 / ${total}人`);
+    await expect(rows).toHaveCount(Math.min(total - 50, 50));
+  });
+
   test("resources page discloses affiliate links and records allowlisted clicks", async ({
     page,
     request,

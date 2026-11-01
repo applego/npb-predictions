@@ -6,6 +6,7 @@ import ShareButton from "@/components/ShareButton";
 import { getSeasons, getScoreboardData } from "@/lib/scoreboard";
 import { ScoreboardTable } from "./ScoreboardClient";
 import { formatPredictionOwnerSubline } from "@/lib/prediction-owner-display";
+import { trendPage } from "@/lib/trend-page";
 import {
   BreadcrumbJsonLd,
   SportsEventJsonLd,
@@ -226,9 +227,9 @@ function Sparkline({
 export default async function StandingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ year?: string; view?: string }>;
+  searchParams: Promise<{ year?: string; view?: string; page?: string }>;
 }) {
-  const { year: yearParam, view } = await searchParams;
+  const { year: yearParam, view, page: pageParam } = await searchParams;
   const selectedYear = yearParam ? parseInt(yearParam, 10) : CURRENT_YEAR;
   const isTrend = view === "trend";
   const isCurrent = selectedYear >= CURRENT_YEAR;
@@ -264,6 +265,11 @@ export default async function StandingsPage({
         b.byYear.size;
       return avgB - avgA;
     });
+
+  const trendPaging = trendPage(pageParam, trendUsers.length);
+  const visibleTrendUsers = trendUsers.slice(trendPaging.start, trendPaging.end);
+  const trendPageHref = (page: number) =>
+    `/rankings/scoreboard?year=${selectedYear}&view=trend${page > 1 ? `&page=${page}` : ""}`;
 
   const trendNameCounts = trendUsers.reduce((counts, user) => {
     counts.set(user.name, (counts.get(user.name) ?? 0) + 1);
@@ -480,7 +486,7 @@ export default async function StandingsPage({
                 </tr>
               </thead>
               <tbody>
-                {trendUsers.map((user, idx) => {
+                {visibleTrendUsers.map((user, idx) => {
                   const scores = [...user.byYear.values()];
                   const avg =
                     scores.reduce((s, v) => s + v.score, 0) / scores.length;
@@ -629,6 +635,35 @@ export default async function StandingsPage({
                 })}
               </tbody>
             </table>
+            {trendPaging.pages > 1 && (
+              <nav
+                aria-label="時系列のページ"
+                className="flex flex-wrap items-center gap-2 px-3 py-3"
+                style={{ borderTop: "1px solid var(--border-primary)" }}
+              >
+                <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+                  平均点順 {trendPaging.start + 1}〜{trendPaging.end}人目 / {trendUsers.length}人
+                </span>
+                <div className="flex flex-wrap gap-1">
+                  {Array.from({ length: trendPaging.pages }, (_, i) => i + 1).map((page) => (
+                    <Link
+                      key={page}
+                      href={trendPageHref(page)}
+                      aria-current={page === trendPaging.page ? "page" : undefined}
+                      className="inline-flex min-h-9 min-w-9 items-center justify-center rounded-sm px-2 text-xs font-medium"
+                      style={{
+                        fontFamily: "var(--font-display)",
+                        background: page === trendPaging.page ? "var(--stitch)" : "var(--bg-surface)",
+                        color: page === trendPaging.page ? "#fff" : "var(--text-muted)",
+                        border: `1px solid ${page === trendPaging.page ? "var(--stitch)" : "var(--border-primary)"}`,
+                      }}
+                    >
+                      {page}
+                    </Link>
+                  ))}
+                </div>
+              </nav>
+            )}
           </div>
         )
       ) : (
