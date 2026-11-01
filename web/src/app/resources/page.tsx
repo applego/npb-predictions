@@ -3,8 +3,7 @@ export const runtime = "edge";
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
-  affiliateNotice,
-  PROVIDER_LABELS,
+  AFFILIATE_DISCLOSURE,
   getAffiliateResources,
   type AffiliateCategory,
 } from "@/lib/affiliate-resources";
@@ -82,7 +81,7 @@ export default function ResourcesPage() {
               color: "var(--text-muted)",
             }}
           >
-            {affiliateNotice(resources)}
+            {AFFILIATE_DISCLOSURE}
           </p>
         </div>
       </section>
@@ -108,13 +107,11 @@ export default function ResourcesPage() {
               >
                 {CATEGORY_LABELS[resource.category]}
               </span>
-              <span className="flex items-center gap-2 text-[11px] font-bold" style={{ color: "var(--text-muted)" }}>
-                {resource.monetized && (
-                  <span className="rounded-sm px-1.5 py-0.5" style={{ border: "1px solid var(--border-primary)" }}>
-                    広告
-                  </span>
-                )}
-                {PROVIDER_LABELS[resource.provider]}
+              <span
+                className="text-[11px] font-bold uppercase"
+                style={{ color: "var(--text-muted)", letterSpacing: "0.08em" }}
+              >
+                {resource.provider}
               </span>
             </div>
             <h2
@@ -152,11 +149,11 @@ export default function ResourcesPage() {
         </p>
         <div className="mt-3">
           <Link
-            href="/rankings"
+            href="/rankings/scoreboard"
             className="inline-flex min-h-10 items-center text-sm font-bold"
             style={{ color: "var(--stitch)" }}
           >
-            解説者の答え合わせを見る &#8594;
+            最新のスコアボードへ戻る &#8594;
           </Link>
         </div>
       </section>

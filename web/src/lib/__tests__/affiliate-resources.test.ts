@@ -1,8 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
   AFFILIATE_DISCLOSURE,
-  NO_AFFILIATE_NOTICE,
-  affiliateNotice,
   findAffiliateResource,
   getAffiliateResources,
 } from "../affiliate-resources";
@@ -28,15 +26,6 @@ describe("affiliate resources", () => {
   it("keeps a visible advertising disclosure", () => {
     expect(AFFILIATE_DISCLOSURE).toContain("広告");
     expect(AFFILIATE_DISCLOSURE).toContain("紹介料");
-  });
-
-  it("claims ads only while some link earns a commission", () => {
-    expect(getAffiliateResources().some((r) => r.monetized)).toBe(false);
-    expect(affiliateNotice(getAffiliateResources())).toBe(NO_AFFILIATE_NOTICE);
-    process.env.NEXT_PUBLIC_AMAZON_ASSOCIATE_TAG = "example-22";
-    const tagged = getAffiliateResources();
-    expect(tagged.find((r) => r.id === "scorebook")?.href).toContain("tag=example-22");
-    expect(affiliateNotice(tagged)).toBe(AFFILIATE_DISCLOSURE);
   });
 
   it("returns unique, allowlisted https resources", () => {

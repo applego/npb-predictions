@@ -188,10 +188,7 @@ product source e2f7626a24cbefbd5d2a053fa2b9596659018795。年度/リーグの選
 効果: 来訪者数・共有開始・X流入を毎日自動で取れる。決めない場合: 収益施策の効果を判定できない。
 代替: 対話端末で `wrangler login` を一度実行する（期限が切れると再び止まる）。
 
-## 2027年2〜3月向けの収益リンク（2026-10-30 追加・2026-11-01 下の「方針の見直し」で置き換え）
-
-> 2026-11-01訂正: 名鑑の紹介料は1人約0.02円で、Amazonの「180日で3件」を今の来訪で満たせない。最初の申請先はA8.net（スカパー!）に変更する。以下は当時の原文。
-
+## 2027年2〜3月向けの収益リンク（2026-10-30 追加・未回答）
 
 推奨: Amazonアソシエイトに本サイトで申請し、承認後に選手名鑑2027のリンクを/resourcesへ1件だけ掲載する。
 理由と根拠: MONETIZATION.md「2026オフ〜2027開幕の計画」。申請・規約同意・リンク公開はオーナーの操作。
@@ -233,27 +230,3 @@ Amazonは申請後180日以内に適格販売3件が審査条件のため、今�
 2日続けて300万行/日（上限の60%）を超えた時か、2〜3月の需要期に来訪が増えて超えそうな時に、Bを判断し直す。
 決めない場合: 上限を超えた日は、残りの時間APIが500を返し続ける。費用の発生する変更はオーナーの承認なしに行わない。
 出典: [D1 pricing](https://developers.cloudflare.com/d1/platform/pricing/)（2026-10-31確認。Workers Paidの月額は料金ページの別記載で、$5は最低額）。
-
-## 2026-11-01 方針の見直しと、オーナーに決めてほしいこと（未回答）
-
-調査: 競合・検索結果・海外事例（ESPN、PunditTracker、Metaculus 等）・ASPの公開条件・法規制（ステマ規制、景品表示法、賭博罪）。
-要点と根拠URLは MONETIZATION.md「2026-11-01 方針の見直し」と下の材料。推奨をそのまま採るなら「全部推奨どおり」の一言で確定する。
-
-| # | 問い | 推奨（既定） | 他の案 | 影響 | 決めない場合 |
-| --- | --- | --- | --- | --- | --- |
-| 1 | 収益の最初の申請先 | A8.net に登録し「スカパー!新規加入」に提携申請（無料。新規有料契約1件3,620円・A8公開値） | Amazonアソシエイト（名鑑。1冊約16〜45円、180日で3件が審査条件） | 開幕前（2027年3月）に視聴の比較リンクを置ける。登録・規約同意・提携申請・リンク公開はオーナーの操作 | 2〜3月の需要期に収益手段が無い |
-| 2 | 検索の計測 | Google Search Console で npb-predictions.pages.dev の所有権を確認（無料） | 確認しない | 実験 seo-ssr-01 / answer-page-01 の判定に必須。表示回数・検索語が分かる | 検索施策の効果を判定できない |
-| 3 | 支援の受け口 | OFUSE か GitHub Sponsors のボタンを1つ置く（無料・可逆。期待は月0〜数百円） | 置かない | 熱心な利用者の支援を受けられる。出金手数料がかかる（OFUSE 1回275円） | 支援の手段が無いまま |
-| 4 | 野球以外への展開 | 広げない。2027年4月に来訪の実測で再判断 | Jリーグ順位予想を追加 | 作業を野球の検索流入に集中できる | 推奨と同じ |
-| 5 | 利用者の予想 | 残すが主にしない。一般参加者の名前を解説者と同じ表に出す扱いを見直す | 利用者の予想を主軸にする | 個人情報・荒らしの負担を増やさずに済む | 現状のまま一般参加者の名前が解説者の表に並ぶ |
-| 6 | PR #118 の統合（本番デプロイ） | 統合する（1102の停止、解説者ランキングの検索対策、広告表記の訂正） | 統合しない | 本番の資源上限エラーと誤った広告表示が止まる | 本番で断続的な503と、紹介料の無いリンクの「広告」表記が続く |
-
-材料（2026-11-01確認）:
-- A8.net 公式ランキング（スカパー!新規加入 3,620円）: https://support.a8.net/as/HintOfProgram/ranking/entertainment.php
-- 楽天アフィリエイト料率表: https://affiliate.rakuten.co.jp/guides/rate/ ／ Amazonアソシエイト紹介料: https://affiliate.amazon.co.jp/help/node/topic/GRXPHT8U84RAYDXZ
-- ステマ規制（消費者庁）: https://www.caa.go.jp/policies/policy/representation/fair_labeling/stealth_marketing/
-- 景品規制（消費者庁）: https://www.caa.go.jp/policies/policy/representation/fair_labeling/premium_regulation/
-- 賞金と賭博罪の解説: https://monolith.law/corporate/esports-tournament-prize-money-gambling-offenses
-- 競合 ohtashp（採点なし・2018年〜・126人）: https://www.ohtashp.com/topics/baseball_yosou/index_sort.html
-- 専門家採点サイトの継続性（PunditTracker 報道は2012〜16年）: https://www.kuow.org/stories/grading-predictions-pundits
-- 未確認: Googleトレンドの数値（取得不可）、本番がインデックスされているか、DAZNの単価、OFUSEの現行料率、2027年の開幕日。

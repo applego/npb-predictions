@@ -750,7 +750,7 @@ function LoadingSkeleton() {
 
 // ── Main Client Component ──
 
-export function CommentatorRankingsClient({ serverPreview }: { serverPreview?: React.ReactNode } = {}) {
+export function CommentatorRankingsClient() {
   const [year, setYear] = useState<YearOption>(DEFAULT_YEAR);
   const [league, setLeague] = useState<LeagueFilter>("all");
   const [search, setSearch] = useState("");
@@ -820,11 +820,8 @@ export function CommentatorRankingsClient({ serverPreview }: { serverPreview?: R
 
   // Fetch data from API
   const fetchData = useCallback(async (y: YearOption, l: LeagueFilter, signal: AbortSignal) => {
-    // A season with no data answers 404; that is not a transient failure worth retrying.
-    let seasonMissing = false;
     const fetchRanking = async (yr: number, lg: LeagueFilter) => {
       const res = await fetch(`/api/rankings/commentators?year=${yr}&league=${lg}`, { signal });
-      if (res.status === 404) seasonMissing = true;
       if (!res.ok) return null;
       return (await res.json()) as CommentatorRankingsResponse;
     };
@@ -886,7 +883,7 @@ export function CommentatorRankingsClient({ serverPreview }: { serverPreview?: R
       const json = await fetchRanking(y, l);
       if (signal.aborted) return;
       if (!json) {
-        setError(seasonMissing ? `${y}年の解説者の順位予想データはありません。` : "読み込みに失敗しました。時間をおいて再度お試しください。");
+        setError("読み込みに失敗しました。時間をおいて再度お試しください。");
         setData(null);
         return;
       }
@@ -1132,7 +1129,7 @@ export function CommentatorRankingsClient({ serverPreview }: { serverPreview?: R
           {loading ? (
             "読み込み中..."
           ) : error ? (
-            <span style={{ color: error.endsWith("データはありません。") ? "var(--text-secondary)" : "var(--stitch)" }}>{error}</span>
+            <span style={{ color: "var(--stitch)" }}>{error}</span>
           ) : filtered.length > 0 ? (
             <>
               {filtered.length}人表示 /{" "}
@@ -1412,7 +1409,7 @@ export function CommentatorRankingsClient({ serverPreview }: { serverPreview?: R
 
       {/* Leaderboard Table */}
       {loading ? (
-        !data && serverPreview ? serverPreview : <LoadingSkeleton />
+        <LoadingSkeleton />
       ) : filtered.length > 0 ? (
         <div
           className="overflow-x-auto rounded-xl"

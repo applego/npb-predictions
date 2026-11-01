@@ -6,7 +6,6 @@ import ShareButton from "@/components/ShareButton";
 import { getSeasons, getScoreboardData } from "@/lib/scoreboard";
 import { ScoreboardTable } from "./ScoreboardClient";
 import { formatPredictionOwnerSubline } from "@/lib/prediction-owner-display";
-import { trendPage } from "@/lib/trend-page";
 import {
   BreadcrumbJsonLd,
   SportsEventJsonLd,
@@ -227,9 +226,9 @@ function Sparkline({
 export default async function StandingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ year?: string; view?: string; page?: string }>;
+  searchParams: Promise<{ year?: string; view?: string }>;
 }) {
-  const { year: yearParam, view, page: pageParam } = await searchParams;
+  const { year: yearParam, view } = await searchParams;
   const selectedYear = yearParam ? parseInt(yearParam, 10) : CURRENT_YEAR;
   const isTrend = view === "trend";
   const isCurrent = selectedYear >= CURRENT_YEAR;
@@ -265,11 +264,6 @@ export default async function StandingsPage({
         b.byYear.size;
       return avgB - avgA;
     });
-
-  const trendPaging = trendPage(pageParam, trendUsers.length);
-  const visibleTrendUsers = trendUsers.slice(trendPaging.start, trendPaging.end);
-  const trendPageHref = (page: number) =>
-    `/rankings/scoreboard?year=${selectedYear}&view=trend${page > 1 ? `&page=${page}` : ""}#trend-table`;
 
   const trendNameCounts = trendUsers.reduce((counts, user) => {
     counts.set(user.name, (counts.get(user.name) ?? 0) + 1);
@@ -314,7 +308,7 @@ export default async function StandingsPage({
           </h1>
           <p className="mt-0.5 text-sm" style={{ color: "var(--text-muted)" }}>
             {isTrend
-              ? `${trendUsers.length}人 / ${activeYears.length}シーズンの時系列推移${trendPaging.pages > 1 ? `（平均点順 ${trendPaging.start + 1}〜${trendPaging.end}人目を表示）` : ""}`
+              ? `${trendUsers.length}人 / ${activeYears.length}シーズンの時系列推移`
               : `${isCurrent ? "シーズン進行中" : `${selectedYear}年シーズン確定結果`}${currentData ? ` — ${currentData.scores.length}人` : ""}`}
           </p>
         </div>
@@ -398,7 +392,6 @@ export default async function StandingsPage({
             </p>
           </div>
         ) : (
-          <div id="trend-table" className="scroll-mt-20 space-y-3">
           <div
             className="max-w-full overflow-x-auto rounded-xl"
             style={{
@@ -427,7 +420,7 @@ export default async function StandingsPage({
                       minWidth: "194px",
                     }}
                   >
-                    予想者（平均点順）
+                    予想者
                   </th>
                   {reversedActiveYears.map((y) => (
                     <th
@@ -487,7 +480,7 @@ export default async function StandingsPage({
                 </tr>
               </thead>
               <tbody>
-                {visibleTrendUsers.map((user, idx) => {
+                {trendUsers.map((user, idx) => {
                   const scores = [...user.byYear.values()];
                   const avg =
                     scores.reduce((s, v) => s + v.score, 0) / scores.length;
@@ -526,9 +519,6 @@ export default async function StandingsPage({
                             display: "block",
                           }}
                         >
-                          <span style={{ color: "var(--text-muted)", fontSize: "11px", marginRight: "6px" }}>
-                            {trendPaging.start + idx + 1}.
-                          </span>
                           {user.name}
                         </span>
                         {metaLine && (
@@ -639,36 +629,6 @@ export default async function StandingsPage({
                 })}
               </tbody>
             </table>
-          </div>
-            {trendPaging.pages > 1 && (
-              <nav
-                aria-label="時系列のページ"
-                className="flex flex-wrap items-center gap-2"
-              >
-                <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-                  平均点順 {trendPaging.start + 1}〜{trendPaging.end}人目 / {trendUsers.length}人
-                </span>
-                <div className="flex flex-wrap gap-1">
-                  {/* Plain links: a full load lets the browser land on #trend-table after the rows stream in. */}
-                  {Array.from({ length: trendPaging.pages }, (_, i) => i + 1).map((page) => (
-                    <a
-                      key={page}
-                      href={trendPageHref(page)}
-                      aria-current={page === trendPaging.page ? "page" : undefined}
-                      className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-sm px-2 text-xs font-medium"
-                      style={{
-                        fontFamily: "var(--font-display)",
-                        background: page === trendPaging.page ? "var(--stitch)" : "var(--bg-surface)",
-                        color: page === trendPaging.page ? "#fff" : "var(--text-muted)",
-                        border: `1px solid ${page === trendPaging.page ? "var(--stitch)" : "var(--border-primary)"}`,
-                      }}
-                    >
-                      {page}
-                    </a>
-                  ))}
-                </div>
-              </nav>
-            )}
           </div>
         )
       ) : (
