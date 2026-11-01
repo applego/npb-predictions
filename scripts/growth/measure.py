@@ -6,12 +6,13 @@ import json
 import os
 import math
 import re
+import subprocess
 import sys
 import urllib.request
 from pathlib import Path
 
 ORIGIN = 'https://npb-predictions.pages.dev'
-METRICS = ['contribution_profit_28d', 'visitors_28d', 'x_visits_28d', 'affiliate_confirmed_28d', 'result_views_28d', 'x_share_starts_28d', 'card_downloads_28d', 'x_result_tabs_28d']
+METRICS = ['contribution_profit_28d', 'affiliate_confirmed_28d', 'result_views_28d', 'x_share_starts_28d', 'card_downloads_28d', 'x_result_tabs_28d', 'affiliate_clicks_28d', 'search_clicks_28d']
 
 def growth_events(report):
     if report.get('windowDays') != 28 or not isinstance(report.get('rows'), list):
@@ -65,12 +66,29 @@ def probe_routes(now):
             pass
     return {'value': successes, 'status': 'ok', 'sample_size': 3, 'data_through': now.isoformat()}
 
+def published_experiments(now):
+    """KDI: one-variable experiments whose publication time falls in the last 7 days (an action count, never the goal)."""
+    ledger = json.loads((Path(__file__).with_name('experiments.json')).read_text())
+    count = 0
+    for item in ledger.get('experiments', []):
+        raw = item.get('published_at')
+        if not raw:
+            continue
+        at = dt.datetime.fromisoformat(raw.replace('Z', '+00:00'))
+        if at.tzinfo is not None and now - dt.timedelta(days=7) <= at <= now:
+            count += 1
+    return {'value': count, 'status': 'ok', 'data_through': now.isoformat(), 'sample_size': len(ledger.get('experiments', []))}
+
+
 def main():
     if sys.argv[1:] == ['check']:
         json.loads((Path(__file__).parents[2] / '.agents/goal-loop.json').read_text())
         print('measurement entrypoint readable; external metrics may be missing')
         return 0
     now = dt.datetime.now(dt.timezone.utc)
+    if sys.argv[1:2] != ['evidence'] and os.environ.get('NPB_GROWTH_COLLECT', '1') != '0':
+        # Refresh the first-party part of the receipt (read-only D1); a failed source stays missing.
+        subprocess.run([sys.executable, str(Path(__file__).with_name('collect.py'))], timeout=600)
     metrics, private = load_metrics(now)
     if sys.argv[1:2] == ['evidence']:
         stage = sys.argv[2]
@@ -105,6 +123,7 @@ def main():
             report = json.load(response)
         metrics.update(growth_events(report))
     metrics['public_result_routes'] = probe_routes(now)
+    metrics['weekly_experiments_published'] = published_experiments(now)
     output = json.dumps({'goal_ref': 'npb-predictions', 'metrics': metrics}, ensure_ascii=False, sort_keys=True)
     print(json.dumps({'schema': 'evidence.v1', 'id': 'npb-growth-' + now.isoformat(),
                       'claim': 'Public HTTP response and externally sourced business metrics are separate',

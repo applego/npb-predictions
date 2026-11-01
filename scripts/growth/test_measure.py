@@ -35,8 +35,8 @@ class EvidenceTests(unittest.TestCase):
         for field, value in [('origin', 'https://example.com'), ('window_days', 7), ('data_through','2027-01-01T00:00:00+00:00')]:
             receipt = self.receipt();receipt[field] = value
             with self.assertRaises(ValueError): self.load(receipt)
-        metrics, _ = self.load(self.receipt(metrics={'visitors_28d': float('nan')}, sources={'visitors_28d':'fixture'}))
-        self.assertIsNone(metrics['visitors_28d']['value'])
+        metrics, _ = self.load(self.receipt(metrics={'result_views_28d': float('nan')}, sources={'result_views_28d':'fixture'}))
+        self.assertIsNone(metrics['result_views_28d']['value'])
     def test_cli_health_entrypoint(self):
         result = subprocess.run(['python3', str(PATH), 'check'], capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -62,4 +62,12 @@ class EvidenceTests(unittest.TestCase):
         self.assertNotIn('contribution_profit_28d', rows)
         report['windowDays'] = 7
         with self.assertRaises(ValueError): module.growth_events(report)
+class PublishedExperimentTests(unittest.TestCase):
+    def test_counts_only_publications_in_the_last_seven_days(self):
+        ledger = {'experiments': [{'id': 'a', 'published_at': '2026-10-20T00:00:00+00:00'},
+                                  {'id': 'b', 'published_at': '2026-10-10T00:00:00+00:00'},
+                                  {'id': 'c', 'published_at': None}, {'id': 'd'}]}
+        with patch.object(module.Path, 'read_text', return_value=json.dumps(ledger)):
+            self.assertEqual(module.published_experiments(NOW)['value'], 1)
+
 if __name__ == '__main__': unittest.main()
