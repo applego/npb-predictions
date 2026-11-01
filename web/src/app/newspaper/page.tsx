@@ -3,6 +3,7 @@ export const runtime = "edge";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { NPB_TEAMS } from "@/lib/teams";
+import { archivedNewspaperPath } from "@/lib/newspaper-archive";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://npb-predictions.pages.dev";
@@ -715,7 +716,7 @@ function TeamRow({
         {teams.map((team) => (
           <a
             key={team.slug}
-            href={`/api/newspaper/${team.slug}`}
+            href={archivedNewspaperPath(team.slug) ?? `/api/newspaper/${team.slug}`}
             target="_blank"
             rel="noopener noreferrer"
             style={{

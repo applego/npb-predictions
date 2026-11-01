@@ -8,6 +8,7 @@ import {
   type HeadlineChar,
 } from "@/lib/public-image-data";
 import { collectText, loadJPFonts } from "@/lib/og-font-subset";
+import { archivedNewspaperPath } from "@/lib/newspaper-archive";
 
 const W = 720;
 const H = 1280;
@@ -28,6 +29,8 @@ export async function GET(
   const { teamSlug } = await params;
   const team = getTeamBySlug(teamSlug);
   if (!team) return new Response(`Team not found: ${teamSlug}`, { status: 404 });
+  const archived = archivedNewspaperPath(team.slug);
+  if (archived) return Response.redirect(new URL(archived, _req.url), 302);
 
   const article = await getTeamNewspaperArticle(team);
   if (!article) {
