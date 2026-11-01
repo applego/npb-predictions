@@ -140,17 +140,17 @@ test.describe("release surface", () => {
       if (message.type() === "error") errors.push(message.text());
     });
     await loadReleaseSurface(page, "/resources");
-    await expect(page.getByRole("heading", { name: "日本シリーズ2026のテレビ・ネット中継" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "試合日程と中継はNPB公式サイトで確認" })).toBeVisible();
     const link = page.getByRole("link", { name: /視聴方法を確認する/ });
-    await expect(link).toHaveAttribute("href", "https://npb.jp/news/detail/20261020_02.html");
+    await expect(link).toHaveAttribute("href", "https://npb.jp/");
     // Do not navigate to or generate analytics on the real external service in CI.
-    await page.context().route("https://npb.jp/news/detail/20261020_02.html", (route) =>
+    await page.context().route("https://npb.jp/", (route) =>
       route.fulfill({ contentType: "text/html", body: "<h1>Official broadcast announcement</h1>" }),
     );
     const popupPromise = page.waitForEvent("popup");
     await link.click();
     const popup = await popupPromise;
-    await expect(popup).toHaveURL("https://npb.jp/news/detail/20261020_02.html");
+    await expect(popup).toHaveURL("https://npb.jp/");
     await expect(popup.getByRole("heading")).toHaveText("Official broadcast announcement");
     await popup.close();
     expect(errors).toEqual([]);
@@ -239,16 +239,18 @@ test.describe("release surface", () => {
     request,
   }) => {
     await loadReleaseSurface(page, "/resources");
-    await expect(
-      page.getByText(/広告・アフィリエイトリンク/),
-      "affiliate disclosure must be visible before outbound commercial links",
-    ).toBeVisible();
+    // CI has no associate tag configured: no link earns a commission, so the page must say so
+    // instead of claiming ads, and must not mark plain links as sponsored.
+    await expect(page.getByText(/紹介料を受け取ることはありません/)).toBeVisible();
+    await expect(page.getByText(/広告・アフィリエイトリンクを含む/)).toHaveCount(0);
 
     const scorebookLink = page.getByRole("link", {
       name: /スコアブックを探す/,
     });
     const href = await scorebookLink.getAttribute("href");
     expect(href).toMatch(/^https:\/\//);
+    expect(href).not.toContain("tag=");
+    await expect(scorebookLink).toHaveAttribute("rel", "noopener noreferrer");
 
     const response = await request.post("/api/affiliate/click", {
       data: {

@@ -27,6 +27,21 @@ type ResourceConfig = {
 export const AFFILIATE_DISCLOSURE =
   "このページには広告・アフィリエイトリンクを含む場合があります。購入や登録が発生すると、運営が紹介料を受け取ることがあります。";
 
+/** Shown while no link earns a commission, so the page never claims ads it does not carry. */
+export const NO_AFFILIATE_NOTICE =
+  "現在、このページのリンクはすべて通常のリンクで、運営が紹介料を受け取ることはありません。紹介料を受け取るリンクを置く時は、そのリンクに「広告」と表示します。";
+
+export function affiliateNotice(resources: AffiliateResource[]): string {
+  return resources.some((resource) => resource.monetized) ? AFFILIATE_DISCLOSURE : NO_AFFILIATE_NOTICE;
+}
+
+export const PROVIDER_LABELS: Record<AffiliateProvider, string> = {
+  amazon: "Amazon",
+  rakuten: "楽天市場",
+  moshimo: "もしも",
+  official: "公式",
+};
+
 const RESOURCE_CONFIGS: ResourceConfig[] = [
   {
     id: "scorebook",
@@ -58,8 +73,9 @@ const RESOURCE_CONFIGS: ResourceConfig[] = [
     description:
       "テレビ・ネット中継を試合ごとに確認。契約前に、見たい試合の配信対象と利用条件を公式案内で確かめましょう。",
     label: "視聴方法を確認する",
-    fallbackHref: "https://npb.jp/news/detail/20261020_02.html",
-    fallbackTitle: "日本シリーズ2026のテレビ・ネット中継",
+    // Off-season: the NPB top page carries the next schedule and broadcast notices.
+    fallbackHref: "https://npb.jp/",
+    fallbackTitle: "試合日程と中継はNPB公式サイトで確認",
     envKey: "AFFILIATE_STREAMING_URL",
   },
   {
