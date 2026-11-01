@@ -214,7 +214,7 @@ test.describe("release surface", () => {
     // Search engines read the first response; the interactive table used to arrive only via client fetch.
     const html = await (await request.get("/rankings/commentators")).text();
     expect(html).toContain('id="ranking-preview-heading"');
-    expect(html).toMatch(/<a [^>]*href="\/rankings\/commentators\/[^"]+"[^>]*>[^<]+<\/a>/);
+    expect(html).toMatch(/<a [^>]*href="\/commentators\/[^"]+"[^>]*>[^<]+<\/a>/);
   });
 
   test("scoreboard trend shows 50 people per page and the next page continues the order", async ({

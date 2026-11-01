@@ -886,7 +886,7 @@ export function CommentatorRankingsClient({ serverPreview }: { serverPreview?: R
       const json = await fetchRanking(y, l);
       if (signal.aborted) return;
       if (!json) {
-        setError(seasonMissing ? `${y}年の解説者の順位予想データはまだありません。` : "読み込みに失敗しました。時間をおいて再度お試しください。");
+        setError(seasonMissing ? `${y}年の解説者の順位予想データはありません。` : "読み込みに失敗しました。時間をおいて再度お試しください。");
         setData(null);
         return;
       }
@@ -1132,7 +1132,7 @@ export function CommentatorRankingsClient({ serverPreview }: { serverPreview?: R
           {loading ? (
             "読み込み中..."
           ) : error ? (
-            <span style={{ color: "var(--stitch)" }}>{error}</span>
+            <span style={{ color: error.endsWith("データはありません。") ? "var(--text-secondary)" : "var(--stitch)" }}>{error}</span>
           ) : filtered.length > 0 ? (
             <>
               {filtered.length}人表示 /{" "}
