@@ -1,0 +1,134 @@
+{
+  "note": "仮定の値。売上の実績ではない。実測やASPの条件が分かったら status を measured/confirmed にして書き換える",
+  "start_month": "2026-11",
+  "base_visitors_per_month": {
+    "now": {
+      "value": 300,
+      "status": "assumed",
+      "basis": "計測できる下限は2026-10-04〜31の28日で10人（計測に同意し結果ページを見た人のみ）。Pages Functionsは1日約800件だがクローラー・定期実行・CI・運営の確認を含み人数ではない"
+    },
+    "growth": {
+      "value": 3000,
+      "status": "assumed",
+      "basis": "共有と検索で現状の10倍"
+    },
+    "major": {
+      "value": 30000,
+      "status": "assumed",
+      "basis": "解説者予想まとめの定番サイト級"
+    }
+  },
+  "season_factor": {
+    "value": {
+      "11": 0.6,
+      "12": 0.4,
+      "01": 0.6,
+      "02": 1.5,
+      "03": 3.0,
+      "04": 1.5,
+      "05": 1.0,
+      "06": 1.0,
+      "07": 1.0,
+      "08": 1.0,
+      "09": 1.0,
+      "10": 1.2
+    },
+    "status": "assumed",
+    "basis": "解説者・新聞の順位予想が出るキャンプ〜開幕前(2〜3月)が最大、オフ(12月)が最小"
+  },
+  "paths": {
+    "book_affiliate": {
+      "label": "選手名鑑の紹介料",
+      "months": [
+        "12",
+        "01",
+        "02",
+        "03"
+      ],
+      "see_link_rate": {
+        "value": 0.3,
+        "status": "assumed"
+      },
+      "click_rate": {
+        "value": 0.03,
+        "status": "assumed"
+      },
+      "purchase_rate": {
+        "value": 0.05,
+        "status": "assumed"
+      },
+      "yen_per_purchase": {
+        "value": 45,
+        "status": "third_party",
+        "basis": "名鑑1冊約1,500円×紹介料3%前後（MONETIZATION.mdの第三者情報）。BBMカラー名鑑は536円（2026年2月）で1冊約16円"
+      },
+      "requires": "Amazonアソシエイト等の承認"
+    },
+    "adsense": {
+      "label": "結果ページの広告",
+      "months": [
+        "11",
+        "12",
+        "01",
+        "02",
+        "03",
+        "04",
+        "05",
+        "06",
+        "07",
+        "08",
+        "09",
+        "10"
+      ],
+      "pages_per_visit": {
+        "value": 2.0,
+        "status": "assumed"
+      },
+      "yen_per_1000_pages": {
+        "value": 150,
+        "status": "assumed",
+        "basis": "未確認。個人ブログの200〜400円/1000PVは第三者情報。承認後の実単価で置き換える"
+      },
+      "requires": "AdSense審査の承認"
+    },
+    "streaming_affiliate": {
+      "label": "配信・放送の新規契約紹介料",
+      "months": [
+        "03",
+        "04",
+        "05",
+        "06",
+        "07",
+        "08",
+        "09",
+        "10"
+      ],
+      "click_rate": {
+        "value": 0.01,
+        "status": "assumed"
+      },
+      "signup_rate": {
+        "value": 0.02,
+        "status": "assumed"
+      },
+      "yen_per_signup": {
+        "value": 3620,
+        "status": "published",
+        "basis": "A8.net公式ランキング「スカパー!新規加入」新規有料契約1件3,620円（2026-10-13更新分、2026-11-01確認 https://support.a8.net/as/HintOfProgram/ranking/entertainment.php ）。DAZNは単価未確認"
+      },
+      "requires": "A8.net登録とスカパー!の提携承認"
+    }
+  },
+  "costs_per_month": {
+    "cloudflare": {
+      "value": 0,
+      "status": "measured",
+      "basis": "Workers無料枠。D1が上限を超え続けるならWorkers Paid $5〜（約780円）"
+    },
+    "agent": {
+      "value": null,
+      "status": "unknown",
+      "basis": "Agent/APIの按分費用。オーナーが金額を決めるまで未計上"
+    }
+  }
+}

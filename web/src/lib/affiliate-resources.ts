@@ -27,6 +27,21 @@ type ResourceConfig = {
 export const AFFILIATE_DISCLOSURE =
   "このページには広告・アフィリエイトリンクを含む場合があります。購入や登録が発生すると、運営が紹介料を受け取ることがあります。";
 
+/** Shown while no link earns a commission, so the page never claims ads it does not carry. */
+export const NO_AFFILIATE_NOTICE =
+  "現在、このページのリンクはすべて通常のリンクで、運営が紹介料を受け取ることはありません。紹介料を受け取るリンクを置く時は、そのリンクに「広告」と表示します。";
+
+export function affiliateNotice(resources: AffiliateResource[]): string {
+  return resources.some((resource) => resource.monetized) ? AFFILIATE_DISCLOSURE : NO_AFFILIATE_NOTICE;
+}
+
+export const PROVIDER_LABELS: Record<AffiliateProvider, string> = {
+  amazon: "Amazon",
+  rakuten: "楽天市場",
+  moshimo: "もしも",
+  official: "NPB公式",
+};
+
 const RESOURCE_CONFIGS: ResourceConfig[] = [
   {
     id: "scorebook",
@@ -58,8 +73,9 @@ const RESOURCE_CONFIGS: ResourceConfig[] = [
     description:
       "テレビ・ネット中継を試合ごとに確認。契約前に、見たい試合の配信対象と利用条件を公式案内で確かめましょう。",
     label: "視聴方法を確認する",
-    fallbackHref: "https://npb.jp/news/detail/20261020_02.html",
-    fallbackTitle: "日本シリーズ2026のテレビ・ネット中継",
+    // Off-season: the NPB top page carries the next schedule and broadcast notices.
+    fallbackHref: "https://npb.jp/",
+    fallbackTitle: "試合日程と中継はNPB公式サイトで確認",
     envKey: "AFFILIATE_STREAMING_URL",
   },
   {
@@ -68,7 +84,7 @@ const RESOURCE_CONFIGS: ResourceConfig[] = [
     provider: "amazon",
     title: "応援グッズ・観戦小物",
     description:
-      "現地観戦やスポーツバー観戦の前に。チームカラーの小物や暑さ対策グッズをまとめて探せます。",
+      "現地観戦やスポーツバー観戦の前に。チームカラーの小物や観戦に便利な道具をまとめて探せます。",
     label: "観戦グッズを探す",
     fallbackHref: "https://www.amazon.co.jp/s?k=%E3%83%97%E3%83%AD%E9%87%8E%E7%90%83+%E5%BF%9C%E6%8F%B4%E3%82%B0%E3%83%83%E3%82%BA",
     envKey: "AFFILIATE_FAN_GEAR_URL",

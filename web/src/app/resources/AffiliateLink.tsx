@@ -25,7 +25,7 @@ export function AffiliateLink({ resource }: { resource: AffiliateResource }) {
     <a
       href={resource.href}
       target="_blank"
-      rel="sponsored noopener noreferrer"
+      rel={resource.monetized ? "sponsored noopener noreferrer" : "noopener noreferrer"}
       onClick={recordClick}
       className="inline-flex min-h-11 items-center justify-center rounded-lg px-4 py-2.5 text-sm font-bold transition-all"
       style={{
