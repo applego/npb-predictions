@@ -79,8 +79,8 @@ async function RankingPreview() {
           <li key={c.userId} className="flex break-inside-avoid items-baseline gap-2 py-0.5">
             {/* Same numbering as the interactive table that replaces this list. */}
             <span className="w-7 text-right text-xs" style={{ color: "var(--text-muted)" }}>{c.rank}.</span>
-            {/* /commentators shows each pick against the actual standings, not only the totals. */}
-            <Link href={`/commentators/${c.slug}`} className="underline underline-offset-2" style={{ color: "var(--text-primary)" }}>
+            {/* Same destination as the table's names, so a name never leads to two different pages. */}
+            <Link href={`/rankings/commentators/${c.slug}`} className="underline underline-offset-2" style={{ color: "var(--text-primary)" }}>
               {c.name}
             </Link>
             <span className="ml-auto text-xs" style={{ color: "var(--text-muted)" }}>
