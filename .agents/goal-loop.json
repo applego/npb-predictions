@@ -6,13 +6,14 @@
     "npb-predictions#public_result_routes"
   ],
   "diagnostic_refs": [
-    "npb-predictions#visitors_28d",
-    "npb-predictions#x_visits_28d",
-    "npb-predictions#affiliate_confirmed_28d",
+    "npb-predictions#search_clicks_28d",
     "npb-predictions#result_views_28d",
+    "npb-predictions#affiliate_clicks_28d",
+    "npb-predictions#affiliate_confirmed_28d",
     "npb-predictions#x_share_starts_28d",
+    "npb-predictions#x_result_tabs_28d",
     "npb-predictions#card_downloads_28d",
-    "npb-predictions#x_result_tabs_28d"
+    "npb-predictions#weekly_experiments_published"
   ],
   "measure_command": "python3 scripts/growth/measure.py",
   "wip": {

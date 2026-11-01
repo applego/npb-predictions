@@ -80,7 +80,7 @@
       "status": "prepared",
       "variable": "解説者ランキングの初期HTMLに当年上位30人の名前とリンクを入れる",
       "prediction": {
-        "metric_ref": "npb-predictions#visitors_28d"
+        "metric_ref": "npb-predictions#search_clicks_28d"
       },
       "window_days": 28,
       "verdict": null,
@@ -105,7 +105,7 @@
       "status": "proposed",
       "variable": "2026年の解説者順位予想の確定答え合わせページ（誰が当てたか）を1枚公開",
       "prediction": {
-        "metric_ref": "npb-predictions#visitors_28d"
+        "metric_ref": "npb-predictions#search_clicks_28d"
       },
       "window_days": 56,
       "verdict": null,
@@ -130,7 +130,7 @@
       "status": "proposed",
       "variable": "2027年の解説者予想を発表から24時間以内に一覧へ追加",
       "prediction": {
-        "metric_ref": "npb-predictions#visitors_28d"
+        "metric_ref": "npb-predictions#search_clicks_28d"
       },
       "window_days": 50,
       "verdict": null,
