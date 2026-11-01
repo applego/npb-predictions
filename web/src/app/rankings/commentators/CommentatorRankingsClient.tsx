@@ -750,7 +750,7 @@ function LoadingSkeleton() {
 
 // ── Main Client Component ──
 
-export function CommentatorRankingsClient() {
+export function CommentatorRankingsClient({ serverPreview }: { serverPreview?: React.ReactNode } = {}) {
   const [year, setYear] = useState<YearOption>(DEFAULT_YEAR);
   const [league, setLeague] = useState<LeagueFilter>("all");
   const [search, setSearch] = useState("");
@@ -1409,7 +1409,7 @@ export function CommentatorRankingsClient() {
 
       {/* Leaderboard Table */}
       {loading ? (
-        <LoadingSkeleton />
+        !data && serverPreview ? serverPreview : <LoadingSkeleton />
       ) : filtered.length > 0 ? (
         <div
           className="overflow-x-auto rounded-xl"
