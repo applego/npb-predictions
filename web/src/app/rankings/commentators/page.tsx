@@ -74,14 +74,12 @@ async function RankingPreview() {
       <h2 id="ranking-preview-heading" className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
         {PREVIEW_YEAR}年 順位予想の得点 上位{Math.min(PREVIEW_COUNT, body.commentators.length)}人（全{body.totalCommentators}人・セパ両リーグ）
       </h2>
-      <ol className="mt-3 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
+      <ol className="mt-3 gap-x-6 text-sm sm:columns-2">
         {body.commentators.slice(0, PREVIEW_COUNT).map((c) => (
-          <li key={c.userId} className="flex items-baseline gap-2">
-            {/* Equal scores share a rank (1, 1, 3), unlike the list position. */}
-            <span className="w-7 text-right text-xs" style={{ color: "var(--text-muted)" }}>
-              {1 + body.commentators.filter((o) => o.effectiveTotal > c.effectiveTotal).length}.
-            </span>
-            <Link href={`/rankings/commentators/${c.slug}`} style={{ color: "var(--text-secondary)" }}>
+          <li key={c.userId} className="flex break-inside-avoid items-baseline gap-2 py-0.5">
+            {/* Same numbering as the interactive table that replaces this list. */}
+            <span className="w-7 text-right text-xs" style={{ color: "var(--text-muted)" }}>{c.rank}.</span>
+            <Link href={`/rankings/commentators/${c.slug}`} className="underline underline-offset-2" style={{ color: "var(--text-primary)" }}>
               {c.name}
             </Link>
             <span className="ml-auto text-xs" style={{ color: "var(--text-muted)" }}>

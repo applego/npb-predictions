@@ -152,11 +152,11 @@ export default function ResourcesPage() {
         </p>
         <div className="mt-3">
           <Link
-            href="/rankings/scoreboard"
+            href="/rankings"
             className="inline-flex min-h-10 items-center text-sm font-bold"
             style={{ color: "var(--stitch)" }}
           >
-            最新のスコアボードへ戻る &#8594;
+            解説者の答え合わせを見る &#8594;
           </Link>
         </div>
       </section>

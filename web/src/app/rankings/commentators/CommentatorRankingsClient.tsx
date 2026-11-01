@@ -820,8 +820,11 @@ export function CommentatorRankingsClient({ serverPreview }: { serverPreview?: R
 
   // Fetch data from API
   const fetchData = useCallback(async (y: YearOption, l: LeagueFilter, signal: AbortSignal) => {
+    // A season with no data answers 404; that is not a transient failure worth retrying.
+    let seasonMissing = false;
     const fetchRanking = async (yr: number, lg: LeagueFilter) => {
       const res = await fetch(`/api/rankings/commentators?year=${yr}&league=${lg}`, { signal });
+      if (res.status === 404) seasonMissing = true;
       if (!res.ok) return null;
       return (await res.json()) as CommentatorRankingsResponse;
     };
@@ -883,7 +886,7 @@ export function CommentatorRankingsClient({ serverPreview }: { serverPreview?: R
       const json = await fetchRanking(y, l);
       if (signal.aborted) return;
       if (!json) {
-        setError("読み込みに失敗しました。時間をおいて再度お試しください。");
+        setError(seasonMissing ? `${y}年の解説者の順位予想データはまだありません。` : "読み込みに失敗しました。時間をおいて再度お試しください。");
         setData(null);
         return;
       }

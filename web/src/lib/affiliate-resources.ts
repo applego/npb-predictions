@@ -39,7 +39,7 @@ export const PROVIDER_LABELS: Record<AffiliateProvider, string> = {
   amazon: "Amazon",
   rakuten: "楽天市場",
   moshimo: "もしも",
-  official: "公式",
+  official: "NPB公式",
 };
 
 const RESOURCE_CONFIGS: ResourceConfig[] = [
@@ -84,7 +84,7 @@ const RESOURCE_CONFIGS: ResourceConfig[] = [
     provider: "amazon",
     title: "応援グッズ・観戦小物",
     description:
-      "現地観戦やスポーツバー観戦の前に。チームカラーの小物や暑さ対策グッズをまとめて探せます。",
+      "現地観戦やスポーツバー観戦の前に。チームカラーの小物や観戦に便利な道具をまとめて探せます。",
     label: "観戦グッズを探す",
     fallbackHref: "https://www.amazon.co.jp/s?k=%E3%83%97%E3%83%AD%E9%87%8E%E7%90%83+%E5%BF%9C%E6%8F%B4%E3%82%B0%E3%83%83%E3%82%BA",
     envKey: "AFFILIATE_FAN_GEAR_URL",
