@@ -11,6 +11,8 @@ export interface SheetRow {
   isMine: boolean;
   /** Full team names, index 0 = predicted 1st. */
   order: string[];
+  /** ISO time a participant saved this on the site before the season (a dated, fixed prediction). */
+  registeredAt?: string;
   /** Present only when actual standings exist. */
   result: { actualRanks: number[]; exact: number; deviation: number; points: number } | null;
 }
@@ -26,6 +28,8 @@ export interface SheetQuery {
   /** Selected commentator userIds, in the order given; null = use the default selection. */
   picks: number[] | null;
   me: { name: string; order: string[] } | null;
+  /** userId of a participant whose prediction was saved and fixed on the site before the season. */
+  user: number | null;
   /** Display name carried across league/year switches even before picks are complete. */
   name?: string;
 }
@@ -44,7 +48,9 @@ export function parseSheetQuery(query: RawQuery): SheetQuery {
     : null;
   const name = (first(query.me) ?? "").trim().slice(0, SHEET_NAME_MAX);
   const order = decodeOrder(first(query.order) ?? "", league);
-  return { league, sort, picks, me: name && order ? { name, order } : null, ...(name && !order ? { name } : {}) };
+  const rawUser = first(query.u) ?? "";
+  const user = /^[1-9]\d{0,9}$/.test(rawUser) ? Number(rawUser) : null;
+  return { league, sort, picks, user, me: name && order ? { name, order } : null, ...(name && !order ? { name } : {}) };
 }
 
 /** "神,巨,De,広,中,ヤ" → full names; null unless it is exactly the six teams of the league. */
@@ -63,6 +69,7 @@ export function encodeOrder(order: string[], league: ResultLeague): string {
 export function sheetUrl(origin: string, year: number, query: SheetQuery): string {
   const params = new URLSearchParams({ year: String(year), league: query.league, sort: query.sort });
   if (query.picks) params.set("picks", query.picks.join(","));
+  if (query.user) params.set("u", String(query.user));
   if (query.me) {
     params.set("me", query.me.name);
     params.set("order", encodeOrder(query.me.order, query.league));

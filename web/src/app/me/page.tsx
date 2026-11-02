@@ -7,6 +7,7 @@ import Link from "next/link";
 import PredictionImageGenerator from "@/components/PredictionImageGenerator";
 import { generateArticleV2, type ArticleVarsV2 } from "@/lib/article-templates-v2";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
+import { formatRegisteredAt, provableRegistration, registrationState, toDate } from "@/lib/prediction-registration";
 
 // ── Types ──
 
@@ -47,6 +48,17 @@ interface RankingPick {
 interface SeasonEntry {
   id: number;
   year: number;
+  isActive?: boolean;
+  lockDate?: string | number | null;
+}
+
+/** The caller's own prediction for one season; registeredAt is the last save. */
+interface OwnPrediction {
+  central: string[];
+  pacific: string[];
+  registeredAt: string | null;
+  isLocked: boolean;
+  lockedAt: string | null;
 }
 
 // ── Component ──
@@ -58,7 +70,7 @@ export default function MyPage() {
   const [allCommentators, setAllCommentators] = useState<AllTimeEntry[]>([]);
   const [groups, setGroups] = useState<GroupEntry[]>([]);
   const [predictions, setPredictions] = useState<
-    Map<number, { central: string[]; pacific: string[] }>
+    Map<number, OwnPrediction>
   >(new Map());
   const [seasons, setSeasons] = useState<SeasonEntry[]>([]);
   const [predictionError, setPredictionError] = useState(false);
@@ -112,13 +124,13 @@ export default function MyPage() {
           setSeasons(seasonsData);
 
           // Own drafts are private: resolve the caller from their verified token.
-          const predMap = new Map<
-            number,
-            { central: string[]; pacific: string[] }
-          >();
+          const predMap = new Map<number, OwnPrediction>();
 
           interface PredictionResponse {
             rankingPicks?: RankingPick[];
+            updatedAt?: string;
+            isLocked?: boolean;
+            lockedAt?: string | null;
           }
 
           const predResults = await Promise.all(
@@ -142,7 +154,12 @@ export default function MyPage() {
               .filter((p) => p.league === "pacific")
               .sort((a, b) => a.rank - b.rank)
               .map((p) => p.teamName);
-            predMap.set(seasonsData[i].year, { central, pacific });
+            predMap.set(seasonsData[i].year, {
+              central, pacific,
+              registeredAt: result.updatedAt ?? null,
+              isLocked: result.isLocked === true,
+              lockedAt: result.lockedAt ?? null,
+            });
           }
           if (!cancelled) setPredictions(predMap);
         }
@@ -667,7 +684,7 @@ function PredictionsCard({
   userName,
   userId,
 }: {
-  predictions: Map<number, { central: string[]; pacific: string[] }>;
+  predictions: Map<number, OwnPrediction>;
   seasons: SeasonEntry[];
   userName: string;
   userId: number;
@@ -721,9 +738,10 @@ function PredictionsCard({
         自分の予想
       </h2>
 
-      {sortedSeasons.length === 0 && (
+      {predictions.size === 0 && (
         <p style={{ fontSize: "0.875rem", color: "var(--text-muted)" }}>
-          まだ予想はありません
+          まだ予想はありません。{" "}
+          <Link href="/predictions/new" style={{ color: "var(--stitch)", fontWeight: 600 }}>予想をつくる →</Link>
         </p>
       )}
 
@@ -791,6 +809,8 @@ function PredictionsCard({
                 </span>
               </div>
 
+              <RegistrationLine prediction={picks} season={s} userId={userId} />
+
               {/* Image generation button */}
               <div style={{ marginTop: "0.5rem" }}>
                 {imageYear === s.year && articleForYear ? (
@@ -800,6 +820,7 @@ function PredictionsCard({
                     year={s.year}
                     centralPicks={picks.central}
                     pacificPicks={picks.pacific}
+                    registeredAt={provableRegistration(picks)}
                     article={{
                       headline: articleForYear.headline,
                       subtext: articleForYear.subtext,
@@ -834,6 +855,35 @@ function PredictionsCard({
         })}
       </div>
     </div>
+  );
+}
+
+// ── Registration line ──
+
+/** When the prediction was saved, whether it can still change, and the dated comparison once fixed. */
+function RegistrationLine({ prediction, season, userId }: { prediction: OwnPrediction; season: SeasonEntry; userId: number }) {
+  if (!prediction.registeredAt) return null;
+  const state = registrationState(prediction, season);
+  // Same rule as the sheet, the picture and the share text.
+  const provable = provableRegistration(prediction) !== null;
+  const lock = toDate(season.lockDate ?? null);
+  const status = state === "fixed"
+    ? "固定済み（変更できません）"
+    : state === "open"
+      ? lock ? `${formatRegisteredAt(lock)}まで変更できます` : "締め切りまで変更できます"
+      : "締め切り後のため変更できません";
+  return (
+    <p data-testid={`registration-${season.year}`} style={{ margin: "0.375rem 0 0", fontSize: "0.75rem", color: "var(--text-secondary)", lineHeight: 1.6 }}>
+      登録 {formatRegisteredAt(prediction.registeredAt)}・{status}
+      {provable && (
+        <>
+          {" "}
+          <Link href={`/sheet?year=${season.year}&league=central&u=${userId}`} style={{ color: "var(--stitch)", fontWeight: 600 }}>
+            解説者と並べて答え合わせ →
+          </Link>
+        </>
+      )}
+    </p>
   );
 }
 

@@ -120,6 +120,26 @@
       "test_id": "own prediction joins the commentator sheet and is shareable at 390px",
       "expected_outcome": "表示名と6球団を入れると参考として解説者の後ろに並び、画像保存とX共有ができ、共有リンクを開いた人にはその人の行として見える",
       "max_operations": 10
+    },
+    {
+      "id": "registered-prediction-me",
+      "question": "開幕前に登録した自分の予想が、登録日時と固定状態つきで見え、画像と共有文に登録日が入るか",
+      "role": "ログインした参加者",
+      "route": "/me",
+      "fixture": "web/e2e/registered-prediction.e2e.ts（認証境界と本人予想APIを合成データで置換）",
+      "test_id": "My Page shows the saved time, the fixed state and puts the date on the picture and share text",
+      "expected_outcome": "「登録 2026年3月20日 12:00・固定済み」と答え合わせへのリンクが出て、画像の下に登録日、Xの共有文に（3/20登録）が入る",
+      "max_operations": 4
+    },
+    {
+      "id": "registered-prediction-sheet",
+      "question": "開幕前に登録・固定された予想を、解説者と同じ順位で答え合わせできるか",
+      "role": "野球ファン",
+      "route": "/sheet?year=2026&league=central&u=:userId",
+      "fixture": "web/src/db/fixtures/e2e-results.sql（検証用 登録済み）",
+      "test_id": "the sheet ranks a prediction fixed before the season with its saved date, and refuses hand-locked rows",
+      "expected_outcome": "登録日つきの行が参考扱いでなく点数順に並び、共有文とURLに登録日と参加者が残り、締め切り時刻の記録が無い行は出ない",
+      "max_operations": 3
     }
   ]
 }

@@ -1,3 +1,4 @@
+import { shortRegisteredAt } from "./prediction-registration";
 /**
  * Share URL builder and OG image URL utilities for social sharing.
  */
@@ -71,15 +72,20 @@ export function getShareUrl(
  */
 export function getShareText(
   type: OgType,
-  params: OgParams & { userName?: string } = {}
+  params: OgParams & { userName?: string; registeredAt?: string | null } = {}
 ): string {
   const year = params.year ?? new Date().getFullYear();
 
   switch (type) {
     case "prediction":
-      return params.userName
-        ? `${params.userName}の${year}年プロ野球順位予想を公開! #みんなの順位予想対決`
-        : `${year}年プロ野球順位予想を公開! #みんなの順位予想対決`;
+      {
+        // The registered date is what makes the prediction worth comparing after the season.
+        const dated = params.registeredAt ? shortRegisteredAt(params.registeredAt) : "";
+        const label = `${year}年プロ野球順位予想${dated ? `（${dated}）` : ""}`;
+        return params.userName
+          ? `${params.userName}の${label}を公開! #みんなの順位予想対決`
+          : `${label}を公開! #みんなの順位予想対決`;
+      }
     case "scoreboard":
       return `${year}年みんなの順位予想対決 現在のスコアボード! #みんなの順位予想対決`;
     case "monthly-champion":
@@ -96,7 +102,7 @@ export function getShareText(
  */
 export function getTwitterShareUrl(
   type: OgType,
-  params: OgParams & { userName?: string } = {}
+  params: OgParams & { userName?: string; registeredAt?: string | null } = {}
 ): string {
   const text = getShareText(type, params);
   const url = getShareUrl(type, params);

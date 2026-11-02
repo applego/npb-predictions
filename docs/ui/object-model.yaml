@@ -22,8 +22,8 @@ objects:
   - name: 自分の予想
     collection: /rankings/commentators?year=:year
     identity: 認証された本人と年度
-    attributes: [名前, 球団別予想, 読み込み状態, 未登録, 取得失敗]
-    actions: [比較へ追加する, 再取得する]
+    attributes: [名前, 球団別予想, 読み込み状態, 未登録, 取得失敗, 登録日時, 固定状態（変更できる期限／固定済み）]
+    actions: [比較へ追加する, 再取得する, 画像を生成する, Xでシェアする, 解説者と並べて答え合わせする]
     related: [シーズン, 解説者の予想結果]
   - name: 解説者の予想比較
     collection: /rankings/commentators
@@ -34,12 +34,13 @@ objects:
   - name: 予想一覧
     collection: /sheet?year=:year&league=:league
     identity: yearとleagueと選んだ予想者と自分の予想
-    attributes: [年度, リーグ, 確定状態, 実際の順位, 予想者, 表示名, 球団別予想, 的中数, ずれ合計, 点数, 並び順, 参考（入力日の記録なし）]
+    attributes: [年度, リーグ, 確定状態, 実際の順位, 予想者, 表示名, 球団別予想, 的中数, ずれ合計, 点数, 並び順, 参考（入力日の記録なし）, 登録・固定（登録日）]
     actions: [自分の予想を入れる, 並べる解説者を選ぶ, 並べ替える, 共有された予想を外す, 一覧を画像で保存する, Xで共有する]
     related: [シーズン, 解説者の予想結果, 球団]
     # 自分の予想と表示名はURLにだけ持ち、サーバーへ保存しない。画像は端末内で生成する。
     # URLの予想は入力日を証明できないため、結果が出た後は「参考」として解説者の後ろに並べ、順位の対象にしない。
     # 共有リンクの予想は「〇〇さん」の行として表示し、開いた人の入力欄は空にする。
-url_state: [year, league, q, perfect, sort, '#predictor-id', picks, me, order]
+    # u=参加者ID の行は、サイトに開幕前に登録し締め切り時刻の記録つきで固定された予想。登録日を出し、解説者と同じく順位の対象にする。
+url_state: [year, league, q, perfect, sort, '#predictor-id', picks, me, order, u]
 forbidden_terms: [的中率100パーセント保証, 歴代最高]
   # 結果カードは解説者の予想結果の画像projection。端末内で生成し、外部送信しない。
