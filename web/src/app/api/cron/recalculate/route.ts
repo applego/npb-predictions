@@ -20,6 +20,7 @@ import {
   type ActualTitle,
 } from "@/lib/scoring";
 import { checkCronAuth } from "@/lib/cron-auth";
+import { lockDuePredictions } from "@/lib/prediction-lock";
 
 /**
  * POST /api/cron/recalculate
@@ -69,13 +70,16 @@ async function handlePOST(req: Request) {
     // Body is optional
   }
 
+  // Fix predictions whose lock time has passed, so public pages can show them.
+  const lockedPredictions = await lockDuePredictions(getDb());
+
   // Load seasons to process
   const allSeasons = targetYear
     ? await getDb().select().from(seasons).where(eq(seasons.year, targetYear))
     : await getDb().select().from(seasons).where(eq(seasons.isActive, true));
 
   if (allSeasons.length === 0) {
-    return NextResponse.json({ message: "No seasons to process", processed: [] });
+    return NextResponse.json({ message: "No seasons to process", processed: [], lockedPredictions });
   }
 
   const results = [];
@@ -183,5 +187,5 @@ async function handlePOST(req: Request) {
     });
   }
 
-  return NextResponse.json({ calculatedAt: now.toISOString(), processed: results });
+  return NextResponse.json({ calculatedAt: now.toISOString(), processed: results, lockedPredictions });
 }

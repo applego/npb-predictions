@@ -2,7 +2,8 @@
 
 import { useRef, useCallback, useState } from "react";
 import { getTeamByName } from "@/lib/teams";
-import { getTwitterShareUrl } from "@/lib/share";
+import { getShareText, getTwitterShareUrl } from "@/lib/share";
+import { fixedLabel } from "@/lib/prediction-registration";
 
 interface DrawProps {
   userName: string;
@@ -10,6 +11,8 @@ interface DrawProps {
   centralPicks: string[]; // shortName array, 1st to 6th
   pacificPicks: string[]; // shortName array, 1st to 6th
   article: { headline: string; subtext: string };
+  /** Saved time, only when it proves the prediction was fixed before the season (provableRegistration). */
+  registeredAt?: string | null;
 }
 
 interface PredictionImageGeneratorProps extends DrawProps {
@@ -132,7 +135,8 @@ function drawPredictionImage(
   ctx.fillStyle = MUTED_TEXT;
   ctx.font = "14px 'Hiragino Sans', 'Noto Sans JP', sans-serif";
   ctx.textAlign = "left";
-  ctx.fillText(`予想者: ${props.userName}`, 40, H - 28);
+  const registered = props.registeredAt ? fixedLabel(props.registeredAt) : "";
+  ctx.fillText(`予想者: ${props.userName}${registered ? `　${registered}` : ""}`, 40, H - 28);
 
   // URL branding
   ctx.textAlign = "right";
@@ -247,6 +251,7 @@ export default function PredictionImageGenerator({
   centralPicks,
   pacificPicks,
   article,
+  registeredAt = null,
 }: PredictionImageGeneratorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [generated, setGenerated] = useState(false);
@@ -260,9 +265,10 @@ export default function PredictionImageGenerator({
       centralPicks,
       pacificPicks,
       article,
+      registeredAt,
     });
     setGenerated(true);
-  }, [userName, year, centralPicks, pacificPicks, article]);
+  }, [userName, year, centralPicks, pacificPicks, article, registeredAt]);
 
   const handleSave = useCallback(() => {
     const canvas = canvasRef.current;
@@ -280,7 +286,7 @@ export default function PredictionImageGenerator({
 
   const handleShare = useCallback(async () => {
     const canvas = canvasRef.current;
-    const twitterUrl = getTwitterShareUrl("prediction", { userId, year, userName });
+    const twitterUrl = getTwitterShareUrl("prediction", { userId, year, userName, registeredAt });
 
     // Try Web Share API with image file (works on mobile / modern browsers)
     if (canvas && typeof navigator !== "undefined" && navigator.canShare) {
@@ -290,7 +296,7 @@ export default function PredictionImageGenerator({
           const file = new File([blob], `npb-prediction-${userName}-${year}.png`, { type: "image/png" });
           if (navigator.canShare({ files: [file] })) {
             try {
-              await navigator.share({ files: [file], title: "みんなの順位予想対決", text: `${userName}の${year}年プロ野球順位予想 #みんなの順位予想対決` });
+              await navigator.share({ files: [file], title: "みんなの順位予想対決", text: getShareText("prediction", { year, userName, registeredAt }) });
               resolve();
               return;
             } catch {
@@ -315,7 +321,7 @@ export default function PredictionImageGenerator({
       }, "image/png");
     }
     window.open(twitterUrl, "_blank", "noopener,noreferrer");
-  }, [userId, userName, year]);
+  }, [userId, userName, year, registeredAt]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>

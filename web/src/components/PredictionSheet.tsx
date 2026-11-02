@@ -8,6 +8,8 @@ import {
   SHEET_MAX_COMMENTATORS, SHEET_NAME_MAX, scoreOrder, sheetUrl, sortRows,
   type SheetQuery, type SheetRow, type SheetSort,
 } from "@/lib/prediction-sheet";
+import { fixedLabel, formatRegisteredAt, shortRegisteredAt } from "@/lib/prediction-registration";
+import type { RegisteredPrediction } from "@/lib/registered-prediction";
 
 export interface SheetCommentator { userId: number; name: string; source: string | null; order: string[]; result: SheetRow["result"] }
 
@@ -15,6 +17,8 @@ export interface SheetCommentator { userId: number; name: string; source: string
 // could be edited). Once results exist they are reference only: labelled, and kept out of the ranking.
 const REFERENCE_LABEL = "参考・順位の対象外";
 const REFERENCE_NOTE = "参考：入力日の記録なし・順位の対象外";
+// Saved on the site and fixed at the season's lock time, so it is ranked with the commentators.
+const UNREGISTERED_NOTE = "この参加者の予想は、開幕前に登録・固定した記録が無いため表示していません。";
 /** A display name in the share text must not notify a real X account. */
 const noMention = (value: string) => value.replace(/@/g, "＠");
 
@@ -22,10 +26,10 @@ const SORTS: { key: SheetSort; label: string }[] = [
   { key: "points", label: "点数" }, { key: "exact", label: "的中数" }, { key: "deviation", label: "ずれ合計" },
 ];
 
-export function PredictionSheet({ year, years, league, status, actualOrder, commentators, defaultPicks, initialQuery, unavailable }: {
+export function PredictionSheet({ year, years, league, status, actualOrder, commentators, defaultPicks, initialQuery, unavailable, registered = null }: {
   year: number; years: number[]; league: ResultLeague; status: "final" | "provisional" | "none";
   actualOrder: string[] | null; commentators: SheetCommentator[]; defaultPicks: number[];
-  initialQuery: SheetQuery; unavailable: boolean;
+  initialQuery: SheetQuery; unavailable: boolean; registered?: RegisteredPrediction | null;
 }) {
   const teams = getTeamsByLeague(league);
   const hasResult = actualOrder !== null;
@@ -44,17 +48,21 @@ export function PredictionSheet({ year, years, league, status, actualOrder, comm
   const sharedRow: SheetRow | null = shared
     ? { key: "shared", name: shared.name, isMine: false, order: shared.order, result: hasResult ? scoreOrder(shared.order, snapshotFrom(actualOrder!, league)) : null }
     : null;
+  const registeredRow: SheetRow | null = registered
+    ? { key: `u${registered.userId}`, name: registered.name, isMine: false, order: registered.order, registeredAt: registered.registeredAt, result: hasResult ? scoreOrder(registered.order, snapshotFrom(actualOrder!, league)) : null }
+    : null;
   const rows = useMemo(() => {
     const chosen = picks.map((id) => commentators.find((c) => c.userId === id)).filter((c): c is SheetCommentator => !!c)
       .map((c): SheetRow => ({ key: `c${c.userId}`, name: c.name, source: c.source, isMine: false, order: c.order, result: c.result }));
+    if (registeredRow) chosen.unshift(registeredRow);
     const entered = [sharedRow, myRow].filter((r): r is SheetRow => !!r);
     // Entered rows may have been made after seeing the standings, so they never outrank a commentator.
     return hasResult ? [...sortRows(chosen, sort), ...entered] : [...entered, ...chosen];
-  }, [picks, commentators, myRow?.name, myRow?.order.join(), sharedRow?.order.join(), sort, hasResult]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [picks, commentators, registered, myRow?.name, myRow?.order.join(), sharedRow?.order.join(), sort, hasResult]); // eslint-disable-line react-hooks/exhaustive-deps
   const isEntered = (row: SheetRow) => row.key === "me" || row.key === "shared";
 
   const duplicateNames = new Set(rows.map((r) => r.name).filter((n, i, all) => all.indexOf(n) !== i));
-  const query: SheetQuery = { league, sort, picks, me: myRow ? { name: myRow.name, order } : shared };
+  const query: SheetQuery = { league, sort, picks, user: initialQuery.user, me: myRow ? { name: myRow.name, order } : shared };
   // Keep the address shareable without a server round trip.
   useEffect(() => {
     const url = sheetUrl(window.location.origin, year, query);
@@ -71,9 +79,12 @@ export function PredictionSheet({ year, years, league, status, actualOrder, comm
     const url = sheetUrl(window.location.origin, year, query) + "&utm_source=x";
     const head = `${year}年 ${RESULT_LABELS[league]} 順位予想`;
     const entered = myRow ?? sharedRow;
+    const scored = (row: SheetRow) => row.result ? ` 的中${row.result.exact}・ずれ${row.result.deviation}・${row.result.points}点` : "";
     const text = entered
-      ? `${head}、解説者と並べてみた｜${noMention(entered.name)}${entered.result ? ` 的中${entered.result.exact}・ずれ${entered.result.deviation}・${entered.result.points}点（${REFERENCE_NOTE}）` : ""}`
-      : `${head}　解説者の予想一覧`;
+      ? `${head}、解説者と並べてみた｜${noMention(entered.name)}${entered.result ? `${scored(entered)}（${REFERENCE_NOTE}）` : ""}`
+      : registeredRow
+        ? `${head}、解説者と並べてみた｜${noMention(registeredRow.name)}さん（${shortRegisteredAt(registeredRow.registeredAt!)}）${scored(registeredRow)}`
+        : `${head}　解説者の予想一覧`;
     return `https://x.com/intent/post?${new URLSearchParams({ text: `${text}\n#みんなの順位予想対決`, url })}`;
   }
   async function saveImage() {
@@ -86,7 +97,7 @@ export function PredictionSheet({ year, years, league, status, actualOrder, comm
   }
 
   // Picks belong to one league; the display name follows the visitor across leagues and years.
-  const switchHref = (y: number, l: ResultLeague) => `/sheet?${new URLSearchParams({ year: String(y), league: l, ...(name.trim() ? { me: name.trim() } : {}) })}`;
+  const switchHref = (y: number, l: ResultLeague) => `/sheet?${new URLSearchParams({ year: String(y), league: l, ...(name.trim() ? { me: name.trim() } : {}), ...(initialQuery.user ? { u: String(initialQuery.user) } : {}) })}`;
   const short = (team: string) => teams.find((t) => t.name === team)?.shortName ?? team;
   const statusLabel = status === "final" ? "確定" : status === "provisional" ? "暫定" : "結果前";
   const visibleCommentators = commentators.filter((c) => !filter || c.name.includes(filter) || (c.source ?? "").includes(filter));
@@ -109,6 +120,7 @@ export function PredictionSheet({ year, years, league, status, actualOrder, comm
         </nav>
       </header>
 
+      {initialQuery.user && !registered && <p className="sheet-help" role="status">{UNREGISTERED_NOTE}</p>}
       {unavailable && <p className="sheet-alert" role="alert">解説者の予想を読み込めませんでした。時間をおいて開き直してください。</p>}
 
       <section className="sheet-mine" aria-labelledby="sheet-mine-title">
@@ -178,7 +190,7 @@ export function PredictionSheet({ year, years, league, status, actualOrder, comm
           )}
           {rows.map((row) => (
             <li key={row.key} className={`sheet-row${row.isMine ? " sheet-row-mine" : ""}${row.key === "shared" ? " sheet-row-shared" : ""}`}>
-              <span className="sheet-name">{row.key === "shared" ? `${row.name}さん` : row.name}{row.isMine && row.name !== "あなた" && <small>あなた</small>}{isEntered(row) && hasResult && <em className="sheet-after">{REFERENCE_LABEL}</em>}{duplicateNames.has(row.name) && row.source && <em className="sheet-source">{row.source}</em>}</span>
+              <span className="sheet-name">{row.key === "shared" ? `${row.name}さん` : row.name}{row.isMine && row.name !== "あなた" && <small>あなた</small>}{isEntered(row) && hasResult && <em className="sheet-after">{REFERENCE_LABEL}</em>}{row.registeredAt && <em className="sheet-registered" title={`${formatRegisteredAt(row.registeredAt)}に登録`}>{fixedLabel(row.registeredAt)}</em>}{duplicateNames.has(row.name) && row.source && <em className="sheet-source">{row.source}</em>}</span>
               <span className="sheet-picks">
                 {row.order.map((t, i) => {
                   const actual = row.result?.actualRanks[i];
@@ -197,7 +209,7 @@ export function PredictionSheet({ year, years, league, status, actualOrder, comm
           ))}
           {rows.length === 0 && <li className="sheet-empty">{order.length > 0 ? `あと${6 - order.length}球団であなたの予想が入ります。` : "あなたの予想を入れるか、「並べる解説者を入れ替える」から解説者を選んでください。"}</li>}
         </ol>
-        <p className="sheet-legend">{hasResult ? "赤枠＝的中、1差〜5差＝実際の順位とのずれ（3差以上は減点）。点数は的中5点・1差3点・2差1点・3差−1点・4差−3点・5差−5点。ここで入れた予想は入力日を記録していないため、解説者の後ろに参考として並びます。" : "結果が出ると、的中とずれがここに入ります。"}</p>
+        <p className="sheet-legend">{hasResult ? "赤枠＝的中、1差〜5差＝実際の順位とのずれ（3差以上は減点）。点数は的中5点・1差3点・2差1点・3差−1点・4差−3点・5差−5点。ここで入れた予想は入力日を記録していないため、解説者の後ろに参考として並びます。" + (registeredRow ? `「登録・固定」はサイトに開幕前に登録し、開幕で変更できなくなった予想で、解説者と同じく順位の対象です。` : "") : "結果が出ると、的中とずれがここに入ります。"}</p>
         {sharedRow && (
           <p className="sheet-help">
             {myRow ? `共有リンクにはあなたの予想だけが入ります（${sharedRow.name}さんの予想は入りません）。` : ""}
@@ -273,12 +285,15 @@ async function drawSheet({ year, league, status, actualOrder, rows }: {
     shown.forEach((l, i) => text(l, 52, startY + i * 30, size, ink, actual ? 700 : 800, maxW));
     if (isEntered && hasResult) text(REFERENCE_LABEL, 52, y + 80, 15, "#7a4d00", 700, maxW);
   };
+  const registeredLine = (row: SheetRow | null, y: number) => {
+    if (row?.registeredAt) text(fixedLabel(row.registeredAt), 52, y + 80, 15, "#1f7a3f", 700, 206);
+  };
   ctx.fillStyle = paper; ctx.fillRect(0, 0, W, H);
   ctx.fillStyle = rule; ctx.fillRect(40, 36, W - 80, 6); ctx.fillRect(40, 48, W - 80, 2);
   text("みんなの順位予想対決", 40, 92, 24, muted, 700, 500);
   text(`${year}年 ${RESULT_LABELS[league]}　順位予想一覧`, 40, 146, 46, ink, 900, 1120);
-  const mine = rows.find((r) => r.isMine) ?? rows.find(entered);
-  const others = rows.filter((r) => !entered(r)).length;
+  const mine = rows.find((r) => r.isMine) ?? rows.find(entered) ?? rows.find((r) => r.registeredAt);
+  const others = rows.filter((r) => !entered(r) && r !== mine).length;
   const who = mine ? (name(mine) + (others > 0 ? "と解説者の予想" : "の予想")) : "解説者の予想";
   const sub = [who, hasResult ? (status === "final" ? "確定順位で答え合わせ" : "暫定順位で答え合わせ") : "", mine && hasResult ? "解説者以外は入力日の記録がない参考" : ""].filter(Boolean).join("　／　");
   text(sub, 40, 190, 24, muted, 700, 1120);
@@ -291,6 +306,7 @@ async function drawSheet({ year, league, status, actualOrder, rows }: {
     if (item.row && entered(item.row)) { ctx.fillStyle = "#fff4d6"; ctx.fillRect(40, y - 8, W - 80, rowH); }
     if (item.actual) { ctx.fillStyle = "#ecebe3"; ctx.fillRect(40, y - 8, W - 80, rowH); }
     nameLines(item.name, y, item.actual, item.row ? entered(item.row) : false);
+    registeredLine(item.row, y);
     item.order.forEach((team, i) => {
       const t = getTeamByName(team), cx = chipX + chipW * i + chipW / 2, cy = y + 34;
       const actual = item.row?.result?.actualRanks[i], gap = actual === undefined ? null : Math.abs(actual - (i + 1));

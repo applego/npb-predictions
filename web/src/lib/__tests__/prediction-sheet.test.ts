@@ -17,6 +17,13 @@ describe("prediction sheet", () => {
     expect(parseSheetQuery(Object.fromEntries(url.searchParams))).toEqual(q);
   });
 
+  it("carries a registered participant only as a positive id, and keeps it in the shared link", () => {
+    const q = parseSheetQuery({ league: "pacific", u: "42" });
+    expect(q.user).toBe(42);
+    expect(new URL(sheetUrl("https://x.test", 2027, q)).searchParams.get("u")).toBe("42");
+    for (const bad of ["0", "-1", "4.2", "abc", "12345678901", ""]) expect(parseSheetQuery({ u: bad }).user).toBeNull();
+  });
+
   it("rejects an order that is not exactly the six teams of the league", () => {
     expect(decodeOrder("神,神,De,広,中,ヤ", "central")).toBeNull();
     expect(decodeOrder("神,巨,De,広,中", "central")).toBeNull();

@@ -76,4 +76,5 @@
 .sheet-actions .result-button:disabled { opacity:.45; cursor:not-allowed; }
 .sheet-picker { margin-bottom:10px; }
 .sheet-after { display:block; font-style:normal; font-size:12px; font-weight:700; color:#7a4d00; margin-top:2px; }
+.sheet-registered { display:block; font-style:normal; font-size:12px; font-weight:700; color:var(--field, #1F7A3F); margin-top:2px; }
 .sheet-chosen { margin:0; font-size:14px; font-weight:700; }
