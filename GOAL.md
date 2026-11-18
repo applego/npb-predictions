@@ -52,7 +52,7 @@ version: 3
 level: product
 entity_id: npb-predictions
 parent_ref: null
-updated_at: 2026-11-01
+updated_at: 2026-11-18
 target_status: provisional
 kgis:
   - id: contribution_profit_28d
@@ -89,22 +89,38 @@ kpis:
     role: input
     unit: 回
     source_ref: search-console
+    target:
+      op: ">="
+      value: 3000
+    due: 2027-03-31
     repair: Search Console の所有権確認（オーナー操作、scripts/growth/decisions.md の2）
   - id: result_views_28d
     title: 結果閲覧タブの延べ数
     role: input
     unit: 日別タブ
     source_ref: first-party-growth-events
+    target:
+      op: ">="
+      value: 3000
+    due: 2027-03-31
   - id: affiliate_clicks_28d
     title: 紹介リンクのクリック
     role: input
     unit: 回
     source_ref: first-party-affiliate-clicks
+    target:
+      op: ">="
+      value: 100
+    due: 2027-04-30
   - id: affiliate_confirmed_28d
     title: ASP確定成果
     role: input
     unit: 件
     source_ref: asp-confirmed-export
+    target:
+      op: ">="
+      value: 3
+    due: 2027-05-31
     repair: A8.net 登録とスカパー!提携（オーナー操作、scripts/growth/decisions.md の1）
   - id: x_share_starts_28d
     title: X共有開始
