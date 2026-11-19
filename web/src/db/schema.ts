@@ -112,6 +112,8 @@ export const scoreSnapshots = sqliteTable("score_snapshots", {
 }, (table) => [
   uniqueIndex("score_user_season_date_idx").on(table.userId, table.seasonId, table.snapshotDate),
   index("score_snapshots_season_user_total_idx").on(table.seasonId, table.userId, table.totalScore),
+  index("score_snapshots_season_total_idx").on(table.seasonId, table.totalScore, table.userId),
+  index("score_snapshots_season_date_idx").on(table.seasonId, table.snapshotDate, table.userId),
 ]);
 
 export const awards = sqliteTable("awards", {
