@@ -9,10 +9,10 @@ import {
   rankingPicks,
   titlePicks,
   actualTeamStandings,
-  actualTitleSnapshots,
 } from "@/db/schema";
 import { and, eq, desc, inArray } from "drizzle-orm";
 import { calcRankingPointForTeam } from "@/lib/scoring";
+import { getSeasonTitles } from "@/lib/season-titles";
 
 /**
  * GET /api/commentators/[slug]?year=2025
@@ -127,12 +127,9 @@ export async function GET(
       }
     }
 
-    // Fetch actual titles
-    const titles = await db
-      .select()
-      .from(actualTitleSnapshots)
-      .where(eq(actualTitleSnapshots.seasonId, season.id))
-      .orderBy(desc(actualTitleSnapshots.snapshotDate));
+    // Fetch actual titles (shared computed_cache entry, not a per-request
+    // re-read of the season's whole snapshot history)
+    const titles = await getSeasonTitles(db, season.id, season.year);
 
     const actualTitleMap = new Map<string, string>();
     for (const row of titles) {

@@ -3,7 +3,7 @@ export const runtime = "edge";
 import { NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { users, seasons, scoreSnapshots } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 
 // GET /api/users/[userId]/history
 // Returns year-by-year score history for a user from score_snapshots.
@@ -24,34 +24,32 @@ export async function GET(
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  const [allSeasons, snaps] = await Promise.all([
-    db.select().from(seasons),
-    db.select().from(scoreSnapshots).where(eq(scoreSnapshots.userId, uid)),
-  ]);
+  const allSeasons = await db.select().from(seasons);
 
-  // Keep best snapshot per season (highest totalScore)
-  const snapBySeason = new Map<number, (typeof snaps)[0]>();
-  for (const s of snaps) {
-    const existing = snapBySeason.get(s.seasonId);
-    if (!existing || s.totalScore > existing.totalScore) {
-      snapBySeason.set(s.seasonId, s);
-    }
+  // Keep best snapshot per season (highest totalScore). One indexed seek
+  // per season (score_snapshots_season_user_total_idx ends each
+  // (season, user) segment at its highest total_score) instead of reading
+  // every snapshot the user has ever accumulated.
+  const history: {
+    year: number;
+    totalScore: number;
+    rankingScore: number;
+    titleScore: number;
+  }[] = [];
+  for (const season of [...allSeasons].sort((a, b) => a.year - b.year)) {
+    const [best] = await db
+      .select({
+        totalScore: scoreSnapshots.totalScore,
+        rankingScore: scoreSnapshots.rankingScore,
+        titleScore: scoreSnapshots.titleScore,
+      })
+      .from(scoreSnapshots)
+      .where(and(eq(scoreSnapshots.userId, uid), eq(scoreSnapshots.seasonId, season.id)))
+      .orderBy(desc(scoreSnapshots.totalScore))
+      .limit(1);
+    if (!best) continue;
+    history.push({ year: season.year, ...best });
   }
-
-  const history = allSeasons
-    .sort((a, b) => a.year - b.year)
-    .flatMap((season) => {
-      const snap = snapBySeason.get(season.id);
-      if (!snap) return [];
-      return [
-        {
-          year: season.year,
-          totalScore: snap.totalScore,
-          rankingScore: snap.rankingScore,
-          titleScore: snap.titleScore,
-        },
-      ];
-    });
 
   return NextResponse.json({ userId: uid, userName: user.name, history });
 }

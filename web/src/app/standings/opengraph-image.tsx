@@ -1,8 +1,9 @@
 import { ImageResponse } from "next/og";
 import { getDb } from "@/db";
 import { getOrCompute } from "@/lib/computed-cache";
-import { eq, desc } from "drizzle-orm";
-import { seasons, scoreSnapshots } from "@/db/schema";
+import { getSeasonTop5 } from "@/lib/og-snapshots";
+import { eq } from "drizzle-orm";
+import { seasons } from "@/db/schema";
 
 export const runtime = "edge";
 export const alt = "みんなの順位予想対決 スコアボード";
@@ -104,24 +105,12 @@ export default async function Image() {
   let entries: { name: string; totalScore: number; rankingScore: number; titleScore: number }[] = [];
 
   if (season) {
-    // Top 5 by best snapshot, cached per season (not every snapshot per image).
+    // Top 5 by best snapshot, cached per season; the recompute reads only
+    // the top rows (lib/og-snapshots), not every snapshot of the season.
     entries = await getOrCompute(getDb(), `standings-og-top5:${season.id}`, async () => {
-    const scores = await getDb().query.scoreSnapshots.findMany({
-      where: eq(scoreSnapshots.seasonId, season.id),
-      orderBy: [desc(scoreSnapshots.totalScore)],
-      with: { user: true },
-    });
-
-    const seen = new Set<number>();
-    return scores
-      .filter((s) => {
-        if (seen.has(s.userId)) return false;
-        seen.add(s.userId);
-        return true;
-      })
-      .slice(0, 5)
-      .map((s) => ({
-        name: s.user.name,
+      const top = await getSeasonTop5(getDb(), season.id);
+      return top.map((s) => ({
+        name: s.name,
         totalScore: s.totalScore,
         rankingScore: s.rankingScore,
         titleScore: s.titleScore,

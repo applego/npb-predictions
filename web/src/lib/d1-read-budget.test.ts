@@ -83,6 +83,15 @@ async function seed(db: D1Database) {
       }
     }
   });
+  // Title snapshots for the 2026 season: 2 leagues x 6 categories x 60 days.
+  for (const league of ["central", "pacific"] as const) {
+    for (const category of ["batting_avg", "rbi", "home_runs", "wins", "era", "saves"]) {
+      for (let day = 0; day < 60; day++) {
+        add("INSERT INTO actual_title_snapshots (season_id, league, category, player_name, team_name, value, snapshot_date) VALUES (3, ?, ?, ?, ?, ?, ?)",
+          league, category, `選手${day % 12}`, "巨人", 0.3, 1_700_000_000 + day * 86_400);
+      }
+    }
+  }
   for (let i = 0; i < statements.length; i += 500) await db.batch(statements.slice(i, i + 500));
 }
 
@@ -122,6 +131,8 @@ const endpoints: [string, () => Promise<unknown>][] = [
   ["GET /api/seasons/2026/current-scoreboard", async () => (await import("@/app/api/seasons/[year]/current-scoreboard/route")).GET(new Request("https://x"), year)],
   ["GET /api/seasons/2026/predictions", async () => (await import("@/app/api/seasons/[year]/predictions/route")).GET(new Request("https://x"), year)],
   ["GET /api/my-rank", async () => (await import("@/app/api/my-rank/route")).GET(new Request("https://x/api/my-rank?year=2026"))],
+  ["GET /api/seasons/2026/titles", async () => (await import("@/app/api/seasons/[year]/titles/route")).GET(new Request("https://x"), year)],
+  ["GET /api/users/7/history", async () => (await import("@/app/api/users/[userId]/history/route")).GET(new Request("https://x"), { params: Promise.resolve({ userId: "7" }) })],
   ["GET /api/commentators/u7", async () => (await import("@/app/api/commentators/[slug]/route")).GET(new Request("https://x/api/commentators/u7"), { params: Promise.resolve({ slug: "u7" }) })],
   ["scoreboard page data", async () => (await import("@/lib/scoreboard")).getScoreboardData(2026)],
   ["home / rankings results", async () => (await import("@/lib/season-results-data")).loadSeasonResults(2026, "all")],
@@ -184,5 +195,86 @@ describe(`D1 rows_read per warm request stays under ${BUDGET} with ${PREDICTIONS
     for (const s of standingsReads) read += (await real.prepare(s.sql).bind(...s.params).all()).meta.rows_read ?? 0;
     const rows = (await real.prepare("SELECT count(*) AS n FROM actual_team_standings WHERE season_id = 3").first<{ n: number }>())!.n;
     expect(read).toBeLessThanOrEqual(4 * rows);
+  }, 120_000);
+
+  it("OG top 5 recompute reads a page of snapshots, not the season", async () => {
+    const { getSeasonTop5 } = await import("@/lib/og-snapshots");
+    log = [];
+    const top = await getSeasonTop5(boundary.getDb(), 3);
+    expect(top).toHaveLength(5);
+    expect(await rowsRead()).toBeLessThanOrEqual(BUDGET);
+    // Each returned score is that user's best, and together they are the
+    // five largest per-user bests (multiset compare: ties are interchangeable).
+    const all = (await real.prepare("SELECT user_id, total_score FROM score_snapshots WHERE season_id = 3").all<{ user_id: number; total_score: number }>()).results;
+    const bestByUser = new Map<number, number>();
+    for (const r of all) bestByUser.set(r.user_id, Math.max(bestByUser.get(r.user_id) ?? -1, r.total_score));
+    for (const entry of top) expect(entry.totalScore).toBe(bestByUser.get(entry.userId));
+    const expectedTotals = [...bestByUser.values()].sort((a, b) => b - a).slice(0, 5);
+    expect(top.map((t) => t.totalScore).sort((a, b) => b - a)).toEqual(expectedTotals);
+  }, 120_000);
+
+  it("OG weekly changes recompute reads two snapshot days, not the season", async () => {
+    const { getSeasonWeeklyChanges } = await import("@/lib/og-snapshots");
+    log = [];
+    const weekly = await getSeasonWeeklyChanges(boundary.getDb(), 3);
+    expect(weekly).not.toBeNull();
+    expect(weekly!.changes).toHaveLength(5);
+    const read = await rowsRead();
+    const latest = (await real.prepare("SELECT max(snapshot_date) AS v FROM score_snapshots WHERE season_id = 3").first<{ v: number }>())!.v;
+    const prev = (await real.prepare("SELECT max(snapshot_date) AS v FROM score_snapshots WHERE season_id = 3 AND snapshot_date <= ?").bind(latest - 7 * 86_400).first<{ v: number }>())!.v;
+    const countOn = async (d: number) => (await real.prepare("SELECT count(*) AS n FROM score_snapshots WHERE season_id = 3 AND snapshot_date = ?").bind(d).first<{ n: number }>())!.n;
+    const twoDays = (await countOn(latest)) + (await countOn(prev));
+    // Two days of rows (the latest day is read joined to users, so ~2x for
+    // that day), independent of how many snapshot days the season has.
+    expect(read).toBeLessThanOrEqual(2 * twoDays + 100);
+    expect(weekly!.latestMs).toBe(latest * 1000);
+    expect(weekly!.weekAgoMs).toBe((latest - 7 * 86_400) * 1000);
+    // Deltas match a brute-force full scan, as multisets and per user.
+    const rows = (await real.prepare("SELECT user_id, total_score, snapshot_date FROM score_snapshots WHERE season_id = 3 ORDER BY snapshot_date DESC").all<{ user_id: number; total_score: number; snapshot_date: number }>()).results;
+    const names = new Map((await real.prepare("SELECT id, name FROM users").all<{ id: number; name: string }>()).results.map((u) => [u.id, u.name]));
+    const weekAgoSec = latest - 7 * 86_400;
+    const latestByUser = new Map<number, number>();
+    const prevByUser = new Map<number, number>();
+    for (const r of rows) {
+      if (!latestByUser.has(r.user_id)) latestByUser.set(r.user_id, r.total_score);
+      if (r.snapshot_date <= weekAgoSec && !prevByUser.has(r.user_id)) prevByUser.set(r.user_id, r.total_score);
+    }
+    const brute = [...latestByUser.entries()].map(([uid, cur]) => ({ userName: names.get(uid)!, delta: cur - (prevByUser.get(uid) ?? 0) }));
+    const bruteByName = new Map(brute.map((b) => [b.userName, b.delta]));
+    for (const c of weekly!.changes) expect(c.delta).toBe(bruteByName.get(c.userName));
+    expect(weekly!.changes.map((c) => c.delta).sort((a, b) => b - a))
+      .toEqual(brute.map((b) => b.delta).sort((a, b) => b - a).slice(0, 5));
+  }, 120_000);
+
+  it("titles recompute reads the season's title snapshots about once, then serves from cache", async () => {
+    const call = endpoints.find(([label]) => label === "GET /api/seasons/2026/titles")![1];
+    await call(); // warm the key at the current counters
+    await real.prepare("UPDATE actual_title_snapshots SET player_name = player_name WHERE id = (SELECT min(id) FROM actual_title_snapshots WHERE season_id = 3)").run();
+    vi.spyOn(Date, "now").mockReturnValue(Date.now() + 1_801_000); // past the per-key recompute window
+    log = [];
+    const res = await call() as Response;
+    vi.restoreAllMocks();
+    expect(res.status).toBe(200);
+    const body = await res.json() as unknown[];
+    const rows = (await real.prepare("SELECT count(*) AS n FROM actual_title_snapshots WHERE season_id = 3").first<{ n: number }>())!.n;
+    expect(body).toHaveLength(rows);
+    // The response IS the season's history, so a recompute cannot read less
+    // than the table once — but it must not read it over and over.
+    expect(await rowsRead()).toBeLessThanOrEqual(4 * rows + 100);
+  }, 120_000);
+
+  it("user history stays bounded however many snapshots the user has", async () => {
+    const call = endpoints.find(([label]) => label === "GET /api/users/7/history")![1];
+    log = [];
+    const res = await call() as Response;
+    expect(res.status).toBe(200);
+    const body = await res.json() as { history: { year: number; totalScore: number }[] };
+    expect(body.history.map((h) => h.year)).toEqual(SEASONS);
+    expect(await rowsRead()).toBeLessThanOrEqual(BUDGET);
+    for (const h of body.history) {
+      const seasonId = SEASONS.indexOf(h.year) + 1;
+      const best = (await real.prepare("SELECT max(total_score) AS v FROM score_snapshots WHERE user_id = 7 AND season_id = ?").bind(seasonId).first<{ v: number }>())!.v;
+      expect(h.totalScore).toBe(best);
+    }
   }, 120_000);
 });
